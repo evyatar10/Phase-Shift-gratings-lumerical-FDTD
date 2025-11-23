@@ -15,6 +15,12 @@ Geometry:
 Spectral setup:
     - Bragg wavelength guess: "lambda_B approx 2 n_eff Lambda"
     - Scan widths are defined explicitly in nanometers
+
+Apodization option:
+    - Keep average width at 800 nm
+    - At edges: full modulation depth = 200 nm  (700 / 900)
+    - At cavity: full modulation depth = center_mod_depth_nm
+      for example 40 nm gives 780 / 820 around the cavity
 """
 
 import numpy as np
@@ -43,11 +49,24 @@ class PiShiftBraggFDTD:
                  y_span=4e-6,
                  z_span=8e-6,
                  buffer_x=4e-6,
-                 core_material="Si3N4 (Silicon Nitride) - Phillip",
+                 core_material="Si3N4 (Silicon Nitride) - Luke",
                  clad_material="SiO2 (Glass) - Palik",
                  n_eff_guess=1.55,
                  coarse_width_nm=150,       # total width of coarse scan in nm
-                 n_wl_points=401):
+                 n_wl_points=401,
+                 use_apodization=False,
+                 center_mod_depth_nm=40.0):
+        """
+        use_apodization:
+            False: constant 700 / 900 widths
+            True:  average width fixed at 800 nm,
+                   modulation depth varies from center_mod_depth_nm
+                   at cavity to full edge depth at outer periods
+
+        center_mod_depth_nm:
+            Full peak to peak difference at the cavity.
+            Example: 40 nm gives 780 / 820 nm around cavity.
+        """
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -64,8 +83,12 @@ class PiShiftBraggFDTD:
         self.n_eff_guess = n_eff_guess
         self.n_wl_points = n_wl_points
 
+        # Apodization control
+        self.use_apodization = use_apodization
+        self.center_mod_depth = center_mod_depth_nm * 1e-9  # meters
+
         # Geometry along x
-        self.cavity_length = pitch/2                  # pi shift defect
+        self.cavity_length = pitch / 2                  # pi shift defect
         self.grating_length = 2 * n_periods_each_side * pitch
         self.n_straight_periods_each_side = 2
         self.straight_length_each_side = self.n_straight_periods_each_side * pitch
@@ -163,41 +186,82 @@ class PiShiftBraggFDTD:
             fdtd.set("x min", x1)
             fdtd.set("x max", x2)
 
+        # Precompute apodization parameters
+        avg_width = 0.5 * (self.width_narrow + self.width_wide)
+        full_depth_edge = self.width_wide - self.width_narrow   # for example 200 nm
+        # If apodization is on, use user specified center depth,
+        # otherwise center depth equals edge depth and everything is flat
+        full_depth_center = self.center_mod_depth if self.use_apodization else full_depth_edge
+        delta_edge = 0.5 * full_depth_edge
+        delta_center = 0.5 * full_depth_center
+
         # Left straight waveguide: width = narrow, length = 2 periods
         x1 = x
         x2 = x1 + self.straight_length_each_side
         add_core_segment(x1, x2, self.width_narrow, name_prefix="wg_left")
         x = x2
 
-        # Left grating: [wide, narrow] repeated
-        for _ in range(self.n_periods_each_side):
+        # Left grating: [wide, narrow] repeated, with possible apodization
+        for i in range(self.n_periods_each_side):
+            if self.use_apodization:
+                # i = 0 at outer edge, i = N-1 near cavity
+                # we want smallest modulation near cavity, largest at edge
+                if self.n_periods_each_side > 1:
+                    j = self.n_periods_each_side - 1 - i
+                    frac = j / (self.n_periods_each_side - 1)
+                else:
+                    frac = 0.0
+                delta = delta_center + (delta_edge - delta_center) * frac
+                width_wide_i = avg_width + delta
+                width_narrow_i = avg_width - delta
+            else:
+                width_wide_i = self.width_wide
+                width_narrow_i = self.width_narrow
+
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, self.width_wide)
+            add_core_segment(x1, x2, width_wide_i)
             x = x2
 
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, self.width_narrow)
+            add_core_segment(x1, x2, width_narrow_i)
             x = x2
 
-        # Cavity: width = narrow, length = pitch/2 (pi shift)
-        width_cavity = self.width_narrow
+        # Cavity: width close to average, with smallest modulation
+        if self.use_apodization:
+            width_cavity = avg_width - delta_center   # for example 780 nm
+        else:
+            width_cavity = self.width_narrow
+
         x1 = x
         x2 = x1 + self.cavity_length
         add_core_segment(x1, x2, width_cavity, name_prefix="cavity")
         x = x2
 
-        # Right grating
-        for _ in range(self.n_periods_each_side):
+        # Right grating: near cavity has smallest modulation
+        for i in range(self.n_periods_each_side):
+            if self.use_apodization:
+                # i = 0 near cavity, i = N-1 at outer edge
+                if self.n_periods_each_side > 1:
+                    frac = i / (self.n_periods_each_side - 1)
+                else:
+                    frac = 0.0
+                delta = delta_center + (delta_edge - delta_center) * frac
+                width_wide_i = avg_width + delta
+                width_narrow_i = avg_width - delta
+            else:
+                width_wide_i = self.width_wide
+                width_narrow_i = self.width_narrow
+
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, self.width_wide)
+            add_core_segment(x1, x2, width_wide_i)
             x = x2
 
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, self.width_narrow)
+            add_core_segment(x1, x2, width_narrow_i)
             x = x2
 
         # Right straight waveguide
@@ -325,9 +389,9 @@ class PiShiftBraggFDTD:
         """
         Update wavelength scan on the existing structure.
 
-        center_lambda_m - center wavelength in meters
-        width_nm        - total scan width in nanometers
-        n_points        - number of wavelength samples
+        center_lambda_m : center wavelength in meters
+        width_nm        : total scan width in nanometers
+        n_points        : number of wavelength samples
         """
         self.n_wl_points = n_points
         half_w = 0.5 * width_nm * 1e-9
@@ -350,21 +414,24 @@ class PiShiftBraggFDTD:
 
 if __name__ == "__main__":
     # One simulation object, reused for coarse and fine
+    # Set use_apodization=False for flat 700 / 900 grating
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
         n_periods_each_side=40,
         width_narrow=700e-9,
-        width_wide=900e-9,  # 700
+        width_wide=900e-9,
         core_height=350e-9,
         substrate_thickness=4e-6,
         y_span=4e-6,
         z_span=8e-6,
         buffer_x=4e-6,
-        core_material="Si3N4 (Silicon Nitride) - Phillip",
+        core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
         n_eff_guess=1.55,
         coarse_width_nm=150,      # coarse scan width in nm
-        n_wl_points=401
+        n_wl_points=401,
+        use_apodization=False,     # "turn apodization on or off here"
+        center_mod_depth_nm=40.0  # "40 nm depth at cavity: 780 / 820"
     )
 
     # ---------- coarse scan on built structure ----------
@@ -373,7 +440,7 @@ if __name__ == "__main__":
     wl_c, T_c, R_c, loss_c = sim.get_spectra()
     wl_c_nm = wl_c * 1e9
 
-    #idx_min_T = np.argmin(T_c)
+    # You can still estimate resonance from coarse scan in code if desired
     lambda_res_est = 1.565e-6
     print(f"Estimated resonance from coarse scan: {lambda_res_est*1e9:.2f} nm")
 
