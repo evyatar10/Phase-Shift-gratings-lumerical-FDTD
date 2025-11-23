@@ -45,28 +45,17 @@ class PiShiftBraggFDTD:
                  width_narrow=700e-9,
                  width_wide=900e-9,
                  core_height=350e-9,
-                 substrate_thickness=4e-6,   # kept for compatibility
+                 substrate_thickness=4e-6,
                  y_span=4e-6,
                  z_span=8e-6,
                  buffer_x=4e-6,
                  core_material="Si3N4 (Silicon Nitride) - Luke",
                  clad_material="SiO2 (Glass) - Palik",
                  n_eff_guess=1.55,
-                 coarse_width_nm=150,       # total width of coarse scan in nm
+                 coarse_width_nm=150,
                  n_wl_points=401,
                  use_apodization=False,
                  center_mod_depth_nm=40.0):
-        """
-        use_apodization:
-            False: constant 700 / 900 widths
-            True:  average width fixed at 800 nm,
-                   modulation depth varies from center_mod_depth_nm
-                   at cavity to full edge depth at outer periods
-
-        center_mod_depth_nm:
-            Full peak to peak difference at the cavity.
-            Example: 40 nm gives 780 / 820 nm around cavity.
-        """
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -83,17 +72,14 @@ class PiShiftBraggFDTD:
         self.n_eff_guess = n_eff_guess
         self.n_wl_points = n_wl_points
 
-        # Apodization control
         self.use_apodization = use_apodization
-        self.center_mod_depth = center_mod_depth_nm * 1e-9  # meters
+        self.center_mod_depth = center_mod_depth_nm * 1e-9
 
-        # Geometry along x
-        self.cavity_length = pitch / 2                  # pi shift defect
+        self.cavity_length = pitch / 2
         self.grating_length = 2 * n_periods_each_side * pitch
         self.n_straight_periods_each_side = 2
         self.straight_length_each_side = self.n_straight_periods_each_side * pitch
 
-        # Total device length
         self.device_length = (
             2 * self.straight_length_each_side
             + self.grating_length
@@ -101,21 +87,64 @@ class PiShiftBraggFDTD:
         )
         self.sim_x_span = self.device_length + 2 * buffer_x
 
-        # Bragg wavelength guess
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
 
-        # Coarse scan width is defined explicitly in nm
         self.coarse_width_nm = coarse_width_nm
         half_w = 0.5 * self.coarse_width_nm * 1e-9
         self.lam_min = self.lambda_B - half_w
         self.lam_max = self.lambda_B + half_w
 
-        # Open a single FDTD session
         self.fdtd = lumapi.FDTD()
+
+        # Correct placement of material setup
+        self._setup_materials()
 
     # ------------------------------------------------------------------
     # Utilities
     # ------------------------------------------------------------------
+    def _setup_materials(self):
+        """Create editable copies of materials and apply fit settings."""
+
+        custom_sin = "SiN_custom"
+        custom_sio2 = "SiO2_custom"
+
+        script = f'''
+        if (haveresult("{custom_sin}", "material")) {{
+            deletematerial("{custom_sin}");
+        }}
+        if (haveresult("{custom_sio2}", "material")) {{
+            deletematerial("{custom_sio2}");
+        }}
+
+        m1 = copymaterial("{self.core_material}");
+        setmaterial(m1, "name", "{custom_sin}");
+
+        m2 = copymaterial("{self.clad_material}");
+        setmaterial(m2, "name", "{custom_sio2}");
+
+        setmaterial("{custom_sin}",  "specify fit range", 1);
+        setmaterial("{custom_sio2}", "specify fit range", 1);
+
+        setmaterial("{custom_sin}",  "wavelength min", {self.lam_min});
+        setmaterial("{custom_sin}",  "wavelength max", {self.lam_max});
+        setmaterial("{custom_sio2}", "wavelength min", {self.lam_min});
+        setmaterial("{custom_sio2}", "wavelength max", {self.lam_max});
+
+        setmaterial("{custom_sin}",  "tolerance", 0.001);
+        setmaterial("{custom_sio2}", "tolerance", 0.001);
+
+        setmaterial("{custom_sin}",  "make fit passive", 1);
+        setmaterial("{custom_sio2}", "make fit passive", 1);
+
+        setmaterial("{custom_sin}",  "improve numerical stability", 1);
+        setmaterial("{custom_sio2}", "improve numerical stability", 1);
+        '''
+
+        self.fdtd.eval(script)
+
+        self.core_material = custom_sin
+        self.clad_material = custom_sio2
+
     def _reset_layout(self):
         self.fdtd.switchtolayout()
         self.fdtd.selectall()
@@ -134,21 +163,14 @@ class PiShiftBraggFDTD:
         fdtd = self.fdtd
 
         fdtd.addfdtd()
-
         fdtd.set("x", 0)
         fdtd.set("y", 0)
         fdtd.set("z", 0)
-
         fdtd.set("x span", self.sim_x_span)
         fdtd.set("y span", self.y_span)
         fdtd.set("z span", self.z_span)
-
-        fdtd.set("dimension", 2)  # same numeric setting as before
-
-        # choose GPU or CPU
-        fdtd.setdevice("GPU")  # this is the CPU / GPU button in the toolbar
-
-        # Full SiO2 cladding
+        fdtd.set("dimension", 2)
+        fdtd.setdevice("GPU")
         fdtd.set("background material", self.clad_material)
 
         for bc in ["x min bc", "x max bc",
@@ -162,15 +184,11 @@ class PiShiftBraggFDTD:
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
-
         z_core_center = self.core_height / 2.0
         pitch = self.pitch
         half_pitch = pitch / 2.0
-
-        # Start at left end of device
         x_start = -self.device_length / 2.0
         x = x_start
-
         seg_id = 0
 
         def add_core_segment(x1, x2, width, name_prefix="core_seg"):
@@ -186,26 +204,19 @@ class PiShiftBraggFDTD:
             fdtd.set("x min", x1)
             fdtd.set("x max", x2)
 
-        # Precompute apodization parameters
         avg_width = 0.5 * (self.width_narrow + self.width_wide)
-        full_depth_edge = self.width_wide - self.width_narrow   # for example 200 nm
-        # If apodization is on, use user specified center depth,
-        # otherwise center depth equals edge depth and everything is flat
+        full_depth_edge = self.width_wide - self.width_narrow
         full_depth_center = self.center_mod_depth if self.use_apodization else full_depth_edge
         delta_edge = 0.5 * full_depth_edge
         delta_center = 0.5 * full_depth_center
 
-        # Left straight waveguide: width = narrow, length = 2 periods
         x1 = x
         x2 = x1 + self.straight_length_each_side
         add_core_segment(x1, x2, self.width_narrow, name_prefix="wg_left")
         x = x2
 
-        # Left grating: [wide, narrow] repeated, with possible apodization
         for i in range(self.n_periods_each_side):
             if self.use_apodization:
-                # i = 0 at outer edge, i = N-1 near cavity
-                # we want smallest modulation near cavity, largest at edge
                 if self.n_periods_each_side > 1:
                     j = self.n_periods_each_side - 1 - i
                     frac = j / (self.n_periods_each_side - 1)
@@ -228,21 +239,18 @@ class PiShiftBraggFDTD:
             add_core_segment(x1, x2, width_narrow_i)
             x = x2
 
-        # Cavity: width close to average, with smallest modulation
         if self.use_apodization:
-            width_cavity = avg_width - delta_center   # for example 780 nm
+            width_cavity = avg_width - delta_center
         else:
             width_cavity = self.width_narrow
 
         x1 = x
         x2 = x1 + self.cavity_length
-        add_core_segment(x1, x2, width_cavity, name_prefix="cavity")
+        add_core_segment(x1, x2, width_cavity, "cavity")
         x = x2
 
-        # Right grating: near cavity has smallest modulation
         for i in range(self.n_periods_each_side):
             if self.use_apodization:
-                # i = 0 near cavity, i = N-1 at outer edge
                 if self.n_periods_each_side > 1:
                     frac = i / (self.n_periods_each_side - 1)
                 else:
@@ -264,10 +272,9 @@ class PiShiftBraggFDTD:
             add_core_segment(x1, x2, width_narrow_i)
             x = x2
 
-        # Right straight waveguide
         x1 = x
         x2 = x1 + self.straight_length_each_side
-        add_core_segment(x1, x2, self.width_narrow, name_prefix="wg_right")
+        add_core_segment(x1, x2, self.width_narrow, "wg_right")
         x = x2
 
     def _add_source_and_monitors(self):
@@ -277,28 +284,19 @@ class PiShiftBraggFDTD:
         lam_max = self.lam_max
         n_freq = self.n_wl_points
 
-        # Device limits
         x_device_start = -self.device_length / 2.0
         x_device_end   = +self.device_length / 2.0
 
-        # Straight waveguide sections
         x_wg_left_start  = x_device_start
         x_wg_left_end    = x_wg_left_start + self.straight_length_each_side
         x_wg_right_end   = x_device_end
         x_wg_right_start = x_wg_right_end - self.straight_length_each_side
 
-        # Source in the middle of the left straight waveguide
         x_source = 0.5 * (x_wg_left_start + x_wg_left_end)
-
-        # Reflection monitor between source and grating (inside straight guide)
         x_R_mon = x_wg_left_end - 0.25 * self.straight_length_each_side
-
-        # Transmission monitor inside right straight guide, before PML
         x_T_mon = x_wg_right_start + 0.25 * self.straight_length_each_side
-
         z_core_center = self.core_height / 2.0
 
-        # Mode source injecting along x
         fdtd.addmode()
         fdtd.set("name", "input_mode")
         fdtd.set("injection axis", "x")
@@ -312,37 +310,30 @@ class PiShiftBraggFDTD:
         fdtd.set("wavelength stop", lam_max)
         fdtd.set("mode selection", "fundamental TE mode")
 
-        # Transmission monitor - DFT
         fdtd.adddftmonitor()
         fdtd.set("name", "T_monitor")
         fdtd.set("monitor type", "2D X-normal")
-
         fdtd.set("x", x_T_mon)
         fdtd.set("y", 0)
         fdtd.set("y span", self.y_span * 0.8)
         fdtd.set("z", self.core_height)
         fdtd.set("z span", self.core_height * 3.0)
-
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
         fdtd.set("frequency points", n_freq)
 
-        # Reflection monitor - DFT
         fdtd.adddftmonitor()
         fdtd.set("name", "R_monitor")
         fdtd.set("monitor type", "2D X-normal")
-
         fdtd.set("x", x_R_mon)
         fdtd.set("y", 0)
         fdtd.set("y span", self.y_span * 0.8)
         fdtd.set("z", self.core_height)
         fdtd.set("z span", self.core_height * 3.0)
-
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
         fdtd.set("frequency points", n_freq)
 
-        # Movie monitor for visualisation
         fdtd.addmovie()
         fdtd.set("name", "movie_xy")
         fdtd.set("monitor type", "2D Z-normal")
@@ -361,20 +352,10 @@ class PiShiftBraggFDTD:
         self.fdtd.run()
 
     def get_spectra(self):
-        """
-        Returns wavelength [m], transmission T, reflection R, and loss.
-
-        Important: for the reflection monitor placed between source and
-        grating we use the relation "R = 1 − T_plane", where T_plane is
-        the normalized power through that plane.
-        """
         T_res = self.fdtd.getresult("T_monitor", "T")
         wl = np.squeeze(T_res["lambda"])
 
-        # Transmission at output plane
         T_val = np.squeeze(np.real(self.fdtd.transmission("T_monitor")))
-
-        # Normalized power through the reflection plane
         T_plane = np.squeeze(np.real(self.fdtd.transmission("R_monitor")))
         R_val = 1.0 - T_plane
 
@@ -386,13 +367,6 @@ class PiShiftBraggFDTD:
         return wl, T, R, loss
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
-        """
-        Update wavelength scan on the existing structure.
-
-        center_lambda_m : center wavelength in meters
-        width_nm        : total scan width in nanometers
-        n_points        : number of wavelength samples
-        """
         self.n_wl_points = n_points
         half_w = 0.5 * width_nm * 1e-9
         self.lam_min = center_lambda_m - half_w
@@ -413,8 +387,7 @@ class PiShiftBraggFDTD:
 
 
 if __name__ == "__main__":
-    # One simulation object, reused for coarse and fine
-    # Set use_apodization=False for flat 700 / 900 grating
+
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
         n_periods_each_side=40,
@@ -428,24 +401,21 @@ if __name__ == "__main__":
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
         n_eff_guess=1.55,
-        coarse_width_nm=150,      # coarse scan width in nm
+        coarse_width_nm=150,
         n_wl_points=401,
-        use_apodization=False,     # "turn apodization on or off here"
-        center_mod_depth_nm=40.0  # "40 nm depth at cavity: 780 / 820"
+        use_apodization=False,
+        center_mod_depth_nm=40.0
     )
 
-    # ---------- coarse scan on built structure ----------
     sim.build()
     sim.run()
     wl_c, T_c, R_c, loss_c = sim.get_spectra()
     wl_c_nm = wl_c * 1e9
 
-    # You can still estimate resonance from coarse scan in code if desired
     lambda_res_est = 1.565e-6
     print(f"Estimated resonance from coarse scan: {lambda_res_est*1e9:.2f} nm")
 
-    # ---------- fine scan on the same structure ----------
-    fine_width_nm = 20.0   # total width of fine scan in nm
+    fine_width_nm = 20.0
     sim.update_scan(center_lambda_m=lambda_res_est,
                     width_nm=fine_width_nm,
                     n_points=801)
@@ -454,7 +424,6 @@ if __name__ == "__main__":
     wl_f, T_f, R_f, loss_f = sim.get_spectra()
     wl_f_nm = wl_f * 1e9
 
-    # ---------- plots ----------
     plt.figure()
     plt.plot(wl_c_nm, T_c, label="T coarse")
     plt.plot(wl_c_nm, R_c, label="R coarse")
