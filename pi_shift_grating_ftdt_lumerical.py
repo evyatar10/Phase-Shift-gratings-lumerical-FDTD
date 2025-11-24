@@ -169,7 +169,8 @@ class PiShiftBraggFDTD:
         fdtd.set("x span", self.sim_x_span)
         fdtd.set("y span", self.y_span)
         fdtd.set("z span", self.z_span)
-        fdtd.set("dimension", 2)
+        #fdtd.set("dimension", 2)
+        fdtd.set("dimension", "3D")
         fdtd.setdevice("GPU")
         fdtd.set("background material", self.clad_material)
 
@@ -403,12 +404,13 @@ if __name__ == "__main__":
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=401,
-        use_apodization=False,
+        use_apodization=True,
         center_mod_depth_nm=40.0
     )
 
     sim.build()
     sim.run()
+    sim.fdtd.save("pi_shift_sim.fsp")
     wl_c, T_c, R_c, loss_c = sim.get_spectra()
     wl_c_nm = wl_c * 1e9
 
