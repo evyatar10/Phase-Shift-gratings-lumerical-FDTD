@@ -25,6 +25,7 @@ Apodization option:
 
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 # Try to import lumapi normally
 try:
@@ -349,8 +350,6 @@ class PiShiftBraggFDTD:
     # ------------------------------------------------------------------
     # Run and spectra
     # ------------------------------------------------------------------
-    def run(self):
-        self.fdtd.run()
 
     def get_spectra(self):
         T_res = self.fdtd.getresult("T_monitor", "T")
@@ -389,6 +388,11 @@ class PiShiftBraggFDTD:
 
 if __name__ == "__main__":
 
+    # Estimated resonance center and scan width around it
+    lambda_res_est = 1.570e-6      # [m]
+    scan_width_nm = 40.0           # full width in nm (±scan_width_nm/2)
+    n_points = 1001                 # number of wavelength points in the scan
+
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
         n_periods_each_side=40,
@@ -396,56 +400,47 @@ if __name__ == "__main__":
         width_wide=900e-9,
         core_height=350e-9,
         substrate_thickness=4e-6,
-        y_span=4e-6,
-        z_span=8e-6,
-        buffer_x=4e-6,
+        y_span=5e-6, #4e-6
+        z_span=8e-6, #8e-6
+        buffer_x=4e-6,  #4e-6
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
         n_eff_guess=1.55,
         coarse_width_nm=150,
-        n_wl_points=401,
+        n_wl_points=n_points,
         use_apodization=True,
         center_mod_depth_nm=40.0
     )
 
     sim.build()
-    sim.run()
-    sim.fdtd.save("pi_shift_sim.fsp")
-    wl_c, T_c, R_c, loss_c = sim.get_spectra()
-    wl_c_nm = wl_c * 1e9
-
-    lambda_res_est = 1.565e-6
-    print(f"Estimated resonance from coarse scan: {lambda_res_est*1e9:.2f} nm")
-
-    fine_width_nm = 20.0
     sim.update_scan(center_lambda_m=lambda_res_est,
-                    width_nm=fine_width_nm,
-                    n_points=801)
+                    width_nm=scan_width_nm,
+                    n_points=n_points)
 
-    sim.run()
-    wl_f, T_f, R_f, loss_f = sim.get_spectra()
-    wl_f_nm = wl_f * 1e9
+    start = time.perf_counter()
+
+    sim.fdtd.run()
+    end = time.perf_counter()
+    print(f"Simulation time: {end - start:.3f} seconds")
+
+    # Build file name: "pi_shift_<N>periods[_apodization].fsp"
+    #base_name = f"pi_shift_{sim.n_periods_each_side}periods"
+    #if sim.use_apodization:
+        #base_name += "_apodization"
+    #sim.fdtd.save(base_name + ".fsp")
+
+    wl, T, R, loss = sim.get_spectra()
+    wl_nm = wl * 1e9
 
     plt.figure()
-    plt.plot(wl_c_nm, T_c, label="T coarse")
-    plt.plot(wl_c_nm, R_c, label="R coarse")
-    plt.plot(wl_c_nm, loss_c, label="loss coarse")
+    plt.plot(wl_nm, T, label="T")
+    plt.plot(wl_nm, R, label="R")
+    plt.plot(wl_nm, loss, label="loss")
     plt.xlabel("Wavelength [nm]")
     plt.ylabel("Normalized power")
     plt.legend()
     plt.grid(True)
-    plt.title("Coarse scan")
-    plt.tight_layout()
-
-    plt.figure()
-    plt.plot(wl_f_nm, T_f, label="T fine")
-    plt.plot(wl_f_nm, R_f, label="R fine")
-    plt.plot(wl_f_nm, loss_f, label="loss fine")
-    plt.xlabel("Wavelength [nm]")
-    plt.ylabel("Normalized power")
-    plt.legend()
-    plt.grid(True)
-    plt.title("Fine scan around resonance")
+    plt.title("Single scan around estimated resonance")
     plt.tight_layout()
 
     plt.show()
