@@ -186,7 +186,8 @@ class PiShiftBraggFDTD:
         #fdtd.set("dimension", 2)
         fdtd.set("dimension", "3D")
         fdtd.setdevice("GPU")
-        fdtd.set("background material", self.clad_material)
+        # background will be air; cladding is added as explicit SiO2 block
+        fdtd.set("background material", "etch")  # <--- changed from "air" to "etch"
 
         for bc in ["x min bc", "x max bc",
                    "y min bc", "y max bc",
@@ -205,6 +206,17 @@ class PiShiftBraggFDTD:
         x_start = -self.device_length / 2.0
         x = x_start
         seg_id = 0
+
+        # Explicit SiO2 cladding block with the same custom material
+        fdtd.addrect()
+        fdtd.set("name", "SiO2_cladding")
+        fdtd.set("material", self.clad_material)
+        fdtd.set("x", 0)
+        fdtd.set("x span", self.sim_x_span)
+        fdtd.set("y", 0)
+        fdtd.set("y span", self.y_span)
+        fdtd.set("z", 0)
+        fdtd.set("z span", self.z_span)
 
         def add_core_segment(x1, x2, width, name_prefix="core_seg"):
             nonlocal seg_id
@@ -441,14 +453,14 @@ class PiShiftBraggFDTD:
 if __name__ == "__main__":
 
     # Estimated resonance center and scan width around it
-    lambda_res_est = 1.573e-6      # [m]
+    lambda_res_est = 1.570e-6      # [m]
     scan_width_nm = 40.0           # full width in nm (±scan_width_nm/2)
     n_points = 1001                # number of wavelength points in the scan
 
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=50,
-        n_apod_periods_each_side=40,
+        n_periods_each_side=40,
+        n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=900e-9,
         core_height=350e-9,
@@ -484,25 +496,6 @@ if __name__ == "__main__":
 
     wl, T, R, loss = sim.get_spectra()
     wl_nm = wl * 1e9
-
-    # --- Build dynamic filename ---
-    N = sim.n_periods_each_side
-    Napod = sim.n_apod_periods_each_side
-
-    if sim.use_apodization and Napod > 0:
-        filename = f"{N}_periods_{Napod}_apodizations.npz"
-    else:
-        filename = f"{N}_periods.npz"
-
-    # --- Save the spectra ---
-    np.savez(filename,
-             wl_m=wl,
-             wl_nm=wl_nm,
-             T=T,
-             R=R,
-             loss=loss)
-
-    print(f"Saved spectrum to: {filename}")
 
     plt.figure()
     plt.plot(wl_nm, T, label="T")
