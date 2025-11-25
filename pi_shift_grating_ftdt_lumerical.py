@@ -170,6 +170,7 @@ class PiShiftBraggFDTD:
     def build(self):
         self._reset_layout()
         self._add_fdtd_region()
+        self._add_x_aligned_mesh_override()
         self._add_bragg_core()
         self._add_source_and_monitors()
 
@@ -196,6 +197,58 @@ class PiShiftBraggFDTD:
         fdtd.set("simulation time", 5e-12)
         fdtd.set("auto shutoff min", 1e-6)
         fdtd.set("mesh accuracy", 3)
+
+    def _add_x_aligned_mesh_override(self, cells_per_half_period=5):
+        """
+        Create a mesh override that aligns the x mesh with the grating periods.
+
+        Idea:
+          * The grating boundaries in x occur every half_pitch = pitch / 2
+          * We choose dx so that half_pitch = cells_per_half_period * dx
+          * Then every interface at k * (half_pitch) falls exactly on a mesh line
+
+        Parameters
+        ----------
+        cells_per_half_period : int
+            Number of mesh cells per half period in x.
+            For example:
+              - 4  -> dx = half_pitch / 4   (coarser)
+              - 8  -> dx = half_pitch / 8   (finer)
+              - 12 -> dx ≈ 20 nm for pitch = 500 nm
+        """
+
+        fdtd = self.fdtd
+
+        # Half period in x
+        half_pitch = 0.5 * self.pitch
+
+        # Ensure at least one cell
+        n_cells_half = max(1, int(cells_per_half_period))
+
+        # Mesh step in x so that half_pitch is an integer multiple of dx
+        dx = half_pitch / float(n_cells_half)
+
+        # Override region; cover the whole device in x, full y and z spans
+        fdtd.addmesh()
+        fdtd.set("name", "mesh_x_aligned")
+
+        fdtd.set("x", 0.0)
+        fdtd.set("x span", self.device_length)   # from −L/2 to +L/2, same as grating
+
+        fdtd.set("y", 0.0)
+        fdtd.set("y span", self.y_span)
+
+        fdtd.set("z", 0.0)
+        fdtd.set("z span", self.z_span)
+
+        # Only override x; leave y and z to the automatic mesh
+        fdtd.set("override x mesh", 1)
+        fdtd.set("override y mesh", 0)
+        fdtd.set("override z mesh", 0)
+
+        fdtd.set("set maximum mesh step", 1)
+        fdtd.set("dx", dx)
+
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
@@ -414,7 +467,7 @@ class PiShiftBraggFDTD:
         T = np.clip(T_val, 0.0, None)
         R = np.clip(R_val, 0.0, None)
         loss = 1.0 - T - R
-        loss = np.clip(loss, 0.0, None)
+        #loss = np.clip(loss, 0.0, None)
 
         return wl, T, R, loss
 
@@ -447,13 +500,13 @@ if __name__ == "__main__":
 
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=50,
-        n_apod_periods_each_side=40,
+        n_periods_each_side=40,
+        n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=900e-9,
         core_height=350e-9,
         substrate_thickness=4e-6,
-        y_span=5e-6,  #4e-6
+        y_span=4.5e-6,  #4e-6
         z_span=8e-6,  #8e-6
         buffer_x=4e-6,  #4e-6
         core_material="Si3N4 (Silicon Nitride) - Luke",
