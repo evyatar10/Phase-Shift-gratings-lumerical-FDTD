@@ -31,7 +31,7 @@ import time
 try:
     import lumapi
 except ImportError:
-    # Fallback; adjust path if needed
+    # Fallback: adjust path if needed
     import importlib.util
     LUMAPI_PATH = r"C:\\Program Files\\Lumerical\\v252\\api\\python\\lumapi.py"
     spec = importlib.util.spec_from_file_location("lumapi", LUMAPI_PATH)
@@ -62,8 +62,8 @@ class PiShiftBraggFDTD:
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
 
-        # New parameter; how many periods near the cavity are apodized on each side
-        # Default; all periods are apodized (old behavior)
+        # New parameter: how many periods near the cavity are apodized on each side
+        # Default: all periods are apodized (old behavior)
         if n_apod_periods_each_side is None:
             self.n_apod_periods_each_side = n_periods_each_side
         else:
@@ -214,7 +214,7 @@ class PiShiftBraggFDTD:
             For example:
               - 4  -> dx = half_pitch / 4   (coarser)
               - 8  -> dx = half_pitch / 8   (finer)
-              - 12 -> dx ≈ 20 nm for pitch = 500 nm
+              - 12 -> dx ~ 20 nm for pitch = 500 nm
         """
 
         fdtd = self.fdtd
@@ -228,12 +228,12 @@ class PiShiftBraggFDTD:
         # Mesh step in x so that half_pitch is an integer multiple of dx
         dx = half_pitch / float(n_cells_half)
 
-        # Override region; cover the whole device in x, full y and z spans
+        # Override region: cover the whole device in x, full y and z spans
         fdtd.addmesh()
         fdtd.set("name", "mesh_x_aligned")
 
         fdtd.set("x", 0.0)
-        fdtd.set("x span", self.device_length)   # from −L/2 to +L/2, same as grating
+        fdtd.set("x span", self.device_length)   # from -L/2 to +L/2, same as grating
 
         fdtd.set("y", 0.0)
         fdtd.set("y span", self.y_span)
@@ -248,7 +248,6 @@ class PiShiftBraggFDTD:
 
         fdtd.set("set maximum mesh step", 1)
         fdtd.set("dx", dx)
-
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
@@ -288,11 +287,11 @@ class PiShiftBraggFDTD:
         add_core_segment(x1, x2, self.width_narrow, name_prefix="wg_left")
         x = x2
 
-        # Left grating periods; from left facet to cavity
+        # Left grating periods: from left facet to cavity
         for i in range(self.n_periods_each_side):
             if self.use_apodization:
                 if n_apod >= n_total:
-                    # Old behavior; apodization over full grating
+                    # Old behavior: apodization over full grating
                     if n_total > 1:
                         j = n_total - 1 - i
                         frac = j / (n_total - 1)
@@ -300,17 +299,17 @@ class PiShiftBraggFDTD:
                         frac = 0.0
                     delta = delta_center + (delta_edge - delta_center) * frac
                 else:
-                    # New behavior; outer periods uniform; inner n_apod periods apodized toward the cavity
+                    # New behavior: outer periods uniform; inner n_apod periods apodized toward the cavity
                     n_outer_uniform = n_total - n_apod
                     if i < n_outer_uniform:
                         delta = delta_edge
                     else:
                         if n_apod > 1:
-                            j = i - n_outer_uniform   # 0 .. n_apod-1
+                            j = i - n_outer_uniform   # 0 .. n_apod - 1
                             frac = j / (n_apod - 1)
                         else:
                             frac = 0.0
-                        # At boundary; delta = delta_edge; at cavity; delta = delta_center
+                        # At boundary: delta = delta_edge; at cavity: delta = delta_center
                         delta = delta_edge + (delta_center - delta_edge) * frac
 
                 width_wide_i = avg_width + delta
@@ -340,24 +339,24 @@ class PiShiftBraggFDTD:
         add_core_segment(x1, x2, width_cavity, "cavity")
         x = x2
 
-        # Right grating periods; from cavity to right facet
+        # Right grating periods: from cavity to right facet
         for i in range(self.n_periods_each_side):
             if self.use_apodization:
                 if n_apod >= n_total:
-                    # Old behavior; apodization over full grating
+                    # Old behavior: apodization over full grating
                     if n_total > 1:
                         frac = i / (n_total - 1)
                     else:
                         frac = 0.0
                     delta = delta_center + (delta_edge - delta_center) * frac
                 else:
-                    # New behavior; inner n_apod periods near cavity apodized; outer periods uniform
+                    # New behavior: inner n_apod periods near cavity apodized; outer periods uniform
                     if i < n_apod:
                         if n_apod > 1:
                             frac = i / (n_apod - 1)
                         else:
                             frac = 0.0
-                        # At cavity; delta = delta_center; at boundary; delta = delta_edge
+                        # At cavity: delta = delta_center; at boundary: delta = delta_edge
                         delta = delta_center + (delta_edge - delta_center) * frac
                     else:
                         delta = delta_edge
@@ -392,106 +391,113 @@ class PiShiftBraggFDTD:
         n_freq = self.n_wl_points
 
         x_device_start = -self.device_length / 2.0
-        x_device_end   = +self.device_length / 2.0
+        x_device_end = +self.device_length / 2.0
 
-        x_wg_left_start  = x_device_start
-        x_wg_left_end    = x_wg_left_start + self.straight_length_each_side
-        x_wg_right_end   = x_device_end
+        x_wg_left_start = x_device_start
+        x_wg_left_end = x_wg_left_start + self.straight_length_each_side
+        x_wg_right_end = x_device_end
         x_wg_right_start = x_wg_right_end - self.straight_length_each_side
 
         x_source = 0.5 * (x_wg_left_start + x_wg_left_end)
         x_R_mon = x_wg_left_end - 0.25 * self.straight_length_each_side
         x_T_mon = x_wg_right_start + 0.25 * self.straight_length_each_side
 
-        # If you want "full height" in z, center at 0 with span = z_span
-        # Same idea in y if you want full width of the FDTD window
-        z_center = 0.0
-        y_center = 0.0
+        # Reflection monitor behind the source (toward input facet)
+        x_R_behind = x_wg_left_start + 0.25 * self.straight_length_each_side
 
-        # ------------------- Source -------------------
+        z_core_center = self.core_height / 2.0
+
         fdtd.addmode()
         fdtd.set("name", "input_mode")
         fdtd.set("injection axis", "x")
         fdtd.set("direction", "Forward")
         fdtd.set("x", x_source)
-
-        fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span)          # "full" y span
-
-        fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span)          # "full" z span
-
+        fdtd.set("y", 0)
+        fdtd.set("y span", self.y_span * 0.8)
+        fdtd.set("z", z_core_center)
+        fdtd.set("z span", self.core_height * 4.0)
         fdtd.set("wavelength start", lam_min)
         fdtd.set("wavelength stop", lam_max)
         fdtd.set("mode selection", "fundamental TE mode")
 
-        # ------------------- Transmission monitor -------------------
         fdtd.adddftmonitor()
         fdtd.set("name", "T_monitor")
         fdtd.set("monitor type", "2D X-normal")
         fdtd.set("x", x_T_mon)
-
-        fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span)          # full y
-
-        fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span)          # full z
-
+        fdtd.set("y", 0)
+        fdtd.set("y span", self.y_span * 0.8)
+        fdtd.set("z", self.core_height)
+        fdtd.set("z span", self.core_height * 3.0)
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
         fdtd.set("frequency points", n_freq)
 
-        # ------------------- Reflection monitor -------------------
         fdtd.adddftmonitor()
         fdtd.set("name", "R_monitor")
         fdtd.set("monitor type", "2D X-normal")
         fdtd.set("x", x_R_mon)
-
-        fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span)          # full y
-
-        fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span)          # full z
-
+        fdtd.set("y", 0)
+        fdtd.set("y span", self.y_span * 0.8)
+        fdtd.set("z", self.core_height)
+        fdtd.set("z span", self.core_height * 3.0)
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
         fdtd.set("frequency points", n_freq)
 
-        # ------------------- Movie monitor -------------------
+        # DFT monitor behind the source
+        fdtd.adddftmonitor()
+        fdtd.set("name", "R_behind")
+        fdtd.set("monitor type", "2D X-normal")
+        fdtd.set("x", x_R_behind)
+        fdtd.set("y", 0)
+        fdtd.set("y span", self.y_span * 0.8)
+        fdtd.set("z", self.core_height)
+        fdtd.set("z span", self.core_height * 3.0)
+        fdtd.set("override global monitor settings", 1)
+        fdtd.set("use source limits", 1)
+        fdtd.set("frequency points", n_freq)
+
         fdtd.addmovie()
         fdtd.set("name", "movie_xy")
         fdtd.set("monitor type", "2D Z-normal")
         fdtd.set("x", 0)
         fdtd.set("x span", self.device_length + self.pitch)
-
-        fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span)          # full y
-
-        # For Z-normal movie you usually want it at the core plane, not full z
-        # so here I keep it at core height; you can change if you want:
-        fdtd.set("z", self.core_height / 2.0)
-
+        fdtd.set("y", 0)
+        fdtd.set("y span", self.y_span * 0.8)
+        fdtd.set("z", z_core_center)
         fdtd.set("lock aspect ratio", 1)
         fdtd.set("horizontal resolution", 400)
 
     # ------------------------------------------------------------------
     # Run and spectra
     # ------------------------------------------------------------------
-
     def get_spectra(self):
         T_res = self.fdtd.getresult("T_monitor", "T")
         wl = np.squeeze(T_res["lambda"])
 
+        # Transmission through the device
         T_val = np.squeeze(np.real(self.fdtd.transmission("T_monitor")))
+
+        # Plane in front of the grating on input side
         T_plane = np.squeeze(np.real(self.fdtd.transmission("R_monitor")))
-        R_val = 1.0 - T_plane
+        R_plane_raw = 1.0 - T_plane
 
+        # Monitor behind the source toward the input facet
+        T_behind = np.squeeze(np.real(self.fdtd.transmission("R_behind")))
+        R_behind_raw = -T_behind
+
+        # Clip to avoid tiny negative values
         T = np.clip(T_val, 0.0, None)
-        R = np.clip(R_val, 0.0, None)
-        loss = 1.0 - T - R
-        #loss = np.clip(loss, 0.0, None)
+        R_plane = np.clip(R_plane_raw, 0.0, None)
+        R_behind = np.clip(R_behind_raw, 0.0, None)
 
-        return wl, T, R, loss
+        # Two loss definitions:
+        # "loss_plane = 1 - T - R_plane"
+        # "loss_behind = 1 - T - R_behind"
+        loss_plane = 1.0 - T - R_plane
+        loss_behind = 1.0 - T - R_behind
+
+        return wl, T, R_plane, R_behind, loss_plane, loss_behind
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
@@ -505,6 +511,7 @@ class PiShiftBraggFDTD:
         fdtd.setnamed("input_mode", "wavelength stop", self.lam_max)
         fdtd.setnamed("T_monitor", "frequency points", self.n_wl_points)
         fdtd.setnamed("R_monitor", "frequency points", self.n_wl_points)
+        fdtd.setnamed("R_behind", "frequency points", self.n_wl_points)
 
     def close(self):
         try:
@@ -517,19 +524,19 @@ if __name__ == "__main__":
 
     # Estimated resonance center and scan width around it
     lambda_res_est = 1.573e-6      # [m]
-    scan_width_nm = 40.0           # full width in nm (±scan_width_nm/2)
+    scan_width_nm = 40.0           # full width in nm (plus/minus scan_width_nm/2)
     n_points = 1001                # number of wavelength points in the scan
 
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=50,
-        n_apod_periods_each_side=40,
+        n_periods_each_side=40,
+        n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=900e-9,
         core_height=350e-9,
         substrate_thickness=4e-6,
         y_span=4.5e-6,  #4e-6
-        z_span=8e-6,  #8e-6
+        z_span=8e-6,    #8e-6
         buffer_x=4e-6,  #4e-6
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
@@ -551,16 +558,11 @@ if __name__ == "__main__":
     end = time.perf_counter()
     print(f"Simulation time: {end - start:.3f} seconds")
 
-    # Build file name: "pi_shift_<N>periods[_apodization].fsp"
-    #base_name = f"pi_shift_{sim.n_periods_each_side}periods"
-    #if sim.use_apodization:
-        #base_name += "_apodization"
-    #sim.fdtd.save(base_name + ".fsp")
-
-    wl, T, R, loss = sim.get_spectra()
+    # Get spectra including both reflection definitions
+    wl, T, R_plane, R_behind, loss_plane, loss_behind = sim.get_spectra()
     wl_nm = wl * 1e9
 
-    # --- Build dynamic filename ---
+    # Build dynamic filename
     N = sim.n_periods_each_side
     Napod = sim.n_apod_periods_each_side
 
@@ -569,20 +571,23 @@ if __name__ == "__main__":
     else:
         filename = f"{N}_periods.npz"
 
-    # --- Save the spectra ---
-    np.savez(filename,
-             wl_m=wl,
-             wl_nm=wl_nm,
-             T=T,
-             R=R,
-             loss=loss)
+    # Save the spectra
+    #np.savez(filename,
+             #wl_m=wl,
+            # wl_nm=wl_nm,
+            # T=T,
+            # R_plane=R_plane,
+            # R_behind=R_behind,
+           #  loss=loss)
 
     print(f"Saved spectrum to: {filename}")
 
     plt.figure()
     plt.plot(wl_nm, T, label="T")
-    plt.plot(wl_nm, R, label="R")
-    plt.plot(wl_nm, loss, label="loss")
+    plt.plot(wl_nm, R_plane, label="R_plane (1 - T_plane)")
+    plt.plot(wl_nm, R_behind, label="R_behind (-T_behind)")
+    plt.plot(wl_nm, loss_plane, label="loss_plane (1 - T - R_plane)")
+    plt.plot(wl_nm, loss_behind, label="loss_behind (1 - T - R_behind)")
     plt.xlabel("Wavelength [nm]")
     plt.ylabel("Normalized power")
     plt.legend()
