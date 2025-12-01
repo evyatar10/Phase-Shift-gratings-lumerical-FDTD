@@ -171,6 +171,7 @@ class PiShiftBraggFDTD:
         self._reset_layout()
         self._add_fdtd_region()
         self._add_x_aligned_mesh_override()
+        #self._add_mesh_override_y()
         self._add_bragg_core()
         self._add_source_and_monitors()
 
@@ -248,6 +249,105 @@ class PiShiftBraggFDTD:
 
         fdtd.set("set maximum mesh step", 1)
         fdtd.set("dx", dx)
+
+    def _add_mesh_override_y(self):
+        """Local mesh refinement over the grating region, Y only.
+
+        Strategy:
+          * X,Z: keep automatic mesh (use global mesh accuracy)
+          * Y: piecewise
+                - coarser dy in the central waveguide region
+                - finer dy only in thin strips around the sidewalls
+        """
+
+        fdtd = self.fdtd
+
+        # 1. Effective wavelength and PPW constraints
+        lambda_core = 2.0 * self.pitch
+
+        ppw_y_center = float(getattr(self, "ppw_y_center", 8.0))
+        ppw_y_edge   = float(getattr(self, "ppw_y_edge", 8.0))
+
+        dy_ppw_center = lambda_core / ppw_y_center
+        dy_ppw_edge   = lambda_core / ppw_y_edge
+
+        # 2. Y direction: feature-based dy near sidewalls
+        full_depth_edge = self.width_wide - self.width_narrow
+
+        if self.use_apodization:
+            full_depth_min = min(self.center_mod_depth, full_depth_edge)
+        else:
+            full_depth_min = full_depth_edge
+
+        full_depth_min = max(full_depth_min, 10e-9)
+
+        # Feature criterion; aim for about 2 cells across the smallest depth
+        dy_feature = full_depth_min / 2.0
+        dy_edge = min(dy_ppw_edge, dy_feature)
+
+        # Central region dy
+        dy_center = dy_ppw_center
+
+        # Sidewall positions
+        y_narrow_half = 0.5 * self.width_narrow
+        y_wide_half   = 0.5 * self.width_wide
+
+        margin_y = 2.0 * dy_edge
+        y_edge_half_span = (y_wide_half - y_narrow_half) / 2.0 + margin_y
+
+        y_edge_center_pos = 0.5 * (y_narrow_half + y_wide_half)
+        y_edge_center_neg = -y_edge_center_pos
+
+        y_center_span = 2.0 * y_narrow_half
+
+        # Common X/Z region used for all overrides
+        x_center = 0.0
+        x_span   = self.device_length
+
+        z_center = self.core_height / 2.0
+        z_span   = 2.0 * self.core_height
+
+        # 3. Central coarse Y mesh override
+        fdtd.addmesh()
+        fdtd.set("name", "mesh_grating_center")
+
+        fdtd.set("x", x_center)
+        fdtd.set("x span", x_span)
+
+        fdtd.set("y", 0.0)
+        fdtd.set("y span", y_center_span)
+
+        fdtd.set("z", z_center)
+        fdtd.set("z span", z_span)
+
+        fdtd.set("override x mesh", 0)
+        fdtd.set("override y mesh", 1)
+        fdtd.set("override z mesh", 0)
+
+        fdtd.set("set maximum mesh step", 1)
+        fdtd.set("dy", dy_center)
+
+        # 4. Fine sidewall Y mesh overrides
+        for name, y_c in [("mesh_grating_side_pos", y_edge_center_pos),
+                          ("mesh_grating_side_neg", y_edge_center_neg)]:
+            fdtd.addmesh()
+            fdtd.set("name", name)
+
+            fdtd.set("x", x_center)
+            fdtd.set("x span", x_span)
+
+            fdtd.set("y", y_c)
+            fdtd.set("y span", 2.0 * y_edge_half_span)
+
+            fdtd.set("z", z_center)
+            fdtd.set("z span", z_span)
+
+            fdtd.set("override x mesh", 0)
+            fdtd.set("override y mesh", 1)
+            fdtd.set("override z mesh", 0)
+
+            fdtd.set("set maximum mesh step", 1)
+            fdtd.set("dy", dy_edge)
 
 
     def _add_bragg_core(self):
@@ -523,7 +623,7 @@ if __name__ == "__main__":
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
         n_periods_each_side=50,
-        n_apod_periods_each_side=40,
+        n_apod_periods_each_side=5,
         width_narrow=700e-9,
         width_wide=900e-9,
         core_height=350e-9,
