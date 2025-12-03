@@ -171,7 +171,7 @@ class PiShiftBraggFDTD:
         self._reset_layout()
         self._add_fdtd_region()
         self._add_x_aligned_mesh_override()
-        self._add_mesh_override_y()
+        #self._add_mesh_override_y()
         self._add_bragg_core()
         self._add_source_and_monitors()
 
@@ -195,8 +195,8 @@ class PiShiftBraggFDTD:
                    "z min bc", "z max bc"]:
             fdtd.set(bc, "PML")
 
-        fdtd.set("simulation time", 5e-12) #5e-12
-        fdtd.set("auto shutoff min", 1e-7)
+        fdtd.set("simulation time", 5e-12)
+        fdtd.set("auto shutoff min", 1e-6)
         fdtd.set("mesh accuracy", 3)
 
     def _add_x_aligned_mesh_override(self, cells_per_half_period=5):
@@ -372,128 +372,117 @@ class PiShiftBraggFDTD:
             fdtd.set("x min", x1)
             fdtd.set("x max", x2)
 
-        # Base widths and corrugation depths
         avg_width = 0.5 * (self.width_narrow + self.width_wide)
         full_depth_edge = self.width_wide - self.width_narrow
         full_depth_center = self.center_mod_depth if self.use_apodization else full_depth_edge
         delta_edge = 0.5 * full_depth_edge
         delta_center = 0.5 * full_depth_center
 
-        n_total = self.n_periods_each_side
+        # Number of periods near the cavity that are apodized on each side
         n_apod = self.n_apod_periods_each_side
+        n_total = self.n_periods_each_side
 
-        # Corrugation half depth vs distance from cavity
-        # d = 1 is the period closest to the cavity
-        def delta_for_distance(d):
-            if not self.use_apodization:
-                return delta_edge
-
-            # full apodization
-            if n_apod >= n_total:
-                if n_total <= 1:
-                    return delta_center
-                frac = (d - 1) / float(n_total - 1)
-                return delta_center + (delta_edge - delta_center) * frac
-
-            # partial apodization: inner n_apod periods tapered, outer fixed
-            if d > n_apod:
-                return delta_edge
-
-            if n_apod <= 1:
-                return delta_center
-
-            frac = (d - 1) / float(n_apod - 1)
-            return delta_center + (delta_edge - delta_center) * frac
-
-        # Precompute widths
-        widths_wide = {}
-        widths_narrow = {}
-        for d in range(1, n_total + 1):
-            dd = delta_for_distance(d)
-            widths_wide[d] = avg_width + dd
-            widths_narrow[d] = avg_width - dd
-
-        # Defect width
-        if self.use_apodization:
-            width_defect = widths_narrow[1]
-        else:
-            width_defect = self.width_narrow
-
-        # 1. Left straight input
+        # Left straight input
         x1 = x
         x2 = x1 + self.straight_length_each_side
         add_core_segment(x1, x2, self.width_narrow, name_prefix="wg_left")
         x = x2
 
-        # 2. Left outer grating: d = n_total down to 2
-        for d in range(n_total, 1, -1):
-            w_wide = widths_wide[d]
-            w_narrow = widths_narrow[d]
+        # Left grating periods; from left facet to cavity
+        for i in range(self.n_periods_each_side):
+            if self.use_apodization:
+                if n_apod >= n_total:
+                    # Old behavior; apodization over full grating
+                    if n_total > 1:
+                        j = n_total - 1 - i
+                        frac = j / (n_total - 1)
+                    else:
+                        frac = 0.0
+                    delta = delta_center + (delta_edge - delta_center) * frac
+                else:
+                    # New behavior; outer periods uniform; inner n_apod periods apodized toward the cavity
+                    n_outer_uniform = n_total - n_apod
+                    if i < n_outer_uniform:
+                        delta = delta_edge
+                    else:
+                        if n_apod > 1:
+                            j = i - n_outer_uniform   # 0 .. n_apod-1
+                            frac = j / (n_apod - 1)
+                        else:
+                            frac = 0.0
+                        # At boundary; delta = delta_edge; at cavity; delta = delta_center
+                        delta = delta_edge + (delta_center - delta_edge) * frac
+
+                width_wide_i = avg_width + delta
+                width_narrow_i = avg_width - delta
+            else:
+                width_wide_i = self.width_wide
+                width_narrow_i = self.width_narrow
 
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, w_wide)
+            add_core_segment(x1, x2, width_wide_i)
             x = x2
 
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, w_narrow)
+            add_core_segment(x1, x2, width_narrow_i)
             x = x2
 
-        # 3. Period closest to cavity on the left: d = 1  (wide1, narrow1)
-        w1_wide = widths_wide[1]
-        w1_narrow = widths_narrow[1]
+        # Cavity
+        if self.use_apodization:
+            width_cavity = avg_width - delta_center
+        else:
+            width_cavity = self.width_narrow
 
         x1 = x
-        x2 = x1 + half_pitch
-        add_core_segment(x1, x2, w1_wide)
+        x2 = x1 + self.cavity_length
+        add_core_segment(x1, x2, width_cavity, "cavity")
         x = x2
 
-        x1 = x
-        x2 = x1 + half_pitch
-        add_core_segment(x1, x2, w1_narrow)
-        x = x2
+        # Right grating periods; from cavity to right facet
+        for i in range(self.n_periods_each_side):
+            if self.use_apodization:
+                if n_apod >= n_total:
+                    # Old behavior; apodization over full grating
+                    if n_total > 1:
+                        frac = i / (n_total - 1)
+                    else:
+                        frac = 0.0
+                    delta = delta_center + (delta_edge - delta_center) * frac
+                else:
+                    # New behavior; inner n_apod periods near cavity apodized; outer periods uniform
+                    if i < n_apod:
+                        if n_apod > 1:
+                            frac = i / (n_apod - 1)
+                        else:
+                            frac = 0.0
+                        # At cavity; delta = delta_center; at boundary; delta = delta_edge
+                        delta = delta_center + (delta_edge - delta_center) * frac
+                    else:
+                        delta = delta_edge
 
-        # 4. Defect (extra half pitch)
-        x1 = x
-        x2 = x1 + half_pitch
-        add_core_segment(x1, x2, width_defect, "cavity")
-        x = x2
-
-        # 5. First period on the right: keep only wide1 (we already had narrow1 on the left)
-        x1 = x
-        x2 = x1 + half_pitch
-        add_core_segment(x1, x2, w1_wide)
-        x = x2
-
-        # 6. Right outer grating: d = 2 .. n_total  (narrow_d then wide_d)
-        for d in range(2, n_total + 1):
-            w_wide = widths_wide[d]
-            w_narrow = widths_narrow[d]
+                width_wide_i = avg_width + delta
+                width_narrow_i = avg_width - delta
+            else:
+                width_wide_i = self.width_wide
+                width_narrow_i = self.width_narrow
 
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, w_narrow)   # toward cavity
+            add_core_segment(x1, x2, width_wide_i)
             x = x2
 
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, w_wide)     # toward outer edge
+            add_core_segment(x1, x2, width_narrow_i)
             x = x2
 
-        # 7. Extra narrow half pitch at the very end on the right
-        w_outer_narrow = widths_narrow[n_total]
-        x1 = x
-        x2 = x1 + half_pitch
-        add_core_segment(x1, x2, w_outer_narrow)
-        x = x2
-
-        # 8. Right straight output waveguide
+        # Right straight output
         x1 = x
         x2 = x1 + self.straight_length_each_side
         add_core_segment(x1, x2, self.width_narrow, "wg_right")
         x = x2
-
 
     def _add_source_and_monitors(self):
         fdtd = self.fdtd
@@ -527,10 +516,10 @@ class PiShiftBraggFDTD:
         fdtd.set("x", x_source)
 
         fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span*1)          # "full" y span
+        fdtd.set("y span", self.y_span)          # "full" y span
 
         fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span*1)          # "full" z span
+        fdtd.set("z span", self.z_span)          # "full" z span
 
         fdtd.set("wavelength start", lam_min)
         fdtd.set("wavelength stop", lam_max)
@@ -543,10 +532,10 @@ class PiShiftBraggFDTD:
         fdtd.set("x", x_T_mon)
 
         fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span*1)          # full y
+        fdtd.set("y span", self.y_span)          # full y
 
         fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span*1)          # full z
+        fdtd.set("z span", self.z_span)          # full z
 
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
@@ -559,10 +548,10 @@ class PiShiftBraggFDTD:
         fdtd.set("x", x_R_mon)
 
         fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span*1)          # full y
+        fdtd.set("y span", self.y_span)          # full y
 
         fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span*1)          # full z
+        fdtd.set("z span", self.z_span)          # full z
 
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
@@ -599,7 +588,6 @@ class PiShiftBraggFDTD:
 
         T = np.clip(T_val, 0.0, None)
         R = np.clip(R_val, 0.0, None)
-        #R = R_val
         loss = 1.0 - T - R
         #loss = np.clip(loss, 0.0, None)
 
@@ -634,21 +622,21 @@ if __name__ == "__main__":
 
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=50,
-        n_apod_periods_each_side=10,
+        n_periods_each_side=20,
+        n_apod_periods_each_side=5,
         width_narrow=700e-9,
         width_wide=900e-9,
         core_height=350e-9,
         substrate_thickness=4e-6,
-        y_span=5e-6,  #4e-6
-        z_span=9e-6,  #8e-6
-        buffer_x=5e-6,  #4e-6
+        y_span=4.5e-6,  #4e-6
+        z_span=8e-6,  #8e-6
+        buffer_x=4e-6,  #4e-6
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
-        use_apodization=True,
+        use_apodization=False,
         center_mod_depth_nm=40.0
     )
 
