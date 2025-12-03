@@ -26,6 +26,9 @@ Apodization option:
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import os
+import tkinter as tk
+from tkinter import filedialog
 
 # Try to import lumapi normally
 try:
@@ -171,7 +174,7 @@ class PiShiftBraggFDTD:
         self._reset_layout()
         self._add_fdtd_region()
         self._add_x_aligned_mesh_override()
-        self._add_mesh_override_y()
+        #self._add_mesh_override_y()
         self._add_bragg_core()
         self._add_source_and_monitors()
 
@@ -196,7 +199,7 @@ class PiShiftBraggFDTD:
             fdtd.set(bc, "PML")
 
         fdtd.set("simulation time", 5e-12) #5e-12
-        fdtd.set("auto shutoff min", 1e-7)
+        fdtd.set("auto shutoff min", 1e-6)
         fdtd.set("mesh accuracy", 3)
 
     def _add_x_aligned_mesh_override(self, cells_per_half_period=5):
@@ -349,16 +352,18 @@ class PiShiftBraggFDTD:
             fdtd.set("set maximum mesh step", 1)
             fdtd.set("dy", dy_edge)
 
-
     def _add_bragg_core(self):
         fdtd = self.fdtd
         z_core_center = self.core_height / 2.0
         pitch = self.pitch
         half_pitch = pitch / 2.0
+
+        # Calculate starting position
         x_start = -self.device_length / 2.0
         x = x_start
         seg_id = 0
 
+        # Helper to draw rectangles
         def add_core_segment(x1, x2, width, name_prefix="core_seg"):
             nonlocal seg_id
             seg_id += 1
@@ -372,129 +377,100 @@ class PiShiftBraggFDTD:
             fdtd.set("x min", x1)
             fdtd.set("x max", x2)
 
-        # Base widths and corrugation depths
+        # ---------------------------------------------------------
+        # 1. Precompute Widths for Apodization
+        # ---------------------------------------------------------
         avg_width = 0.5 * (self.width_narrow + self.width_wide)
         full_depth_edge = self.width_wide - self.width_narrow
-        full_depth_center = self.center_mod_depth if self.use_apodization else full_depth_edge
-        delta_edge = 0.5 * full_depth_edge
-        delta_center = 0.5 * full_depth_center
+
+        if self.use_apodization:
+            full_depth_center = self.center_mod_depth
+        else:
+            full_depth_center = full_depth_edge
 
         n_total = self.n_periods_each_side
         n_apod = self.n_apod_periods_each_side
 
-        # Corrugation half depth vs distance from cavity
-        # d = 1 is the period closest to the cavity
-        def delta_for_distance(d):
-            if not self.use_apodization:
-                return delta_edge
+        def get_mod_depth(d):
+            # d=1 is closest to cavity, d=N is closest to edge
+            if d <= n_apod and n_total > 1:
+                if n_apod == 1:
+                    return full_depth_center
+                frac = (d - 1) / (n_apod - 1)
+                return full_depth_center + (full_depth_edge - full_depth_center) * frac
+            else:
+                return full_depth_edge
 
-            # full apodization
-            if n_apod >= n_total:
-                if n_total <= 1:
-                    return delta_center
-                frac = (d - 1) / float(n_total - 1)
-                return delta_center + (delta_edge - delta_center) * frac
+        W_narrow = {}
+        W_wide = {}
 
-            # partial apodization: inner n_apod periods tapered, outer fixed
-            if d > n_apod:
-                return delta_edge
-
-            if n_apod <= 1:
-                return delta_center
-
-            frac = (d - 1) / float(n_apod - 1)
-            return delta_center + (delta_edge - delta_center) * frac
-
-        # Precompute widths
-        widths_wide = {}
-        widths_narrow = {}
         for d in range(1, n_total + 1):
-            dd = delta_for_distance(d)
-            widths_wide[d] = avg_width + dd
-            widths_narrow[d] = avg_width - dd
+            mod_depth = get_mod_depth(d)
+            delta = mod_depth / 2.0
+            W_narrow[d] = avg_width - delta
+            W_wide[d] = avg_width + delta
 
-        # Defect width
-        if self.use_apodization:
-            width_defect = widths_narrow[1]
-        else:
-            width_defect = self.width_narrow
+        # ---------------------------------------------------------
+        # 2. Build Geometry
+        # ---------------------------------------------------------
 
-        # 1. Left straight input
+        # --- A. Left Straight Input ---
         x1 = x
         x2 = x1 + self.straight_length_each_side
         add_core_segment(x1, x2, self.width_narrow, name_prefix="wg_left")
         x = x2
 
-        # 2. Left outer grating: d = n_total down to 2
-        for d in range(n_total, 1, -1):
-            w_wide = widths_wide[d]
-            w_narrow = widths_narrow[d]
+        # --- B. Left Grating (N -> 1) ---
+        # Sequence: Narrow -> Wide
+        for d in range(n_total, 0, -1):
+            w_n = W_narrow[d]
+            w_w = W_wide[d]
 
+            # Narrow
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, w_wide)
+            add_core_segment(x1, x2, w_n, name_prefix=f"L_narrow_{d}")
             x = x2
 
+            # Wide
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, w_narrow)
+            add_core_segment(x1, x2, w_w, name_prefix=f"L_wide_{d}")
             x = x2
 
-        # 3. Period closest to cavity on the left: d = 1  (wide1, narrow1)
-        w1_wide = widths_wide[1]
-        w1_narrow = widths_narrow[1]
-
+        # --- C. Cavity ---
+        # Matches the narrow width of period 1
+        w_cavity = W_narrow[1]
         x1 = x
-        x2 = x1 + half_pitch
-        add_core_segment(x1, x2, w1_wide)
+        x2 = x1 + self.cavity_length
+        add_core_segment(x1, x2, w_cavity, name_prefix="cavity")
         x = x2
 
-        x1 = x
-        x2 = x1 + half_pitch
-        add_core_segment(x1, x2, w1_narrow)
-        x = x2
+        # --- D. Right Grating (1 -> N) ---
+        # Sequence: Narrow -> Wide
+        for d in range(1, n_total + 1):
+            w_n = W_narrow[d]
+            w_w = W_wide[d]
 
-        # 4. Defect (extra half pitch)
-        x1 = x
-        x2 = x1 + half_pitch
-        add_core_segment(x1, x2, width_defect, "cavity")
-        x = x2
-
-        # 5. First period on the right: keep only wide1 (we already had narrow1 on the left)
-        x1 = x
-        x2 = x1 + half_pitch
-        add_core_segment(x1, x2, w1_wide)
-        x = x2
-
-        # 6. Right outer grating: d = 2 .. n_total  (narrow_d then wide_d)
-        for d in range(2, n_total + 1):
-            w_wide = widths_wide[d]
-            w_narrow = widths_narrow[d]
-
+            # Narrow
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, w_narrow)   # toward cavity
+            add_core_segment(x1, x2, w_n, name_prefix=f"R_narrow_{d}")
             x = x2
 
+            # Wide
             x1 = x
             x2 = x1 + half_pitch
-            add_core_segment(x1, x2, w_wide)     # toward outer edge
+            add_core_segment(x1, x2, w_w, name_prefix=f"R_wide_{d}")
             x = x2
 
-        # 7. Extra narrow half pitch at the very end on the right
-        w_outer_narrow = widths_narrow[n_total]
-        x1 = x
-        x2 = x1 + half_pitch
-        add_core_segment(x1, x2, w_outer_narrow)
-        x = x2
-
-        # 8. Right straight output waveguide
+        # --- E. Right Straight Output ---
         x1 = x
         x2 = x1 + self.straight_length_each_side
-        add_core_segment(x1, x2, self.width_narrow, "wg_right")
+        add_core_segment(x1, x2, self.width_narrow, name_prefix="wg_right")
         x = x2
 
-
+    # CRITICAL: This function must be unindented to match `def _add_bragg_core`
     def _add_source_and_monitors(self):
         fdtd = self.fdtd
 
@@ -503,88 +479,71 @@ class PiShiftBraggFDTD:
         n_freq = self.n_wl_points
 
         x_device_start = -self.device_length / 2.0
-        x_device_end   = +self.device_length / 2.0
+        x_device_end = +self.device_length / 2.0
 
-        x_wg_left_start  = x_device_start
-        x_wg_left_end    = x_wg_left_start + self.straight_length_each_side
-        x_wg_right_end   = x_device_end
+        x_wg_left_start = x_device_start
+        x_wg_left_end = x_wg_left_start + self.straight_length_each_side
+        x_wg_right_end = x_device_end
         x_wg_right_start = x_wg_right_end - self.straight_length_each_side
 
         x_source = 0.5 * (x_wg_left_start + x_wg_left_end)
         x_R_mon = x_wg_left_end - 0.25 * self.straight_length_each_side
         x_T_mon = x_wg_right_start + 0.25 * self.straight_length_each_side
 
-        # If you want "full height" in z, center at 0 with span = z_span
-        # Same idea in y if you want full width of the FDTD window
         z_center = 0.0
         y_center = 0.0
 
-        # ------------------- Source -------------------
+        # Source
         fdtd.addmode()
         fdtd.set("name", "input_mode")
         fdtd.set("injection axis", "x")
         fdtd.set("direction", "Forward")
         fdtd.set("x", x_source)
-
         fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span*1)          # "full" y span
-
+        fdtd.set("y span", self.y_span)
         fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span*1)          # "full" z span
-
+        fdtd.set("z span", self.z_span)
         fdtd.set("wavelength start", lam_min)
         fdtd.set("wavelength stop", lam_max)
         fdtd.set("mode selection", "fundamental TE mode")
 
-        # ------------------- Transmission monitor -------------------
+        # Transmission monitor
         fdtd.adddftmonitor()
         fdtd.set("name", "T_monitor")
         fdtd.set("monitor type", "2D X-normal")
         fdtd.set("x", x_T_mon)
-
         fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span*1)          # full y
-
+        fdtd.set("y span", self.y_span)
         fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span*1)          # full z
-
+        fdtd.set("z span", self.z_span)
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
         fdtd.set("frequency points", n_freq)
 
-        # ------------------- Reflection monitor -------------------
+        # Reflection monitor
         fdtd.adddftmonitor()
         fdtd.set("name", "R_monitor")
         fdtd.set("monitor type", "2D X-normal")
         fdtd.set("x", x_R_mon)
-
         fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span*1)          # full y
-
+        fdtd.set("y span", self.y_span)
         fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span*1)          # full z
-
+        fdtd.set("z span", self.z_span)
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
         fdtd.set("frequency points", n_freq)
 
-        # ------------------- Movie monitor -------------------
+        # Movie monitor
         fdtd.addmovie()
         fdtd.set("name", "movie_xy")
         fdtd.set("monitor type", "2D Z-normal")
         fdtd.set("x", 0)
         fdtd.set("x span", self.device_length + self.pitch)
-
         fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span)          # full y
-
-        # For Z-normal movie you usually want it at the core plane, not full z
-        # so here I keep it at core height; you can change if you want:
+        fdtd.set("y span", self.y_span)
         fdtd.set("z", self.core_height / 2.0)
-
         fdtd.set("lock aspect ratio", 1)
         fdtd.set("horizontal resolution", 400)
-
     # ------------------------------------------------------------------
     # Run and spectra
     # ------------------------------------------------------------------
@@ -640,9 +599,9 @@ if __name__ == "__main__":
         width_wide=900e-9,
         core_height=350e-9,
         substrate_thickness=4e-6,
-        y_span=5e-6,  #4e-6
-        z_span=9e-6,  #8e-6
-        buffer_x=5e-6,  #4e-6
+        y_span=5e-6,
+        z_span=9e-6,
+        buffer_x=5e-6,
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
         n_eff_guess=1.55,
@@ -652,27 +611,16 @@ if __name__ == "__main__":
         center_mod_depth_nm=40.0
     )
 
-    sim.build()
-    sim.update_scan(center_lambda_m=lambda_res_est,
-                    width_nm=scan_width_nm,
-                    n_points=n_points)
+    # ----------------------------
+    # Choose save folder *before* running simulation
+    # ----------------------------
+    root = tk.Tk()
+    root.withdraw()
+    save_dir = filedialog.askdirectory(title="Select folder to save NPZ results")
+    if not save_dir:
+        save_dir = os.getcwd()  # fallback
 
-    start = time.perf_counter()
-
-    sim.fdtd.run()
-    end = time.perf_counter()
-    print(f"Simulation time: {end - start:.3f} seconds")
-
-    # Build file name: "pi_shift_<N>periods[_apodization].fsp"
-    #base_name = f"pi_shift_{sim.n_periods_each_side}periods"
-    #if sim.use_apodization:
-        #base_name += "_apodization"
-    #sim.fdtd.save(base_name + ".fsp")
-
-    wl, T, R, loss = sim.get_spectra()
-    wl_nm = wl * 1e9
-
-    # --- Build dynamic filename ---
+    # Build dynamic filename
     N = sim.n_periods_each_side
     Napod = sim.n_apod_periods_each_side
 
@@ -681,15 +629,38 @@ if __name__ == "__main__":
     else:
         filename = f"{N}_periods.npz"
 
-    # --- Save the spectra ---
-    np.savez(filename,
+    save_path = os.path.join(save_dir, filename)
+
+    # ----------------------------
+    # Build simulation
+    # ----------------------------
+    sim.build()
+    sim.update_scan(center_lambda_m=lambda_res_est,
+                    width_nm=scan_width_nm,
+                    n_points=n_points)
+
+    # ----------------------------
+    # Run simulation
+    # ----------------------------
+    start = time.perf_counter()
+    sim.fdtd.run()
+    end = time.perf_counter()
+    print(f"Simulation time: {end - start:.3f} seconds")
+
+    # ----------------------------
+    # Save results
+    # ----------------------------
+    wl, T, R, loss = sim.get_spectra()
+    wl_nm = wl * 1e9
+
+    np.savez(save_path,
              wl_m=wl,
              wl_nm=wl_nm,
              T=T,
              R=R,
              loss=loss)
 
-    print(f"Saved spectrum to: {filename}")
+    print(f"Saved spectrum to: {save_path}")
 
     plt.figure()
     plt.plot(wl_nm, T, label="T")
@@ -701,7 +672,6 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.title("Single scan around estimated resonance")
     plt.tight_layout()
-
     plt.show()
 
     sim.close()
