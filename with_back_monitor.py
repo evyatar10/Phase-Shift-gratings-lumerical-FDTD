@@ -195,8 +195,8 @@ class PiShiftBraggFDTD:
                    "z min bc", "z max bc"]:
             fdtd.set(bc, "PML")
 
-        fdtd.set("simulation time", 5e-12) #5e-12
-        fdtd.set("auto shutoff min", 1e-7)
+        fdtd.set("simulation time", 5e-12)  # 5e-12
+        fdtd.set("auto shutoff min", 1e-6)
         fdtd.set("mesh accuracy", 3)
 
     def _add_x_aligned_mesh_override(self, cells_per_half_period=5):
@@ -271,7 +271,7 @@ class PiShiftBraggFDTD:
         dy_ppw_center = lambda_core / ppw_y_center
         dy_ppw_edge   = lambda_core / ppw_y_edge
 
-        # 2. Y direction: feature-based dy near sidewalls
+        # 2. Y direction; feature-based dy near sidewalls
         full_depth_edge = self.width_wide - self.width_narrow
 
         if self.use_apodization:
@@ -348,7 +348,6 @@ class PiShiftBraggFDTD:
 
             fdtd.set("set maximum mesh step", 1)
             fdtd.set("dy", dy_edge)
-
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
@@ -470,13 +469,13 @@ class PiShiftBraggFDTD:
                 width_narrow_i = self.width_narrow
 
             if i == 0:
-                # Immediately after cavity: go directly to the next "wide" corrugation
+                # Immediately after cavity; go directly to the next "wide" corrugation
                 x1 = x
                 x2 = x1 + half_pitch
                 add_core_segment(x1, x2, width_wide_i)
                 x = x2
             else:
-                # Regular pattern: narrow then wide
+                # Regular pattern; narrow then wide
                 x1 = x
                 x2 = x1 + half_pitch
                 add_core_segment(x1, x2, width_narrow_i)
@@ -511,6 +510,9 @@ class PiShiftBraggFDTD:
         x_source = 0.5 * (x_wg_left_start + x_wg_left_end)
         x_R_mon = x_wg_left_end - 0.25 * self.straight_length_each_side
         x_T_mon = x_wg_right_start + 0.25 * self.straight_length_each_side
+
+        # New; monitor behind the input mode
+        x_R_back = x_wg_left_start + 0.25 * self.straight_length_each_side
 
         # If you want "full height" in z, center at 0 with span = z_span
         # Same idea in y if you want full width of the FDTD window
@@ -550,11 +552,27 @@ class PiShiftBraggFDTD:
         fdtd.set("use source limits", 1)
         fdtd.set("frequency points", n_freq)
 
-        # ------------------- Reflection monitor -------------------
+        # ------------------- Reflection monitor (original plane) -------------------
         fdtd.adddftmonitor()
         fdtd.set("name", "R_monitor")
         fdtd.set("monitor type", "2D X-normal")
         fdtd.set("x", x_R_mon)
+
+        fdtd.set("y", y_center)
+        fdtd.set("y span", self.y_span)          # full y
+
+        fdtd.set("z", z_center)
+        fdtd.set("z span", self.z_span)          # full z
+
+        fdtd.set("override global monitor settings", 1)
+        fdtd.set("use source limits", 1)
+        fdtd.set("frequency points", n_freq)
+
+        # ------------------- Reflection monitor behind source (minus signal) -------------------
+        fdtd.adddftmonitor()
+        fdtd.set("name", "R_back_monitor")
+        fdtd.set("monitor type", "2D X-normal")
+        fdtd.set("x", x_R_back)
 
         fdtd.set("y", y_center)
         fdtd.set("y span", self.y_span)          # full y
@@ -577,7 +595,6 @@ class PiShiftBraggFDTD:
         fdtd.set("y span", self.y_span)          # full y
 
         # For Z-normal movie you usually want it at the core plane, not full z
-        # so here I keep it at core height; you can change if you want:
         fdtd.set("z", self.core_height / 2.0)
 
         fdtd.set("lock aspect ratio", 1)
@@ -588,20 +605,31 @@ class PiShiftBraggFDTD:
     # ------------------------------------------------------------------
 
     def get_spectra(self):
+        # Wavelength axis from the transmission monitor
         T_res = self.fdtd.getresult("T_monitor", "T")
         wl = np.squeeze(T_res["lambda"])
 
+        # Transmission through the grating
         T_val = np.squeeze(np.real(self.fdtd.transmission("T_monitor")))
+
+        # Original reflection plane method
         T_plane = np.squeeze(np.real(self.fdtd.transmission("R_monitor")))
-        R_val = 1.0 - T_plane
+        R_plane_val = 1.0 - T_plane
 
+        # New reflection from monitor behind the source; minus the signal
+        R_back_raw = np.squeeze(np.real(self.fdtd.transmission("R_back_monitor")))
+        R_back_val = -R_back_raw
+
+        # Clip small negative numerical noise
         T = np.clip(T_val, 0.0, None)
-        R = np.clip(R_val, 0.0, None)
-        #R = R_val
-        loss = 1.0 - T - R
-        #loss = np.clip(loss, 0.0, None)
+        R_plane = np.clip(R_plane_val, 0.0, None)
+        R_back = np.clip(R_back_val, 0.0, None)
 
-        return wl, T, R, loss
+        # Loss definitions for both reflection conventions
+        loss_plane = 1.0 - T - R_plane
+        loss_back = 1.0 - T - R_back
+
+        return wl, T, R_plane, R_back, loss_plane, loss_back
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
@@ -615,6 +643,7 @@ class PiShiftBraggFDTD:
         fdtd.setnamed("input_mode", "wavelength stop", self.lam_max)
         fdtd.setnamed("T_monitor", "frequency points", self.n_wl_points)
         fdtd.setnamed("R_monitor", "frequency points", self.n_wl_points)
+        fdtd.setnamed("R_back_monitor", "frequency points", self.n_wl_points)
 
     def close(self):
         try:
@@ -638,9 +667,9 @@ if __name__ == "__main__":
         width_wide=900e-9,
         core_height=350e-9,
         substrate_thickness=4e-6,
-        y_span=5e-6,  #4e-6
-        z_span=9e-6,  #8e-6
-        buffer_x=5e-6,  #4e-6
+        y_span=4.5e-6,   # 4e-6
+        z_span=8e-6,     # 8e-6
+        buffer_x=4e-6,   # 4e-6
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
         n_eff_guess=1.55,
@@ -656,18 +685,12 @@ if __name__ == "__main__":
                     n_points=n_points)
 
     start = time.perf_counter()
-
     sim.fdtd.run()
     end = time.perf_counter()
     print(f"Simulation time: {end - start:.3f} seconds")
 
-    # Build file name: "pi_shift_<N>periods[_apodization].fsp"
-    #base_name = f"pi_shift_{sim.n_periods_each_side}periods"
-    #if sim.use_apodization:
-        #base_name += "_apodization"
-    #sim.fdtd.save(base_name + ".fsp")
-
-    wl, T, R, loss = sim.get_spectra()
+    # wl, T, R, loss = sim.get_spectra()
+    wl, T, R_plane, R_back, loss_plane, loss_back = sim.get_spectra()
     wl_nm = wl * 1e9
 
     # --- Build dynamic filename ---
@@ -684,20 +707,24 @@ if __name__ == "__main__":
              wl_m=wl,
              wl_nm=wl_nm,
              T=T,
-             R=R,
-             loss=loss)
+             R_plane=R_plane,
+             R_back=R_back,
+             loss_plane=loss_plane,
+             loss_back=loss_back)
 
     print(f"Saved spectrum to: {filename}")
 
     plt.figure()
     plt.plot(wl_nm, T, label="T")
-    plt.plot(wl_nm, R, label="R")
-    plt.plot(wl_nm, loss, label="loss")
+    plt.plot(wl_nm, R_plane, label="R_plane (1 - T_plane)")
+    plt.plot(wl_nm, R_back, label="R_back (-trans behind source)")
+    plt.plot(wl_nm, loss_plane, label="loss_plane")
+    plt.plot(wl_nm, loss_back, label="loss_back")
     plt.xlabel("Wavelength [nm]")
     plt.ylabel("Normalized power")
     plt.legend()
     plt.grid(True)
-    plt.title("Single scan around estimated resonance")
+    plt.title("Single scan around estimated resonance; both reflection definitions")
     plt.tight_layout()
 
     plt.show()
