@@ -16,7 +16,7 @@ LAMBDA_MIN_NM = 1000.0 * LAMBDA_MIN_UM   # 1570 nm
 LAMBDA_MAX_NM = 1000.0 * LAMBDA_MAX_UM   # 1575 nm
 
 # Optional: highlight peak loss points with (x, y) text on the plots
-HIGHLIGHT_PEAKS = True
+HIGHLIGHT_PEAKS = False
 
 # -----------------------------
 # 1. Select .npz files

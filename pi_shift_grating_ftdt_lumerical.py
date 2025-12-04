@@ -94,7 +94,7 @@ class PiShiftBraggFDTD:
 
         self.cavity_length = pitch / 2
         self.grating_length = 2 * n_periods_each_side * pitch
-        self.n_straight_periods_each_side = 2
+        self.n_straight_periods_each_side = 3
         self.straight_length_each_side = self.n_straight_periods_each_side * pitch
 
         self.device_length = (
@@ -394,11 +394,19 @@ class PiShiftBraggFDTD:
         def get_mod_depth(d):
             # d=1 is closest to cavity, d=N is closest to edge
             if d <= n_apod and n_total > 1:
-                if n_apod == 1:
-                    return full_depth_center
-                frac = (d - 1) / (n_apod - 1)
+                # SPECIAL CASE: if n_apod is the whole grating, we keep the old behavior
+                # otherwise, we divide by n_apod so the last apodized period isn't quite full depth yet
+                if n_apod == n_total:
+                    denom = n_apod - 1 if n_apod > 1 else 1
+                else:
+                    denom = n_apod
+
+                if denom == 0: return full_depth_center
+
+                frac = (d - 1) / float(denom)
                 return full_depth_center + (full_depth_edge - full_depth_center) * frac
             else:
+                # d > n_apod (e.g. period 6 and onwards) gets full depth
                 return full_depth_edge
 
         W_narrow = {}
@@ -478,17 +486,25 @@ class PiShiftBraggFDTD:
         lam_max = self.lam_max
         n_freq = self.n_wl_points
 
+        # Calculate geometric boundaries
         x_device_start = -self.device_length / 2.0
         x_device_end = +self.device_length / 2.0
 
         x_wg_left_start = x_device_start
         x_wg_left_end = x_wg_left_start + self.straight_length_each_side
-        x_wg_right_end = x_device_end
-        x_wg_right_start = x_wg_right_end - self.straight_length_each_side
 
-        x_source = 0.5 * (x_wg_left_start + x_wg_left_end)
-        x_R_mon = x_wg_left_end - 0.25 * self.straight_length_each_side
-        x_T_mon = x_wg_right_start + 0.25 * self.straight_length_each_side
+        x_wg_right_start = x_device_end - self.straight_length_each_side
+        x_wg_right_end = x_device_end
+
+        # --- ADJUSTED POSITIONS ---
+        # 1. Move Source far left (90% of the straight section away from grating)
+        x_source = x_wg_left_end - 0.6 * self.straight_length_each_side
+
+        # 2. Move R monitor left (60% away), but keep it to the right of the Source
+        x_R_mon = x_wg_left_end - 0.4 * self.straight_length_each_side
+
+        # 3. Move T monitor far right (80% away from grating)
+        x_T_mon = x_wg_right_start + 0.4 * self.straight_length_each_side
 
         z_center = 0.0
         y_center = 0.0
@@ -507,7 +523,7 @@ class PiShiftBraggFDTD:
         fdtd.set("wavelength stop", lam_max)
         fdtd.set("mode selection", "fundamental TE mode")
 
-        # Transmission monitor
+        # Transmission monitor (Far Right)
         fdtd.adddftmonitor()
         fdtd.set("name", "T_monitor")
         fdtd.set("monitor type", "2D X-normal")
@@ -520,7 +536,7 @@ class PiShiftBraggFDTD:
         fdtd.set("use source limits", 1)
         fdtd.set("frequency points", n_freq)
 
-        # Reflection monitor
+        # Reflection monitor (Left, between Source and Grating)
         fdtd.adddftmonitor()
         fdtd.set("name", "R_monitor")
         fdtd.set("monitor type", "2D X-normal")
@@ -541,10 +557,10 @@ class PiShiftBraggFDTD:
         fdtd.set("x span", self.device_length + self.pitch)
         fdtd.set("y", y_center)
         fdtd.set("y span", self.y_span)
+        # For Z-normal movie, typically center at the core height
         fdtd.set("z", self.core_height / 2.0)
         fdtd.set("lock aspect ratio", 1)
-        fdtd.set("horizontal resolution", 400)
-    # ------------------------------------------------------------------
+        fdtd.set("horizontal resolution", 400)    # ------------------------------------------------------------------
     # Run and spectra
     # ------------------------------------------------------------------
 
@@ -594,13 +610,13 @@ if __name__ == "__main__":
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
         n_periods_each_side=50,
-        n_apod_periods_each_side=10,
+        n_apod_periods_each_side=1,
         width_narrow=700e-9,
         width_wide=900e-9,
         core_height=350e-9,
-        substrate_thickness=4e-6,
-        y_span=5e-6,
-        z_span=9e-6,
+        substrate_thickness=4e-6, #lower
+        y_span=5e-6, #lower
+        z_span=9e-6, #lower
         buffer_x=5e-6,
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
