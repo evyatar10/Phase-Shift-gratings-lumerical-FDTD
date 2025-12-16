@@ -488,25 +488,27 @@ class PiShiftBraggFDTD:
         # Extract wavelength
         wl = np.squeeze(res1["lambda"])
 
-        # Extract coefficients
-        # a = forward wave (input)
-        # b = backward wave (reflection)
+        # Port 1 (left); direction = forward
+        # a1: wave traveling +x (launched / forward)
+        # b1: wave traveling -x (reflected / backward)
         a1 = np.squeeze(res1["a"])
         b1 = np.squeeze(res1["b"])
 
-        # For Port 2 (Output), we want the wave entering the port
-        b2 = np.squeeze(res2["b"])
+        # Port 2 (right); you set direction = forward
+        # a2: wave traveling +x (transmitted forward out of the device)
+        # b2: wave traveling -x (would correspond to a wave coming from the right into the device)
+        a2 = np.squeeze(res2["a"])
 
-        # ------------------------------------------------------------------
-        # S-Parameter Calculation
-        # ------------------------------------------------------------------
         epsilon = 1e-20
 
-        # S11 = Reflection / Input
-        S11 = b1 / (a1 + epsilon)
+        # S11: reflection at port 1
+        #S11 = b1 / (a1 + epsilon)
 
-        # S21 = Transmission / Input
-        S21 = b2 / (a1 + epsilon)
+        S11 = np.squeeze(res1["S"])
+        S21 = np.squeeze(res2["S"])
+
+        # S21: transmission from port 1 to port 2
+        #S21 = a2 / (a1 + epsilon)
 
         # (Keep the rest of your T-Matrix code exactly the same as before...)
         S12 = S21
