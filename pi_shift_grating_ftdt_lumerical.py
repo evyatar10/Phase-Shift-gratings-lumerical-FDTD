@@ -205,20 +205,6 @@ class PiShiftBraggFDTD:
     def _add_x_aligned_mesh_override(self, cells_per_half_period=5):
         """
         Create a mesh override that aligns the x mesh with the grating periods.
-
-        Idea:
-          * The grating boundaries in x occur every half_pitch = pitch / 2
-          * We choose dx so that half_pitch = cells_per_half_period * dx
-          * Then every interface at k * (half_pitch) falls exactly on a mesh line
-
-        Parameters
-        ----------
-        cells_per_half_period : int
-            Number of mesh cells per half period in x.
-            For example:
-              - 4  -> dx = half_pitch / 4   (coarser)
-              - 8  -> dx = half_pitch / 8   (finer)
-              - 12 -> dx ≈ 20 nm for pitch = 500 nm
         """
 
         fdtd = self.fdtd
@@ -255,100 +241,60 @@ class PiShiftBraggFDTD:
 
     def _add_mesh_override_y(self):
         """Local mesh refinement over the grating region, Y only.
-
-        Strategy:
-          * X,Z: keep automatic mesh (use global mesh accuracy)
-          * Y: piecewise
-                - coarser dy in the central waveguide region
-                - finer dy only in thin strips around the sidewalls
         """
-
         fdtd = self.fdtd
-
-        # 1. Effective wavelength and PPW constraints
+        # (Preserved method body)
         lambda_core = 2.0 * self.pitch
-
         ppw_y_center = float(getattr(self, "ppw_y_center", 8.0))
         ppw_y_edge   = float(getattr(self, "ppw_y_edge", 8.0))
-
         dy_ppw_center = lambda_core / ppw_y_center
         dy_ppw_edge   = lambda_core / ppw_y_edge
-
-        # 2. Y direction: feature-based dy near sidewalls
         full_depth_edge = self.width_wide - self.width_narrow
-
         if self.use_apodization:
             full_depth_min = min(self.center_mod_depth, full_depth_edge)
         else:
             full_depth_min = full_depth_edge
-
         full_depth_min = max(full_depth_min, 10e-9)
-
-        # Feature criterion; aim for about 2 cells across the smallest depth
         dy_feature = full_depth_min / 2.0
         dy_edge = min(dy_ppw_edge, dy_feature)
-
-        # Central region dy
         dy_center = dy_ppw_center
-
-        # Sidewall positions
         y_narrow_half = 0.5 * self.width_narrow
         y_wide_half   = 0.5 * self.width_wide
-
         margin_y = 2.0 * dy_edge
         y_edge_half_span = (y_wide_half - y_narrow_half) / 2.0 + margin_y
-
         y_edge_center_pos = 0.5 * (y_narrow_half + y_wide_half)
         y_edge_center_neg = -y_edge_center_pos
-
         y_center_span = 2.0 * y_narrow_half
-
-        # Common X/Z region used for all overrides
         x_center = 0.0
         x_span   = self.device_length
-
         z_center = self.core_height / 2.0
         z_span   = 2.0 * self.core_height
-
-        # 3. Central coarse Y mesh override
         fdtd.addmesh()
         fdtd.set("name", "mesh_grating_center")
-
         fdtd.set("x", x_center)
         fdtd.set("x span", x_span)
-
         fdtd.set("y", 0.0)
         fdtd.set("y span", y_center_span)
-
         fdtd.set("z", z_center)
         fdtd.set("z span", z_span)
-
         fdtd.set("override x mesh", 0)
         fdtd.set("override y mesh", 1)
         fdtd.set("override z mesh", 0)
-
         fdtd.set("set maximum mesh step", 1)
         fdtd.set("dy", dy_center)
-
-        # 4. Fine sidewall Y mesh overrides
         for name, y_c in [("mesh_grating_side_pos", y_edge_center_pos),
                           ("mesh_grating_side_neg", y_edge_center_neg)]:
             fdtd.addmesh()
             fdtd.set("name", name)
-
             fdtd.set("x", x_center)
             fdtd.set("x span", x_span)
-
             fdtd.set("y", y_c)
             fdtd.set("y span", 2.0 * y_edge_half_span)
-
             fdtd.set("z", z_center)
             fdtd.set("z span", z_span)
-
             fdtd.set("override x mesh", 0)
             fdtd.set("override y mesh", 1)
             fdtd.set("override z mesh", 0)
-
             fdtd.set("set maximum mesh step", 1)
             fdtd.set("dy", dy_edge)
 
@@ -394,8 +340,6 @@ class PiShiftBraggFDTD:
         def get_mod_depth(d):
             # d=1 is closest to cavity, d=N is closest to edge
             if d <= n_apod and n_total > 1:
-                # SPECIAL CASE: if n_apod is the whole grating, we keep the old behavior
-                # otherwise, we divide by n_apod so the last apodized period isn't quite full depth yet
                 if n_apod == n_total:
                     denom = n_apod - 1 if n_apod > 1 else 1
                 else:
@@ -406,7 +350,6 @@ class PiShiftBraggFDTD:
                 frac = (d - 1) / float(denom)
                 return full_depth_center + (full_depth_edge - full_depth_center) * frac
             else:
-                # d > n_apod (e.g. period 6 and onwards) gets full depth
                 return full_depth_edge
 
         W_narrow = {}
@@ -421,64 +364,43 @@ class PiShiftBraggFDTD:
         # ---------------------------------------------------------
         # 2. Build Geometry
         # ---------------------------------------------------------
-
-        # --- A. Left Straight Input ---
+        # A. Left Straight
         x1 = x
         x2 = x1 + self.straight_length_each_side
         add_core_segment(x1, x2, self.width_narrow, name_prefix="wg_left")
         x = x2
-
-        # --- B. Left Grating (N -> 1) ---
-        # Sequence: Narrow -> Wide
+        # B. Left Grating
         for d in range(n_total, 0, -1):
-            w_n = W_narrow[d]
-            w_w = W_wide[d]
-
-            # Narrow
-            x1 = x
-            x2 = x1 + half_pitch
+            w_n, w_w = W_narrow[d], W_wide[d]
+            x1 = x; x2 = x1 + half_pitch
             add_core_segment(x1, x2, w_n, name_prefix=f"L_narrow_{d}")
             x = x2
-
-            # Wide
-            x1 = x
-            x2 = x1 + half_pitch
+            x1 = x; x2 = x1 + half_pitch
             add_core_segment(x1, x2, w_w, name_prefix=f"L_wide_{d}")
             x = x2
-
-        # --- C. Cavity ---
-        # Matches the narrow width of period 1
+        # C. Cavity
         w_cavity = W_narrow[1]
-        x1 = x
-        x2 = x1 + self.cavity_length
+        x1 = x; x2 = x1 + self.cavity_length
         add_core_segment(x1, x2, w_cavity, name_prefix="cavity")
         x = x2
-
-        # --- D. Right Grating (1 -> N) ---
-        # Sequence: Narrow -> Wide
+        # D. Right Grating
         for d in range(1, n_total + 1):
-            w_n = W_narrow[d]
-            w_w = W_wide[d]
-
-            # Narrow
-            x1 = x
-            x2 = x1 + half_pitch
+            w_n, w_w = W_narrow[d], W_wide[d]
+            x1 = x; x2 = x1 + half_pitch
             add_core_segment(x1, x2, w_n, name_prefix=f"R_narrow_{d}")
             x = x2
-
-            # Wide
-            x1 = x
-            x2 = x1 + half_pitch
+            x1 = x; x2 = x1 + half_pitch
             add_core_segment(x1, x2, w_w, name_prefix=f"R_wide_{d}")
             x = x2
-
-        # --- E. Right Straight Output ---
+        # E. Right Straight
         x1 = x
         x2 = x1 + self.straight_length_each_side
         add_core_segment(x1, x2, self.width_narrow, name_prefix="wg_right")
         x = x2
 
-    # CRITICAL: This function must be unindented to match `def _add_bragg_core`
+    # ------------------------------------------------------------------
+    # Monitors & Sources (UPDATED TO PORTS - FIXED)
+    # ------------------------------------------------------------------
     def _add_source_and_monitors(self):
         fdtd = self.fdtd
 
@@ -486,70 +408,45 @@ class PiShiftBraggFDTD:
         lam_max = self.lam_max
         n_freq = self.n_wl_points
 
-        # Calculate geometric boundaries
         x_device_start = -self.device_length / 2.0
         x_device_end = +self.device_length / 2.0
-
-        x_wg_left_start = x_device_start
-        x_wg_left_end = x_wg_left_start + self.straight_length_each_side
-
+        x_wg_left_end = x_device_start + self.straight_length_each_side
         x_wg_right_start = x_device_end - self.straight_length_each_side
-        x_wg_right_end = x_device_end
 
-        # --- ADJUSTED POSITIONS ---
-        # 1. Move Source far left (90% of the straight section away from grating)
-        x_source = x_wg_left_end - 0.6 * self.straight_length_each_side
-
-        # 2. Move R monitor left (60% away), but keep it to the right of the Source
-        x_R_mon = x_wg_left_end - 0.4 * self.straight_length_each_side
-
-        # 3. Move T monitor far right (80% away from grating)
-        x_T_mon = x_wg_right_start + 0.4 * self.straight_length_each_side
-
+        x_Port_1 = x_wg_left_end - 0.4 * self.straight_length_each_side
+        x_Port_2 = x_wg_right_start + 0.4 * self.straight_length_each_side
         z_center = 0.0
         y_center = 0.0
 
-        # Source
-        fdtd.addmode()
-        fdtd.set("name", "input_mode")
+        # Port 1 (Source)
+        fdtd.addport()
+        fdtd.set("name", "Port_1")
         fdtd.set("injection axis", "x")
-        fdtd.set("direction", "Forward")
-        fdtd.set("x", x_source)
+        fdtd.set("x", x_Port_1)
         fdtd.set("y", y_center)
         fdtd.set("y span", self.y_span)
         fdtd.set("z", z_center)
         fdtd.set("z span", self.z_span)
-        fdtd.set("wavelength start", lam_min)
-        fdtd.set("wavelength stop", lam_max)
-        fdtd.set("mode selection", "fundamental TE mode")
+        fdtd.set("direction", "forward")
+        fdtd.set("mode selection", "fundamental mode") #fundamental TE mode?
 
-        # Transmission monitor (Far Right)
-        fdtd.adddftmonitor()
-        fdtd.set("name", "T_monitor")
-        fdtd.set("monitor type", "2D X-normal")
-        fdtd.set("x", x_T_mon)
+        # Port 2 (Monitor)
+        fdtd.addport()
+        fdtd.set("name", "Port_2")
+        fdtd.set("injection axis", "x")
+        fdtd.set("x", x_Port_2)
         fdtd.set("y", y_center)
         fdtd.set("y span", self.y_span)
         fdtd.set("z", z_center)
         fdtd.set("z span", self.z_span)
-        fdtd.set("override global monitor settings", 1)
-        fdtd.set("use source limits", 1)
-        fdtd.set("frequency points", n_freq)
+        fdtd.set("direction", "backward")
+        fdtd.set("mode selection", "fundamental mode")
 
-        # Reflection monitor (Left, between Source and Grating)
-        fdtd.adddftmonitor()
-        fdtd.set("name", "R_monitor")
-        fdtd.set("monitor type", "2D X-normal")
-        fdtd.set("x", x_R_mon)
-        fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span)
-        fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span)
-        fdtd.set("override global monitor settings", 1)
-        fdtd.set("use source limits", 1)
-        fdtd.set("frequency points", n_freq)
+        # GLOBAL Source Settings
+        fdtd.setglobalsource("wavelength start", lam_min)
+        fdtd.setglobalsource("wavelength stop", lam_max)
+        fdtd.setglobalmonitor("frequency points", n_freq)
 
-        # Movie monitor
         fdtd.addmovie()
         fdtd.set("name", "movie_xy")
         fdtd.set("monitor type", "2D Z-normal")
@@ -557,27 +454,91 @@ class PiShiftBraggFDTD:
         fdtd.set("x span", self.device_length + self.pitch)
         fdtd.set("y", y_center)
         fdtd.set("y span", self.y_span)
-        # For Z-normal movie, typically center at the core height
         fdtd.set("z", self.core_height / 2.0)
         fdtd.set("lock aspect ratio", 1)
-        fdtd.set("horizontal resolution", 400)    # ------------------------------------------------------------------
-    # Run and spectra
+        fdtd.set("horizontal resolution", 400)
+
+    # ------------------------------------------------------------------
+    # Run and spectra (FIXED: Get "expansion" result, not "S")
     # ------------------------------------------------------------------
 
+    def get_s_and_t_matrix(self):
+        fdtd = self.fdtd
+
+        # ------------------------------------------------------------------
+        # FIX: The internal name is just "expansion"
+        # ------------------------------------------------------------------
+        # "expansion for port monitor" is the GUI display name.
+        # "expansion" is the ID the code needs.
+        #try:
+        #    res1 = fdtd.getresult("Port_1", "expansion")
+        #    res2 = fdtd.getresult("Port_2", "expansion")
+        #except Exception as e:
+            # Diagnostic: If this fails, this prints what names exist so you can see them
+        #    print("\n--- DEBUG INFO ---")
+        #    print(f"Could not find 'expansion'. Exact error: {e}")
+         #   print("Available results in Port_1:")
+         #   print(fdtd.eval("?getresult('Port_1');"))
+         #   print("------------------\n")
+         #   raise
+
+        res1 = self.fdtd.getresult("FDTD::ports::Port_1", "expansion for port monitor")
+        res2 = self.fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
+
+        # Extract wavelength
+        wl = np.squeeze(res1["lambda"])
+
+        # Extract coefficients
+        # a = forward wave (input)
+        # b = backward wave (reflection)
+        a1 = np.squeeze(res1["a"])
+        b1 = np.squeeze(res1["b"])
+
+        # For Port 2 (Output), we want the wave entering the port
+        b2 = np.squeeze(res2["b"])
+
+        # ------------------------------------------------------------------
+        # S-Parameter Calculation
+        # ------------------------------------------------------------------
+        epsilon = 1e-20
+
+        # S11 = Reflection / Input
+        S11 = b1 / (a1 + epsilon)
+
+        # S21 = Transmission / Input
+        S21 = b2 / (a1 + epsilon)
+
+        # (Keep the rest of your T-Matrix code exactly the same as before...)
+        S12 = S21
+        S22 = np.zeros_like(S11)
+
+        R_modal = np.abs(S11)**2
+        T_modal = np.abs(S21)**2
+        Loss_radiation = 1.0 - R_modal - T_modal
+
+        # ... (Include the rest of your T-matrix logic here) ...
+
+        # Copy-paste the T-matrix calculation block from your previous code:
+        S21_c = S21.astype(complex)
+        T11 = np.zeros_like(S11, dtype=complex)
+        T12 = np.zeros_like(S11, dtype=complex)
+        T21 = np.zeros_like(S11, dtype=complex)
+        T22 = np.zeros_like(S11, dtype=complex)
+
+        mask = np.abs(S21_c) > 1e-12
+        T11[mask] = 1.0 / S21_c[mask]
+        T12[mask] = -S22[mask] / S21_c[mask]
+        T21[mask] = S11[mask] / S21_c[mask]
+        T22[mask] = S12[mask] - (S11[mask] * S22[mask]) / S21_c[mask]
+
+        T_matrix = np.stack([
+            np.stack([T11, T12], axis=1),
+            np.stack([T21, T22], axis=1)
+        ], axis=1)
+
+        return wl, R_modal, T_modal, Loss_radiation, T_matrix
     def get_spectra(self):
-        T_res = self.fdtd.getresult("T_monitor", "T")
-        wl = np.squeeze(T_res["lambda"])
-
-        T_val = np.squeeze(np.real(self.fdtd.transmission("T_monitor")))
-        T_plane = np.squeeze(np.real(self.fdtd.transmission("R_monitor")))
-        R_val = 1.0 - T_plane
-
-        T = np.clip(T_val, 0.0, None)
-        R = np.clip(R_val, 0.0, None)
-        #R = R_val
-        loss = 1.0 - T - R
-        #loss = np.clip(loss, 0.0, None)
-
+        wl, R, T, loss, _ = self.get_s_and_t_matrix()
         return wl, T, R, loss
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
@@ -588,10 +549,10 @@ class PiShiftBraggFDTD:
 
         fdtd = self.fdtd
         fdtd.switchtolayout()
-        fdtd.setnamed("input_mode", "wavelength start", self.lam_min)
-        fdtd.setnamed("input_mode", "wavelength stop", self.lam_max)
-        fdtd.setnamed("T_monitor", "frequency points", self.n_wl_points)
-        fdtd.setnamed("R_monitor", "frequency points", self.n_wl_points)
+
+        fdtd.setglobalsource("wavelength start", self.lam_min)
+        fdtd.setglobalsource("wavelength stop", self.lam_max)
+        fdtd.setglobalmonitor("frequency points", self.n_wl_points)
 
     def close(self):
         try:
@@ -601,22 +562,20 @@ class PiShiftBraggFDTD:
 
 
 if __name__ == "__main__":
-
-    # Estimated resonance center and scan width around it
-    lambda_res_est = 1.573e-6      # [m]
-    scan_width_nm = 40.0           # full width in nm (±scan_width_nm/2)
-    n_points = 1001                # number of wavelength points in the scan
+    lambda_res_est = 1.573e-6
+    scan_width_nm = 40.0
+    n_points = 1001
 
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=50,
-        n_apod_periods_each_side=1,
+        n_periods_each_side=20,
+        n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=900e-9,
         core_height=350e-9,
-        substrate_thickness=4e-6, #lower
-        y_span=5e-6, #lower
-        z_span=9e-6, #lower
+        substrate_thickness=4e-6,
+        y_span=6e-6,
+        z_span=6e-6,
         buffer_x=5e-6,
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
@@ -627,66 +586,54 @@ if __name__ == "__main__":
         center_mod_depth_nm=40.0
     )
 
-    # ----------------------------
-    # Choose save folder *before* running simulation
-    # ----------------------------
     root = tk.Tk()
     root.withdraw()
     save_dir = filedialog.askdirectory(title="Select folder to save NPZ results")
     if not save_dir:
-        save_dir = os.getcwd()  # fallback
+        save_dir = os.getcwd()
 
-    # Build dynamic filename
     N = sim.n_periods_each_side
     Napod = sim.n_apod_periods_each_side
 
     if sim.use_apodization and Napod > 0:
-        filename = f"{N}_periods_{Napod}_apodizations.npz"
+        filename = f"{N}_periods_{Napod}_apodizations_SMatrix.npz"
     else:
-        filename = f"{N}_periods.npz"
+        filename = f"{N}_periods_SMatrix.npz"
 
     save_path = os.path.join(save_dir, filename)
 
-    # ----------------------------
-    # Build simulation
-    # ----------------------------
     sim.build()
     sim.update_scan(center_lambda_m=lambda_res_est,
                     width_nm=scan_width_nm,
                     n_points=n_points)
 
-    # ----------------------------
-    # Run simulation
-    # ----------------------------
     start = time.perf_counter()
     sim.fdtd.run()
     end = time.perf_counter()
     print(f"Simulation time: {end - start:.3f} seconds")
 
-    # ----------------------------
-    # Save results
-    # ----------------------------
-    wl, T, R, loss = sim.get_spectra()
+    wl, R_modal, T_modal, Loss_radiation, T_matrix = sim.get_s_and_t_matrix()
     wl_nm = wl * 1e9
 
     np.savez(save_path,
              wl_m=wl,
              wl_nm=wl_nm,
-             T=T,
-             R=R,
-             loss=loss)
+             T=T_modal,
+             R=R_modal,
+             loss=Loss_radiation,
+             T_matrix=T_matrix)
 
-    print(f"Saved spectrum to: {save_path}")
+    print(f"Saved spectrum and T-matrix to: {save_path}")
 
     plt.figure()
-    plt.plot(wl_nm, T, label="T")
-    plt.plot(wl_nm, R, label="R")
-    plt.plot(wl_nm, loss, label="loss")
+    plt.plot(wl_nm, T_modal, label="T (Modal)")
+    plt.plot(wl_nm, R_modal, label="R (Modal)")
+    plt.plot(wl_nm, Loss_radiation, label="Radiation Loss")
     plt.xlabel("Wavelength [nm]")
     plt.ylabel("Normalized power")
     plt.legend()
     plt.grid(True)
-    plt.title("Single scan around estimated resonance")
+    plt.title("Single scan (Modal Orthogonality)")
     plt.tight_layout()
     plt.show()
 
