@@ -430,6 +430,7 @@ class PiShiftBraggFDTD:
         fdtd.set("direction", "forward")
         fdtd.set("mode selection", "fundamental mode") #fundamental TE mode?
 
+
         # Port 2 (Monitor)
         fdtd.addport()
         fdtd.set("name", "Port_2")
@@ -439,13 +440,15 @@ class PiShiftBraggFDTD:
         fdtd.set("y span", self.y_span)
         fdtd.set("z", z_center)
         fdtd.set("z span", self.z_span)
-        fdtd.set("direction", "backward")
+        fdtd.set("direction", "forward")
         fdtd.set("mode selection", "fundamental mode")
 
         # GLOBAL Source Settings
-        fdtd.setglobalsource("wavelength start", lam_min)
-        fdtd.setglobalsource("wavelength stop", lam_max)
-        fdtd.setglobalmonitor("frequency points", n_freq)
+        #fdtd.setglobalsource("wavelength start", lam_min)
+        #fdtd.setglobalsource("wavelength stop", lam_max)
+        #fdtd.setglobalmonitor("frequency points", n_freq)
+
+
 
         fdtd.addmovie()
         fdtd.set("name", "movie_xy")
@@ -463,7 +466,7 @@ class PiShiftBraggFDTD:
     # ------------------------------------------------------------------
 
     def get_s_and_t_matrix(self):
-        fdtd = self.fdtd
+        #fdtd = self.fdtd
 
         # ------------------------------------------------------------------
         # FIX: The internal name is just "expansion"
@@ -502,13 +505,13 @@ class PiShiftBraggFDTD:
         epsilon = 1e-20
 
         # S11: reflection at port 1
-        #S11 = b1 / (a1 + epsilon)
+        S11 = b1 / (a1 + epsilon)
 
-        S11 = np.squeeze(res1["S"])
-        S21 = np.squeeze(res2["S"])
+        #S11 = np.squeeze(res1["S"])
+        #S21 = np.squeeze(res2["S"])
 
         # S21: transmission from port 1 to port 2
-        #S21 = a2 / (a1 + epsilon)
+        S21 = a2 / (a1 + epsilon)
 
         # (Keep the rest of your T-Matrix code exactly the same as before...)
         S12 = S21
@@ -539,6 +542,8 @@ class PiShiftBraggFDTD:
         ], axis=1)
 
         return wl, R_modal, T_modal, Loss_radiation, T_matrix
+    
+    #erase this function
     def get_spectra(self):
         wl, R, T, loss, _ = self.get_s_and_t_matrix()
         return wl, T, R, loss
@@ -556,6 +561,10 @@ class PiShiftBraggFDTD:
         fdtd.setglobalsource("wavelength stop", self.lam_max)
         fdtd.setglobalmonitor("frequency points", self.n_wl_points)
 
+        fdtd.setnamed("FDTD::ports", "monitor frequency points", self.n_wl_points)
+
+
+    #erase this function
     def close(self):
         try:
             self.fdtd.close()
@@ -576,8 +585,8 @@ if __name__ == "__main__":
         width_wide=900e-9,
         core_height=350e-9,
         substrate_thickness=4e-6,
-        y_span=6e-6,
-        z_span=6e-6,
+        y_span=4e-6,
+        z_span=4e-6,
         buffer_x=5e-6,
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
