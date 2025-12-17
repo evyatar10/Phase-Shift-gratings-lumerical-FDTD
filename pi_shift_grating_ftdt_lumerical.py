@@ -300,7 +300,7 @@ class PiShiftBraggFDTD:
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
-        z_core_center = self.core_height / 2.0
+        z_core_center = 0.0
         pitch = self.pitch
         half_pitch = pitch / 2.0
 
@@ -429,6 +429,8 @@ class PiShiftBraggFDTD:
         fdtd.set("z span", self.z_span)
         fdtd.set("direction", "forward")
         fdtd.set("mode selection", "fundamental mode") #fundamental TE mode?
+        #fdtd.set("use source", 1)  # Port_1 now injects light
+        #fdtd.set("use monitor", 1)  # And also acts as a monitor
 
 
         # Port 2 (Monitor)
@@ -442,6 +444,8 @@ class PiShiftBraggFDTD:
         fdtd.set("z span", self.z_span)
         fdtd.set("direction", "forward")
         fdtd.set("mode selection", "fundamental mode")
+        #fdtd.set("use source", 0)  # Port_2 does NOT inject anything
+        #fdtd.set("use monitor", 1)  # Only monitors
 
         # GLOBAL Source Settings
         #fdtd.setglobalsource("wavelength start", lam_min)
@@ -457,7 +461,7 @@ class PiShiftBraggFDTD:
         fdtd.set("x span", self.device_length + self.pitch)
         fdtd.set("y", y_center)
         fdtd.set("y span", self.y_span)
-        fdtd.set("z", self.core_height / 2.0)
+        fdtd.set("z", 0.0)
         fdtd.set("lock aspect ratio", 1)
         fdtd.set("horizontal resolution", 400)
 
@@ -543,10 +547,6 @@ class PiShiftBraggFDTD:
 
         return wl, R_modal, T_modal, Loss_radiation, T_matrix
     
-    #erase this function
-    def get_spectra(self):
-        wl, R, T, loss, _ = self.get_s_and_t_matrix()
-        return wl, T, R, loss
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
@@ -560,6 +560,9 @@ class PiShiftBraggFDTD:
         fdtd.setglobalsource("wavelength start", self.lam_min)
         fdtd.setglobalsource("wavelength stop", self.lam_max)
         fdtd.setglobalmonitor("frequency points", self.n_wl_points)
+
+        #fdtd.setnamed("FDTD::ports", "wavelength start", self.lam_min)
+        #fdtd.setnamed("FDTD::ports", "wavelength stop", self.lam_max)
 
         fdtd.setnamed("FDTD::ports", "monitor frequency points", self.n_wl_points)
 
@@ -576,24 +579,25 @@ if __name__ == "__main__":
     lambda_res_est = 1.573e-6
     scan_width_nm = 40.0
     n_points = 1001
-
+    w_wide = 900e-9
+    core_h = 350e-9
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=20,
+        n_periods_each_side=50,
         n_apod_periods_each_side=10,
         width_narrow=700e-9,
-        width_wide=900e-9,
-        core_height=350e-9,
+        width_wide=w_wide,
+        core_height=core_h,
         substrate_thickness=4e-6,
-        y_span=4e-6,
-        z_span=4e-6,
+        y_span=w_wide+1.8*lambda_res_est,
+        z_span=core_h+1.8*lambda_res_est,
         buffer_x=5e-6,
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
-        use_apodization=True,
+        use_apodization=False,
         center_mod_depth_nm=40.0
     )
 
