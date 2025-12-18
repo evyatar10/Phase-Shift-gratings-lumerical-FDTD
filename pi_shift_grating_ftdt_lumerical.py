@@ -27,8 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import os
-import tkinter as tk
-from tkinter import filedialog
+import scipy.io as sio
 
 # Try to import lumapi normally
 try:
@@ -418,15 +417,17 @@ class PiShiftBraggFDTD:
         z_center = 0.0
         y_center = 0.0
 
+        monitor_ratio = 1.05
+
         # Port 1 (Source)
         fdtd.addport()
         fdtd.set("name", "Port_1")
         fdtd.set("injection axis", "x")
         fdtd.set("x", x_Port_1)
         fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span)
+        fdtd.set("y span", monitor_ratio*self.y_span)
         fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span)
+        fdtd.set("z span", monitor_ratio*self.z_span)
         fdtd.set("direction", "forward")
         fdtd.set("mode selection", "fundamental mode") #fundamental TE mode?
         #fdtd.set("use source", 1)  # Port_1 now injects light
@@ -439,10 +440,10 @@ class PiShiftBraggFDTD:
         fdtd.set("injection axis", "x")
         fdtd.set("x", x_Port_2)
         fdtd.set("y", y_center)
-        fdtd.set("y span", self.y_span)
+        fdtd.set("y span", monitor_ratio*self.y_span)
         fdtd.set("z", z_center)
-        fdtd.set("z span", self.z_span)
-        fdtd.set("direction", "forward")
+        fdtd.set("z span", monitor_ratio*self.z_span)
+        fdtd.set("direction", "backward")
         fdtd.set("mode selection", "fundamental mode")
         #fdtd.set("use source", 0)  # Port_2 does NOT inject anything
         #fdtd.set("use monitor", 1)  # Only monitors
@@ -509,17 +510,23 @@ class PiShiftBraggFDTD:
         epsilon = 1e-20
 
         # S11: reflection at port 1
-        S11 = b1 / (a1 + epsilon)
+        #S11 = b1 / (a1 + epsilon)
 
-        #S11 = np.squeeze(res1["S"])
-        #S21 = np.squeeze(res2["S"])
+        S11 = np.squeeze(res1["S"])
+        S21 = np.squeeze(res2["S"])
 
         # S21: transmission from port 1 to port 2
-        S21 = a2 / (a1 + epsilon)
+        #S21 = a2 / (a1 + epsilon)
+
+        S11 = np.conj(S11)
+        S21 = np.conj(S21)
 
         # (Keep the rest of your T-Matrix code exactly the same as before...)
         S12 = S21
         S22 = np.zeros_like(S11)
+
+
+
 
         R_modal = np.abs(S11)**2
         T_modal = np.abs(S21)**2
@@ -545,7 +552,7 @@ class PiShiftBraggFDTD:
             np.stack([T21, T22], axis=1)
         ], axis=1)
 
-        return wl, R_modal, T_modal, Loss_radiation, T_matrix
+        return wl, R_modal, T_modal, Loss_radiation, T_matrix, S11, S21
     
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
@@ -576,70 +583,110 @@ class PiShiftBraggFDTD:
 
 
 if __name__ == "__main__":
+    # ------------------------------------------------------------------
+    # Saving Location
+    base_save_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\18_12"
+
+    # Simulation Parameters
     lambda_res_est = 1.573e-6
     scan_width_nm = 40.0
     n_points = 1001
+
     w_wide = 900e-9
     core_h = 350e-9
+
+    # ------------------------------------------------------------------
+    # 2. SIMULATION SETUP
+    # ------------------------------------------------------------------
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=50,
+        n_periods_each_side=40,
         n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=w_wide,
         core_height=core_h,
         substrate_thickness=4e-6,
-        y_span=w_wide+1.8*lambda_res_est,
-        z_span=core_h+1.8*lambda_res_est,
+        y_span=w_wide + 1.8 * lambda_res_est,
+        z_span=core_h + 1.8 * lambda_res_est,
         buffer_x=5e-6,
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
-        use_apodization=False,
+        use_apodization=True,
         center_mod_depth_nm=40.0
     )
 
-    root = tk.Tk()
-    root.withdraw()
-    save_dir = filedialog.askdirectory(title="Select folder to save NPZ results")
-    if not save_dir:
-        save_dir = os.getcwd()
+    # ------------------------------------------------------------------
+    # 3. FOLDER & NAMING LOGIC (The "Better" Code B Approach)
+    # ------------------------------------------------------------------
+    layouts_dir = os.path.join(base_save_dir, "layouts")
+    results_dir = os.path.join(base_save_dir, "results")
 
+    # Modern, safe creation
+    os.makedirs(layouts_dir, exist_ok=True)
+    os.makedirs(results_dir, exist_ok=True)
+
+    # Robust naming logic
     N = sim.n_periods_each_side
     Napod = sim.n_apod_periods_each_side
 
-    if sim.use_apodization and Napod > 0:
-        filename = f"{N}_periods_{Napod}_apodizations_SMatrix.npz"
+    # Check if apodization is effectively active (Flag is True AND count > 0)
+    use_apod = bool(sim.use_apodization) and (Napod is not None) and (Napod > 0)
+
+    if use_apod:
+        tag = f"{N}_periods_{Napod}_apodizations"
     else:
-        filename = f"{N}_periods_SMatrix.npz"
+        tag = f"{N}_periods"
 
-    save_path = os.path.join(save_dir, filename)
+    layout_filename = f"layout_{tag}.fsp"
+    results_filename = f"result_{tag}.mat"
+    layout_path = os.path.join(layouts_dir, layout_filename)
+    results_path = os.path.join(results_dir, results_filename)
 
+    # ------------------------------------------------------------------
+    # 4. RUN & SAVE
+    # ------------------------------------------------------------------
     sim.build()
-    sim.update_scan(center_lambda_m=lambda_res_est,
-                    width_nm=scan_width_nm,
-                    n_points=n_points)
+    sim.update_scan(center_lambda_m=lambda_res_est, width_nm=scan_width_nm, n_points=n_points)
+
+    sim.fdtd.save(layout_path)
+    print(f"Saved layout to: {layout_path}")
 
     start = time.perf_counter()
     sim.fdtd.run()
     end = time.perf_counter()
     print(f"Simulation time: {end - start:.3f} seconds")
 
-    wl, R_modal, T_modal, Loss_radiation, T_matrix = sim.get_s_and_t_matrix()
+    wl, R_modal, T_modal, Loss_radiation, T_matrix, S11, S21 = sim.get_s_and_t_matrix()
     wl_nm = wl * 1e9
 
-    np.savez(save_path,
-             wl_m=wl,
-             wl_nm=wl_nm,
-             T=T_modal,
-             R=R_modal,
-             loss=Loss_radiation,
-             T_matrix=T_matrix)
+    #np.savez(
+    #    results_path,
+    #    wl_m=wl,
+    #    wl_nm=wl_nm,
+    #    T=T_modal,
+    #    R=R_modal,
+    #    loss=Loss_radiation,
+    #    T_matrix=T_matrix
+    #)
+   # print(f"Saved results to: {results_path}")
 
-    print(f"Saved spectrum and T-matrix to: {save_path}")
+    mat_data = {
+        'wl_m': wl,
+        'wl_nm': wl_nm,
+        'T': T_modal,  # Power Transmission (Real)
+        'R': R_modal,  # Power Reflection (Real)
+        'loss': Loss_radiation,
+        'T_matrix': T_matrix,
+        'S11_complex': S11,  # Complex Reflection (magnitude & phase)
+        'S21_complex': S21  # Complex Transmission (magnitude & phase)
+    }
 
+    sio.savemat(results_path, mat_data)
+
+    # Plotting
     plt.figure()
     plt.plot(wl_nm, T_modal, label="T (Modal)")
     plt.plot(wl_nm, R_modal, label="R (Modal)")
@@ -648,7 +695,7 @@ if __name__ == "__main__":
     plt.ylabel("Normalized power")
     plt.legend()
     plt.grid(True)
-    plt.title("Single scan (Modal Orthogonality)")
+    plt.title(f"Scan: {tag}")
     plt.tight_layout()
     plt.show()
 
