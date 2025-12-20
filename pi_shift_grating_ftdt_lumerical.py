@@ -160,7 +160,7 @@ class PiShiftBraggFDTD:
         for bc in ["x min bc", "x max bc", "y min bc", "y max bc", "z min bc", "z max bc"]:
             fdtd.set(bc, "PML")
 
-        fdtd.set("simulation time", 8e-12)
+        fdtd.set("simulation time", 10e-12)
         fdtd.set("auto shutoff min", 1e-6)
         fdtd.set("mesh accuracy", 3)
 
@@ -408,7 +408,7 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=50,
+        n_periods_each_side=70,
         n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=w_wide,
@@ -423,7 +423,7 @@ if __name__ == "__main__":
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
-        use_apodization=False,
+        use_apodization=True,
         center_mod_depth_nm=40.0
     )
 
