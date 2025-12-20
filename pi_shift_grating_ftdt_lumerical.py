@@ -10,7 +10,7 @@ try:
 except ImportError:
     import importlib.util
     # Adjust this path if needed
-    LUMAPI_PATH = r"C:\\Program Files\\Lumerical\\v252\\api\\python\\lumapi.py" 
+    LUMAPI_PATH = r"C:\\Program Files\\Lumerical\\v252\\api\\python\\lumapi.py"
     spec = importlib.util.spec_from_file_location("lumapi", LUMAPI_PATH)
     lumapi = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(lumapi)
@@ -30,7 +30,7 @@ class PiShiftBraggFDTD:
                  # NEW GEOMETRY PARAMETERS
                  n_periods_dist_to_port=5,      # Distance from grating edge to port (in pitches)
                  n_wls_dist_port_to_pml=2.0,    # Distance from port to PML (in wavelengths)
-                 
+
                  core_material="Si3N4 (Silicon Nitride) - Luke",
                  clad_material="SiO2 (Glass) - Palik",
                  n_eff_guess=1.55,
@@ -56,7 +56,7 @@ class PiShiftBraggFDTD:
         self.substrate_thickness = substrate_thickness
         self.y_span = y_span
         self.z_span = z_span
-        
+
         self.core_material = core_material
         self.clad_material = clad_material
         self.n_eff_guess = n_eff_guess
@@ -67,21 +67,21 @@ class PiShiftBraggFDTD:
         # --- GEOMETRY CALCULATION ---
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
         self.cavity_length = pitch / 2
-        
+
         # 1. Grating Extent (Half length from x=0)
         # N periods + half the cavity
         self.x_grating_end = (self.n_periods_each_side * self.pitch) + (self.cavity_length / 2.0)
-        
+
         # 2. Port Location
         # User defined: Grating Edge + N pitches
         self.dist_grating_to_port = n_periods_dist_to_port * self.pitch
         self.x_port = self.x_grating_end + self.dist_grating_to_port
-        
+
         # 3. PML Boundary
         # User defined: Port + N wavelengths (using lambda_B as reference)
         self.dist_port_to_pml = n_wls_dist_port_to_pml * self.lambda_B
         self.x_sim_boundary = self.x_port + self.dist_port_to_pml
-        
+
         # Total Simulation Span
         self.sim_x_span = 2.0 * self.x_sim_boundary
 
@@ -101,7 +101,7 @@ class PiShiftBraggFDTD:
         """Create editable copies of materials and apply fit settings."""
         custom_sin = "SiN_custom"
         custom_sio2 = "SiO2_custom"
-        
+
         # (Same material setup script as before)
         script = f'''
         if (haveresult("{custom_sin}", "material")) {{ deletematerial("{custom_sin}"); }}
@@ -166,7 +166,7 @@ class PiShiftBraggFDTD:
 
     def _add_x_aligned_mesh_override(self, cells_per_half_period=5):
         """
-        Mesh override covers the entire simulation x-span now to ensure 
+        Mesh override covers the entire simulation x-span now to ensure
         consistency from port to port.
         """
         fdtd = self.fdtd
@@ -194,7 +194,7 @@ class PiShiftBraggFDTD:
         z_core_center = 0.0
         pitch = self.pitch
         half_pitch = pitch / 2.0
-        
+
         # Helper to draw rectangles
         seg_id = 0
         def add_core_segment(x1, x2, width, name_prefix="core_seg"):
@@ -215,7 +215,7 @@ class PiShiftBraggFDTD:
         # ---------------------------------------------------------
         avg_width = 0.5 * (self.width_narrow + self.width_wide)
         full_depth_edge = self.width_wide - self.width_narrow
-        
+
         if self.use_apodization:
             full_depth_center = self.center_mod_depth
         else:
@@ -244,19 +244,19 @@ class PiShiftBraggFDTD:
         # ---------------------------------------------------------
         # Build Geometry
         # ---------------------------------------------------------
-        
+
         # Start X drawing position
-        # We draw from Left Grating Edge moving Right. 
+        # We draw from Left Grating Edge moving Right.
         # The Infinite Waveguides are drawn separately.
-        
+
         x_grating_start = -self.x_grating_end
         x = x_grating_start
-        
+
         # A. LEFT INFINITE WAVEGUIDE
         # Extends from PML (with margin) to the start of the grating
         x_pml_left = -self.x_sim_boundary - 1e-6 # Extra 1um into PML
         add_core_segment(x_pml_left, x_grating_start, self.width_narrow, name_prefix="wg_left_inf")
-        
+
         # B. Left Grating
         for d in range(n_total, 0, -1):
             w_n, w_w = W_narrow[d], W_wide[d]
@@ -266,13 +266,13 @@ class PiShiftBraggFDTD:
             x1 = x; x2 = x1 + half_pitch
             add_core_segment(x1, x2, w_w, name_prefix=f"L_wide_{d}")
             x = x2
-            
+
         # C. Cavity
         w_cavity = W_narrow[1]
         x1 = x; x2 = x1 + self.cavity_length
         add_core_segment(x1, x2, w_cavity, name_prefix="cavity")
         x = x2
-        
+
         # D. Right Grating
         for d in range(1, n_total + 1):
             w_n, w_w = W_narrow[d], W_wide[d]
@@ -282,7 +282,7 @@ class PiShiftBraggFDTD:
             x1 = x; x2 = x1 + half_pitch
             add_core_segment(x1, x2, w_w, name_prefix=f"R_wide_{d}")
             x = x2
-            
+
         # E. RIGHT INFINITE WAVEGUIDE
         # Extends from current x (end of grating) to PML (with margin)
         x_pml_right = self.x_sim_boundary + 1e-6
@@ -290,11 +290,11 @@ class PiShiftBraggFDTD:
 
     def _add_source_and_monitors(self):
         fdtd = self.fdtd
-        
+
         # Use calculated port positions
         x_Port_1 = -self.x_port
         x_Port_2 = self.x_port
-        
+
         z_center = 0.0
         y_center = 0.0
         monitor_ratio = 1.05
@@ -346,7 +346,7 @@ class PiShiftBraggFDTD:
         S11 = np.conj(S11)
         S21 = np.conj(S21)
         S12 = S21
-        S22 = np.zeros_like(S11) # Assuming symmetry/low reflection from right for simplified T-matrix
+        S22 = S11
 
         R_modal = np.abs(S11)**2
         T_modal = np.abs(S21)**2
@@ -358,14 +358,23 @@ class PiShiftBraggFDTD:
         T21 = np.zeros_like(S11, dtype=complex)
         T22 = np.zeros_like(S11, dtype=complex)
 
-        # Basic T-matrix conversion (S to T)
-        # Avoid division by zero
-        mask = np.abs(S21_c) > 1e-12
-        T11[mask] = 1.0 / S21_c[mask]
-        T12[mask] = -S22[mask] / S21_c[mask]
-        T21[mask] = S11[mask] / S21_c[mask]
-        T22[mask] = S12[mask] - (S11[mask] * S22[mask]) / S21_c[mask]
+        # Left-to-Right T-matrix conversion
+        # Allows chaining: T_total = T3 @ T2 @ T1
+        mask = np.abs(S21_c) > 1e-15
 
+        # Formula: T22 = 1 / S21
+        T22[mask] = 1.0 / S21_c[mask]
+
+        # Formula: T21 = -S11 / S21
+        T21[mask] = -S11[mask] / S21_c[mask]
+
+        # Formula: T12 = S22 / S21
+        T12[mask] = S22[mask] / S21_c[mask]
+
+        # Formula: T11 = S12 - (S11 * S22) / S21
+        T11[mask] = S12[mask] - (S11[mask] * S22[mask]) / S21_c[mask]
+
+        # Stack results
         T_matrix = np.stack([
             np.stack([T11, T12], axis=1),
             np.stack([T21, T22], axis=1)
@@ -378,7 +387,7 @@ class PiShiftBraggFDTD:
         half_w = 0.5 * width_nm * 1e-9
         self.lam_min = center_lambda_m - half_w
         self.lam_max = center_lambda_m + half_w
-        
+
         self.fdtd.switchtolayout()
         self.fdtd.setglobalsource("wavelength start", self.lam_min)
         self.fdtd.setglobalsource("wavelength stop", self.lam_max)
