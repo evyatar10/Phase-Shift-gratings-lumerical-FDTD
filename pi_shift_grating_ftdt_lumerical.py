@@ -3,12 +3,14 @@ import matplotlib.pyplot as plt
 import time
 import os
 import scipy.io as sio
+from scipy.interpolate import interp1d
 
 # Try to import lumapi normally
 try:
     import lumapi
 except ImportError:
     import importlib.util
+
     # Adjust this path if needed
     LUMAPI_PATH = r"C:\\Program Files\\Lumerical\\v252\\api\\python\\lumapi.py"
     spec = importlib.util.spec_from_file_location("lumapi", LUMAPI_PATH)
@@ -28,8 +30,8 @@ class PiShiftBraggFDTD:
                  y_span=4e-6,
                  z_span=8e-6,
                  # NEW GEOMETRY PARAMETERS
-                 n_periods_dist_to_port=5,      # Distance from grating edge to port (in pitches)
-                 n_wls_dist_port_to_pml=2.0,    # Distance from port to PML (in wavelengths)
+                 n_periods_dist_to_port=5,  # Distance from grating edge to port (in pitches)
+                 n_wls_dist_port_to_pml=2.0,  # Distance from port to PML (in wavelengths)
 
                  core_material="Si3N4 (Silicon Nitride) - Luke",
                  clad_material="SiO2 (Glass) - Palik",
@@ -177,7 +179,7 @@ class PiShiftBraggFDTD:
         fdtd.addmesh()
         fdtd.set("name", "mesh_x_aligned")
         fdtd.set("x", 0.0)
-        fdtd.set("x span", self.sim_x_span) # Cover full span
+        fdtd.set("x span", self.sim_x_span)  # Cover full span
         fdtd.set("y", 0.0)
         fdtd.set("y span", self.y_span)
         fdtd.set("z", 0.0)
@@ -197,6 +199,7 @@ class PiShiftBraggFDTD:
 
         # Helper to draw rectangles
         seg_id = 0
+
         def add_core_segment(x1, x2, width, name_prefix="core_seg"):
             nonlocal seg_id
             seg_id += 1
@@ -254,32 +257,37 @@ class PiShiftBraggFDTD:
 
         # A. LEFT INFINITE WAVEGUIDE
         # Extends from PML (with margin) to the start of the grating
-        x_pml_left = -self.x_sim_boundary - 1e-6 # Extra 1um into PML
+        x_pml_left = -self.x_sim_boundary - 1e-6  # Extra 1um into PML
         add_core_segment(x_pml_left, x_grating_start, self.width_narrow, name_prefix="wg_left_inf")
 
         # B. Left Grating
         for d in range(n_total, 0, -1):
             w_n, w_w = W_narrow[d], W_wide[d]
-            x1 = x; x2 = x1 + half_pitch
+            x1 = x
+            x2 = x1 + half_pitch
             add_core_segment(x1, x2, w_n, name_prefix=f"L_narrow_{d}")
             x = x2
-            x1 = x; x2 = x1 + half_pitch
+            x1 = x
+            x2 = x1 + half_pitch
             add_core_segment(x1, x2, w_w, name_prefix=f"L_wide_{d}")
             x = x2
 
         # C. Cavity
         w_cavity = W_narrow[1]
-        x1 = x; x2 = x1 + self.cavity_length
+        x1 = x
+        x2 = x1 + self.cavity_length
         add_core_segment(x1, x2, w_cavity, name_prefix="cavity")
         x = x2
 
         # D. Right Grating
         for d in range(1, n_total + 1):
             w_n, w_w = W_narrow[d], W_wide[d]
-            x1 = x; x2 = x1 + half_pitch
+            x1 = x
+            x2 = x1 + half_pitch
             add_core_segment(x1, x2, w_n, name_prefix=f"R_narrow_{d}")
             x = x2
-            x1 = x; x2 = x1 + half_pitch
+            x1 = x
+            x2 = x1 + half_pitch
             add_core_segment(x1, x2, w_w, name_prefix=f"R_wide_{d}")
             x = x2
 
@@ -305,11 +313,13 @@ class PiShiftBraggFDTD:
         fdtd.set("injection axis", "x")
         fdtd.set("x", x_Port_1)
         fdtd.set("y", y_center)
-        fdtd.set("y span", monitor_ratio*self.y_span)
+        fdtd.set("y span", monitor_ratio * self.y_span)
         fdtd.set("z", z_center)
-        fdtd.set("z span", monitor_ratio*self.z_span)
+        fdtd.set("z span", monitor_ratio * self.z_span)
         fdtd.set("direction", "forward")
         fdtd.set("mode selection", "fundamental mode")
+
+        fdtd.set("frequency dependent profile", 1)
 
         # Port 2 (Monitor)
         fdtd.addport()
@@ -317,11 +327,13 @@ class PiShiftBraggFDTD:
         fdtd.set("injection axis", "x")
         fdtd.set("x", x_Port_2)
         fdtd.set("y", y_center)
-        fdtd.set("y span", monitor_ratio*self.y_span)
+        fdtd.set("y span", monitor_ratio * self.y_span)
         fdtd.set("z", z_center)
-        fdtd.set("z span", monitor_ratio*self.z_span)
+        fdtd.set("z span", monitor_ratio * self.z_span)
         fdtd.set("direction", "backward")
         fdtd.set("mode selection", "fundamental mode")
+
+        fdtd.set("frequency dependent profile", 1)
 
         fdtd.addmovie()
         fdtd.set("name", "movie_xy")
@@ -334,22 +346,33 @@ class PiShiftBraggFDTD:
         fdtd.set("lock aspect ratio", 1)
         fdtd.set("horizontal resolution", 400)
 
-    def get_s_and_t_matrix(self):
-        # Result extraction logic remains identical
+    def get_s_and_t_matrix(self, neff_mat_file=None, correct_phase=True):
+        # 1. Get raw expansion results
         res1 = self.fdtd.getresult("FDTD::ports::Port_1", "expansion for port monitor")
         res2 = self.fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
 
         wl = np.squeeze(res1["lambda"])
-        S11 = np.squeeze(res1["S"])
-        S21 = np.squeeze(res2["S"])
+        S11_raw = np.squeeze(res1["S"])
+        S21_raw = np.squeeze(res2["S"])
 
-        S11 = np.conj(S11)
-        S21 = np.conj(S21)
-        S12 = S21
-        S22 = S11
+        # 2. Optional: Phase Correction (De-embedding)
+        if correct_phase:
+            S11_sim, S21_sim = self._apply_phase_correction(wl, S11_raw, S21_raw, neff_mat_file)
+        else:
+            print("Skipping phase correction (Returning raw S-parameters at Port).")
+            S11_sim = S11_raw
+            S21_sim = S21_raw
 
-        R_modal = np.abs(S11)**2
-        T_modal = np.abs(S21)**2
+        # 3. Physics Conversion (Conjugate for e^-jwt)
+        S11 = np.conj(S11_sim)
+        S21 = np.conj(S21_sim)
+
+        # 4. Physics Assumptions
+        S12 = S21  # Reciprocity
+        S22 = S11  # Symmetry
+
+        R_modal = np.abs(S11) ** 2
+        T_modal = np.abs(S21) ** 2
         Loss_radiation = 1.0 - R_modal - T_modal
 
         S21_c = S21.astype(complex)
@@ -358,29 +381,69 @@ class PiShiftBraggFDTD:
         T21 = np.zeros_like(S11, dtype=complex)
         T22 = np.zeros_like(S11, dtype=complex)
 
-        # Left-to-Right T-matrix conversion
-        # Allows chaining: T_total = T3 @ T2 @ T1
         mask = np.abs(S21_c) > 1e-15
 
-        # Formula: T22 = 1 / S21
+        # T-Matrix (Left-to-Right Propagator)
         T22[mask] = 1.0 / S21_c[mask]
-
-        # Formula: T21 = -S11 / S21
         T21[mask] = -S11[mask] / S21_c[mask]
-
-        # Formula: T12 = S22 / S21
         T12[mask] = S22[mask] / S21_c[mask]
-
-        # Formula: T11 = S12 - (S11 * S22) / S21
         T11[mask] = S12[mask] - (S11[mask] * S22[mask]) / S21_c[mask]
 
-        # Stack results
         T_matrix = np.stack([
             np.stack([T11, T12], axis=1),
             np.stack([T21, T22], axis=1)
         ], axis=1)
 
         return wl, R_modal, T_modal, Loss_radiation, T_matrix, S11, S21
+
+    def _apply_phase_correction(self, wl, S11_raw, S21_raw, neff_mat_file=None):
+        """
+                Loads neff (from file or ports), calculates propagation beta,
+                and removes the phase of the feed waveguides from S-parameters.
+                """
+        # 1. Determine Effective Index (Neff)
+        if neff_mat_file and os.path.exists(neff_mat_file):
+            print(f"Loading external neff data from: {neff_mat_file}")
+            mat_data = sio.loadmat(neff_mat_file)
+
+            # Extract data from .mat
+            wl_fde = np.squeeze(mat_data['wavelengths'])
+            neff_fde = np.squeeze(mat_data['neff_complex'])
+
+            # Interpolate Real and Imag parts separately to be safe
+            interp_real = interp1d(wl_fde, np.real(neff_fde), kind='linear', fill_value="extrapolate")
+            interp_imag = interp1d(wl_fde, np.imag(neff_fde), kind='linear', fill_value="extrapolate")
+
+            neff_interp = interp_real(wl) + 1j * interp_imag(wl)
+            neff1 = neff_interp
+            neff2 = neff_interp
+        else:
+            print("Using FDTD Port neff (internal) for de-embedding.")
+            neff1_data = self.fdtd.getresult("FDTD::ports::Port_1", "neff")
+            neff2_data = self.fdtd.getresult("FDTD::ports::Port_2", "neff")
+            neff1 = np.squeeze(neff1_data["neff"])
+            neff2 = np.squeeze(neff2_data["neff"])
+
+        # 2. Calculate Correction Factors
+        k0 = 2 * np.pi / wl
+        L_feed = self.dist_grating_to_port
+
+        beta1 = k0 * neff1
+        beta2 = k0 * neff2
+
+        # Lumerical (e^-iwt) -> Forward wave is e^(+i beta L)
+        # Correction -> e^(-i beta L)
+        corr_factor_1 = np.exp(-1j * beta1 * L_feed)
+        corr_factor_2 = np.exp(-1j * beta2 * L_feed)
+
+        # 3. Apply Correction
+        # S11: Round trip on Side 1 (2 * L)
+        S11_corr = S11_raw * (corr_factor_1 ** 2)
+
+        # S21: One trip left + One trip right
+        S21_corr = S21_raw * corr_factor_1 * corr_factor_2
+
+        return S11_corr, S21_corr
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
@@ -400,10 +463,13 @@ class PiShiftBraggFDTD:
         except Exception:
             pass
 
+
 if __name__ == "__main__":
     # ------------------------------------------------------------------
     # Saving Location
     base_save_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\18_12"
+    # neff vs wavlength at uniform section
+    neff_mat_path = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl\results\FDE_sweep_results.mat"
 
     # Simulation Parameters
     lambda_res_est = 1.573e-6
@@ -417,7 +483,7 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=70,
+        n_periods_each_side=50,
         n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=w_wide,
@@ -425,8 +491,8 @@ if __name__ == "__main__":
         substrate_thickness=4e-6,
         y_span=w_wide + 1.8 * lambda_res_est,
         z_span=core_h + 1.8 * lambda_res_est,
-        n_periods_dist_to_port=20,   # Distance from grating edge to Port
-        n_wls_dist_port_to_pml=2.0, # Distance from Port to PML (wavelengths)
+        n_periods_dist_to_port=20,  # Distance from grating edge to Port
+        n_wls_dist_port_to_pml=2.0,  # Distance from Port to PML (wavelengths)
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
         n_eff_guess=1.55,
@@ -468,7 +534,11 @@ if __name__ == "__main__":
     end = time.perf_counter()
     print(f"Simulation time: {end - start:.3f} seconds")
 
-    wl, R_modal, T_modal, Loss_radiation, T_matrix, S11, S21 = sim.get_s_and_t_matrix()
+    wl, R_modal, T_modal, Loss_radiation, T_matrix, S11, S21 = sim.get_s_and_t_matrix(
+        neff_mat_file=neff_mat_path,
+        correct_phase=True  # Set this  False to see raw uncorrected results
+    )
+
     wl_nm = wl * 1e9
 
     mat_data = {
