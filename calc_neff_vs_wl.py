@@ -57,23 +57,42 @@ def run_fde_sweep_builtin(base_dir):
     core_mat_base = "Si3N4 (Silicon Nitride) - Luke"
     clad_mat_base = "SiO2 (Glass) - Palik"
 
+    # --- UPDATED MATERIAL SCRIPT (FIXED) ---
+    # Removed invalid "fit sampled data" property.
+    # Setting "max coefficients" implies fitting the material data.
     script = f'''
+    # 1. Cleanup
     if (haveresult("{custom_sin}", "material")) {{ deletematerial("{custom_sin}"); }}
     if (haveresult("{custom_sio2}", "material")) {{ deletematerial("{custom_sio2}"); }}
 
+    # 2. Copy base materials
     m1 = copymaterial("{core_mat_base}");
     setmaterial(m1, "name", "{custom_sin}");
     m2 = copymaterial("{clad_mat_base}");
     setmaterial(m2, "name", "{custom_sio2}");
 
+    # 3. Set Fit Range (Wavelengths)
     setmaterial("{custom_sin}",  "specify fit range", 1);
     setmaterial("{custom_sio2}", "specify fit range", 1);
     setmaterial("{custom_sin}",  "wavelength min", {lam_min});
     setmaterial("{custom_sin}",  "wavelength max", {lam_max});
     setmaterial("{custom_sio2}", "wavelength min", {lam_min});
     setmaterial("{custom_sio2}", "wavelength max", {lam_max});
+
+    # 4. ENABLE MULTI-COEFFICIENT MODEL (MCM)
+    # Setting "max coefficients" > 0 enables the MCM fitting algorithm.
+    setmaterial("{custom_sin}",  "max coefficients", 10);
+    setmaterial("{custom_sio2}", "max coefficients", 10);
+
+    # Set Tolerance (High quality fit)
+    setmaterial("{custom_sin}",  "tolerance", 0.001);
+    setmaterial("{custom_sio2}", "tolerance", 0.001);
+
+    # 5. Stability Settings
     setmaterial("{custom_sin}",  "make fit passive", 1);
     setmaterial("{custom_sio2}", "make fit passive", 1);
+    setmaterial("{custom_sin}",  "improve numerical stability", 1);
+    setmaterial("{custom_sio2}", "improve numerical stability", 1);
     '''
     mode.eval(script)
 
@@ -103,7 +122,6 @@ def run_fde_sweep_builtin(base_dir):
         mode.set(bc, "PML")
 
     # --- Mesh Settings ---
-    # Using 'maximum mesh step' (0.05 um) for consistent resolution
     mode.set("define y mesh by", "maximum mesh step")
     mode.set("define z mesh by", "maximum mesh step")
     mode.set("dy", 0.05e-6)
@@ -136,18 +154,13 @@ def run_fde_sweep_builtin(base_dir):
     print("6. Extracting data...")
 
     # Get Raw Data
-    # Lumerical frequency sweep stores 'f' (Hz), not 'wavelength'
     freq_Hz = np.squeeze(mode.getdata("frequencysweep", "f"))
     neff_complex = np.squeeze(mode.getdata("frequencysweep", "neff"))
-
-    # Get Loss (Default Lumerical unit is dB/m)
     loss_db_m = np.squeeze(mode.getdata("frequencysweep", "loss"))
 
-    # --- UNIT CONVERSIONS ---
+    # Unit Conversions
     c0 = 299792458.0
     wavelengths_out = c0 / freq_Hz
-
-    # Convert dB/m to dB/cm (Divide by 100)
     loss_db_cm = loss_db_m / 100.0
 
     # Save Layout
@@ -171,7 +184,7 @@ def run_fde_sweep_builtin(base_dir):
     mode.close()
 
     # ------------------------------------------------------------------
-    # 5. PLOTTING WITH DUAL AXIS & CORRECT UNITS
+    # 5. PLOTTING
     # ------------------------------------------------------------------
     print("7. Plotting results...")
 
@@ -181,10 +194,8 @@ def run_fde_sweep_builtin(base_dir):
 
     plt.figure(figsize=(10, 8))
 
-    # --- SUBPLOT 1: Complex Effective Index (Dual Axis) ---
+    # --- SUBPLOT 1: Complex Effective Index ---
     ax1 = plt.subplot(2, 1, 1)
-
-    # Left Axis: Real Part
     color_real = 'tab:blue'
     lns1 = ax1.plot(wl_um, neff_real, color=color_real, marker='.', label=r"Re($n_{eff}$)")
     ax1.set_xlabel(r"Wavelength ($\mu m$)")
@@ -192,26 +203,24 @@ def run_fde_sweep_builtin(base_dir):
     ax1.tick_params(axis='y', labelcolor=color_real)
     ax1.grid(True, linestyle='--', alpha=0.5)
 
-    # Right Axis: Imaginary Part
     ax2 = ax1.twinx()
     color_imag = 'tab:orange'
     lns2 = ax2.plot(wl_um, neff_imag, color=color_imag, marker='x', linestyle='--', label=r"Im($n_{eff}$)")
     ax2.set_ylabel("Imaginary Part", color=color_imag, fontsize=12)
     ax2.tick_params(axis='y', labelcolor=color_imag)
 
-    # Combined Legend
     lns = lns1 + lns2
     labs = [l.get_label() for l in lns]
     ax1.legend(lns, labs, loc='center right')
 
     plt.title("Complex Effective Index vs Wavelength")
 
-    # --- SUBPLOT 2: Loss (dB/cm) ---
+    # --- SUBPLOT 2: Loss ---
     plt.subplot(2, 1, 2)
     plt.plot(wl_um, loss_db_cm, 'r.-', linewidth=2)
     plt.title("Propagation Loss vs Wavelength")
     plt.xlabel(r"Wavelength ($\mu m$)")
-    plt.ylabel("Loss (dB/cm)")  # Now matches the converted data
+    plt.ylabel("Loss (dB/cm)")
     plt.grid(True, which='both', linestyle='--', alpha=0.7)
 
     plt.tight_layout()

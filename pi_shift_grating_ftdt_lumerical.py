@@ -389,10 +389,10 @@ class PiShiftBraggFDTD:
         T12[mask] = S22[mask] / S21_c[mask]
         T11[mask] = S12[mask] - (S11[mask] * S22[mask]) / S21_c[mask]
 
-        T_matrix = np.stack([
-            np.stack([T11, T12], axis=1),
-            np.stack([T21, T22], axis=1)
-        ], axis=1)
+        T_matrix = np.array([
+            [T11, T12],
+            [T21, T22]
+        ])
 
         return wl, R_modal, T_modal, Loss_radiation, T_matrix, S11, S21
 
@@ -467,7 +467,7 @@ class PiShiftBraggFDTD:
 if __name__ == "__main__":
     # ------------------------------------------------------------------
     # Saving Location
-    base_save_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\18_12"
+    base_save_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\version_for_CMT"
     # neff vs wavlength at uniform section
     neff_mat_path = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl\results\FDE_sweep_results.mat"
 
@@ -483,8 +483,8 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=50,
-        n_apod_periods_each_side=10,
+        n_periods_each_side=60,
+        n_apod_periods_each_side=5,
         width_narrow=700e-9,
         width_wide=w_wide,
         core_height=core_h,
@@ -541,6 +541,8 @@ if __name__ == "__main__":
 
     wl_nm = wl * 1e9
 
+    device_len_m = 2.0 * sim.x_grating_end;
+
     mat_data = {
         'wl_m': wl,
         'wl_nm': wl_nm,
@@ -549,7 +551,8 @@ if __name__ == "__main__":
         'loss': Loss_radiation,
         'T_matrix': T_matrix,
         'S11_complex': S11,
-        'S21_complex': S21
+        'S21_complex': S21,
+        'L_device': device_len_m
     }
 
     sio.savemat(results_path, mat_data)
