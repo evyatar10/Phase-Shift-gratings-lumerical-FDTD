@@ -21,7 +21,7 @@ def run_fde_sweep_builtin(base_dir):
     # 1. PARAMETERS
     # ------------------------------------------------------------------
     # Core dimensions
-    width_nm = 700e-9
+    width_nm = 900e-9
     height_nm = 350e-9
 
     # Sweep settings
@@ -99,11 +99,11 @@ def run_fde_sweep_builtin(base_dir):
     # --- Geometry ---
     mode.addrect()
     mode.set("name", "waveguide")
-    mode.set("x", 0);
+    mode.set("x", 0)
     mode.set("x span", 1e-6)
-    mode.set("y", 0);
+    mode.set("y", 0)
     mode.set("y span", width_nm)
-    mode.set("z", 0);
+    mode.set("z", 0)
     mode.set("z span", height_nm)
     mode.set("material", custom_sin)
 
@@ -111,9 +111,9 @@ def run_fde_sweep_builtin(base_dir):
     mode.addfde()
     mode.set("solver type", "2D X normal")
     mode.set("x", 0)
-    mode.set("y", 0);
+    mode.set("y", 0)
     mode.set("y span", y_span)
-    mode.set("z", 0);
+    mode.set("z", 0)
     mode.set("z span", z_span)
     mode.set("background material", custom_sio2)
 

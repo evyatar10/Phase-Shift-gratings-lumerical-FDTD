@@ -358,6 +358,22 @@ class PiShiftBraggFDTD:
         # 2. Optional: Phase Correction (De-embedding)
         if correct_phase:
             S11_sim, S21_sim = self._apply_phase_correction(wl, S11_raw, S21_raw, neff_mat_file)
+            # A. Define the Reference Bragg Wavenumber (beta_0)
+            #    This is the reference frame your CMT code uses.
+            beta_0 = np.pi / sim.pitch
+
+            # B. Get the total physical length of the device
+            device_len_m = 2.0 * sim.x_grating_end
+
+            # 3. Correction Factor
+            envelope_correction = np.exp(-1j * beta_0 * device_len_m)
+
+            # D. Apply to Transmission (S21 / S12)
+            #    We do NOT apply this to Reflection (S11) because reflection is
+            #    referenced to the input port (z=0), so the relative phase is local.
+            S21_sim = S21_sim * envelope_correction
+
+
         else:
             print("Skipping phase correction (Returning raw S-parameters at Port).")
             S11_sim = S11_raw
@@ -483,7 +499,7 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=60,
+        n_periods_each_side=40,
         n_apod_periods_each_side=5,
         width_narrow=700e-9,
         width_wide=w_wide,
@@ -498,7 +514,7 @@ if __name__ == "__main__":
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
-        use_apodization=True,
+        use_apodization=False,
         center_mod_depth_nm=40.0
     )
 
@@ -539,9 +555,17 @@ if __name__ == "__main__":
         correct_phase=True  # Set this  False to see raw uncorrected results
     )
 
+    # ---------------------------------------------------------
+    # NEW: Convert to "Envelope Frame" for CMT
+    # ---------------------------------------------------------
+
+
+
+    # ---------------------------------------------------------
+
     wl_nm = wl * 1e9
 
-    device_len_m = 2.0 * sim.x_grating_end;
+    device_len_m = 2.0 * sim.x_grating_end
 
     mat_data = {
         'wl_m': wl,
