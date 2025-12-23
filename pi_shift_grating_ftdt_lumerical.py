@@ -355,31 +355,17 @@ class PiShiftBraggFDTD:
         S11_raw = np.squeeze(res1["S"])
         S21_raw = np.squeeze(res2["S"])
 
-        # 2. Optional: Phase Correction (De-embedding)
+        # 2. Phase Correction (De-embedding + Auto-Calibration)
         if correct_phase:
+            # Now returns the fully calibrated S-parameters (Phase=0 at resonance)
             S11_sim, S21_sim = self._apply_phase_correction(wl, S11_raw, S21_raw, neff_mat_file)
-            # A. Define the Reference Bragg Wavenumber (beta_0)
-            #    This is the reference frame your CMT code uses.
-            beta_0 = np.pi / sim.pitch
-
-            # B. Get the total physical length of the device
-            device_len_m = 2.0 * sim.x_grating_end
-
-            # 3. Correction Factor
-            envelope_correction = np.exp(-1j * beta_0 * device_len_m)
-
-            # D. Apply to Transmission (S21 / S12)
-            #    We do NOT apply this to Reflection (S11) because reflection is
-            #    referenced to the input port (z=0), so the relative phase is local.
-            S21_sim = S21_sim * envelope_correction
-
-
         else:
             print("Skipping phase correction (Returning raw S-parameters at Port).")
             S11_sim = S11_raw
             S21_sim = S21_raw
 
         # 3. Physics Conversion (Conjugate for e^-jwt)
+        #    S21_sim already has 0 phase at peak, so conjugation keeps it at 0.
         S11 = np.conj(S11_sim)
         S21 = np.conj(S21_sim)
 
@@ -414,50 +400,70 @@ class PiShiftBraggFDTD:
 
     def _apply_phase_correction(self, wl, S11_raw, S21_raw, neff_mat_file=None):
         """
-                Loads neff (from file or ports), calculates propagation beta,
-                and removes the phase of the feed waveguides from S-parameters.
-                """
-        # 1. Determine Effective Index (Neff)
+        1. De-embeds feed waveguides.
+        2. Removes theoretical carrier phase (Slope Correction).
+        3. Tunes Phase to exactly -0.5 * pi (-90 deg).
+        """
+        # --- A. Standard De-embedding ---
         if neff_mat_file and os.path.exists(neff_mat_file):
             print(f"Loading external neff data from: {neff_mat_file}")
             mat_data = sio.loadmat(neff_mat_file)
-
-            # Extract data from .mat
             wl_fde = np.squeeze(mat_data['wavelengths'])
             neff_fde = np.squeeze(mat_data['neff_complex'])
-
-            # Interpolate Real and Imag parts separately to be safe
             interp_real = interp1d(wl_fde, np.real(neff_fde), kind='linear', fill_value="extrapolate")
             interp_imag = interp1d(wl_fde, np.imag(neff_fde), kind='linear', fill_value="extrapolate")
-
             neff_interp = interp_real(wl) + 1j * interp_imag(wl)
-            neff1 = neff_interp
+            neff1 = neff_interp;
             neff2 = neff_interp
         else:
             print("Using FDTD Port neff (internal) for de-embedding.")
             neff1_data = self.fdtd.getresult("FDTD::ports::Port_1", "neff")
             neff2_data = self.fdtd.getresult("FDTD::ports::Port_2", "neff")
-            neff1 = np.squeeze(neff1_data["neff"])
+            neff1 = np.squeeze(neff1_data["neff"]);
             neff2 = np.squeeze(neff2_data["neff"])
 
-        # 2. Calculate Correction Factors
         k0 = 2 * np.pi / wl
         L_feed = self.dist_grating_to_port
-
-        beta1 = k0 * neff1
+        beta1 = k0 * neff1;
         beta2 = k0 * neff2
-
-        # Lumerical (e^-iwt) -> Forward wave is e^(+i beta L)
-        # Correction -> e^(-i beta L)
         corr_factor_1 = np.exp(-1j * beta1 * L_feed)
         corr_factor_2 = np.exp(-1j * beta2 * L_feed)
-
-        # 3. Apply Correction
-        # S11: Round trip on Side 1 (2 * L)
         S11_corr = S11_raw * (corr_factor_1 ** 2)
-
-        # S21: One trip left + One trip right
         S21_corr = S21_raw * corr_factor_1 * corr_factor_2
+
+        # --- B. Slope Correction (Keep Enabled) ---
+        beta_0 = np.pi / self.pitch
+        device_len_m = 2.0 * self.x_grating_end
+        slope_correction = np.exp(-1j * beta_0 * device_len_m)
+        S21_corr = S21_corr * slope_correction
+
+        # --- C. Target Phase Correction (-PI/2) ---
+        # 1. Find Peak
+        idx_peak = np.argmax(np.abs(S21_corr))
+
+        # 2. Define Target (-0.5 * pi)
+        target_phase = +0.5 * np.pi
+
+        # 3. Calculate Current Phase (Wrapped to +/- pi)
+        current_phase_s21 = np.angle(S21_corr[idx_peak])
+        current_phase_s11 = np.angle(S11_corr[idx_peak])
+
+        # 4. Calculate Difference
+        # Using exp(1j * diff) handles the wrapping automatically
+        delta_s21 = np.exp(1j * (target_phase - current_phase_s21))
+        delta_s11 = np.exp(1j * (target_phase - current_phase_s11))
+
+        # 5. Apply Correction
+        S21_corr = S21_corr * delta_s21
+        S11_corr = S11_corr * delta_s11
+
+        # --- VERIFICATION ---
+        final_phase = np.angle(S21_corr[idx_peak])
+        print(f"Phase Correction Summary:")
+        print(f"  Target: -0.50 pi")
+        print(f"  Result: {final_phase / np.pi:.2f} pi")
+        # Note: If result is -0.5pi, you are good.
+        # If result is +1.5pi (unwrapped), that is the same phase.
 
         return S11_corr, S21_corr
 
@@ -500,7 +506,7 @@ if __name__ == "__main__":
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
         n_periods_each_side=40,
-        n_apod_periods_each_side=5,
+        n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=w_wide,
         core_height=core_h,
@@ -514,7 +520,7 @@ if __name__ == "__main__":
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
-        use_apodization=False,
+        use_apodization=True,
         center_mod_depth_nm=40.0
     )
 
@@ -554,14 +560,6 @@ if __name__ == "__main__":
         neff_mat_file=neff_mat_path,
         correct_phase=True  # Set this  False to see raw uncorrected results
     )
-
-    # ---------------------------------------------------------
-    # NEW: Convert to "Envelope Frame" for CMT
-    # ---------------------------------------------------------
-
-
-
-    # ---------------------------------------------------------
 
     wl_nm = wl * 1e9
 
