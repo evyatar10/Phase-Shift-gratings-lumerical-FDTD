@@ -424,7 +424,7 @@ class PiShiftBraggFDTD:
 
         k0 = 2 * np.pi / wl
         L_feed = self.dist_grating_to_port
-        beta1 = k0 * neff1;
+        beta1 = k0 * neff1
         beta2 = k0 * neff2
         corr_factor_1 = np.exp(-1j * beta1 * L_feed)
         corr_factor_2 = np.exp(-1j * beta2 * L_feed)
@@ -439,28 +439,29 @@ class PiShiftBraggFDTD:
 
         # --- C. Target Phase Correction (-PI/2) ---
         # 1. Find Peak
-        idx_peak = np.argmax(np.abs(S21_corr))
+        idx_peak_21 = np.argmax(np.abs(S21_corr))
+        idx_peak_11 = np.argmax(np.abs(S11_corr))
 
-        # 2. Define Target (-0.5 * pi)
-        target_phase = +0.5 * np.pi
+        # 2. Define Target (-0.5 * pi)-> conj=0.5 * pi
+        target_phase = 0.5 * np.pi
 
-        # 3. Calculate Current Phase (Wrapped to +/- pi)
-        current_phase_s21 = np.angle(S21_corr[idx_peak])
-        current_phase_s11 = np.angle(S11_corr[idx_peak])
+        # 3. Calculate Current Phase
+        current_phase_s21 = np.angle(S21_corr[idx_peak_21])
+        current_phase_s11 = np.angle(S11_corr[idx_peak_11])
 
         # 4. Calculate Difference
         # Using exp(1j * diff) handles the wrapping automatically
         delta_s21 = np.exp(1j * (target_phase - current_phase_s21))
-        delta_s11 = np.exp(1j * (target_phase - current_phase_s11))
+        delta_s11 = np.exp(1j * (target_phase - current_phase_s21))
 
         # 5. Apply Correction
         S21_corr = S21_corr * delta_s21
         S11_corr = S11_corr * delta_s11
 
         # --- VERIFICATION ---
-        final_phase = np.angle(S21_corr[idx_peak])
+        final_phase = np.angle(S21_corr[idx_peak_21])
         print(f"Phase Correction Summary:")
-        print(f"  Target: -0.50 pi")
+        print(f"  Target: 0.50 pi")
         print(f"  Result: {final_phase / np.pi:.2f} pi")
         # Note: If result is -0.5pi, you are good.
         # If result is +1.5pi (unwrapped), that is the same phase.
@@ -505,7 +506,7 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=40,
+        n_periods_each_side=60,
         n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=w_wide,
@@ -520,7 +521,7 @@ if __name__ == "__main__":
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
-        use_apodization=True,
+        use_apodization=False,
         center_mod_depth_nm=40.0
     )
 
