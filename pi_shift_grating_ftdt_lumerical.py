@@ -439,34 +439,105 @@ class PiShiftBraggFDTD:
 
         # --- C. Target Phase Correction (-PI/2) ---
         # 1. Find Peak
-        idx_peak_21 = np.argmax(np.abs(S21_corr))
-        idx_peak_11 = np.argmax(np.abs(S11_corr))
+        #idx_peak_21 = np.argmax(np.abs(S21_corr))
+        #idx_peak_11 = np.argmax(np.abs(S11_corr))
 
         # 2. Define Target (-0.5 * pi)-> conj=0.5 * pi
-        target_phase = 0.5 * np.pi
+        #target_phase = 0.5 * np.pi
 
         # 3. Calculate Current Phase
-        current_phase_s21 = np.angle(S21_corr[idx_peak_21])
-        current_phase_s11 = np.angle(S11_corr[idx_peak_11])
+        #current_phase_s21 = np.angle(S21_corr[idx_peak_21])
+        #current_phase_s11 = np.angle(S11_corr[idx_peak_11])
 
         # 4. Calculate Difference
         # Using exp(1j * diff) handles the wrapping automatically
-        delta_s21 = np.exp(1j * (target_phase - current_phase_s21))
-        delta_s11 = np.exp(1j * (target_phase - current_phase_s21))
+        #delta_s21 = np.exp(1j * (target_phase - current_phase_s21))
+        #delta_s11 = np.exp(1j * (target_phase - current_phase_s21))
 
         # 5. Apply Correction
-        S21_corr = S21_corr * delta_s21
-        S11_corr = S11_corr * delta_s11
+        #S21_corr = S21_corr * delta_s21
+        #S11_corr = S11_corr * delta_s11
+
+        # --- C. Intersection-Based Phase Correction (Using Helper) ---
+        S11_corr, S21_corr = self.align_phases_at_intersection(
+            wl, S11_corr, S21_corr, target_phase=0.5 * np.pi
+        )
 
         # --- VERIFICATION ---
-        final_phase = np.angle(S21_corr[idx_peak_21])
-        print(f"Phase Correction Summary:")
-        print(f"  Target: 0.50 pi")
-        print(f"  Result: {final_phase / np.pi:.2f} pi")
+        #final_phase = np.angle(S21_corr[idx_peak_21])
+        #print(f"Phase Correction Summary:")
+        #print(f"  Target: 0.50 pi")
+        #print(f"  Result: {final_phase / np.pi:.2f} pi")
         # Note: If result is -0.5pi, you are good.
         # If result is +1.5pi (unwrapped), that is the same phase.
 
         return S11_corr, S21_corr
+
+    def align_phases_at_intersection(self ,wl, S11, S21, target_phase=0.5 * np.pi):
+        """
+        Finds the wavelength where the phases of S11 and S21 intersect (closest
+        to the S21 resonance peak), interpolates the exact phase value there,
+        and applies a single phase correction to both signals so that the
+        intersection phase equals target_phase.
+        """
+        # 1. Find Resonance (Peak of S21 magnitude) as the anchor point
+        idx_peak_21 = np.argmax(np.abs(S21))
+
+        # 2. Find Intersection of phases
+        # Mathematically, phase(S11) == phase(S21) is where angle(S11 / S21) == 0.
+        # This robustly handles wrapping issues.
+        rel_phase = np.angle(S11 / S21)
+
+        # Find indices where relative phase crosses zero
+        sign_changes = np.where(rel_phase[:-1] * rel_phase[1:] <= 0)[0]
+
+        intersection_phase_val = 0.0
+
+        if len(sign_changes) == 0:
+            print("Warning: No phase intersection found. Defaulting to peak S21 phase.")
+            intersection_phase_val = np.angle(S21[idx_peak_21])
+        else:
+            # 3. Select the crossing closest to the Resonance Wavelength
+            dist_to_peak = np.abs(sign_changes - idx_peak_21)
+            closest_idx_idx = np.argmin(dist_to_peak)
+            idx_cross = sign_changes[closest_idx_idx]
+
+            # 4. Linear Interpolation for "Exact" Intersection Value
+            # Get relative phase values straddling the zero-crossing
+            y1 = rel_phase[idx_cross]
+            y2 = rel_phase[idx_cross + 1]
+
+            # Calculate fraction 'f' (0 to 1) where crossing occurs
+            if np.abs(y2 - y1) < 1e-12:
+                f = 0.5
+            else:
+                f = -y1 / (y2 - y1)
+
+            # Interpolate the ACTUAL phase of S21 at this fractional index
+            p1 = np.angle(S21[idx_cross])
+            p2 = np.angle(S21[idx_cross + 1])
+
+            # Handle 2pi wrapping for interpolation safety (though rare near pi/2)
+            if p2 - p1 > np.pi:
+                p2 -= 2 * np.pi
+            elif p1 - p2 > np.pi:
+                p1 -= 2 * np.pi
+
+            intersection_phase_val = p1 + f * (p2 - p1)
+
+            # Debug print
+            print(f"  Intersection found near index {idx_cross} (Resonance at {idx_peak_21})")
+            print(f"  Uncorrected Phase at intersection: {intersection_phase_val / np.pi:.3f} pi")
+
+        # 5. Calculate Correction
+        delta_phase = target_phase - intersection_phase_val
+        correction_phasor = np.exp(1j * delta_phase)
+
+        # 6. Apply to both
+        S11_corrected = S11 * correction_phasor
+        S21_corrected = S21 * correction_phasor
+
+        return S11_corrected, S21_corrected
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
