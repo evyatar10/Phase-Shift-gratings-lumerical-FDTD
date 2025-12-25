@@ -11,6 +11,7 @@ from scipy.signal import find_peaks
 try:
     import lumapi
 except ImportError:
+    # Adjust path if needed
     LUMAPI_PATH = r"C:\\Program Files\\Lumerical\\v252\\api\\python\\lumapi.py"
     if os.path.exists(LUMAPI_PATH):
         spec = importlib.util.spec_from_file_location("lumapi", LUMAPI_PATH)
@@ -35,9 +36,11 @@ class GroupIndexSolver:
         mode.switchtolayout()
         mode.deleteall()
 
+        # Build Waveguide
         mode.addrect(name="core", x=0, y=0, z=0, x_span=10e-6, y_span=self.width, z_span=self.height)
         mode.set("material", "Si3N4 (Silicon Nitride) - Luke")
 
+        # FDE Region
         mode.addfde()
         mode.set("solver type", "2D X normal")
         mode.set("x", 0)
@@ -48,6 +51,7 @@ class GroupIndexSolver:
         mode.set("wavelength", self.wl)
         mode.set("background material", "SiO2 (Glass) - Palik")
 
+        # Analysis Settings
         mode.setanalysis("calculate group index", True)
         mode.setanalysis("number of trial modes", 5)
         mode.setanalysis("search", "near n")
@@ -57,6 +61,7 @@ class GroupIndexSolver:
         mode.mesh()
         mode.findmodes()
 
+        # Extract ng
         ng = mode.getdata("FDE::data::mode1", "ng")
         if isinstance(ng, np.ndarray): ng = ng.item()
 
@@ -65,7 +70,7 @@ class GroupIndexSolver:
 
 
 # -----------------------------------------------------------------------------
-# PART 2: FDTD UNIT CELL SIMULATION (With Exact Mesh)
+# PART 2: FDTD UNIT CELL SIMULATION
 # -----------------------------------------------------------------------------
 class BraggKappaFDTD:
     def __init__(self, ng, pitch=500e-9, w_narrow=700e-9, w_wide=900e-9, core_h=350e-9):
@@ -75,6 +80,7 @@ class BraggKappaFDTD:
         self.w_narrow = w_narrow
         self.w_wide = w_wide
         self.core_h = core_h
+        # Simulation time (fs). 10ps is usually sufficient for strong gratings.
         self.sim_time_fs = 10000
 
     def run_simulation(self):
@@ -100,40 +106,18 @@ class BraggKappaFDTD:
         fdtd.set("y max bc", "PML")
         fdtd.set("z min bc", "PML");
         fdtd.set("z max bc", "PML")
-
-        # We can leave auto mesh at 2 because we will use an override
         fdtd.set("mesh accuracy", 2)
         fdtd.set("simulation time", self.sim_time_fs * 1e-15)
+
+        # CRITICAL: Disable Early Shutoff
         fdtd.set("use early shutoff", 0)
 
-        # --- 3. MESH OVERRIDE (CRITICAL FIX) ---
-        # This forces the mesh to align EXACTLY with the period.
-        # pitch = 500nm. dx = 10nm. This gives exactly 50 cells per period.
-        fdtd.addmesh()
-        fdtd.set("name", "mesh_periodic")
-        fdtd.set("x", 0);
-        fdtd.set("x span", self.pitch)
-        fdtd.set("y", 0);
-        fdtd.set("y span", self.w_wide + 1e-6)  # Cover width
-        fdtd.set("z", 0);
-        fdtd.set("z span", self.core_h + 1e-6)  # Cover height
-
-        # Force X mesh steps
-        fdtd.set("override x mesh", 1)
-        fdtd.set("dx", 10e-9)  # 10 nm step (500/10 = 50 cells)
-
-        # Optional: Force Y/Z if you want high precision on mode profile
-        fdtd.set("override y mesh", 1);
-        fdtd.set("dy", 10e-9)
-        fdtd.set("override z mesh", 1);
-        fdtd.set("dz", 10e-9)
-
-        # --- 4. BLOCH SETTINGS ---
+        # --- 3. BLOCH SETTINGS (Band Edge) ---
         fdtd.set("set based on source angle", 0)
         fdtd.set("bloch units", "bandstructure")
         fdtd.set("kx", 0.5)
 
-        # --- 5. SOURCE ---
+        # --- 4. SOURCE (Mode Source) ---
         fdtd.addmode()
         fdtd.set("name", "source")
         fdtd.set("injection axis", "x")
@@ -146,7 +130,7 @@ class BraggKappaFDTD:
         fdtd.set("wavelength start", 1.45e-6)
         fdtd.set("wavelength stop", 1.65e-6)
 
-        # --- 6. MONITORS ---
+        # --- 5. MONITORS (Random Points) ---
         np.random.seed(123)
         n_monitors = 10
         print(f"Adding {n_monitors} random monitors...")
@@ -155,18 +139,20 @@ class BraggKappaFDTD:
             name = f"mon_{i}"
             fdtd.addtime()
             fdtd.set("name", name)
+            # Random position
             fdtd.set("x", (np.random.rand() - 0.5) * self.pitch)
             fdtd.set("y", (np.random.rand() - 0.5) * self.w_wide)
             fdtd.set("z", (np.random.rand() - 0.5) * self.core_h)
 
-        # --- 7. SAVE & RUN ---
-        save_path = os.path.join(os.getcwd(), "unit_cell_exact_mesh.fsp")
+        # --- 6. SAVE & RUN ---
+        save_path = os.path.join(os.getcwd(), "temp_kappa_calc.fsp")
         fdtd.save(save_path)
         print(f"Layout saved to: {save_path}")
+
         print("Running FDTD simulation...")
         fdtd.run()
 
-        # --- 8. EXTRACT ---
+        # --- 7. EXTRACT DATA (WITH WINDOWING) ---
         print("Extracting time signals...")
         f_vec = None
         spectrum_sum = None
@@ -176,19 +162,23 @@ class BraggKappaFDTD:
             name = f"mon_{i}"
             try:
                 if fdtd.havedata(name, "Ex"):
+                    # Use RAW extraction
                     Ex = np.squeeze(fdtd.getdata(name, "Ex"))
                     t = np.squeeze(fdtd.getdata(name, "t"))
 
                     dt = t[1] - t[0]
                     n_samp = len(Ex)
 
-                    # Apply Hanning Window for smooth peaks
+                    # --- APPLY HANNING WINDOW ---
+                    # This smooths the signal and removes "wiggles" from the FFT
                     window = np.hanning(n_samp)
                     Ex_smooth = Ex * window
 
+                    # FFT
                     Y = np.fft.fft(Ex_smooth)
                     f = np.fft.fftfreq(n_samp, d=dt)
 
+                    # Keep positive frequencies
                     mask = f > 0
                     f = f[mask]
                     Y = np.abs(Y[mask])
@@ -203,7 +193,7 @@ class BraggKappaFDTD:
                 pass
 
         if monitors_found == 0:
-            raise RuntimeError("CRITICAL: Failed to extract data.")
+            raise RuntimeError("CRITICAL: Failed to extract data. Simulation might have failed.")
 
         return f_vec, spectrum_sum, self.sim_time_fs
 
@@ -213,59 +203,99 @@ class BraggKappaFDTD:
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
 
+    # PARAMETERS
     pitch = 500e-9
     w_narrow = 700e-9
     w_wide = 900e-9
     w_avg = (w_narrow + w_wide) / 2.0
 
+    # 1. GET GROUP INDEX
     print("--- STEP 1: CALCULATING GROUP INDEX ---")
     fde = GroupIndexSolver(width_avg=w_avg)
     ng = fde.calculate_ng()
+    print(f"Calculated Group Index (ng): {ng:.4f}")
 
-    print(f"\n--- STEP 2: RUNNING FDTD (EXACT MESH) ---")
+    # 2. RUN FDTD
+    print(f"\n--- STEP 2: RUNNING FDTD ---")
     sim = BraggKappaFDTD(ng=ng, pitch=pitch, w_narrow=w_narrow, w_wide=w_wide)
     freq, intensity, t_max_fs = sim.run_simulation()
 
-    # Analyze
+    # 3. ANALYZE DATA
     c = 299792458
+
+    # Define ROI (Region of Interest)
     f_min, f_max = 180e12, 210e12
     mask = (freq > f_min) & (freq < f_max)
     f_roi = freq[mask]
     i_roi = intensity[mask]
 
+    # Find Peaks
     peaks, _ = find_peaks(i_roi, height=np.max(i_roi) * 0.1, distance=5)
 
     if len(peaks) >= 2:
+        # Sort peaks by height and take the top 2
         peak_inds = peaks[np.argsort(i_roi[peaks])][-2:]
         f1, f2 = sorted(f_roi[peak_inds])
 
-        lam1 = c / f2;
-        lam2 = c / f1
+        # --- CALCULATION ---
+        delta_f = f2 - f1
+
+        # Convert to Wavelength
+        lam1 = c / f2  # Low freq = High wavelength
+        lam2 = c / f1  # High freq = Low wavelength
+
         delta_lam = lam2 - lam1
         lam_bragg = (lam1 + lam2) / 2.0
+
+        # Calculate Kappa (using Bragg Wavelength)
+        # Formula: kappa = (pi * ng * delta_lam) / (lambda_B^2)
         kappa = (np.pi * ng * delta_lam) / (lam_bragg ** 2)
+
+        # Calculate dn (Effective Index Perturbation)
+        # Formula: dn = (kappa * lambda_B) / pi
         dn = (kappa * lam_bragg) / np.pi
 
+        # --- RESULTS ---
         print(f"\n" + "=" * 50)
-        print(f"       RESULTS (EXACT MESH ALIGNMENT)")
+        print(f"              SIMULATION RESULTS")
         print(f"=" * 50)
-        print(f"Resonance 1:          {lam1 * 1e9:.2f} nm")
-        print(f"Resonance 2:          {lam2 * 1e9:.2f} nm")
-        print(f"Bragg Wavelength:     {lam_bragg * 1e9:.2f} nm")
+        print(f"Resonance 1 (Upper):  {lam1 * 1e9:.2f} nm")
+        print(f"Resonance 2 (Lower):  {lam2 * 1e9:.2f} nm")
         print(f"-" * 50)
-        print(f"KAPPA:                {kappa:.2e} m^-1")
-        print(f"Index Perturbation:   {dn:.4f}")
+        print(f"Bragg Wavelength:     {lam_bragg * 1e9:.2f} nm")
+        print(f"Bandwidth (Gap):      {delta_lam * 1e9:.2f} nm")
+        print(f"-" * 50)
+        print(f"Coupling Coeff (Kappa): {kappa:.2e} m^-1")
+        print(f"                        {kappa / 100:.1f} cm^-1")
+        print(f"Index Perturbation (dn): {dn:.4f}")
         print(f"=" * 50)
 
+        # --- PLOTTING ---
         lam_roi_nm = (c / f_roi) * 1e9
+
         plt.figure(figsize=(10, 6))
-        plt.plot(lam_roi_nm, i_roi, 'b-', label="Spectrum")
-        plt.plot([lam1 * 1e9, lam2 * 1e9], [i_roi[peak_inds[1]], i_roi[peak_inds[0]]], "rx")
-        plt.axvline(lam_bragg * 1e9, color='k', linestyle='--', label=f"Center: {lam_bragg * 1e9:.1f}nm")
-        plt.xlabel("Wavelength [nm]")
-        plt.ylabel("Intensity [a.u.]")
-        plt.title(f"Kappa = {kappa:.2e} m$^{{-1}}$")
-        plt.legend()
+        plt.plot(lam_roi_nm, i_roi, 'b-', linewidth=1.5, label="Intensity Spectrum")
+
+        # Mark Peaks
+        p1_nm = lam1 * 1e9
+        p2_nm = lam2 * 1e9
+        plt.plot([p1_nm, p2_nm], [i_roi[peak_inds[1]], i_roi[peak_inds[0]]], "rx", markersize=10, label="Resonances")
+
+        # Bragg Center Line
+        plt.axvline(lam_bragg * 1e9, color='k', linestyle='--', linewidth=1.5, label=f"Bragg: {lam_bragg * 1e9:.1f}nm")
+
+        plt.xlabel("Wavelength [nm]", fontsize=12)
+        plt.ylabel("Intensity [a.u.]", fontsize=12)
+        plt.title(f"Bragg Grating Resonance Scan\nKappa = {kappa:.2e} m$^{{-1}}$ | dn = {dn:.4f}", fontsize=14)
+        plt.legend(loc="upper right")
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
         plt.show()
+
     else:
-        print("Could not find peaks.")
+        print("\n[ERROR] Could not find two distinct peaks.")
+        print("Showing raw spectrum for debugging...")
+        lam_roi_nm = (c / f_roi) * 1e9
+        plt.plot(lam_roi_nm, i_roi)
+        plt.xlabel("Wavelength [nm]")
+        plt.show()

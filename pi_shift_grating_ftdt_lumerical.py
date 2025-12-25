@@ -330,7 +330,7 @@ class PiShiftBraggFDTD:
 
         z_center = 0.0
         y_center = 0.0
-        monitor_ratio = 1.1
+        monitor_ratio = 1.2
 
         # Port 1 (Source)
         fdtd.addport()
@@ -438,7 +438,7 @@ class PiShiftBraggFDTD:
             interp_real = interp1d(wl_fde, np.real(neff_fde), kind='linear', fill_value="extrapolate")
             interp_imag = interp1d(wl_fde, np.imag(neff_fde), kind='linear', fill_value="extrapolate")
             neff_interp = interp_real(wl) + 1j * interp_imag(wl)
-            neff1 = neff_interp;
+            neff1 = neff_interp
             neff2 = neff_interp
         else:
             print("Using FDTD Port neff (internal) for de-embedding.")
@@ -501,43 +501,62 @@ class PiShiftBraggFDTD:
     @staticmethod
     def align_phases_at_resonance_peak(wl, S11, S21, target_phase=0.5 * np.pi):
         """
-        Aligns phases by finding the exact Resonance Peak (point of steepest phase slope)
-        and forcing the phase there to match target_phase.
+        Aligns phases by finding the resonance peak using a "Stopband Logic".
 
-        This method ignores crossings and purely anchors to the physics of
-        light trapping (Max Group Delay).
+        Logic:
+        1. Identify the 'stopband' region where Transmission is low (T < 0.5 or T < 0.85).
+        2. Define a search ROI spanning from the first to the last index of this stopband.
+        3. Find the maximum Transmission peak strictly within this ROI.
         """
 
-        # --- 1. Find the Resonance Peak (Max Group Delay) ---
-        # Unwrap phase to calculate continuous slope
-        phi_21_unwrapped = np.unwrap(np.angle(S21))
+        # Calculate Transmission scalar
+        T = np.abs(S21) ** 2
 
-        # Calculate Group Delay (slope of the phase).
-        # We use ABS because we want the steepest change (positive or negative).
-        # This quantity is maximal exactly where the light is trapped in the cavity.
-        group_delay = np.abs(np.gradient(phi_21_unwrapped))
+        # 1. Define Stopband Mask
+        # Primary threshold: Transmission < 0.5
+        is_stopband = T < 0.5
 
-        # Find the index of the maximum slope
-        idx_peak = np.argmax(group_delay)
+        # Fallback threshold: if no points < 0.5, try < 0.85
+        if not np.any(is_stopband):
+            is_stopband = T < 0.85
 
-        # --- 2. Get Phase at that Peak ---
+        # 2. Find Resonance Peak Index
+        if np.any(is_stopband):
+            # Get all indices where T is within the stopband criteria
+            stopband_indices = np.where(is_stopband)[0]
+
+            # Define ROI: Span from the *first* detected stopband point to the *last*
+            # This covers the whole bandgap, including the resonance peak in the middle.
+            idx_start = stopband_indices[0]
+            idx_end = stopband_indices[-1]
+
+            # Extract ROI (add +1 to end because Python slicing is exclusive)
+            T_roi = T[idx_start: idx_end + 1]
+
+            # Find the index of the max value relative to the ROI
+            local_peak_idx = np.argmax(T_roi)
+
+            # Convert back to global index
+            idx_peak = idx_start + local_peak_idx
+        else:
+            # Fallback: if no stopband detected at all, take global max
+            idx_peak = np.argmax(T)
+
+        # 3. Get Phase at that specific Peak
         current_phase_val = np.angle(S21[idx_peak])
 
-        # Debug info
-        # print(f"  Resonance Peak found at index: {idx_peak}")
-        # print(f"  Phase at Peak: {current_phase_val / np.pi:.3f} pi")
+        # Optional: Print to verify it found the right spot
+        # print(f"  Resonance detected at {wl[idx_peak]*1e9:.2f} nm (T={T[idx_peak]:.2f})")
 
-        # --- 3. Calculate Correction ---
-        # We simply shift this specific point to match the target.
+        # 4. Calculate Correction Phasor
         delta_phase = target_phase - current_phase_val
         correction_phasor = np.exp(1j * delta_phase)
 
-        # --- 4. Apply to both ---
+        # 5. Apply Correction to S-parameters
         S11_corrected = S11 * correction_phasor
         S21_corrected = S21 * correction_phasor
 
         return S11_corrected, S21_corrected
-
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
         half_w = 0.5 * width_nm * 1e-9
@@ -576,8 +595,8 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=120,
-        n_apod_periods_each_side=5,
+        n_periods_each_side=60,
+        n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=w_wide,
         core_height=core_h,
@@ -591,7 +610,7 @@ if __name__ == "__main__":
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
-        use_apodization=False,
+        use_apodization=True,
         center_mod_depth_nm=40.0
     )
 
