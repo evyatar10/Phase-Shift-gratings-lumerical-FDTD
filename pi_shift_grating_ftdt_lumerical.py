@@ -162,7 +162,7 @@ class PiShiftBraggFDTD:
         for bc in ["x min bc", "x max bc", "y min bc", "y max bc", "z min bc", "z max bc"]:
             fdtd.set(bc, "PML")
 
-        fdtd.set("simulation time", 10e-12)
+        fdtd.set("simulation time", 50e-12)
         fdtd.set("auto shutoff min", 1e-6)
         fdtd.set("mesh accuracy", 3)
 
@@ -299,13 +299,38 @@ class PiShiftBraggFDTD:
     def _add_source_and_monitors(self):
         fdtd = self.fdtd
 
-        # Use calculated port positions
-        x_Port_1 = -self.x_port
-        x_Port_2 = self.x_port
+        # 1. Retrieve the exact mesh step used in the override
+        #    (Must match logic in _add_x_aligned_mesh_override)
+        cells_per_half_period = 5  # Ensure this matches your default or passed arg
+        half_pitch = 0.5 * self.pitch
+        n_cells_half = max(1, int(cells_per_half_period))
+        dx_mesh = half_pitch / float(n_cells_half)
+
+        # 2. Calculate the theoretical distance (Grating Edge -> Port)
+        dist_theoretical = self.dist_grating_to_port
+
+        # 3. SNAP this distance to the nearest mesh line
+        #    This forces the port to sit exactly on a grid boundary.
+        dist_snapped = round(dist_theoretical / dx_mesh) * dx_mesh
+
+        # 4. Update the class property so de-embedding uses this REAL distance
+        #    (Crucial: De-embedding math must match FDTD geometry)
+        self.dist_grating_to_port = dist_snapped
+
+        # 5. Define Port Positions relative to Grating Edges
+        #    Left Port = -(Grating End + Distance)
+        #    Right Port = +(Grating End + Distance)
+        #    Since x_grating_end is already snapped (it's N*pitch + pitch/2),
+        #    adding a snapped distance ensures global alignment.
+        x_Port_1 = -(self.x_grating_end + dist_snapped)
+        x_Port_2 = (self.x_grating_end + dist_snapped)
+
+        # Update x_port for reference, though x_Port_1/2 are used below
+        self.x_port = self.x_grating_end + dist_snapped
 
         z_center = 0.0
         y_center = 0.0
-        monitor_ratio = 1.05
+        monitor_ratio = 1.1
 
         # Port 1 (Source)
         fdtd.addport()
@@ -344,7 +369,7 @@ class PiShiftBraggFDTD:
         fdtd.set("y span", self.y_span)
         fdtd.set("z", 0.0)
         fdtd.set("lock aspect ratio", 1)
-        fdtd.set("horizontal resolution", 400)
+        fdtd.set("horizontal resolution", 600)
 
     def get_s_and_t_matrix(self, neff_mat_file=None, correct_phase=True):
         # 1. Get raw expansion results
@@ -419,7 +444,7 @@ class PiShiftBraggFDTD:
             print("Using FDTD Port neff (internal) for de-embedding.")
             neff1_data = self.fdtd.getresult("FDTD::ports::Port_1", "neff")
             neff2_data = self.fdtd.getresult("FDTD::ports::Port_2", "neff")
-            neff1 = np.squeeze(neff1_data["neff"]);
+            neff1 = np.squeeze(neff1_data["neff"])
             neff2 = np.squeeze(neff2_data["neff"])
 
         k0 = 2 * np.pi / wl
@@ -551,8 +576,8 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=60,
-        n_apod_periods_each_side=10,
+        n_periods_each_side=120,
+        n_apod_periods_each_side=5,
         width_narrow=700e-9,
         width_wide=w_wide,
         core_height=core_h,
@@ -566,7 +591,7 @@ if __name__ == "__main__":
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
-        use_apodization=True,
+        use_apodization=False,
         center_mod_depth_nm=40.0
     )
 
