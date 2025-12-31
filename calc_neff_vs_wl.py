@@ -9,225 +9,209 @@ try:
 except ImportError:
     import importlib.util
 
-    # Adjust path if necessary to match your installation
+    # Adjust this path if needed
     LUMAPI_PATH = r"C:\\Program Files\\Lumerical\\v252\\api\\python\\lumapi.py"
     spec = importlib.util.spec_from_file_location("lumapi", LUMAPI_PATH)
     lumapi = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(lumapi)
 
 
-def run_fde_sweep_builtin(base_dir):
-    # ------------------------------------------------------------------
-    # 1. PARAMETERS
-    # ------------------------------------------------------------------
-    # Core dimensions
-    width_nm = 900e-9
-    height_nm = 350e-9
+class NeffSweeper:
+    def __init__(self,
+                 width=700e-9,
+                 height=350e-9,
+                 wl_start=1.5e-6,
+                 wl_stop=1.6e-6,
+                 n_points=100,
+                 # MATERIALS
+                 material_db_path=None,  # <--- NEW: Path to .mdf file
+                 core_material="Si3N4 (Silicon Nitride) - Luke",  # Default (Standard)
+                 clad_material="SiO2 (Glass) - Palik"):  # Default (Standard)
 
-    # Sweep settings
-    center_lambda = 1.573e-6
-    scan_width_nm = 40.0
-    n_points = 10
+        self.width = width
+        self.height = height
+        self.wl_start = wl_start
+        self.wl_stop = wl_stop
+        self.n_points = n_points
 
-    # --- DYNAMIC SPAN CALCULATION ---
-    # Formula: Core Dimension + 1.8 * Center Wavelength
-    y_span = width_nm + (1.8 * center_lambda)
-    z_span = height_nm + (1.8 * center_lambda)
+        self.material_db_path = material_db_path
+        self.core_material = core_material
+        self.clad_material = clad_material
 
-    half_w = 0.5 * scan_width_nm * 1e-9
-    lam_min = center_lambda - half_w
-    lam_max = center_lambda + half_w
+        # Initialize MODE solver
+        self.mode = lumapi.MODE()
+        self._setup_materials()
 
-    # ------------------------------------------------------------------
-    # 2. SETUP & BUILD
-    # ------------------------------------------------------------------
-    layouts_dir = os.path.join(base_dir, "layouts")
-    results_dir = os.path.join(base_dir, "results")
-    os.makedirs(layouts_dir, exist_ok=True)
-    os.makedirs(results_dir, exist_ok=True)
+    def _setup_materials(self):
+        """
+        Creates 'SiN_custom' and 'SiO2_custom' from either standard lib
+        or Custom LGT DB, and applies robust fitting settings.
+        """
+        # 1. Determine Source Material Names (LGT vs Standard)
+        if self.material_db_path and os.path.exists(self.material_db_path):
+            print(f"Importing material DB from: {self.material_db_path}")
+            self.mode.importmaterialdb(self.material_db_path)
+            # Use Ligentec names found in your config_params.py
+            src_core = 'LGT Si3N4 Sellmeier'
+            src_clad = 'LGT SiO2 Sellmeier'
+        else:
+            print("Using Standard Library materials (Luke/Palik).")
+            src_core = self.core_material
+            src_clad = self.clad_material
 
-    layout_path = os.path.join(layouts_dir, "FDE_sweep_builtin.lms")
-    result_path = os.path.join(results_dir, "FDE_sweep_results.mat")
+        custom_sin = "SiN_custom"
+        custom_sio2 = "SiO2_custom"
 
-    mode = lumapi.MODE()
+        # 2. Script to Copy Source -> Custom and Apply Fits
+        # (This logic is identical to the FDTD script)
+        script = f'''
+        if (haveresult("{custom_sin}", "material")) {{ deletematerial("{custom_sin}"); }}
+        if (haveresult("{custom_sio2}", "material")) {{ deletematerial("{custom_sio2}"); }}
 
-    # --- Materials Setup ---
-    custom_sin = "SiN_custom"
-    custom_sio2 = "SiO2_custom"
-    core_mat_base = "Si3N4 (Silicon Nitride) - Luke"
-    clad_mat_base = "SiO2 (Glass) - Palik"
+        m1 = copymaterial("{src_core}");
+        setmaterial(m1, "name", "{custom_sin}");
+        m2 = copymaterial("{src_clad}");
+        setmaterial(m2, "name", "{custom_sio2}");
 
-    # --- UPDATED MATERIAL SCRIPT (FIXED) ---
-    # Removed invalid "fit sampled data" property.
-    # Setting "max coefficients" implies fitting the material data.
-    script = f'''
-    # 1. Cleanup
-    if (haveresult("{custom_sin}", "material")) {{ deletematerial("{custom_sin}"); }}
-    if (haveresult("{custom_sio2}", "material")) {{ deletematerial("{custom_sio2}"); }}
+        setmaterial("{custom_sin}",  "specify fit range", 1);
+        setmaterial("{custom_sio2}", "specify fit range", 1);
 
-    # 2. Copy base materials
-    m1 = copymaterial("{core_mat_base}");
-    setmaterial(m1, "name", "{custom_sin}");
-    m2 = copymaterial("{clad_mat_base}");
-    setmaterial(m2, "name", "{custom_sio2}");
+        setmaterial("{custom_sin}",  "wavelength min", {self.wl_start});
+        setmaterial("{custom_sin}",  "wavelength max", {self.wl_stop});
+        setmaterial("{custom_sio2}", "wavelength min", {self.wl_start});
+        setmaterial("{custom_sio2}", "wavelength max", {self.wl_stop});
 
-    # 3. Set Fit Range (Wavelengths)
-    setmaterial("{custom_sin}",  "specify fit range", 1);
-    setmaterial("{custom_sio2}", "specify fit range", 1);
-    setmaterial("{custom_sin}",  "wavelength min", {lam_min});
-    setmaterial("{custom_sin}",  "wavelength max", {lam_max});
-    setmaterial("{custom_sio2}", "wavelength min", {lam_min});
-    setmaterial("{custom_sio2}", "wavelength max", {lam_max});
+        setmaterial("{custom_sin}",  "tolerance", 0.001);
+        setmaterial("{custom_sio2}", "tolerance", 0.001);
 
-    # 4. ENABLE MULTI-COEFFICIENT MODEL (MCM)
-    # Setting "max coefficients" > 0 enables the MCM fitting algorithm.
-    setmaterial("{custom_sin}",  "max coefficients", 10);
-    setmaterial("{custom_sio2}", "max coefficients", 10);
+        setmaterial("{custom_sin}",  "make fit passive", 1);
+        setmaterial("{custom_sio2}", "make fit passive", 1);
 
-    # Set Tolerance (High quality fit)
-    setmaterial("{custom_sin}",  "tolerance", 0.001);
-    setmaterial("{custom_sio2}", "tolerance", 0.001);
+        setmaterial("{custom_sin}",  "improve numerical stability", 1);
+        setmaterial("{custom_sio2}", "improve numerical stability", 1);
+        '''
+        self.mode.eval(script)
 
-    # 5. Stability Settings
-    setmaterial("{custom_sin}",  "make fit passive", 1);
-    setmaterial("{custom_sio2}", "make fit passive", 1);
-    setmaterial("{custom_sin}",  "improve numerical stability", 1);
-    setmaterial("{custom_sio2}", "improve numerical stability", 1);
-    '''
-    mode.eval(script)
+        # Update class attributes to point to the CUSTOM names
+        self.core_material = custom_sin
+        self.clad_material = custom_sio2
 
-    # --- Geometry ---
-    mode.addrect()
-    mode.set("name", "waveguide")
-    mode.set("x", 0)
-    mode.set("x span", 1e-6)
-    mode.set("y", 0)
-    mode.set("y span", width_nm)
-    mode.set("z", 0)
-    mode.set("z span", height_nm)
-    mode.set("material", custom_sin)
+    def build_sim(self):
+        self.mode.switchtolayout()
+        self.mode.deleteall()
 
-    # --- FDE Region ---
-    mode.addfde()
-    mode.set("solver type", "2D X normal")
-    mode.set("x", 0)
-    mode.set("y", 0)
-    mode.set("y span", y_span)
-    mode.set("z", 0)
-    mode.set("z span", z_span)
-    mode.set("background material", custom_sio2)
+        # Simulation Region (FDE)
+        self.mode.addfde()
+        self.mode.set("solver type", "2D X normal")
+        self.mode.set("x", 0)
+        self.mode.set("y", 0)
+        self.mode.set("y span", 4e-6)
+        self.mode.set("z", 0)
+        self.mode.set("z span", 4e-6)
+        self.mode.set("wavelength", (self.wl_start + self.wl_stop) / 2)
 
-    # Boundaries
-    for bc in ["y min bc", "y max bc", "z min bc", "z max bc"]:
-        mode.set(bc, "PML")
+        # Substrate
+        self.mode.addrect()
+        self.mode.set("name", "substrate")
+        self.mode.set("material", self.clad_material)
+        self.mode.set("x span", 10e-6)
+        self.mode.set("y span", 10e-6)
+        self.mode.set("z span", 10e-6)
 
-    # --- Mesh Settings ---
-    mode.set("define y mesh by", "maximum mesh step")
-    mode.set("define z mesh by", "maximum mesh step")
-    mode.set("dy", 0.05e-6)
-    mode.set("dz", 0.05e-6)
+        # Core
+        self.mode.addrect()
+        self.mode.set("name", "core")
+        self.mode.set("material", self.core_material)
+        self.mode.set("x span", 10e-6)  # Infinite in X (propagation dir)
+        self.mode.set("y", 0)
+        self.mode.set("y span", self.width)
+        self.mode.set("z", 0)
+        self.mode.set("z span", self.height)
 
-    # ------------------------------------------------------------------
-    # 3. RUN FREQUENCY SWEEP
-    # ------------------------------------------------------------------
-    print(f"1. Setting calculation wavelength to start: {lam_min * 1e6:.4f} um")
-    mode.setanalysis("wavelength", lam_min)
+        # Mesh override for core
+        self.mode.addmesh()
+        self.mode.set("name", "core_mesh")
+        self.mode.set("y", 0)
+        self.mode.set("y span", self.width + 0.5e-6)
+        self.mode.set("z", 0)
+        self.mode.set("z span", self.height + 0.5e-6)
+        self.mode.set("dx", 20e-9)
+        self.mode.set("dy", 20e-9)
+        self.mode.set("dz", 20e-9)
 
-    print("2. Calculating modes at start wavelength...")
-    mode.findmodes()
+    def run_sweep(self):
+        self.mode.run()
+        self.mode.setanalysis("wavelength", self.wl_start)
+        self.mode.findmodes()
+        self.mode.selectmode(1)  # Select fundamental TE usually (check this!)
 
-    print("3. Selecting Fundamental Mode (Mode 1)...")
-    mode.selectmode(1)
+        # Frequency Sweep
+        self.mode.setanalysis("track selected mode", 1)
+        self.mode.setanalysis("detailed dispersion calculation", 0)
+        self.mode.setanalysis("stop wavelength", self.wl_stop)
+        self.mode.setanalysis("number of points", self.n_points)
+        self.mode.frequencysweep()
 
-    print("4. Configuring Frequency Sweep...")
-    mode.setanalysis("track selected mode", 1)
-    mode.setanalysis("detailed dispersion calculation", 1)
-    mode.setanalysis("stop wavelength", lam_max)
-    mode.setanalysis("number of points", n_points)
+        res = self.mode.getdata("frequencysweep", "neff")
+        f = self.mode.getdata("frequencysweep", "f")
+        wl = 299792458 / f
 
-    print(f"5. Running Frequency Sweep ({n_points} points)...")
-    mode.frequencysweep()
+        # Ensure array shapes
+        neff_complex = np.squeeze(res)
+        wl = np.squeeze(wl)
 
-    # ------------------------------------------------------------------
-    # 4. EXTRACT RESULTS
-    # ------------------------------------------------------------------
-    print("6. Extracting data...")
+        # If sweep goes high freq -> low freq, flip it
+        if wl[0] > wl[-1]:
+            wl = np.flip(wl)
+            neff_complex = np.flip(neff_complex)
 
-    # Get Raw Data
-    freq_Hz = np.squeeze(mode.getdata("frequencysweep", "f"))
-    neff_complex = np.squeeze(mode.getdata("frequencysweep", "neff"))
-    loss_db_m = np.squeeze(mode.getdata("frequencysweep", "loss"))
+        return wl, neff_complex
 
-    # Unit Conversions
-    c0 = 299792458.0
-    wavelengths_out = c0 / freq_Hz
-    loss_db_cm = loss_db_m / 100.0
+    def save_results(self, wl, neff, filename):
+        data = {
+            "wavelengths": wl,
+            "neff_complex": neff,
+            "neff_real": np.real(neff),
+            "neff_imag": np.imag(neff)
+        }
+        sio.savemat(filename, data)
+        print(f"Saved Neff data to {filename}")
 
-    # Save Layout
-    mode.save(layout_path)
-    print(f"Layout saved: {layout_path}")
-
-    # Save .mat
-    mat_data = {
-        "wavelengths": wavelengths_out,
-        "frequency": freq_Hz,
-        "neff_complex": neff_complex,
-        "loss_dB_cm": loss_db_cm,
-        "loss_dB_m": loss_db_m,
-        "neff_real": np.real(neff_complex),
-        "neff_imag": np.imag(neff_complex)
-    }
-
-    sio.savemat(result_path, mat_data)
-    print(f"Results saved: {result_path}")
-
-    mode.close()
-
-    # ------------------------------------------------------------------
-    # 5. PLOTTING
-    # ------------------------------------------------------------------
-    print("7. Plotting results...")
-
-    wl_um = wavelengths_out * 1e6
-    neff_real = np.real(neff_complex)
-    neff_imag = np.imag(neff_complex)
-
-    plt.figure(figsize=(10, 8))
-
-    # --- SUBPLOT 1: Complex Effective Index ---
-    ax1 = plt.subplot(2, 1, 1)
-    color_real = 'tab:blue'
-    lns1 = ax1.plot(wl_um, neff_real, color=color_real, marker='.', label=r"Re($n_{eff}$)")
-    ax1.set_xlabel(r"Wavelength ($\mu m$)")
-    ax1.set_ylabel("Real Part", color=color_real, fontsize=12)
-    ax1.tick_params(axis='y', labelcolor=color_real)
-    ax1.grid(True, linestyle='--', alpha=0.5)
-
-    ax2 = ax1.twinx()
-    color_imag = 'tab:orange'
-    lns2 = ax2.plot(wl_um, neff_imag, color=color_imag, marker='x', linestyle='--', label=r"Im($n_{eff}$)")
-    ax2.set_ylabel("Imaginary Part", color=color_imag, fontsize=12)
-    ax2.tick_params(axis='y', labelcolor=color_imag)
-
-    lns = lns1 + lns2
-    labs = [l.get_label() for l in lns]
-    ax1.legend(lns, labs, loc='center right')
-
-    plt.title("Complex Effective Index vs Wavelength")
-
-    # --- SUBPLOT 2: Loss ---
-    plt.subplot(2, 1, 2)
-    plt.plot(wl_um, loss_db_cm, 'r.-', linewidth=2)
-    plt.title("Propagation Loss vs Wavelength")
-    plt.xlabel(r"Wavelength ($\mu m$)")
-    plt.ylabel("Loss (dB/cm)")
-    plt.grid(True, which='both', linestyle='--', alpha=0.7)
-
-    plt.tight_layout()
-    plt.show()
+    def close(self):
+        self.mode.close()
 
 
 if __name__ == "__main__":
-    # Update this path to your folder
-    user_base_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl"
-    run_fde_sweep_builtin(user_base_dir)
+    # --- CONFIGURATION ---
+    base_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl_lgt"
+    if not os.path.exists(base_dir): os.makedirs(base_dir)
+
+    # Path to Custom Material Database (LGT)
+    mdf_path = r'C:\Users\evyat\Lumerical\ron_lumerical_codes\lgt_materials.mdf'
+    # mdf_path = None # Uncomment to use standard materials
+
+    sweeper = NeffSweeper(
+        width=700e-9,  # Narrow width used in grating
+        height=350e-9,  # Core height
+        wl_start=1.54e-6,
+        wl_stop=1.59e-6,
+        n_points=200,
+        material_db_path=mdf_path  # <--- Pass path here
+    )
+
+    sweeper.build_sim()
+    wl, neff = sweeper.run_sweep()
+
+    save_path = os.path.join(base_dir, "FDE_sweep_results.mat")
+    sweeper.save_results(wl, neff, save_path)
+
+    # Simple Plot
+    plt.figure()
+    plt.plot(wl * 1e9, np.real(neff))
+    plt.xlabel("Wavelength (nm)")
+    plt.ylabel("Real(Neff)")
+    plt.title("Effective Index vs Wavelength")
+    plt.grid(True)
+    plt.show()
+
+    sweeper.close()

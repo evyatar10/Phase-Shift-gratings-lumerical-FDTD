@@ -33,8 +33,11 @@ class PiShiftBraggFDTD:
                  n_periods_dist_to_port=5,  # Distance from grating edge to port (in pitches)
                  n_wls_dist_port_to_pml=2.0,  # Distance from port to PML (in wavelengths)
 
-                 core_material="Si3N4 (Silicon Nitride) - Luke",
-                 clad_material="SiO2 (Glass) - Palik",
+                 # MATERIALS
+                 material_db_path=None,  # <--- NEW: Path to .mdf file
+                 core_material="Si3N4 (Silicon Nitride) - Luke",  # Default (Standard)
+                 clad_material="SiO2 (Glass) - Palik",  # Default (Standard)
+
                  n_eff_guess=1.55,
                  coarse_width_nm=150,
                  n_wl_points=401,
@@ -59,8 +62,10 @@ class PiShiftBraggFDTD:
         self.y_span = y_span
         self.z_span = z_span
 
+        self.material_db_path = material_db_path
         self.core_material = core_material
         self.clad_material = clad_material
+
         self.n_eff_guess = n_eff_guess
         self.n_wl_points = n_wl_points
         self.use_apodization = use_apodization
@@ -101,33 +106,52 @@ class PiShiftBraggFDTD:
     # ------------------------------------------------------------------
     def _setup_materials(self):
         """Create editable copies of materials and apply fit settings."""
+        # 1. Determine Source Material Names (LGT vs Standard)
+        if self.material_db_path and os.path.exists(self.material_db_path):
+            print(f"Importing material DB from: {self.material_db_path}")
+            self.fdtd.importmaterialdb(self.material_db_path)
+            # Use Ligentec names found in your config_params.py
+            src_core = 'LGT Si3N4 Sellmeier'
+            src_clad = 'LGT SiO2 Sellmeier'
+        else:
+            print("Using Standard Library materials (Luke/Palik).")
+            src_core = self.core_material
+            src_clad = self.clad_material
+
         custom_sin = "SiN_custom"
         custom_sio2 = "SiO2_custom"
 
-        # (Same material setup script as before)
+        # 2. Script to Copy Source -> Custom and Apply Fits
+        # (This logic is identical to before, just using src_core/src_clad variables)
         script = f'''
         if (haveresult("{custom_sin}", "material")) {{ deletematerial("{custom_sin}"); }}
         if (haveresult("{custom_sio2}", "material")) {{ deletematerial("{custom_sio2}"); }}
 
-        m1 = copymaterial("{self.core_material}");
+        m1 = copymaterial("{src_core}");
         setmaterial(m1, "name", "{custom_sin}");
-        m2 = copymaterial("{self.clad_material}");
+        m2 = copymaterial("{src_clad}");
         setmaterial(m2, "name", "{custom_sio2}");
 
         setmaterial("{custom_sin}",  "specify fit range", 1);
         setmaterial("{custom_sio2}", "specify fit range", 1);
+
         setmaterial("{custom_sin}",  "wavelength min", {self.lam_min});
         setmaterial("{custom_sin}",  "wavelength max", {self.lam_max});
         setmaterial("{custom_sio2}", "wavelength min", {self.lam_min});
         setmaterial("{custom_sio2}", "wavelength max", {self.lam_max});
+
         setmaterial("{custom_sin}",  "tolerance", 0.001);
         setmaterial("{custom_sio2}", "tolerance", 0.001);
+
         setmaterial("{custom_sin}",  "make fit passive", 1);
         setmaterial("{custom_sio2}", "make fit passive", 1);
+
         setmaterial("{custom_sin}",  "improve numerical stability", 1);
         setmaterial("{custom_sio2}", "improve numerical stability", 1);
         '''
         self.fdtd.eval(script)
+
+        # Update class attributes to point to the CUSTOM names
         self.core_material = custom_sin
         self.clad_material = custom_sio2
 
@@ -162,7 +186,7 @@ class PiShiftBraggFDTD:
         for bc in ["x min bc", "x max bc", "y min bc", "y max bc", "z min bc", "z max bc"]:
             fdtd.set(bc, "PML")
 
-        fdtd.set("simulation time", 50e-12)
+        fdtd.set("simulation time", 15e-12)
         fdtd.set("auto shutoff min", 1e-6)
         fdtd.set("mesh accuracy", 3)
 
@@ -190,6 +214,10 @@ class PiShiftBraggFDTD:
         fdtd.set("override z mesh", 0)
         fdtd.set("set maximum mesh step", 1)
         fdtd.set("dx", dx)
+
+        # dyz = 50e-9
+        # fdtd.set("dy", dyz)
+        # fdtd.set("dz", dyz)
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
@@ -342,7 +370,7 @@ class PiShiftBraggFDTD:
         fdtd.set("z", z_center)
         fdtd.set("z span", monitor_ratio * self.z_span)
         fdtd.set("direction", "forward")
-        fdtd.set("mode selection", "fundamental mode")
+        fdtd.set("mode selection", "fundamental TE mode")
 
         fdtd.set("frequency dependent profile", 1)
 
@@ -355,8 +383,8 @@ class PiShiftBraggFDTD:
         fdtd.set("y span", monitor_ratio * self.y_span)
         fdtd.set("z", z_center)
         fdtd.set("z span", monitor_ratio * self.z_span)
-        fdtd.set("direction", "backward")
-        fdtd.set("mode selection", "fundamental mode")
+        fdtd.set("direction", "backward")  # forward/backward
+        fdtd.set("mode selection", "fundamental TE mode")
 
         fdtd.set("frequency dependent profile", 1)
 
@@ -377,8 +405,26 @@ class PiShiftBraggFDTD:
         res2 = self.fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
 
         wl = np.squeeze(res1["lambda"])
+
         S11_raw = np.squeeze(res1["S"])
         S21_raw = np.squeeze(res2["S"])
+
+        # Port 1 (left); direction = forward
+        # a1: wave traveling +x (launched / forward)
+        # b1: wave traveling -x (reflected / backward)
+        # a1 = np.squeeze(res1["a"])
+        # b1 = np.squeeze(res1["b"])
+
+        # Port 2 (right); you set direction = forward
+        # a2: wave traveling +x (transmitted forward out of the device)
+        # b2: wave traveling -x (would correspond to a wave coming from the right into the device)
+        # a2 = np.squeeze(res2["a"])
+
+        # epsilon = 1e-20
+
+        # S11: reflection at port 1
+        # S11_raw = b1 / (a1 + epsilon)
+        # S21_raw = a2 / (a1 + epsilon)
 
         # 2. Phase Correction (De-embedding + Auto-Calibration)
         if correct_phase:
@@ -448,9 +494,12 @@ class PiShiftBraggFDTD:
             neff2 = np.squeeze(neff2_data["neff"])
 
         k0 = 2 * np.pi / wl
+
         L_feed = self.dist_grating_to_port
-        beta1 = k0 * neff1
-        beta2 = k0 * neff2
+        # beta1 = k0 * neff1
+        # beta2 = k0 * neff2
+        beta1 = k0 * np.real(neff1)
+        beta2 = k0 * np.real(neff2)
         corr_factor_1 = np.exp(-1j * beta1 * L_feed)
         corr_factor_2 = np.exp(-1j * beta2 * L_feed)
         S11_corr = S11_raw * (corr_factor_1 ** 2)
@@ -463,36 +512,16 @@ class PiShiftBraggFDTD:
         S21_corr = S21_corr * slope_correction
 
         # --- C. Target Phase Correction (-PI/2) ---
-        # 1. Find Peak
-        #idx_peak_21 = np.argmax(np.abs(S21_corr))
-        #idx_peak_11 = np.argmax(np.abs(S11_corr))
-
-        # 2. Define Target (-0.5 * pi)-> conj=0.5 * pi
-        #target_phase = 0.5 * np.pi
-
-        # 3. Calculate Current Phase
-        #current_phase_s21 = np.angle(S21_corr[idx_peak_21])
-        #current_phase_s11 = np.angle(S11_corr[idx_peak_11])
-
-        # 4. Calculate Difference
-        # Using exp(1j * diff) handles the wrapping automatically
-        #delta_s21 = np.exp(1j * (target_phase - current_phase_s21))
-        #delta_s11 = np.exp(1j * (target_phase - current_phase_s21))
-
-        # 5. Apply Correction
-        #S21_corr = S21_corr * delta_s21
-        #S11_corr = S11_corr * delta_s11
-
-        # --- C. Max Group Delay Correction (Simple & Robust) ---
+        # We correct according to S21, and apply the same correction to S11
         S11_corr, S21_corr = self.align_phases_at_resonance_peak(
             wl, S11_corr, S21_corr, target_phase=0.5 * np.pi
         )
 
         # --- VERIFICATION ---
-        #final_phase = np.angle(S21_corr[idx_peak_21])
-        #print(f"Phase Correction Summary:")
-        #print(f"  Target: 0.50 pi")
-        #print(f"  Result: {final_phase / np.pi:.2f} pi")
+        # final_phase = np.angle(S21_corr[idx_peak_21])
+        # print(f"Phase Correction Summary:")
+        # print(f"  Target: 0.50 pi")
+        # print(f"  Result: {final_phase / np.pi:.2f} pi")
         # Note: If result is -0.5pi, you are good.
         # If result is +1.5pi (unwrapped), that is the same phase.
 
@@ -516,9 +545,9 @@ class PiShiftBraggFDTD:
         # Primary threshold: Transmission < 0.5
         is_stopband = T < 0.5
 
-        # Fallback threshold: if no points < 0.5, try < 0.85
+        # Fallback threshold: if no points < 0.5, try < 0.8
         if not np.any(is_stopband):
-            is_stopband = T < 0.85
+            is_stopband = T < 0.8
 
         # 2. Find Resonance Peak Index
         if np.any(is_stopband):
@@ -540,6 +569,7 @@ class PiShiftBraggFDTD:
             idx_peak = idx_start + local_peak_idx
         else:
             # Fallback: if no stopband detected at all, take global max
+            # change this!
             idx_peak = np.argmax(T)
 
         # 3. Get Phase at that specific Peak
@@ -557,6 +587,7 @@ class PiShiftBraggFDTD:
         S21_corrected = S21 * correction_phasor
 
         return S11_corrected, S21_corrected
+
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
         half_w = 0.5 * width_nm * 1e-9
@@ -580,13 +611,19 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     # Saving Location
     base_save_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\version_for_CMT"
-    # neff vs wavlength at uniform section
-    neff_mat_path = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl\results\FDE_sweep_results.mat"
+
+    # Path to EXTERNAL effective index data (for de-embedding)
+    neff_mat_path = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl_lgt\FDE_sweep_results.mat"
+
+    # Path to Custom Material Database (LGT)
+    # Set this to None to use standard materials, or provide path to use LGT
+    mdf_path = r'C:\Users\evyat\Lumerical\ron_lumerical_codes\lgt_materials.mdf'
+    # mdf_path = None # Uncomment this to use standard materials
 
     # Simulation Parameters
-    lambda_res_est = 1.573e-6
-    scan_width_nm = 40.0
-    n_points = 1001
+    lambda_res_est = 1.564e-6
+    scan_width_nm = 42.0
+    n_points = 2001
     w_wide = 900e-9
     core_h = 350e-9
 
@@ -603,10 +640,15 @@ if __name__ == "__main__":
         substrate_thickness=4e-6,
         y_span=w_wide + 1.8 * lambda_res_est,
         z_span=core_h + 1.8 * lambda_res_est,
-        n_periods_dist_to_port=20,  # Distance from grating edge to Port
-        n_wls_dist_port_to_pml=2.0,  # Distance from Port to PML (wavelengths)
+
+        # --- MATERIAL SELECTION ---
+        material_db_path=mdf_path,  # <--- Pass the path (or None) here
+        # These are used ONLY if mdf_path is None:
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
+
+        n_periods_dist_to_port=20,  # Distance from grating edge to Port
+        n_wls_dist_port_to_pml=2.0,  # Distance from Port to PML (wavelengths)
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
@@ -647,8 +689,8 @@ if __name__ == "__main__":
     print(f"Simulation time: {end - start:.3f} seconds")
 
     wl, R_modal, T_modal, Loss_radiation, T_matrix, S11, S21 = sim.get_s_and_t_matrix(
-        neff_mat_file=neff_mat_path,
-        correct_phase=True  # Set this  False to see raw uncorrected results
+        correct_phase=True,  # Set this  False to see raw uncorrected results
+        neff_mat_file=neff_mat_path,  # <--- Restored this argument
     )
 
     wl_nm = wl * 1e9
