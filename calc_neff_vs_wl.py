@@ -24,7 +24,7 @@ class NeffSweeper:
                  wl_stop=1.6e-6,
                  n_points=100,
                  # MATERIALS
-                 material_db_path=None,  # <--- NEW: Path to .mdf file
+                 material_db_path=None,  # Path to .mdf file
                  core_material="Si3N4 (Silicon Nitride) - Luke",  # Default (Standard)
                  clad_material="SiO2 (Glass) - Palik"):  # Default (Standard)
 
@@ -47,26 +47,35 @@ class NeffSweeper:
         Creates 'SiN_custom' and 'SiO2_custom' from either standard lib
         or Custom LGT DB, and applies robust fitting settings.
         """
-        # 1. Determine Source Material Names (LGT vs Standard)
+        # 1. Import Material DB if provided
+        # This makes the "LGT" materials available in the simulation
         if self.material_db_path and os.path.exists(self.material_db_path):
             print(f"Importing material DB from: {self.material_db_path}")
             self.mode.importmaterialdb(self.material_db_path)
-            # Use Ligentec names found in your config_params.py
-            src_core = 'LGT Si3N4 Sellmeier'
-            src_clad = 'LGT SiO2 Sellmeier'
-        else:
-            print("Using Standard Library materials (Luke/Palik).")
-            src_core = self.core_material
-            src_clad = self.clad_material
+
+        # 2. Determine Source Material Names
+        # We trust the names passed to __init__, allowing hybrid selection
+        src_core = self.core_material
+        src_clad = self.clad_material
+
+        print(f"  -> Using Core Source: {src_core}")
+        print(f"  -> Using Clad Source: {src_clad}")
 
         custom_sin = "SiN_custom"
         custom_sio2 = "SiO2_custom"
 
-        # 2. Script to Copy Source -> Custom and Apply Fits
-        # (This logic is identical to the FDTD script)
+        # 3. Script to Copy Source -> Custom and Apply Fits
         script = f'''
         if (haveresult("{custom_sin}", "material")) {{ deletematerial("{custom_sin}"); }}
         if (haveresult("{custom_sio2}", "material")) {{ deletematerial("{custom_sio2}"); }}
+
+        # Safety check to ensure materials exist
+        if (!haveresult("{src_core}", "material")) {{ 
+            print("Error: Core material '{src_core}' not found!"); 
+        }}
+        if (!haveresult("{src_clad}", "material")) {{ 
+            print("Error: Clad material '{src_clad}' not found!"); 
+        }}
 
         m1 = copymaterial("{src_core}");
         setmaterial(m1, "name", "{custom_sin}");
@@ -183,20 +192,30 @@ class NeffSweeper:
 
 if __name__ == "__main__":
     # --- CONFIGURATION ---
-    base_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl_lgt"
+    base_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl_phillip_palik"
     if not os.path.exists(base_dir): os.makedirs(base_dir)
 
     # Path to Custom Material Database (LGT)
     mdf_path = r'C:\Users\evyat\Lumerical\ron_lumerical_codes\lgt_materials.mdf'
-    # mdf_path = None # Uncomment to use standard materials
+
+    # --- HYBRID MATERIAL DEFINITIONS ---
+    # 1. Core: Use LGT Si3N4 (requires mdf_path to be loaded)
+    core_mat_name = "Si3N4 (Silicon Nitride) - Phillip"
+
+    # 2. Clad: Use Standard Palik SiO2 (ignores LGT SiO2 in the file)
+    clad_mat_name = "SiO2 (Glass) - Palik"
 
     sweeper = NeffSweeper(
         width=700e-9,  # Narrow width used in grating
         height=350e-9,  # Core height
-        wl_start=1.54e-6,
-        wl_stop=1.59e-6,
+        wl_start=1.5e-6,
+        wl_stop=1.6e-6,
         n_points=200,
-        material_db_path=mdf_path  # <--- Pass path here
+
+        # --- HYBRID SETUP ---
+        material_db_path=mdf_path,  # Load file to get LGT SiN
+        core_material=core_mat_name,  # "LGT Si3N4 Sellmeier"
+        clad_material=clad_mat_name  # "SiO2 (Glass) - Palik"
     )
 
     sweeper.build_sim()

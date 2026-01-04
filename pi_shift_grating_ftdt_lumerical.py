@@ -25,6 +25,7 @@ class PiShiftBraggFDTD:
                  n_apod_periods_each_side=None,
                  width_narrow=700e-9,
                  width_wide=900e-9,
+                 width_port=1000e-9,  # <--- NEW PARAMETER
                  core_height=350e-9,
                  substrate_thickness=4e-6,
                  y_span=4e-6,
@@ -57,6 +58,7 @@ class PiShiftBraggFDTD:
 
         self.width_narrow = width_narrow
         self.width_wide = width_wide
+        self.width_port = width_port  # <--- STORED PARAMETER
         self.core_height = core_height
         self.substrate_thickness = substrate_thickness
         self.y_span = y_span
@@ -286,7 +288,7 @@ class PiShiftBraggFDTD:
         # A. LEFT INFINITE WAVEGUIDE
         # Extends from PML (with margin) to the start of the grating
         x_pml_left = -self.x_sim_boundary - 1e-6  # Extra 1um into PML
-        add_core_segment(x_pml_left, x_grating_start, self.width_narrow, name_prefix="wg_left_inf")
+        add_core_segment(x_pml_left, x_grating_start, self.width_port, name_prefix="wg_left_inf") # <--- UPDATED
 
         # B. Left Grating
         for d in range(n_total, 0, -1):
@@ -322,7 +324,7 @@ class PiShiftBraggFDTD:
         # E. RIGHT INFINITE WAVEGUIDE
         # Extends from current x (end of grating) to PML (with margin)
         x_pml_right = self.x_sim_boundary + 1e-6
-        add_core_segment(x, x_pml_right, self.width_narrow, name_prefix="wg_right_inf")
+        add_core_segment(x, x_pml_right, self.width_port, name_prefix="wg_right_inf") # <--- UPDATED
 
     def _add_source_and_monitors(self):
         fdtd = self.fdtd
@@ -610,7 +612,7 @@ class PiShiftBraggFDTD:
 if __name__ == "__main__":
     # ------------------------------------------------------------------
     # Saving Location
-    base_save_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\version_for_CMT"
+    base_save_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\version_for_CMT_v2"
 
     # Path to EXTERNAL effective index data (for de-embedding)
     neff_mat_path = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl_lgt\FDE_sweep_results.mat"
@@ -621,7 +623,7 @@ if __name__ == "__main__":
     # mdf_path = None # Uncomment this to use standard materials
 
     # Simulation Parameters
-    lambda_res_est = 1.564e-6
+    lambda_res_est = 1.5725e-6
     scan_width_nm = 42.0
     n_points = 2001
     w_wide = 900e-9
@@ -636,13 +638,14 @@ if __name__ == "__main__":
         n_apod_periods_each_side=10,
         width_narrow=700e-9,
         width_wide=w_wide,
+        width_port=1000e-9,  # <--- SET OUTER WAVEGUIDE WIDTH HERE
         core_height=core_h,
         substrate_thickness=4e-6,
         y_span=w_wide + 1.8 * lambda_res_est,
         z_span=core_h + 1.8 * lambda_res_est,
 
         # --- MATERIAL SELECTION ---
-        material_db_path=mdf_path,  # <--- Pass the path (or None) here
+        material_db_path=None,  # <--- Pass the path (or None) here
         # These are used ONLY if mdf_path is None:
         core_material="Si3N4 (Silicon Nitride) - Luke",
         clad_material="SiO2 (Glass) - Palik",
@@ -652,7 +655,7 @@ if __name__ == "__main__":
         n_eff_guess=1.55,
         coarse_width_nm=150,
         n_wl_points=n_points,
-        use_apodization=True,
+        use_apodization=False,
         center_mod_depth_nm=40.0
     )
 
