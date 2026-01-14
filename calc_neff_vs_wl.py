@@ -192,7 +192,7 @@ class NeffSweeper:
 
 if __name__ == "__main__":
     # --- CONFIGURATION ---
-    base_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl_phillip_palik"
+    base_dir = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl_new"
     if not os.path.exists(base_dir): os.makedirs(base_dir)
 
     # Path to Custom Material Database (LGT)
@@ -200,13 +200,13 @@ if __name__ == "__main__":
 
     # --- HYBRID MATERIAL DEFINITIONS ---
     # 1. Core: Use LGT Si3N4 (requires mdf_path to be loaded)
-    core_mat_name = "Si3N4 (Silicon Nitride) - Phillip"
+    core_mat_name = "Si3N4 (Silicon Nitride) - Luke"
 
     # 2. Clad: Use Standard Palik SiO2 (ignores LGT SiO2 in the file)
     clad_mat_name = "SiO2 (Glass) - Palik"
 
     sweeper = NeffSweeper(
-        width=700e-9,  # Narrow width used in grating
+        width=1000-9,  # Narrow width used in grating
         height=350e-9,  # Core height
         wl_start=1.5e-6,
         wl_stop=1.6e-6,
