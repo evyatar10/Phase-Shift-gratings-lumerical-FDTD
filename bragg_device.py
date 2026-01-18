@@ -104,6 +104,10 @@ class PiShiftBraggFDTD:
         custom_sin = "SiN_custom"
         custom_sio2 = "SiO2_custom"
 
+        # Updated range based on your successful test (Wide enough for stability, narrow enough for accuracy)
+        safe_lam_min = 1.35e-6
+        safe_lam_max = 1.85e-6
+
         script = f'''
         if (haveresult("{custom_sin}", "material")) {{ deletematerial("{custom_sin}"); }}
         if (haveresult("{custom_sio2}", "material")) {{ deletematerial("{custom_sio2}"); }}
@@ -113,14 +117,25 @@ class PiShiftBraggFDTD:
         m2 = copymaterial("{src_clad}");
         setmaterial(m2, "name", "{custom_sio2}");
 
+        # --- 1. FIT RANGE ---
         setmaterial("{custom_sin}",  "specify fit range", 1);
         setmaterial("{custom_sio2}", "specify fit range", 1);
-        setmaterial("{custom_sin}",  "wavelength min", {self.lam_min});
-        setmaterial("{custom_sin}",  "wavelength max", {self.lam_max});
-        setmaterial("{custom_sio2}", "wavelength min", {self.lam_min});
-        setmaterial("{custom_sio2}", "wavelength max", {self.lam_max});
+        setmaterial("{custom_sin}",  "wavelength min", {safe_lam_min});
+        setmaterial("{custom_sin}",  "wavelength max", {safe_lam_max});
+        setmaterial("{custom_sio2}", "wavelength min", {safe_lam_min});
+        setmaterial("{custom_sio2}", "wavelength max", {safe_lam_max});
+
+        # --- 2. HIGH-Q OPTIMIZATION (CRITICAL) ---
+        # "imaginary weight" prioritizes zero loss (10^-10) over refractive index accuracy
+        setmaterial("{custom_sin}",  "imaginary weight", 2); 
+        setmaterial("{custom_sio2}", "imaginary weight", 2);
+
+        setmaterial("{custom_sin}",  "max coefficients", 8);
+        setmaterial("{custom_sio2}", "max coefficients", 8);
         setmaterial("{custom_sin}",  "tolerance", 0.001);
         setmaterial("{custom_sio2}", "tolerance", 0.001);
+
+        # --- 3. STABILITY CHECKS ---
         setmaterial("{custom_sin}",  "make fit passive", 1);
         setmaterial("{custom_sio2}", "make fit passive", 1);
         setmaterial("{custom_sin}",  "improve numerical stability", 1);
@@ -152,14 +167,14 @@ class PiShiftBraggFDTD:
         fdtd.set("y span", self.y_span)
         fdtd.set("z span", self.z_span)
         fdtd.set("dimension", "3D")
-        fdtd.setdevice("GPU")
+        fdtd.setdevice("CPU")
         fdtd.set("background material", self.clad_material)
         for bc in ["x min bc", "x max bc", "y min bc", "y max bc", "z min bc", "z max bc"]:
             fdtd.set(bc, "PML")
-        fdtd.set("simulation time", 25e-12)
+        fdtd.set("simulation time", 60e-12)
         fdtd.set("auto shutoff min", 1e-6)
         fdtd.set("mesh accuracy", 3)
-        fdtd.set("dt stability factor", 0.95)
+        fdtd.set("dt stability factor", 0.9)
 
     def _add_aligned_mesh_override(self, cells_per_half_period=5, max_cavity_dx=40e-9):
         """
