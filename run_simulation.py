@@ -7,18 +7,15 @@ from bragg_device import PiShiftBraggFDTD
 import config
 
 
-
 def run_single_sim():
     # 1. Parameters
-    #lambda_res_est = 1.5725e-6
     lambda_res_est = 1.616e-6
-
     scan_width_nm = 42.0
     n_points = 3001
     avg_corr = 800e-9
     corr_depth = 350e-9
-    w_wide = avg_corr+corr_depth/2
-    w_narrow = avg_corr-corr_depth/2
+    w_wide = avg_corr + corr_depth / 2
+    w_narrow = avg_corr - corr_depth / 2
     core_h = 350e-9
 
     calc_y_span = w_wide + 1.8 * lambda_res_est
@@ -35,7 +32,6 @@ def run_single_sim():
         core_height=core_h,
         substrate_thickness=4e-6,
 
-        # Set cavity length override
         override_cavity_length_nm=185.0,
 
         y_span=calc_y_span,
@@ -48,21 +44,30 @@ def run_single_sim():
         use_apodization=True,
         center_mod_depth_nm=4.0,
 
-        # MESH: Enable override, but dx is now auto-calculated in the class
-        use_cavity_mesh_override=True
+        use_cavity_mesh_override=True,
+
+        # --- SYMMETRY SETTINGS ---
+        use_symmetry=True,    # Y-axis (Anti-Symmetric for TE)
+        use_z_symmetry=True,  # Z-axis (Symmetric for TE)
+
+        # --- MATERIAL SETTINGS ---
+        use_constant_materials=False,
+        n_core_const=1.98  # Accurate SiN index at 1550nm
     )
 
-    # 3. Generate Filenames (Updated Tag)
+    # 3. Generate Filenames
     N = sim.n_periods_each_side
     Napod = sim.n_apod_periods_each_side
     use_apod = bool(sim.use_apodization) and (Napod is not None) and (Napod > 0)
 
-    # Tag Logic: L_cav
     cav_tag = ""
     if sim.cavity_length != sim.pitch / 2.0:
         cav_tag = f"_L_cav_{int(sim.cavity_length * 1e9)}"
 
-    tag = f"{N}_periods_{Napod}_apodizations{cav_tag}" if use_apod else f"{N}_periods{cav_tag}"
+    # Update tag to reflect material choice
+    mat_tag = "_CONST" if sim.use_constant_materials else ""
+
+    tag = f"{N}_periods_{Napod}_apodizations{cav_tag}{mat_tag}" if use_apod else f"{N}_periods{cav_tag}{mat_tag}"
 
     layout_path = os.path.join(config.LAYOUTS_DIR, f"layout_{tag}.fsp")
     results_path = os.path.join(config.RESULTS_DIR, f"result_{tag}.mat")
@@ -96,7 +101,7 @@ def run_single_sim():
     sio.savemat(results_path, mat_data)
     print(f"Data saved to: {results_path}")
 
-    # The data folder has the same name as the layout file (without extension)
+    # The data folder has the same name as the layout file
     folder_to_delete = os.path.splitext(layout_path)[0]
 
     if os.path.exists(folder_to_delete):
@@ -105,7 +110,6 @@ def run_single_sim():
             print(f"CLEANUP: Deleted data folder: {os.path.basename(folder_to_delete)}")
         except Exception as e:
             print(f"CLEANUP ERROR: Could not delete {folder_to_delete}: {e}")
-
 
     # 7. Plot
     plt.figure()

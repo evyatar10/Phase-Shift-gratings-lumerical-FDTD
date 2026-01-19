@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import importlib.util
-import math  # <--- Added import
+import math
 import analysis
 
 # Try to import lumapi normally
@@ -37,7 +37,13 @@ class PiShiftBraggFDTD:
                  n_wl_points=401,
                  use_apodization=False,
                  center_mod_depth_nm=40.0,
-                 use_cavity_mesh_override=False):
+                 use_cavity_mesh_override=False,
+                 # --- NEW FEATURES ---
+                 use_symmetry=True,  # Y-axis Symmetry (Anti-Symmetric for TE)
+                 use_z_symmetry=True,  # Z-axis Symmetry (Symmetric for TE)
+                 use_constant_materials=False,
+                 n_core_const=1.98,
+                 n_clad_const=1.44):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -60,6 +66,13 @@ class PiShiftBraggFDTD:
         self.material_db_path = material_db_path
         self.core_material = core_material
         self.clad_material = clad_material
+
+        # Store New Parameters
+        self.use_symmetry = use_symmetry
+        self.use_z_symmetry = use_z_symmetry
+        self.use_constant_materials = use_constant_materials
+        self.n_core_const = n_core_const
+        self.n_clad_const = n_clad_const
 
         self.n_eff_guess = n_eff_guess
         self.n_wl_points = n_wl_points
@@ -91,6 +104,43 @@ class PiShiftBraggFDTD:
         self._setup_materials()
 
     def _setup_materials(self):
+        # --- OPTION A: Constant Materials ---
+        if self.use_constant_materials:
+            print(f"Using CONSTANT Materials: SiN={self.n_core_const}, SiO2={self.n_clad_const}")
+            const_sin = "SiN_Const_Custom"
+            const_sio2 = "SiO2_Const_Custom"
+
+            eps_sin = self.n_core_const ** 2
+            eps_sio2 = self.n_clad_const ** 2
+
+            script = f'''
+            f_vector = [0; 1000e12];
+            eps_sin_vector = [{eps_sin}; {eps_sin}];
+            eps_sio2_vector = [{eps_sio2}; {eps_sio2}];
+
+            if (materialexists("{const_sin}")) {{ deletematerial("{const_sin}"); }}
+            if (materialexists("{const_sio2}")) {{ deletematerial("{const_sio2}"); }}
+
+            new_mat = addmaterial("Sampled data");
+            setmaterial(new_mat, "name", "{const_sin}");
+            data_sin = matrix(2, 2);
+            data_sin(1:2, 1) = f_vector;
+            data_sin(1:2, 2) = eps_sin_vector; 
+            setmaterial("{const_sin}", "sampled data", data_sin);
+
+            new_mat2 = addmaterial("Sampled data");
+            setmaterial(new_mat2, "name", "{const_sio2}");
+            data_sio2 = matrix(2, 2);
+            data_sio2(1:2, 1) = f_vector;
+            data_sio2(1:2, 2) = eps_sio2_vector;
+            setmaterial("{const_sio2}", "sampled data", data_sio2);
+            '''
+            self.fdtd.eval(script)
+            self.core_material = const_sin
+            self.clad_material = const_sio2
+            return
+
+        # --- OPTION B: Dispersive Materials ---
         if self.material_db_path and os.path.exists(self.material_db_path):
             print(f"Importing material DB from: {self.material_db_path}")
             self.fdtd.importmaterialdb(self.material_db_path)
@@ -103,43 +153,52 @@ class PiShiftBraggFDTD:
 
         custom_sin = "SiN_custom"
         custom_sio2 = "SiO2_custom"
-
-        # Updated range based on your successful test (Wide enough for stability, narrow enough for accuracy)
         safe_lam_min = 1.35e-6
         safe_lam_max = 1.85e-6
 
         script = f'''
-        if (haveresult("{custom_sin}", "material")) {{ deletematerial("{custom_sin}"); }}
-        if (haveresult("{custom_sio2}", "material")) {{ deletematerial("{custom_sio2}"); }}
+        if (materialexists("{custom_sin}")) {{ deletematerial("{custom_sin}"); }}
+        if (materialexists("{custom_sio2}")) {{ deletematerial("{custom_sio2}"); }}
 
-        m1 = copymaterial("{src_core}");
-        setmaterial(m1, "name", "{custom_sin}");
-        m2 = copymaterial("{src_clad}");
-        setmaterial(m2, "name", "{custom_sio2}");
+        if (materialexists("{src_core}")) {{
+            m1 = copymaterial("{src_core}");
+            setmaterial(m1, "name", "{custom_sin}");
+        }} else {{
+            addmaterial("Dielectric");
+            set("name", "{custom_sin}");
+            set("Refractive Index", 2.0); 
+        }}
 
-        # --- 1. FIT RANGE ---
-        setmaterial("{custom_sin}",  "specify fit range", 1);
-        setmaterial("{custom_sio2}", "specify fit range", 1);
-        setmaterial("{custom_sin}",  "wavelength min", {safe_lam_min});
-        setmaterial("{custom_sin}",  "wavelength max", {safe_lam_max});
-        setmaterial("{custom_sio2}", "wavelength min", {safe_lam_min});
-        setmaterial("{custom_sio2}", "wavelength max", {safe_lam_max});
+        if (materialexists("{src_clad}")) {{
+            m2 = copymaterial("{src_clad}");
+            setmaterial(m2, "name", "{custom_sio2}");
+        }} else {{
+            addmaterial("Dielectric");
+            set("name", "{custom_sio2}");
+            set("Refractive Index", 1.44);
+        }}
 
-        # --- 2. HIGH-Q OPTIMIZATION (CRITICAL) ---
-        # "imaginary weight" prioritizes zero loss (10^-10) over refractive index accuracy
-        setmaterial("{custom_sin}",  "imaginary weight", 2); 
-        setmaterial("{custom_sio2}", "imaginary weight", 2);
+        if (materialexists("{custom_sin}")) {{
+            setmaterial("{custom_sin}", "specify fit range", 1);
+            setmaterial("{custom_sin}", "wavelength min", {safe_lam_min});
+            setmaterial("{custom_sin}", "wavelength max", {safe_lam_max});
+            setmaterial("{custom_sin}", "imaginary weight", 2); 
+            setmaterial("{custom_sin}", "max coefficients", 8);
+            setmaterial("{custom_sin}", "tolerance", 0.001);
+            setmaterial("{custom_sin}", "make fit passive", 1);
+            setmaterial("{custom_sin}", "improve numerical stability", 1);
+        }}
 
-        setmaterial("{custom_sin}",  "max coefficients", 8);
-        setmaterial("{custom_sio2}", "max coefficients", 8);
-        setmaterial("{custom_sin}",  "tolerance", 0.001);
-        setmaterial("{custom_sio2}", "tolerance", 0.001);
-
-        # --- 3. STABILITY CHECKS ---
-        setmaterial("{custom_sin}",  "make fit passive", 1);
-        setmaterial("{custom_sio2}", "make fit passive", 1);
-        setmaterial("{custom_sin}",  "improve numerical stability", 1);
-        setmaterial("{custom_sio2}", "improve numerical stability", 1);
+        if (materialexists("{custom_sio2}")) {{
+            setmaterial("{custom_sio2}", "specify fit range", 1);
+            setmaterial("{custom_sio2}", "wavelength min", {safe_lam_min});
+            setmaterial("{custom_sio2}", "wavelength max", {safe_lam_max});
+            setmaterial("{custom_sio2}", "imaginary weight", 2); 
+            setmaterial("{custom_sio2}", "max coefficients", 8);
+            setmaterial("{custom_sio2}", "tolerance", 0.001);
+            setmaterial("{custom_sio2}", "make fit passive", 1);
+            setmaterial("{custom_sio2}", "improve numerical stability", 1);
+        }}
         '''
         self.fdtd.eval(script)
         self.core_material = custom_sin
@@ -161,118 +220,80 @@ class PiShiftBraggFDTD:
         fdtd = self.fdtd
         fdtd.addfdtd()
         fdtd.set("x", 0)
-        fdtd.set("y", 0)
-        fdtd.set("z", 0)
         fdtd.set("x span", self.sim_x_span)
+
+        # --- FULL SPAN CONFIGURATION ---
+        fdtd.set("y", 0)
         fdtd.set("y span", self.y_span)
+
+        fdtd.set("z", 0)
         fdtd.set("z span", self.z_span)
-        fdtd.set("dimension", "3D")
-        fdtd.setdevice("CPU")
-        fdtd.set("background material", self.clad_material)
+
+        # Default BCs
         for bc in ["x min bc", "x max bc", "y min bc", "y max bc", "z min bc", "z max bc"]:
             fdtd.set(bc, "PML")
-        fdtd.set("simulation time", 60e-12)
+
+        # --- Y SYMMETRY (Anti-Symmetric for TE) ---
+        if self.use_symmetry:
+            fdtd.set("y min bc", "Anti-Symmetric")
+            fdtd.set("force symmetric y mesh", 1)
+
+        # --- Z SYMMETRY (Symmetric for TE) ---
+        if self.use_z_symmetry:
+            fdtd.set("z min bc", "Symmetric")
+            fdtd.set("force symmetric z mesh", 1)
+
+        fdtd.set("dimension", "3D")
+        fdtd.setdevice("GPU")
+        fdtd.set("background material", self.clad_material)
+        fdtd.set("simulation time", 100e-12)
         fdtd.set("auto shutoff min", 1e-6)
         fdtd.set("mesh accuracy", 3)
-        fdtd.set("dt stability factor", 0.9)
+        fdtd.set("dt stability factor", 0.5)
 
     def _add_aligned_mesh_override(self, cells_per_half_period=5, max_cavity_dx=40e-9):
-        """
-        Adds mesh overrides.
-        UPDATED: Now enforces a high-resolution mesh (max_cavity_dx) inside the cavity
-        to ensure we have more than just 4 cells.
-        """
         fdtd = self.fdtd
         import math
-
-        # --- 1. Calculate General Steps ---
         half_pitch = 0.5 * self.pitch
         n_cells_half = max(1, int(cells_per_half_period))
-        dx_grating = half_pitch / float(n_cells_half)  # Target: ~50nm
-
+        dx_grating = half_pitch / float(n_cells_half)
         dy_global = self.width_narrow / 13.0
         dz_global = self.core_height / 7.0
-
         max_device_width = max(self.width_port, self.width_wide, self.width_narrow)
         y_span_override = max_device_width * 1.2
         z_span_override = self.core_height
-
-        # --- 2. Anchor Points ---
         x_cav_right = self.cavity_length / 2.0
         x_cav_left = -self.cavity_length / 2.0
         x_sim_left = -self.sim_x_span / 2.0 - 1e-6
         x_sim_right = self.sim_x_span / 2.0 + 1e-6
 
-        print(f"DEBUG: Grating Step (dx) = {dx_grating * 1e9:.2f} nm")
-
-        # --- Region A: LEFT GRATING ARM ---
-        fdtd.addmesh()
-        fdtd.set("name", "mesh_left_arm")
-        len_left = x_cav_left - x_sim_left
-        fdtd.set("x", x_sim_left + len_left / 2.0)
-        fdtd.set("x span", len_left)
-        fdtd.set("y", 0.0)
-        fdtd.set("y span", y_span_override)
-        fdtd.set("z", 0.0)
-        fdtd.set("z span", z_span_override)
-        fdtd.set("override x mesh", 1)
-        fdtd.set("override y mesh", 1)
-        fdtd.set("override z mesh", 1)
-        fdtd.set("dx", dx_grating)
-        fdtd.set("dy", dy_global)
-        fdtd.set("dz", dz_global)
-
-        # --- Region B: RIGHT GRATING ARM ---
-        fdtd.addmesh()
-        fdtd.set("name", "mesh_right_arm")
-        len_right = x_sim_right - x_cav_right
-        fdtd.set("x", x_cav_right + len_right / 2.0)
-        fdtd.set("x span", len_right)
-        fdtd.set("y", 0.0)
-        fdtd.set("y span", y_span_override)
-        fdtd.set("z", 0.0)
-        fdtd.set("z span", z_span_override)
-        fdtd.set("override x mesh", 1)
-        fdtd.set("override y mesh", 1)
-        fdtd.set("override z mesh", 1)
-        fdtd.set("dx", dx_grating)
-        fdtd.set("dy", dy_global)
-        fdtd.set("dz", dz_global)
-
-        # --- Region C: CAVITY (Central) ---
-        if self.use_cavity_mesh_override:
-            # 1. Determine Target Step
-            # We want the step to be AT LEAST as small as the grating,
-            # but preferably smaller (e.g. 10nm) to resolve the phase shift.
-            target_dx = min(dx_grating, max_cavity_dx)
-
-            # 2. Calculate integer number of cells to fit cavity
-            n_cells_cav = max(1, math.ceil(self.cavity_length / target_dx))
-
-            # 3. Recalculate exact dx to fill the length perfectly
-            dx_cav_snapped = self.cavity_length / float(n_cells_cav)
-
-            print(f"DEBUG: Cavity Length = {self.cavity_length * 1e9:.2f} nm")
-            print(f"DEBUG: Cavity Target Resolution = {max_cavity_dx * 1e9:.2f} nm")
-            print(f"DEBUG: Cavity Actual Cells = {n_cells_cav}")
-            print(f"DEBUG: Cavity Step (dx) = {dx_cav_snapped * 1e9:.2f} nm")
-
+        def add_mesh_box(name, x, x_span, dx_val):
             fdtd.addmesh()
-            fdtd.set("name", "mesh_cavity")
-            fdtd.set("x", 0.0)
-            fdtd.set("x span", self.cavity_length)
-            fdtd.set("y", 0.0)
+            fdtd.set("name", name)
+            fdtd.set("x", x);
+            fdtd.set("x span", x_span)
+            fdtd.set("y", 0.0);
             fdtd.set("y span", y_span_override)
-            fdtd.set("z", 0.0)
+            fdtd.set("z", 0.0);
             fdtd.set("z span", z_span_override)
-            fdtd.set("override x mesh", 1)
-            fdtd.set("override y mesh", 1)
+            fdtd.set("override x mesh", 1);
+            fdtd.set("override y mesh", 1);
             fdtd.set("override z mesh", 1)
-
-            # Apply the strictly smaller, aligned step
-            fdtd.set("dx", dx_cav_snapped)
-            fdtd.set("dy", dy_global)
+            fdtd.set("dx", dx_val);
+            fdtd.set("dy", dy_global);
             fdtd.set("dz", dz_global)
+
+        len_left = x_cav_left - x_sim_left
+        add_mesh_box("mesh_left_arm", x_sim_left + len_left / 2.0, len_left, dx_grating)
+
+        len_right = x_sim_right - x_cav_right
+        add_mesh_box("mesh_right_arm", x_cav_right + len_right / 2.0, len_right, dx_grating)
+
+        if self.use_cavity_mesh_override:
+            target_dx = min(dx_grating, max_cavity_dx)
+            n_cells_cav = max(1, math.ceil(self.cavity_length / target_dx))
+            dx_cav_snapped = self.cavity_length / float(n_cells_cav)
+            add_mesh_box("mesh_cavity", 0.0, self.cavity_length, dx_cav_snapped)
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
@@ -371,6 +392,32 @@ class PiShiftBraggFDTD:
         fdtd.set("mode selection", "fundamental TE mode")
         fdtd.set("frequency dependent profile", 1)
 
+        # --- NEW MONITOR: Field Profile (Z-normal) ---
+        fdtd.addprofile()
+        fdtd.set("name", "field_profile")
+        fdtd.set("monitor type", "2D Z-normal")
+        fdtd.set("x", 0)
+        fdtd.set("x span", 2.0 * self.x_grating_end + 2.0e-6)
+        fdtd.set("y", 0)
+        fdtd.set("y span", 1.5 * self.width_wide)
+        fdtd.set("z", 0)
+        fdtd.set("override global monitor settings", 1)
+        fdtd.set("use source limits", 1)
+        fdtd.set("frequency points", 21)
+
+        # --- NEW MONITORS: Time Domain (3 Points) ---
+        def add_time_mon(name, x_pos):
+            fdtd.addtime()
+            fdtd.set("name", name)
+            fdtd.set("monitor type", "Point")
+            fdtd.set("x", x_pos);
+            fdtd.set("y", 0);
+            fdtd.set("z", 0)
+
+        add_time_mon("time_input", -self.x_grating_end - 0.5e-6)
+        add_time_mon("time_cavity", 0.0)
+        add_time_mon("time_output", self.x_grating_end + 0.5e-6)
+
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
         half_w = 0.5 * width_nm * 1e-9
@@ -397,7 +444,18 @@ class PiShiftBraggFDTD:
 
         if correct_phase:
             neff1_data, neff2_data = None, None
-            if not (neff_mat_file and os.path.exists(neff_mat_file)):
+            use_single_neff = False
+            single_neff_val = None
+
+            if self.use_constant_materials:
+                use_single_neff = True
+                n1_res = self.fdtd.getresult("FDTD::ports::Port_1", "neff")
+                neff_vec = np.atleast_1d(np.squeeze(n1_res["neff"]))
+                mid_idx = len(neff_vec) // 2
+                single_neff_val = neff_vec[mid_idx]
+                print(f"Using Single Neff for Correction: {np.real(single_neff_val):.4f}")
+
+            elif not (neff_mat_file and os.path.exists(neff_mat_file)):
                 n1_res = self.fdtd.getresult("FDTD::ports::Port_1", "neff")
                 n2_res = self.fdtd.getresult("FDTD::ports::Port_2", "neff")
                 neff1_data = np.squeeze(n1_res["neff"])
@@ -406,7 +464,9 @@ class PiShiftBraggFDTD:
             S11_sim, S21_sim = analysis.apply_phase_correction(
                 wl, S11_raw, S21_raw,
                 self.pitch, self.dist_grating_to_port, self.x_grating_end,
-                neff_mat_file, neff1_data, neff2_data
+                neff_mat_file, neff1_data, neff2_data,
+                use_single_neff=use_single_neff,
+                single_neff_val=single_neff_val
             )
         else:
             S11_sim, S21_sim = S11_raw, S21_raw
