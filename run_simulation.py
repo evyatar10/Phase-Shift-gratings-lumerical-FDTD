@@ -152,14 +152,14 @@ def run_single_sim():
     # 2. Initialize Simulation
     sim = PiShiftBraggFDTD(
         pitch=520e-9,
-        n_periods_each_side=40,
+        n_periods_each_side=60,
         n_apod_periods_each_side=20,
         width_narrow=w_narrow,
         width_wide=w_wide,
         width_port=1000e-9,
         core_height=core_h,
         substrate_thickness=4e-6,
-        override_cavity_length_nm=185.0,
+        override_cavity_length_nm=False, # False = pitch/2
         y_span=calc_y_span,
         z_span=calc_z_span,
         material_db_path=config.MATERIAL_DB_PATH,
@@ -167,13 +167,13 @@ def run_single_sim():
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
         n_wl_points=n_points,
-        use_apodization=True,
+        use_apodization=False,
         center_mod_depth_nm=4.0,
         use_cavity_mesh_override=True,
-        use_symmetry=True,
+        use_symmetry=True, # y symmetry
         use_z_symmetry=True,
         use_constant_materials=True,
-        n_core_const=1.98
+        n_core_const=1.977
     )
 
     # 3. Generate Filenames
@@ -240,7 +240,9 @@ def run_single_sim():
     plt.plot(f_x * 1e6, I_x_envelope, 'r-', linewidth=2.5, label="Field Envelope (Peak Tracing)")
     plt.plot(f_x * 1e6, I_x_1D, 'b-', alpha=0.3, linewidth=0.5, label="Raw |E|^2")
 
-    y_max, y_min = np.max(I_x_envelope), np.min(I_x_envelope)
+    y_max =  np.max(I_x_envelope)
+    #y_min = np.min(I_x_envelope)
+    y_min = 0 # make it relative to zero, as edge is not when profile fully decays
     target_y = y_min + 0.5 * (y_max - y_min)
     plt.hlines(target_y, -fwhm_val * 1e6 / 2, fwhm_val * 1e6 / 2, colors='k', linestyles='dashed')
     plt.text(0, target_y * 1.05, f"FWHM = {fwhm_val * 1e6:.2f} um", ha='center', color='black', fontweight='bold')

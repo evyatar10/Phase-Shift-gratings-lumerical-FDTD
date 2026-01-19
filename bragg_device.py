@@ -260,17 +260,17 @@ class PiShiftBraggFDTD:
         def add_mesh_box(name, x, x_span, dx_val):
             fdtd.addmesh()
             fdtd.set("name", name)
-            fdtd.set("x", x);
+            fdtd.set("x", x)
             fdtd.set("x span", x_span)
-            fdtd.set("y", 0.0);
+            fdtd.set("y", 0.0)
             fdtd.set("y span", y_span_override)
-            fdtd.set("z", 0.0);
+            fdtd.set("z", 0.0)
             fdtd.set("z span", z_span_override)
-            fdtd.set("override x mesh", 1);
-            fdtd.set("override y mesh", 1);
+            fdtd.set("override x mesh", 1)
+            fdtd.set("override y mesh", 1)
             fdtd.set("override z mesh", 1)
-            fdtd.set("dx", dx_val);
-            fdtd.set("dy", dy_global);
+            fdtd.set("dx", dx_val)
+            fdtd.set("dy", dy_global)
             fdtd.set("dz", dz_global)
 
         len_left = x_cav_left - x_sim_left

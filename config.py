@@ -1,7 +1,7 @@
 import os
 
 # Base paths
-BASE_SAVE_DIR = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\results_for_lab"
+BASE_SAVE_DIR = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\versions_for_cmt\version_for_CMT_v5"
 NEFF_DATA_PATH = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl_new\FDE_sweep_results.mat"
 MATERIAL_DB_PATH = None  # or r'C:\...\lgt_materials.mdf'
 
