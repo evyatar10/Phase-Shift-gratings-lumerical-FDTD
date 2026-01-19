@@ -38,11 +38,10 @@ class PiShiftBraggFDTD:
                  use_apodization=False,
                  center_mod_depth_nm=40.0,
                  use_cavity_mesh_override=False,
-                 # --- NEW FEATURES ---
-                 use_symmetry=True,  # Y-axis Symmetry (Anti-Symmetric for TE)
-                 use_z_symmetry=True,  # Z-axis Symmetry (Symmetric for TE)
+                 use_symmetry=True,
+                 use_z_symmetry=True,
                  use_constant_materials=False,
-                 n_core_const=1.98,
+                 n_core_const=1.977,
                  n_clad_const=1.44):
 
         self.pitch = pitch
@@ -67,7 +66,6 @@ class PiShiftBraggFDTD:
         self.core_material = core_material
         self.clad_material = clad_material
 
-        # Store New Parameters
         self.use_symmetry = use_symmetry
         self.use_z_symmetry = use_z_symmetry
         self.use_constant_materials = use_constant_materials
@@ -104,7 +102,6 @@ class PiShiftBraggFDTD:
         self._setup_materials()
 
     def _setup_materials(self):
-        # --- OPTION A: Constant Materials ---
         if self.use_constant_materials:
             print(f"Using CONSTANT Materials: SiN={self.n_core_const}, SiO2={self.n_clad_const}")
             const_sin = "SiN_Const_Custom"
@@ -140,7 +137,6 @@ class PiShiftBraggFDTD:
             self.clad_material = const_sio2
             return
 
-        # --- OPTION B: Dispersive Materials ---
         if self.material_db_path and os.path.exists(self.material_db_path):
             print(f"Importing material DB from: {self.material_db_path}")
             self.fdtd.importmaterialdb(self.material_db_path)
@@ -221,24 +217,18 @@ class PiShiftBraggFDTD:
         fdtd.addfdtd()
         fdtd.set("x", 0)
         fdtd.set("x span", self.sim_x_span)
-
-        # --- FULL SPAN CONFIGURATION ---
         fdtd.set("y", 0)
         fdtd.set("y span", self.y_span)
-
         fdtd.set("z", 0)
         fdtd.set("z span", self.z_span)
 
-        # Default BCs
         for bc in ["x min bc", "x max bc", "y min bc", "y max bc", "z min bc", "z max bc"]:
             fdtd.set(bc, "PML")
 
-        # --- Y SYMMETRY (Anti-Symmetric for TE) ---
         if self.use_symmetry:
             fdtd.set("y min bc", "Anti-Symmetric")
             fdtd.set("force symmetric y mesh", 1)
 
-        # --- Z SYMMETRY (Symmetric for TE) ---
         if self.use_z_symmetry:
             fdtd.set("z min bc", "Symmetric")
             fdtd.set("force symmetric z mesh", 1)
@@ -403,7 +393,8 @@ class PiShiftBraggFDTD:
         fdtd.set("z", 0)
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
-        fdtd.set("frequency points", 21)
+        # CHANGED: Increased to 501 points for better resolution
+        fdtd.set("frequency points", 501)
 
         # --- NEW MONITORS: Time Domain (3 Points) ---
         def add_time_mon(name, x_pos):
