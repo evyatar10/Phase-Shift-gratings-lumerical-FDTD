@@ -43,59 +43,67 @@ def align_phases_at_resonance_peak(wl, S11, S21, target_phase=0.5 * np.pi):
 
 def apply_phase_correction(wl, S11_raw, S21_raw, pitch, dist_grating_to_port, x_grating_end,
                            neff_mat_file=None, neff1_internal=None, neff2_internal=None,
-                           use_single_neff=False, single_neff_val=None):
+                           use_single_neff=False, single_neff_val=None,
+                           do_length_correction=True, do_envelope_correction=True):
     """
-    1. De-embeds feed waveguides.
-    2. Removes theoretical carrier phase (Slope Correction).
-    3. Tunes Phase to exactly -0.5 * pi (-90 deg).
+    1. De-embeds feed waveguides (Controlled by do_length_correction).
+    2. Removes theoretical carrier phase (Slope Correction) AND
+    3. Tunes Phase to exactly -0.5 * pi (-90 deg) (Both controlled by do_envelope_correction).
 
-    UPDATED: Now supports 'use_single_neff' for Constant Material simulations.
+    UPDATED: Now supports independent control of length and envelope corrections.
     """
-    # --- A. Standard De-embedding ---
-    if use_single_neff:
-        # For Constant Materials: Use the single scalar value provided
-        if single_neff_val is None:
-            raise ValueError("use_single_neff is True, but single_neff_val is None.")
-        neff1 = single_neff_val
-        neff2 = single_neff_val
+    S11_corr = S11_raw.copy()
+    S21_corr = S21_raw.copy()
 
-    elif neff_mat_file and os.path.exists(neff_mat_file):
-        print(f"Loading external neff data from: {neff_mat_file}")
-        mat_data = sio.loadmat(neff_mat_file)
-        wl_fde = np.squeeze(mat_data['wavelengths'])
-        neff_fde = np.squeeze(mat_data['neff_complex'])
-        interp_real = interp1d(wl_fde, np.real(neff_fde), kind='linear', fill_value="extrapolate")
-        interp_imag = interp1d(wl_fde, np.imag(neff_fde), kind='linear', fill_value="extrapolate")
-        neff_interp = interp_real(wl) + 1j * interp_imag(wl)
-        neff1 = neff_interp
-        neff2 = neff_interp
-    else:
-        print("Using FDTD Port neff (internal) for de-embedding.")
-        if neff1_internal is None or neff2_internal is None:
-            raise ValueError("Internal neff data required but not provided.")
-        neff1 = neff1_internal
-        neff2 = neff2_internal
+    # --- A. Standard De-embedding (Length Correction) ---
+    if do_length_correction:
+        if use_single_neff:
+            # For Constant Materials: Use the single scalar value provided
+            if single_neff_val is None:
+                raise ValueError("use_single_neff is True, but single_neff_val is None.")
+            neff1 = single_neff_val
+            neff2 = single_neff_val
 
-    k0 = 2 * np.pi / wl
-    L_feed = dist_grating_to_port
+        elif neff_mat_file and os.path.exists(neff_mat_file):
+            print(f"Loading external neff data from: {neff_mat_file}")
+            mat_data = sio.loadmat(neff_mat_file)
+            wl_fde = np.squeeze(mat_data['wavelengths'])
+            neff_fde = np.squeeze(mat_data['neff_complex'])
+            interp_real = interp1d(wl_fde, np.real(neff_fde), kind='linear', fill_value="extrapolate")
+            interp_imag = interp1d(wl_fde, np.imag(neff_fde), kind='linear', fill_value="extrapolate")
+            neff_interp = interp_real(wl) + 1j * interp_imag(wl)
+            neff1 = neff_interp
+            neff2 = neff_interp
+        else:
+            print("Using FDTD Port neff (internal) for de-embedding.")
+            if neff1_internal is None or neff2_internal is None:
+                raise ValueError("Internal neff data required but not provided.")
+            neff1 = neff1_internal
+            neff2 = neff2_internal
 
-    beta1 = k0 * np.real(neff1)
-    beta2 = k0 * np.real(neff2)
-    corr_factor_1 = np.exp(-1j * beta1 * L_feed)
-    corr_factor_2 = np.exp(-1j * beta2 * L_feed)
-    S11_corr = S11_raw * (corr_factor_1 ** 2)
-    S21_corr = S21_raw * corr_factor_1 * corr_factor_2
+        k0 = 2 * np.pi / wl
+        L_feed = dist_grating_to_port
 
-    # --- B. Slope Correction ---
-    beta_0 = np.pi / pitch
-    device_len_m = 2.0 * x_grating_end
-    slope_correction = np.exp(-1j * beta_0 * device_len_m)
-    S21_corr = S21_corr * slope_correction
+        beta1 = k0 * np.real(neff1)
+        beta2 = k0 * np.real(neff2)
+        corr_factor_1 = np.exp(-1j * beta1 * L_feed)
+        corr_factor_2 = np.exp(-1j * beta2 * L_feed)
+        S11_corr = S11_corr * (corr_factor_1 ** 2)
+        S21_corr = S21_corr * corr_factor_1 * corr_factor_2
 
-    # --- C. Target Phase Correction (-PI/2) ---
-    S11_corr, S21_corr = align_phases_at_resonance_peak(
-        wl, S11_corr, S21_corr, target_phase=0.5 * np.pi
-    )
+    # --- B & C. Slope Correction & Target Phase Correction ---
+    if do_envelope_correction:
+        # --- B. Slope Correction ---
+        beta_0 = np.pi / pitch
+        device_len_m = 2.0 * x_grating_end
+        slope_correction = np.exp(-1j * beta_0 * device_len_m)
+        S21_corr = S21_corr * slope_correction
+
+        # --- C. Target Phase Correction (-PI/2) ---
+        S11_corr, S21_corr = align_phases_at_resonance_peak(
+            wl, S11_corr, S21_corr, target_phase=0.5 * np.pi
+        )
+
     return S11_corr, S21_corr
 
 

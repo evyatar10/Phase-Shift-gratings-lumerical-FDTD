@@ -1,10 +1,15 @@
 import numpy as np
 import os
+import time
 import importlib.util
-import math
+import matplotlib.pyplot as plt
+import scipy.io as sio
+
+# Import your existing modules
+import config
 import analysis
 
-# Try to import lumapi normally
+# Try to import lumapi
 try:
     import lumapi
 except ImportError:
@@ -14,11 +19,10 @@ except ImportError:
     spec.loader.exec_module(lumapi)
 
 
-class PiShiftBraggFDTD:
+class SimpleBraggFDTD:
     def __init__(self,
                  pitch=500e-9,
-                 n_periods_each_side=10,
-                 n_apod_periods_each_side=None,
+                 n_periods=40,  # Total number of periods
                  width_narrow=700e-9,
                  width_wide=900e-9,
                  width_port=1000e-9,
@@ -28,16 +32,12 @@ class PiShiftBraggFDTD:
                  z_span=8e-6,
                  n_periods_dist_to_port=5,
                  n_wls_dist_port_to_pml=2.0,
-                 override_cavity_length_nm=None,
                  material_db_path=None,
                  core_material="Si3N4 (Silicon Nitride) - Luke",
                  clad_material="SiO2 (Glass) - Palik",
                  n_eff_guess=1.55,
                  coarse_width_nm=150,
                  n_wl_points=401,
-                 use_apodization=False,
-                 center_mod_depth_nm=40.0,
-                 use_cavity_mesh_override=False,
                  use_symmetry=True,
                  use_z_symmetry=True,
                  use_constant_materials=False,
@@ -45,15 +45,7 @@ class PiShiftBraggFDTD:
                  n_clad_const=1.44):
 
         self.pitch = pitch
-        self.n_periods_each_side = n_periods_each_side
-
-        if n_apod_periods_each_side is None:
-            self.n_apod_periods_each_side = n_periods_each_side
-        else:
-            self.n_apod_periods_each_side = max(
-                1, min(n_apod_periods_each_side, n_periods_each_side)
-            )
-
+        self.n_periods = n_periods
         self.width_narrow = width_narrow
         self.width_wide = width_wide
         self.width_port = width_port
@@ -62,37 +54,36 @@ class PiShiftBraggFDTD:
         self.y_span = y_span
         self.z_span = z_span
 
+        # Materials
         self.material_db_path = material_db_path
         self.core_material = core_material
         self.clad_material = clad_material
-
-        self.use_symmetry = use_symmetry
-        self.use_z_symmetry = use_z_symmetry
         self.use_constant_materials = use_constant_materials
         self.n_core_const = n_core_const
         self.n_clad_const = n_clad_const
 
+        # Simulation settings
+        self.use_symmetry = use_symmetry
+        self.use_z_symmetry = use_z_symmetry
         self.n_eff_guess = n_eff_guess
         self.n_wl_points = n_wl_points
-        self.use_apodization = use_apodization
-        self.center_mod_depth = center_mod_depth_nm * 1e-9
 
-        self.use_cavity_mesh_override = use_cavity_mesh_override
-
+        # Calculate Geometry
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
 
-        if override_cavity_length_nm:
-            self.cavity_length = override_cavity_length_nm * 1e-9
-        else:
-            self.cavity_length = pitch / 2.0
+        # Total length of the grating
+        self.L_grating = self.n_periods * self.pitch
 
-        self.x_grating_end = (self.n_periods_each_side * self.pitch) + (self.cavity_length / 2.0)
+        # We center the grating at x=0, so the end coordinate is half the length
+        self.x_grating_end = self.L_grating / 2.0
+
         self.dist_grating_to_port = n_periods_dist_to_port * self.pitch
         self.x_port = self.x_grating_end + self.dist_grating_to_port
         self.dist_port_to_pml = n_wls_dist_port_to_pml * self.lambda_B
         self.x_sim_boundary = self.x_port + self.dist_port_to_pml
         self.sim_x_span = 2.0 * self.x_sim_boundary
 
+        # Scan range
         self.coarse_width_nm = coarse_width_nm
         half_w = 0.5 * self.coarse_width_nm * 1e-9
         self.lam_min = self.lambda_B - half_w
@@ -102,6 +93,7 @@ class PiShiftBraggFDTD:
         self._setup_materials()
 
     def _setup_materials(self):
+        # COPY OF ORIGINAL MATERIAL SETUP
         if self.use_constant_materials:
             print(f"Using CONSTANT Materials: SiN={self.n_core_const}, SiO2={self.n_clad_const}")
             const_sin = "SiN_Const_Custom"
@@ -236,60 +228,46 @@ class PiShiftBraggFDTD:
         fdtd.set("dimension", "3D")
         fdtd.setdevice("GPU")
         fdtd.set("background material", self.clad_material)
-        fdtd.set("simulation time", 1000e-12)
+        fdtd.set("simulation time", 100e-12)
         fdtd.set("auto shutoff min", 1e-6)
         fdtd.set("mesh accuracy", 3)
-        fdtd.set("dt stability factor", 0.7)
+        fdtd.set("dt stability factor", 0.5)
 
-    def _add_aligned_mesh_override(self, cells_per_half_period=5, max_cavity_dx=40e-9):
+    def _add_aligned_mesh_override(self, cells_per_half_period=5):
+        # EXACTLY matching the mesh logic from previous code,
+        # but simplified to a single box since there is no cavity.
         fdtd = self.fdtd
-        import math
         half_pitch = 0.5 * self.pitch
         n_cells_half = max(1, int(cells_per_half_period))
         dx_grating = half_pitch / float(n_cells_half)
         dy_global = self.width_narrow / 13.0
         dz_global = self.core_height / 7.0
+
         max_device_width = max(self.width_port, self.width_wide, self.width_narrow)
         y_span_override = max_device_width * 1.2
         z_span_override = self.core_height
-        x_cav_right = self.cavity_length / 2.0
-        x_cav_left = -self.cavity_length / 2.0
-        x_sim_left = -self.sim_x_span / 2.0 - 1e-6
-        x_sim_right = self.sim_x_span / 2.0 + 1e-6
 
-        def add_mesh_box(name, x, x_span, dx_val):
-            fdtd.addmesh()
-            fdtd.set("name", name)
-            fdtd.set("x", x)
-            fdtd.set("x span", x_span)
-            fdtd.set("y", 0.0)
-            fdtd.set("y span", y_span_override)
-            fdtd.set("z", 0.0)
-            fdtd.set("z span", z_span_override)
-            fdtd.set("override x mesh", 1)
-            fdtd.set("override y mesh", 1)
-            fdtd.set("override z mesh", 1)
-            fdtd.set("dx", dx_val)
-            fdtd.set("dy", dy_global)
-            fdtd.set("dz", dz_global)
-
-        len_left = x_cav_left - x_sim_left
-        add_mesh_box("mesh_left_arm", x_sim_left + len_left / 2.0, len_left, dx_grating)
-
-        len_right = x_sim_right - x_cav_right
-        add_mesh_box("mesh_right_arm", x_cav_right + len_right / 2.0, len_right, dx_grating)
-
-        if self.use_cavity_mesh_override:
-            target_dx = min(dx_grating, max_cavity_dx)
-            n_cells_cav = max(1, math.ceil(self.cavity_length / target_dx))
-            dx_cav_snapped = self.cavity_length / float(n_cells_cav)
-            add_mesh_box("mesh_cavity", 0.0, self.cavity_length, dx_cav_snapped)
+        # Create one single mesh override covering the entire grating area
+        # from -x_grating_end to +x_grating_end
+        fdtd.addmesh()
+        fdtd.set("name", "mesh_grating")
+        fdtd.set("x", 0)
+        fdtd.set("x span", 2.0 * self.x_grating_end)  # Full length
+        fdtd.set("y", 0.0)
+        fdtd.set("y span", y_span_override)
+        fdtd.set("z", 0.0)
+        fdtd.set("z span", z_span_override)
+        fdtd.set("override x mesh", 1)
+        fdtd.set("override y mesh", 1)
+        fdtd.set("override z mesh", 1)
+        fdtd.set("dx", dx_grating)
+        fdtd.set("dy", dy_global)
+        fdtd.set("dz", dz_global)
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
         z_core_center = 0.0
-        pitch = self.pitch
-        half_pitch = pitch / 2.0
+        half_pitch = self.pitch / 2.0
         seg_id = 0
 
         def add_core_segment(x1, x2, width, name_prefix="core_seg"):
@@ -305,47 +283,24 @@ class PiShiftBraggFDTD:
             fdtd.set("x min", x1)
             fdtd.set("x max", x2)
 
-        avg_width = 0.5 * (self.width_narrow + self.width_wide)
-        full_depth_edge = self.width_wide - self.width_narrow
-        full_depth_center = self.center_mod_depth if self.use_apodization else full_depth_edge
-        n_total = self.n_periods_each_side
-        n_apod = self.n_apod_periods_each_side
+        # 1. Start from the left edge of the grating
+        x_start = -self.x_grating_end
+        x = x_start
 
-        def get_mod_depth(d):
-            if d <= n_apod and n_total > 1:
-                denom = (n_apod - 1) if (n_apod > 1 and n_apod == n_total) else n_apod
-                if denom == 0: return full_depth_center
-                frac = (d - 1) / float(denom)
-                return full_depth_center + (full_depth_edge - full_depth_center) * frac
-            else:
-                return full_depth_edge
+        # 2. Add Left Infinite Waveguide
+        add_core_segment(-self.x_sim_boundary - 1e-6, x_start, self.width_port, name_prefix="wg_left_inf")
 
-        W_narrow, W_wide = {}, {}
-        for d in range(1, n_total + 1):
-            mod_depth = get_mod_depth(d)
-            delta = mod_depth / 2.0
-            W_narrow[d] = avg_width - delta
-            W_wide[d] = avg_width + delta
-
-        x_grating_start = -self.x_grating_end
-        x = x_grating_start
-        add_core_segment(-self.x_sim_boundary - 1e-6, x_grating_start, self.width_port, name_prefix="wg_left_inf")
-
-        for d in range(n_total, 0, -1):
-            add_core_segment(x, x + half_pitch, W_narrow[d], name_prefix=f"L_narrow_{d}")
+        # 3. Add Grating Periods
+        # No apodization, no cavity. Simple loop.
+        for i in range(self.n_periods):
+            # Narrow segment
+            add_core_segment(x, x + half_pitch, self.width_narrow, name_prefix=f"narrow_{i}")
             x += half_pitch
-            add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"L_wide_{d}")
+            # Wide segment
+            add_core_segment(x, x + half_pitch, self.width_wide, name_prefix=f"wide_{i}")
             x += half_pitch
 
-        add_core_segment(x, x + self.cavity_length, W_narrow[1], name_prefix="cavity")
-        x += self.cavity_length
-
-        for d in range(1, n_total + 1):
-            add_core_segment(x, x + half_pitch, W_narrow[d], name_prefix=f"R_narrow_{d}")
-            x += half_pitch
-            add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"R_wide_{d}")
-            x += half_pitch
-
+        # 4. Add Right Infinite Waveguide
         add_core_segment(x, self.x_sim_boundary + 1e-6, self.width_port, name_prefix="wg_right_inf")
 
     def _add_source_and_monitors(self):
@@ -354,10 +309,13 @@ class PiShiftBraggFDTD:
         half_pitch = 0.5 * self.pitch
         n_cells_half = max(1, int(cells_per_half_period))
         dx_mesh = half_pitch / float(n_cells_half)
+
+        # Snap port distance to mesh
         dist_snapped = round(self.dist_grating_to_port / dx_mesh) * dx_mesh
         self.dist_grating_to_port = dist_snapped
         self.x_port = self.x_grating_end + dist_snapped
 
+        # Port 1 (Forward)
         fdtd.addport()
         fdtd.set("name", "Port_1")
         fdtd.set("injection axis", "x")
@@ -370,6 +328,7 @@ class PiShiftBraggFDTD:
         fdtd.set("mode selection", "fundamental TE mode")
         fdtd.set("frequency dependent profile", 1)
 
+        # Port 2 (Backward)
         fdtd.addport()
         fdtd.set("name", "Port_2")
         fdtd.set("injection axis", "x")
@@ -381,33 +340,6 @@ class PiShiftBraggFDTD:
         fdtd.set("direction", "backward")
         fdtd.set("mode selection", "fundamental TE mode")
         fdtd.set("frequency dependent profile", 1)
-
-        # --- NEW MONITOR: Field Profile (Z-normal) ---
-        fdtd.addprofile()
-        fdtd.set("name", "field_profile")
-        fdtd.set("monitor type", "2D Z-normal")
-        fdtd.set("x", 0)
-        fdtd.set("x span", 2.0 * self.x_grating_end + 2.0e-6)
-        fdtd.set("y", 0)
-        fdtd.set("y span", 1.5 * self.width_wide)
-        fdtd.set("z", 0)
-        fdtd.set("override global monitor settings", 1)
-        fdtd.set("use source limits", 1)
-        # CHANGED: Increased to 501 points for better resolution
-        fdtd.set("frequency points", 501)
-
-        # --- NEW MONITORS: Time Domain (3 Points) ---
-        def add_time_mon(name, x_pos):
-            fdtd.addtime()
-            fdtd.set("name", name)
-            fdtd.set("monitor type", "Point")
-            fdtd.set("x", x_pos);
-            fdtd.set("y", 0);
-            fdtd.set("z", 0)
-
-        add_time_mon("time_input", -self.x_grating_end - 0.5e-6)
-        add_time_mon("time_cavity", 0.0)
-        add_time_mon("time_output", self.x_grating_end + 0.5e-6)
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
@@ -427,6 +359,9 @@ class PiShiftBraggFDTD:
             pass
 
     def get_s_and_t_matrix(self, neff_mat_file=None, correct_length=True, correct_envelope_and_t_phase=True):
+        """
+        UPDATED: Now accepts separate flags for length correction and envelope/phase correction.
+        """
         res1 = self.fdtd.getresult("FDTD::ports::Port_1", "expansion for port monitor")
         res2 = self.fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
         wl = np.squeeze(res1["lambda"])
@@ -437,7 +372,7 @@ class PiShiftBraggFDTD:
         use_single_neff = False
         single_neff_val = None
 
-        # Only prepare Neff data if we are actually doing length correction
+        # Only gather neff if length correction is actually requested
         if correct_length:
             if self.use_constant_materials:
                 use_single_neff = True
@@ -465,3 +400,100 @@ class PiShiftBraggFDTD:
 
         R_modal, T_modal, Loss_radiation, T_matrix = analysis.calculate_physics_matrices(S11_sim, S21_sim)
         return wl, R_modal, T_modal, Loss_radiation, T_matrix, S11_sim, S21_sim
+
+
+def run_simple_sim():
+    # 1. Parameters
+    lambda_res_est = 1.610e-6
+    scan_width_nm = 42.0
+    n_points = 3001
+    avg_corr = 800e-9
+    corr_depth = 350e-9
+    w_wide = avg_corr + corr_depth / 2
+    w_narrow = avg_corr - corr_depth / 2
+    core_h = 350e-9
+
+    calc_y_span = w_wide + 1.8 * lambda_res_est
+    calc_z_span = core_h + 1.8 * lambda_res_est
+
+    # User requested 40 periods total
+    N_total = 40
+
+    # 2. Initialize Simulation
+    sim = SimpleBraggFDTD(
+        pitch=520e-9,
+        n_periods=N_total,  # Total periods
+        width_narrow=w_narrow,
+        width_wide=w_wide,
+        width_port=1000e-9,
+        core_height=core_h,
+        substrate_thickness=4e-6,
+        y_span=calc_y_span,
+        z_span=calc_z_span,
+        material_db_path=config.MATERIAL_DB_PATH,
+        n_periods_dist_to_port=30,
+        n_wls_dist_port_to_pml=5.0,
+        n_eff_guess=1.55,
+        n_wl_points=n_points,
+        use_symmetry=True,  # y symmetry
+        use_z_symmetry=True,
+        use_constant_materials=True,
+        n_core_const=1.977
+    )
+
+    # 3. Generate Filenames
+    tag = f"SimpleBragg_{N_total}_periods"
+    if sim.use_constant_materials:
+        tag += "_CONST"
+
+    # --- SAVE LOCATION ---
+    layout_path = os.path.join(config.LAYOUTS_DIR, f"layout_{tag}.fsp")
+    results_path = os.path.join(config.RESULTS_DIR, f"result_{tag}.mat")
+
+    # 4. Run
+    sim.build()
+    sim.update_scan(center_lambda_m=lambda_res_est, width_nm=scan_width_nm, n_points=n_points)
+
+    sim.fdtd.save(layout_path)
+    print(f"Saved layout to: {layout_path}")
+
+    start = time.perf_counter()
+    sim.fdtd.run()
+    print(f"Simulation time: {time.perf_counter() - start:.3f} seconds")
+
+    # 5. Process S-parameters
+    # UPDATED: Length correction ON, Envelope/Phase correction OFF
+    wl, R, T, Loss, T_mat, S11, S21 = sim.get_s_and_t_matrix(
+        neff_mat_file=config.NEFF_DATA_PATH,
+        correct_length=True,
+        correct_envelope_and_t_phase=False
+    )
+
+    # 6. Save Data
+    mat_data = {
+        'wl_m': wl, 'wl_nm': wl * 1e9,
+        'T': T, 'R': R, 'loss': Loss,
+        'T_matrix': T_mat, 'S11_complex': S11, 'S21_complex': S21,
+        'L_device': 2.0 * sim.x_grating_end,
+    }
+    sio.savemat(results_path, mat_data)
+    print(f"Data saved to: {results_path}")
+
+    # 7. Plot R and T
+    plt.figure(figsize=(10, 6))
+    plt.plot(wl * 1e9, T, label="T (Modal) = |S21|^2", color='blue')
+    plt.plot(wl * 1e9, R, label="R (Modal) = |S11|^2", color='red')
+    plt.title(f"Simple Bragg Grating Response\nPeriods: {N_total}")
+    plt.xlabel("Wavelength [nm]")
+    plt.ylabel("Normalized power")
+    plt.legend()
+    plt.grid(True)
+
+    print("Displaying plots...")
+    plt.show()
+
+    sim.close()
+
+
+if __name__ == "__main__":
+    run_simple_sim()

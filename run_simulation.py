@@ -152,14 +152,14 @@ def run_single_sim():
     # 2. Initialize Simulation
     sim = PiShiftBraggFDTD(
         pitch=520e-9,
-        n_periods_each_side=60,
+        n_periods_each_side=145,
         n_apod_periods_each_side=20,
         width_narrow=w_narrow,
         width_wide=w_wide,
         width_port=1000e-9,
         core_height=core_h,
         substrate_thickness=4e-6,
-        override_cavity_length_nm=False, # False = pitch/2
+        override_cavity_length_nm=185.0, # False = pitch/2
         y_span=calc_y_span,
         z_span=calc_z_span,
         material_db_path=config.MATERIAL_DB_PATH,
@@ -167,7 +167,7 @@ def run_single_sim():
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
         n_wl_points=n_points,
-        use_apodization=False,
+        use_apodization=True,
         center_mod_depth_nm=4.0,
         use_cavity_mesh_override=True,
         use_symmetry=True, # y symmetry
@@ -198,7 +198,12 @@ def run_single_sim():
     print(f"Simulation time: {time.perf_counter() - start:.3f} seconds")
 
     # 5. Process S-parameters
-    wl, R, T, Loss, T_mat, S11, S21 = sim.get_s_and_t_matrix(correct_phase=True, neff_mat_file=config.NEFF_DATA_PATH)
+    # UPDATED to use the new flags instead of 'correct_phase'
+    wl, R, T, Loss, T_mat, S11, S21 = sim.get_s_and_t_matrix(
+        neff_mat_file=config.NEFF_DATA_PATH,
+        correct_length=True,
+        correct_envelope_and_t_phase=True
+    )
 
     # 6. Find Peak & Process Field Profile
     print("Finding Resonance Peak...")
@@ -233,7 +238,7 @@ def run_single_sim():
     plt.title(f"Spectral Response\nScan: {tag}")
     plt.xlabel("Wavelength [nm]")
     plt.ylabel("Normalized power")
-    plt.legend();
+    plt.legend()
     plt.grid(True)
 
     fig2 = plt.figure(num="Field Profile", figsize=(10, 6))
@@ -250,7 +255,7 @@ def run_single_sim():
     plt.title(f"Mode Profile (Cropped)\nResonance at {actual_mon_wl * 1e9:.2f} nm")
     plt.xlabel("Position x [um]")
     plt.ylabel("Integrated Energy Density (a.u.)")
-    plt.legend();
+    plt.legend()
     plt.grid(True)
 
     print("Displaying plots...")
