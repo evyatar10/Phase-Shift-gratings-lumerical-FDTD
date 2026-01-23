@@ -8,6 +8,7 @@ import scipy.signal  # For find_peaks
 from scipy.interpolate import interp1d
 import numpy as np
 from bragg_device import PiShiftBraggFDTD
+import analysis  # Ensure this module has the export function!
 import config
 
 
@@ -137,11 +138,11 @@ def extract_and_process_field_profile(sim, target_wl):
 
 def run_single_sim():
     # 1. Parameters
-    lambda_res_est = 1.610e-6
+    lambda_res_est = 1.560e-6 #1.610
     scan_width_nm = 42.0
     n_points = 3001
     avg_corr = 800e-9
-    corr_depth = 350e-9
+    corr_depth = 200e-9
     w_wide = avg_corr + corr_depth / 2
     w_narrow = avg_corr - corr_depth / 2
     core_h = 350e-9
@@ -151,15 +152,15 @@ def run_single_sim():
 
     # 2. Initialize Simulation
     sim = PiShiftBraggFDTD(
-        pitch=520e-9,
-        n_periods_each_side=145,
+        pitch=500e-9,
+        n_periods_each_side=120,
         n_apod_periods_each_side=20,
         width_narrow=w_narrow,
         width_wide=w_wide,
         width_port=1000e-9,
         core_height=core_h,
         substrate_thickness=4e-6,
-        override_cavity_length_nm=185.0, # False = pitch/2
+        override_cavity_length_nm=False, # False = pitch/2
         y_span=calc_y_span,
         z_span=calc_z_span,
         material_db_path=config.MATERIAL_DB_PATH,
@@ -167,7 +168,7 @@ def run_single_sim():
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
         n_wl_points=n_points,
-        use_apodization=True,
+        use_apodization=False,
         center_mod_depth_nm=4.0,
         use_cavity_mesh_override=True,
         use_symmetry=True, # y symmetry
@@ -230,7 +231,24 @@ def run_single_sim():
     sio.savemat(results_path, mat_data)
     print(f"Data saved to: {results_path}")
 
-    # 8. Plot
+    # 8. Export for Interconnect
+    print("Exporting for Interconnect...")
+    # Fetch matrices AGAIN with specific flags for Interconnect:
+    # correct_length=True (Removes pigtails/arms)
+    # correct_envelope_and_t_phase=False (KEEPS physical group delay/phase slope)
+    _, _, _, _, _, S11_interconnect, S21_interconnect = sim.get_s_and_t_matrix(
+        neff_mat_file=config.NEFF_DATA_PATH,
+        correct_length=True,
+        correct_envelope_and_t_phase=True
+    )
+
+    interconnect_file = os.path.join(config.RESULTS_DIR, f"interconnect_symmetric_{tag}.txt")
+    # Calling the symmetric export function from analysis.py
+    # NOTE: Ensure your analysis.py actually has this function!
+    analysis.export_for_interconnect_symmetric(interconnect_file, wl, S11_interconnect, S21_interconnect)
+    print(f"Interconnect data saved to: {interconnect_file}")
+
+    # 9. Plot
     fig1 = plt.figure(num="Spectrum", figsize=(10, 6))
     plt.plot(wl * 1e9, T, label="T (Modal)")
     plt.plot(wl * 1e9, R, label="R (Modal)")

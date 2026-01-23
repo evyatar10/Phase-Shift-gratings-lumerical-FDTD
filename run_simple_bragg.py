@@ -404,11 +404,11 @@ class SimpleBraggFDTD:
 
 def run_simple_sim():
     # 1. Parameters
-    lambda_res_est = 1.610e-6
+    lambda_res_est = 1.560e-6
     scan_width_nm = 42.0
     n_points = 3001
     avg_corr = 800e-9
-    corr_depth = 350e-9
+    corr_depth = 200e-9
     w_wide = avg_corr + corr_depth / 2
     w_narrow = avg_corr - corr_depth / 2
     core_h = 350e-9
@@ -421,7 +421,7 @@ def run_simple_sim():
 
     # 2. Initialize Simulation
     sim = SimpleBraggFDTD(
-        pitch=520e-9,
+        pitch=500e-9,
         n_periods=N_total,  # Total periods
         width_narrow=w_narrow,
         width_wide=w_wide,
@@ -462,11 +462,11 @@ def run_simple_sim():
     print(f"Simulation time: {time.perf_counter() - start:.3f} seconds")
 
     # 5. Process S-parameters
-    # UPDATED: Length correction ON, Envelope/Phase correction OFF
+    # UPDATED: Length correction ON, Envelope/Phase correction ON (User request)
     wl, R, T, Loss, T_mat, S11, S21 = sim.get_s_and_t_matrix(
         neff_mat_file=config.NEFF_DATA_PATH,
         correct_length=True,
-        correct_envelope_and_t_phase=False
+        correct_envelope_and_t_phase=True
     )
 
     # 6. Save Data
@@ -479,7 +479,13 @@ def run_simple_sim():
     sio.savemat(results_path, mat_data)
     print(f"Data saved to: {results_path}")
 
-    # 7. Plot R and T
+    # 7. Export for INTERCONNECT (New addition)
+    print("Exporting for Interconnect...")
+    interconnect_file = os.path.join(config.RESULTS_DIR, f"interconnect_symmetric_{tag}.txt")
+    analysis.export_for_interconnect_symmetric(interconnect_file, wl, S11, S21)
+    print(f"Interconnect data saved to: {interconnect_file}")
+
+    # 8. Plot R and T
     plt.figure(figsize=(10, 6))
     plt.plot(wl * 1e9, T, label="T (Modal) = |S21|^2", color='blue')
     plt.plot(wl * 1e9, R, label="R (Modal) = |S11|^2", color='red')

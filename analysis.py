@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.io as sio
 from scipy.interpolate import interp1d
+import scipy.constants as xc
 import os
 
 
@@ -101,7 +102,7 @@ def apply_phase_correction(wl, S11_raw, S21_raw, pitch, dist_grating_to_port, x_
 
         # --- C. Target Phase Correction (-PI/2) ---
         S11_corr, S21_corr = align_phases_at_resonance_peak(
-            wl, S11_corr, S21_corr, target_phase=0.5 * np.pi
+            wl, S11_corr, S21_corr, target_phase=0.5 * np.pi #0.5 * np.pi
         )
 
     return S11_corr, S21_corr
@@ -142,3 +143,41 @@ def calculate_physics_matrices(S11, S21):
     ])
 
     return R_modal, T_modal, Loss_radiation, T_matrix
+
+
+def export_for_interconnect_symmetric(filename, wl, S11, S21):
+    """
+    Exports S-parameters to the Lumerical INTERCONNECT 'Optical S-Parameter' format.
+    Symmetric configuration: (S11=S22, S21=S12).
+
+    Header Format: (num_points, 5)
+    Columns: Frequency | |S11| | Angle(S11) | |S21| | Angle(S21)
+    """
+    # 1. Convert Wavelength to Frequency
+    f_vec = xc.c / wl
+
+    # 2. Interconnect requires strictly increasing frequency
+    if f_vec[0] > f_vec[-1]:
+        f_vec = np.flip(f_vec)
+        S11 = np.flip(S11)
+        S21 = np.flip(S21)
+
+    # 3. Calculate Magnitude and Phase (Radians)
+    abs_s11 = np.abs(S11)
+    ang_s11 = np.unwrap(np.angle(S11))
+
+    abs_s21 = np.abs(S21)
+    ang_s21 = np.unwrap(np.angle(S21))
+
+
+    # 5. Stack Data
+    data_block = np.column_stack((
+        f_vec,
+        abs_s11, ang_s11,
+        abs_s21, ang_s21
+    ))
+
+    # 6. Save
+    # comments='' prevents np.savetxt from adding a '#' before the header
+    np.savetxt(filename, data_block, fmt='%.12e')
+    print(f"Exported for INTERCONNECT (Symmetric): {filename}")

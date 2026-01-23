@@ -163,7 +163,7 @@ def run_manual_reprocessing(layout_path, manual_resonance_nm=None, save_images=T
 
 # --- EXAMPLE USAGE ---
 if __name__ == "__main__":
-    MY_LAYOUT = os.path.join(config.LAYOUTS_DIR, "layout_145_periods_20_apodizations_L_cav_185_CONST.fsp")
+    MY_LAYOUT = os.path.join(config.LAYOUTS_DIR, "layout_150_periods_CONST.fsp")
 
     # Use save_images=True to save the PNGs
-    run_manual_reprocessing(MY_LAYOUT, manual_resonance_nm=1609, save_images=True)
+    run_manual_reprocessing(MY_LAYOUT, manual_resonance_nm=1562.37, save_images=True)
