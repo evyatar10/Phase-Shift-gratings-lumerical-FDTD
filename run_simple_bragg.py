@@ -466,7 +466,7 @@ def run_simple_sim():
     wl, R, T, Loss, T_mat, S11, S21 = sim.get_s_and_t_matrix(
         neff_mat_file=config.NEFF_DATA_PATH,
         correct_length=True,
-        correct_envelope_and_t_phase=True
+        correct_envelope_and_t_phase=False
     )
 
     # 6. Save Data

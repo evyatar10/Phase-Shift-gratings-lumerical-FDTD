@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import os
 import importlib.util
 import config
+import analysis  # Added for T-matrix calculation
 from run_simulation import extract_and_process_field_profile
 
 # --- LUMAPI INITIALIZATION ---
@@ -16,23 +17,36 @@ except ImportError:
     spec.loader.exec_module(lumapi)
 
 
-def run_manual_reprocessing(layout_path, manual_resonance_nm=None, save_images=True):
+def run_manual_reprocessing(layout_path, manual_resonance_nm=None, save_images=True, save_full_mat=True):
     """
     1. Loads existing simulation (no re-run).
     2. Recalculates Resonance, Q-factor (abs), and Side-Relative FWHM.
     3. Saves data to .mat file.
     4. Plots 3 separate figures (Linear, dB, Profile).
     5. Optionally saves the dB and Profile images to disk.
+    6. (New) Optionally saves a full result .mat file (like run_simulation output)
+       with the updated field profile and resonance info.
     """
     print(f"Opening Lumerical Layout: {layout_path}")
     fdtd = lumapi.FDTD(filename=layout_path)
 
-    # --- 1. Get Spectral Data ---
+    # --- 1. Get Spectral Data (Port 1 & 2) ---
+    # We need Port 1 now for Reflection/Loss if we are saving the full mat
+    res1 = fdtd.getresult("FDTD::ports::Port_1", "expansion for port monitor")
     res2 = fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
-    wl = np.squeeze(res2["lambda"])
-    T_linear = np.abs(np.squeeze(res2["S"])) ** 2
-    T_db = 10 * np.log10(T_linear)
+
+    wl = np.squeeze(res1["lambda"])
     wl_nm = wl * 1e9
+
+    # S-Parameters (Complex)
+    S11 = np.squeeze(res1["S"])
+    S21 = np.squeeze(res2["S"])
+
+    # Power Data
+    T_linear = np.abs(S21) ** 2
+    R_linear = np.abs(S11) ** 2
+    Loss = 1.0 - R_linear - T_linear
+    T_db = 10 * np.log10(T_linear)
 
     # --- 2. Resonance Selection ---
     if manual_resonance_nm:
@@ -64,6 +78,7 @@ def run_manual_reprocessing(layout_path, manual_resonance_nm=None, save_images=T
         def __init__(self, fdtd_obj):
             self.fdtd = fdtd_obj
             # This value matches your typical simulation size
+            # WARNING: Ideally this should be read from the file to be safe
             self.x_grating_end = 75.4925e-6
 
     proxy = SimProxy(fdtd)
@@ -84,10 +99,10 @@ def run_manual_reprocessing(layout_path, manual_resonance_nm=None, save_images=T
     else:
         fwhm_spatial_um = 0.0
 
-    # --- 6. Save Data (.mat) ---
     results_tag = os.path.basename(layout_path).replace(".fsp", "")
-    save_path_mat = os.path.join(config.RESULTS_DIR, f"reprocessed_{results_tag}.mat")
 
+    # --- 6a. Save Summary Data (Lite Version) ---
+    save_path_mat = os.path.join(config.RESULTS_DIR, f"reprocessed_{results_tag}.mat")
     sio.savemat(save_path_mat, {
         'wl_nm': wl_nm,
         'T_linear': T_linear,
@@ -99,7 +114,33 @@ def run_manual_reprocessing(layout_path, manual_resonance_nm=None, save_images=T
         'field_envelope': I_x_env,
         'field_energy_density_1D': I_x_1D
     })
-    print(f"Data saved to: {save_path_mat}")
+    print(f"Summary data saved to: {save_path_mat}")
+
+    # --- 6b. Save Full Simulation Format (Optional) ---
+    if save_full_mat:
+        # Calculate T-matrix for completeness
+        _, _, _, T_matrix = analysis.calculate_physics_matrices(S11, S21)
+
+        full_save_path = os.path.join(config.RESULTS_DIR, f"result_reprocessed_FULL_{results_tag}.mat")
+
+        full_data = {
+            'wl_m': wl,
+            'wl_nm': wl_nm,
+            'T': T_linear,
+            'R': R_linear,
+            'loss': Loss,
+            'T_matrix': T_matrix,
+            'S11_complex': S11,  # Note: Raw S-params (phase corrections from run_sim might be missing if not baked in)
+            'S21_complex': S21,
+            'L_device': 2.0 * proxy.x_grating_end,
+            'field_x': f_x,
+            'field_energy_density_1D': I_x_1D,
+            'field_envelope_1D': I_x_env,
+            'fwhm_m': fwhm_spatial_um * 1e-6
+        }
+
+        sio.savemat(full_save_path, full_data)
+        print(f"Full original-format data saved to: {full_save_path}")
 
     # --- 7. Plotting & Image Saving ---
 
@@ -141,11 +182,10 @@ def run_manual_reprocessing(layout_path, manual_resonance_nm=None, save_images=T
     if fwhm_spatial_um > 0:
         half_width = fwhm_spatial_um / 2.0
         plt.hlines(target_level, -half_width, half_width, colors='k', linestyles='dashed', linewidth=2)
-        # Removed backgroundcolor='white' to remove the box
         plt.text(0, target_level * 1.05, f"FWHM = {fwhm_spatial_um:.2f} um",
                  ha='center', color='black', fontweight='bold')
 
-    plt.title(f"Mode Profile @ {res_wl_nm:.2f} nm")  # Removed (Relative to edge) text
+    plt.title(f"Mode Profile @ {res_wl_nm:.2f} nm")
     plt.xlabel("Position x [um]")
     plt.ylabel("Integrated Energy Density (a.u.)")
     plt.legend()
@@ -165,5 +205,5 @@ def run_manual_reprocessing(layout_path, manual_resonance_nm=None, save_images=T
 if __name__ == "__main__":
     MY_LAYOUT = os.path.join(config.LAYOUTS_DIR, "layout_150_periods_CONST.fsp")
 
-    # Use save_images=True to save the PNGs
-    run_manual_reprocessing(MY_LAYOUT, manual_resonance_nm=1562.37, save_images=True)
+    # Set save_full_mat=True to generate the new file
+    run_manual_reprocessing(MY_LAYOUT, manual_resonance_nm=1562.37, save_images=True, save_full_mat=True)

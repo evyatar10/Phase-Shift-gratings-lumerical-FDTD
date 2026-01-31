@@ -139,7 +139,7 @@ def extract_and_process_field_profile(sim, target_wl):
 def run_single_sim():
     # 1. Parameters
     lambda_res_est = 1.560e-6 #1.610
-    scan_width_nm = 42.0
+    scan_width_nm = 16.0
     n_points = 3001
     avg_corr = 800e-9
     corr_depth = 200e-9
@@ -153,7 +153,7 @@ def run_single_sim():
     # 2. Initialize Simulation
     sim = PiShiftBraggFDTD(
         pitch=500e-9,
-        n_periods_each_side=120,
+        n_periods_each_side=60,
         n_apod_periods_each_side=20,
         width_narrow=w_narrow,
         width_wide=w_wide,
@@ -164,7 +164,7 @@ def run_single_sim():
         y_span=calc_y_span,
         z_span=calc_z_span,
         material_db_path=config.MATERIAL_DB_PATH,
-        n_periods_dist_to_port=30,
+        n_periods_dist_to_port=20,
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
         n_wl_points=n_points,
