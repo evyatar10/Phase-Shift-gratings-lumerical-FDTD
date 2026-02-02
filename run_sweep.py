@@ -93,7 +93,7 @@ def run_parameter_sweep():
     lambda_res_est = 1.560e-6
 
     # 2. 3D Points: MUST BE ODD to ensure the center wavelength is included
-    n_3d_points = 21
+    n_3d_points = 31
 
     record_3d_fields = True
     export_interconnect_data = True
@@ -199,25 +199,21 @@ def run_parameter_sweep():
                 if diff < 1e-12:
                     print(f"Confirmed: {lambda_res_est * 1e6:.3f} um is in the 3D data.")
 
-                # We save the closest point to the ACTUAL resonance found in simulation
-                idx_3d = np.argmin(np.abs(lam_3d - target_wl))
-                print(
-                    f"Saving 3D slice at {lam_3d[idx_3d] * 1e9:.3f} nm (Error from peak: {(lam_3d[idx_3d] - target_wl) * 1e9:.3f} nm)")
+                # Save ALL frequency points
+                print(f"Saving 3D field for all {len(lam_3d)} frequency points.")
 
                 E_full = res_3d['E']
-                if E_full.ndim == 5:
-                    E_res = E_full[..., idx_3d, :]
-                else:
-                    E_res = E_full
+                # E_full shape is typically (x, y, z, freq, 3) or (x, y, z, 3)
+                # We save it as is to preserve all frequency info.
 
                 field_3d_data = {
                     'x': np.squeeze(res_3d['x']),
                     'y': np.squeeze(res_3d['y']),
                     'z': np.squeeze(res_3d['z']),
-                    'E_res': E_res,
-                    'lambda_3d': lam_3d[idx_3d] if not np.isscalar(lam_3d) else lam_3d
+                    'E_res': E_full,  # Now contains all frequency points
+                    'lambda_3d': lam_3d
                 }
-                del res_3d, E_full, E_res
+                del res_3d, E_full
 
                 # Save
             mat_data = {

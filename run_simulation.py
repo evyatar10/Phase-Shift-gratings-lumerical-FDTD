@@ -241,7 +241,7 @@ def run_single_sim():
     # --- 7. EXTRACT 3D DATA ---
     field_3d_data = {}
     if sim.record_3d_fields:
-        print("Extracting 3D Field data at resonance...")
+        print("Extracting 3D Field data...")
         # Access the raw result from the monitor
         res_3d = sim.fdtd.getresult("field_profile_3D", "E")
         lam_3d = np.squeeze(res_3d['lambda'])
@@ -251,24 +251,17 @@ def run_single_sim():
         if diff < 1e-12:
             print(f"Confirmed: {lambda_res_est * 1e6:.3f} um is included in the 3D data.")
 
-        # Find index closest to ACTUAL resonance peak found in simulation
-        idx_3d = np.argmin(np.abs(lam_3d - target_wl))
-
-        # Extract E-field ONLY at that index to save space
+        # SAVE ALL FREQUENCY POINTS
+        # We do not slice [..., idx, :] anymore.
+        print(f"Saving all {len(lam_3d)} frequency points from 3D monitor.")
         E_full = res_3d['E']
-
-        if E_full.ndim == 5:
-            # Squeeze out the frequency dimension, keep (x,y,z,3)
-            E_res = E_full[..., idx_3d, :]
-        else:
-            E_res = E_full
 
         field_3d_data = {
             'x': np.squeeze(res_3d['x']),
             'y': np.squeeze(res_3d['y']),
             'z': np.squeeze(res_3d['z']),
-            'E_res': E_res,  # Contains Ex, Ey, Ez
-            'lambda_3d': lam_3d[idx_3d] if not np.isscalar(lam_3d) else lam_3d
+            'E_res': E_full,  # Contains all freq points
+            'lambda_3d': lam_3d
         }
         del res_3d  # Free memory
 
