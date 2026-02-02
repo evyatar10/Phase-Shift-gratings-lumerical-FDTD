@@ -1,7 +1,6 @@
-% MATLAB Script: calculate_overlap_physics_export_descriptive_inverted.m
+% MATLAB Script: calculate_overlap_all_strategies.m
 
 % --- USER CONFIGURATION ---
-% Physical Parameters
 N_short = 60;       % Periods (each side) for the short device
 N_long  = 100;      % Periods (each side) for the long device
 pitch   = 500e-9;   % Grating pitch
@@ -13,13 +12,13 @@ filename_short = fullfile(base_dir, 'result_60_periods_CONST_3D_crop.mat');
 filename_long  = fullfile(base_dir, 'result_100_periods_CONST_3D_crop.mat');
 
 % Run Analysis
-analyze_overlap_physics_export(filename_long, filename_short, N_short, N_long, pitch, cav_len, base_dir);
+analyze_overlap_all(filename_long, filename_short, N_short, N_long, pitch, cav_len, base_dir);
 
 
 % ---------------------------------------------------------
 % MAIN FUNCTION
 % ---------------------------------------------------------
-function analyze_overlap_physics_export(file_long, file_short, N_short, N_long, pitch, cav_len, out_dir)
+function analyze_overlap_all(file_long, file_short, N_short, N_long, pitch, cav_len, out_dir)
 
     % 1. Load Data
     fprintf('Loading Long Device...\n');
@@ -35,7 +34,7 @@ function analyze_overlap_physics_export(file_long, file_short, N_short, N_long, 
         wl_resonance_global = wl_spec(idx_peak_global);
         fprintf('Spectrum Analysis: True Resonance detected at %.3f nm\n', wl_resonance_global*1e9);
     else
-        error('Variable "T" or "wl_m" not found. Cannot find resonance.');
+        error('Variable "T" or "wl_m" not found.');
     end
 
     % 3. Unpack 3D Data
@@ -43,102 +42,122 @@ function analyze_overlap_physics_export(file_long, file_short, N_short, N_long, 
     [xS, yS, zS, lamS_3d, ES_All] = unpack_data_robust(data_S, 'Short');
 
     num_wls = length(lamS_3d);
-    fprintf('3D Monitor contains %d wavelength points.\n', num_wls);
+    fprintf('3D Monitor contains %d wavelengths.\n', num_wls);
 
-    % 4. Map Resonance Indices
+    % 4. Find Indices
     [~, idx_res_3d] = min(abs(lamS_3d - wl_resonance_global));
     T_at_3d = interp1(wl_spec, T_spec, lamS_3d, 'nearest');
     [~, idx_off_3d] = min(T_at_3d);
 
-    % 5. Define Physical Edges
+    % 5. Define STRICT Physical Region
     x_edge_pos = (N_short * pitch) + (cav_len / 2);
     x_target_L = -x_edge_pos;
     x_target_R =  x_edge_pos;
+    
+    fprintf('Physical Edges: +/- %.3f um\n', x_edge_pos*1e6);
 
     % 6. Initialize Storage
-    factors_left  = zeros(num_wls, 1);
-    factors_right = zeros(num_wls, 1);
+    factors_left   = zeros(num_wls, 1);
+    factors_right  = zeros(num_wls, 1);
+    factors_global = zeros(num_wls, 1);
     
-    prof_res = struct('x', [], 'raw', [], 'env', [], 'wl', 0, 'val_L', 0, 'val_R', 0);
-    prof_off = struct('x', [], 'raw', [], 'env', [], 'wl', 0, 'val_L', 0, 'val_R', 0);
+    prof_res = struct('x', [], 'raw', [], 'env', [], 'wl', 0, 'val_L', 0, 'val_R', 0, 'val_avg', 0);
+    prof_off = struct('x', [], 'raw', [], 'env', [], 'wl', 0, 'val_L', 0, 'val_R', 0, 'val_avg', 0);
 
     % --- LOOP OVER WAVELENGTHS ---
-    fprintf('Processing Overlaps...\n');
+    fprintf('Processing...\n');
     for i = 1:num_wls
         wl_current = lamS_3d(i);
         
         % Extract Slices
-        E_L_slice = squeeze(EL_All(:, :, :, i, :));
-        E_S_slice = squeeze(ES_All(:, :, :, i, :));
+        E_L = squeeze(EL_All(:, :, :, i, :));
+        E_S = squeeze(ES_All(:, :, :, i, :));
 
-        % Calculate Spatial Overlap
-        [x_common, overlap_profile] = calculate_spatial_overlap(xL, yL, zL, E_L_slice, xS, yS, zS, E_S_slice);
+        % Calculate Spatial Overlap Profile
+        [x_common, overlap_profile] = calculate_spatial_overlap(xL, yL, zL, E_L, xS, yS, zS, E_S);
 
-        % Calculate Envelope
-        [x_env, y_env] = calculate_envelope_extrapolated(x_common, overlap_profile);
+        % Calculate Envelope (DENSE Interpolation for averaging)
+        [x_env_pts, y_env_pts] = calculate_envelope_points(x_common, overlap_profile);
+        env_dense = interp1(x_env_pts, y_env_pts, x_common, 'pchip', 'extrap');
 
-        % Extract Values at Edges
-        val_L = interp1(x_env, y_env, x_target_L, 'linear', 'extrap');
-        val_R = interp1(x_env, y_env, x_target_R, 'linear', 'extrap');
+        % --- A. Left/Right Edge Values ---
+        val_L = interp1(x_env_pts, y_env_pts, x_target_L, 'linear', 'extrap');
+        val_R = interp1(x_env_pts, y_env_pts, x_target_R, 'linear', 'extrap');
         
-        % Clamp (0 to 1)
-        val_L = min(max(val_L, 0), 1);
-        val_R = min(max(val_R, 0), 1);
+        % --- B. Global Mean Calculation ---
+        mask_device = (x_common >= x_target_L) & (x_common <= x_target_R);
+        if any(mask_device)
+            val_avg = mean(env_dense(mask_device));
+        else
+            val_avg = 0; 
+        end
         
-        factors_left(i)  = val_L;
-        factors_right(i) = val_R;
+        % Clamp (Physics check)
+        val_L   = min(max(val_L, 0), 1);
+        val_R   = min(max(val_R, 0), 1);
+        val_avg = min(max(val_avg, 0), 1);
+        
+        factors_left(i)   = val_L;
+        factors_right(i)  = val_R;
+        factors_global(i) = val_avg;
 
         % Store Profiles
         if i == idx_res_3d
-            prof_res.x = x_common; prof_res.raw = overlap_profile; prof_res.env = interp1(x_env, y_env, x_common, 'pchip', 'extrap');
-            prof_res.wl = wl_current; prof_res.val_L = val_L; prof_res.val_R = val_R;
+            prof_res.x = x_common; prof_res.raw = overlap_profile; prof_res.env = env_dense;
+            prof_res.wl = wl_current; prof_res.val_L = val_L; prof_res.val_R = val_R; prof_res.val_avg = val_avg;
         end
         if i == idx_off_3d
-            prof_off.x = x_common; prof_off.raw = overlap_profile; prof_off.env = interp1(x_env, y_env, x_common, 'pchip', 'extrap');
-            prof_off.wl = wl_current; prof_off.val_L = val_L; prof_off.val_R = val_R;
+            prof_off.x = x_common; prof_off.raw = overlap_profile; prof_off.env = env_dense;
+            prof_off.wl = wl_current; prof_off.val_L = val_L; prof_off.val_R = val_R; prof_off.val_avg = val_avg;
         end
-        if mod(i, 5) == 0, fprintf('  Completed %d / %d\n', i, num_wls); end
+        if mod(i, 5) == 0, fprintf('  %d/%d\n', i, num_wls); end
     end
 
     % ---------------------------------------------------------
-    % 7. EXPORT FOR INTERCONNECT (DESCRIPTIVE NAMES + INVERTED)
+    % 7. EXPORT (INVERTED SQRT)
     % ---------------------------------------------------------
     fprintf('Exporting S-Matrices to %s...\n', out_dir);
     
-    % Prepare Frequency Vector (Hz)
     freq_vec = 2.99792458e8 ./ lamS_3d;
     
-    % Generate Descriptive Filenames
+    % S21 = sqrt(1 / eta)
+    S21_L = sqrt(1 ./ factors_left);
+    S21_R = sqrt(1 ./ factors_right);
+    S21_G = sqrt(1 ./ factors_global);
+    
+    % Filenames
     name_L = sprintf('junction_N%d_N%d_left.txt', N_short, N_long);
     name_R = sprintf('junction_N%d_N%d_right.txt', N_short, N_long);
+    name_G = sprintf('junction_N%d_N%d_global_avg.txt', N_short, N_long);
     
-    % Left Junction (Correction Factor = 1 / Overlap)
-    % Amplitude S21 = sqrt(1 / Power_Overlap)
-    S21_L = sqrt(1 ./ factors_left);
     export_s_matrix(fullfile(out_dir, name_L), freq_vec, S21_L);
-    
-    % Right Junction (Correction Factor = 1 / Overlap)
-    S21_R = sqrt(1 ./ factors_right);
     export_s_matrix(fullfile(out_dir, name_R), freq_vec, S21_R);
+    export_s_matrix(fullfile(out_dir, name_G), freq_vec, S21_G);
 
     % ---------------------------------------------------------
     % PLOTTING
     % ---------------------------------------------------------
-    plot_spatial_result(prof_res, x_target_L, x_target_R, 'Resonance Profile');
-    plot_spatial_result(prof_off, x_target_L, x_target_R, 'Off-Resonance Profile');
+    plot_spatial_comparison(prof_res, x_target_L, x_target_R, 'Resonance Profile');
+    plot_spatial_comparison(prof_off, x_target_L, x_target_R, 'Off-Resonance Profile');
     
     figure('Name', 'Mismatch Coupling Spectrum', 'Color', 'w');
-    plot(lamS_3d * 1e9, factors_left, 'b-o', 'LineWidth', 1.5, 'DisplayName', 'Left Junction (-X)');
     hold on;
-    plot(lamS_3d * 1e9, factors_right, 'r--x', 'LineWidth', 1.5, 'DisplayName', 'Right Junction (+X)');
-    xline(wl_resonance_global*1e9, 'k--', 'DisplayName', 'True Resonance');
-    xlabel('Wavelength [nm]'); ylabel('Coupling Factor \eta (Raw)');
-    title({'Junction Coupling Efficiency', sprintf('Evaluated at Edges +/- %.2f um', x_target_R*1e6)});
+    % Plot Left/Right (Dashed/Dotted)
+    plot(lamS_3d * 1e9, factors_left, 'b--', 'LineWidth', 1, 'DisplayName', 'Left Edge');
+    plot(lamS_3d * 1e9, factors_right, 'r--', 'LineWidth', 1, 'DisplayName', 'Right Edge');
+    
+    % Plot Global Average (Thick Line)
+    plot(lamS_3d * 1e9, factors_global, 'g-o', 'LineWidth', 2, 'MarkerFaceColor', 'g', 'DisplayName', 'Global Average');
+    
+    xline(wl_resonance_global*1e9, 'k-', 'DisplayName', 'Resonance');
+    xlabel('Wavelength [nm]'); ylabel('Overlap Factor \eta');
+    title('Comparison: Edge vs Distributed Overlap');
     legend('Location', 'best'); grid on;
     
     fprintf('\n--- FINAL COEFFICIENTS AT RESONANCE ---\n');
-    fprintf('Left:  %.4f\nRight: %.4f\n', prof_res.val_L, prof_res.val_R);
-    fprintf('(Files exported with INVERSE correction factors)\n');
+    fprintf('Left Edge:   %.4f\n', prof_res.val_L);
+    fprintf('Right Edge:  %.4f\n', prof_res.val_R);
+    fprintf('Global Avg:  %.4f\n', prof_res.val_avg);
 end
 
 % ---------------------------------------------------------
@@ -146,11 +165,8 @@ end
 % ---------------------------------------------------------
 function export_s_matrix(filepath, freq, S21_mag)
     fid = fopen(filepath, 'w');
-    % Format: Freq(Hz) |S11| ang |S21| ang |S12| ang |S22| ang
-    % S21 = S12 = transmission. S11 = S22 = 0.
     for k = 1:length(freq)
-        fprintf(fid, '%.6e 0 0 %.6f 0 %.6f 0 0 0\n', ...
-            freq(k), S21_mag(k), S21_mag(k));
+        fprintf(fid, '%.6e 0 0 %.6f 0 %.6f 0 0 0\n', freq(k), S21_mag(k), S21_mag(k));
     end
     fclose(fid);
     fprintf('  -> Saved: %s\n', filepath);
@@ -189,32 +205,41 @@ function [x_common, overlap_vals] = calculate_spatial_overlap(xL, yL, zL, EL, xS
 end
 
 % ---------------------------------------------------------
-% HELPER: ENVELOPE (Column Fixed)
+% HELPER: ENVELOPE (Points Only)
 % ---------------------------------------------------------
-function [x_env, y_env] = calculate_envelope_extrapolated(x, y)
+function [x_peaks, y_peaks] = calculate_envelope_points(x, y)
     [pks, locs] = findpeaks(y, x);
-    if length(pks) < 3, x_env = x; y_env = y; return; end
-    x_peaks = locs(:); y_peaks = pks(:);
-    y_start = interp1(x_peaks(1:2), y_peaks(1:2), x(1), 'linear', 'extrap');
-    y_end   = interp1(x_peaks(end-1:end), y_peaks(end-1:end), x(end), 'linear', 'extrap');
-    x_env = [x(1); x_peaks; x(end)];
-    y_env = [y_start; y_peaks; y_end];
+    if length(pks) < 3, x_peaks = x; y_peaks = y; return; end
+    x_locs = locs(:); y_pks = pks(:);
+    y_start = interp1(x_locs(1:2), y_pks(1:2), x(1), 'linear', 'extrap');
+    y_end   = interp1(x_locs(end-1:end), y_pks(end-1:end), x(end), 'linear', 'extrap');
+    x_peaks = [x(1); x_locs; x(end)];
+    y_peaks = [y_start; y_pks; y_end];
 end
 
 % ---------------------------------------------------------
 % HELPER: PLOTTER
 % ---------------------------------------------------------
-function plot_spatial_result(prof, x_L, x_R, title_str)
+function plot_spatial_comparison(prof, x_L, x_R, title_str)
     if isempty(prof.x), return; end
     figure('Name', title_str, 'Color', 'w'); hold on;
-    plot(prof.x * 1e6, prof.raw, 'Color', [0.7 0.7 1], 'LineWidth', 0.5);
-    plot(prof.x * 1e6, prof.env, 'r-', 'LineWidth', 2);
-    xline(x_L * 1e6, 'k--', 'LineWidth', 1.5);
-    plot(x_L * 1e6, prof.val_L, 'ko', 'MarkerFaceColor', 'b', 'MarkerSize', 7);
-    xline(x_R * 1e6, 'k--', 'LineWidth', 1.5);
-    plot(x_R * 1e6, prof.val_R, 'ko', 'MarkerFaceColor', 'b', 'MarkerSize', 7);
+    
+    % Raw & Envelope
+    plot(prof.x * 1e6, prof.raw, 'Color', [0.8 0.8 1], 'LineWidth', 0.5);
+    plot(prof.x * 1e6, prof.env, 'r-', 'LineWidth', 1.5);
+    
+    % Edge Markers
+    xline(x_L * 1e6, 'b--', 'LineWidth', 1.5);
+    plot(x_L * 1e6, prof.val_L, 'bs', 'MarkerFaceColor', 'b');
+    xline(x_R * 1e6, 'r--', 'LineWidth', 1.5);
+    plot(x_R * 1e6, prof.val_R, 'rs', 'MarkerFaceColor', 'r');
+    
+    % Average Line
+    yline(prof.val_avg, 'g--', 'LineWidth', 2, 'DisplayName', 'Global Mean');
+
     xlabel('Position X [\mum]'); ylabel('Overlap Factor');
-    title({[title_str ' (\lambda = ' num2str(prof.wl*1e9, '%.2f') ' nm)'], 'Blue=Raw, Red=Envelope'});
+    title({[title_str ' (\lambda = ' num2str(prof.wl*1e9, '%.2f') ' nm)'], ...
+           'Blue Square=Left, Red Square=Right, Green Line=Avg'});
     grid on; ylim([0, 1.05]); xlim([min(prof.x)*1e6, max(prof.x)*1e6]); hold off;
 end
 
@@ -222,7 +247,6 @@ end
 % HELPER: UNPACK
 % ---------------------------------------------------------
 function [x, y, z, lam, E_5D] = unpack_data_robust(data, name)
-    if ~isfield(data, 'field_3d'), error('Missing field_3d in %s', name); end
     f3d = data.field_3d;
     x = double(f3d.x); y = double(f3d.y); z = double(f3d.z);
     if isfield(f3d, 'lambda_3d'), lam = double(f3d.lambda_3d); else, lam = 1.55e-6; end
