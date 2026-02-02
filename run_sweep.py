@@ -86,26 +86,22 @@ def extract_and_process_field_profile(sim, target_wl):
 # --- SWEEP RUNNER ---
 
 def run_parameter_sweep():
-    N_periods_list = [60, 80, 100]
+    # Sweep Parameters
+    N_periods_list = [40, 60, 80, 100]
 
-    # --- CONFIGURATION ---
-    # 1. Target Wavelength (Center of Scan)
+    # Common Config
     lambda_res_est = 1.560e-6
-
-    # 2. 3D Points: MUST BE ODD to ensure the center wavelength is included
     n_3d_points = 31
-
     record_3d_fields = True
     export_interconnect_data = True
 
     pitch = 500e-9
     cav_len = pitch / 2.0
-    N_reference_for_crop = 60
+    N_reference_for_crop = 40
     crop_len_m = 2.0 * (N_reference_for_crop * pitch) + cav_len + 1.0e-6
 
-    # Common Settings
     scan_width_nm = 16.0
-    n_points_global = 3001  # For high-res S-parameters
+    n_points_global = 3001
     core_h = 350e-9
     w_wide = 900e-9
     w_narrow = 700e-9
@@ -113,7 +109,7 @@ def run_parameter_sweep():
     print(f"--- SWEEP CONFIGURATION ---")
     print(f"Sweeping N_periods: {N_periods_list}")
     print(f"Center Wavelength: {lambda_res_est * 1e6:.3f} um")
-    print(f"3D Monitor: {n_3d_points} points (guarantees center WL included)")
+    print(f"3D Monitor: {n_3d_points} points")
     print(f"---------------------------\n")
 
     for i, N_periods in enumerate(N_periods_list):
@@ -148,7 +144,6 @@ def run_parameter_sweep():
             downsample_yz=1
         )
 
-        # Tagging
         N = sim.n_periods_each_side
         Napod = sim.n_apod_periods_each_side
         use_apod = bool(sim.use_apodization) and (Napod is not None) and (Napod > 0)
@@ -164,8 +159,6 @@ def run_parameter_sweep():
             sim.build()
             sim.update_scan(center_lambda_m=lambda_res_est, width_nm=scan_width_nm, n_points=n_points_global)
 
-            # --- OVERRIDE 3D MONITOR POINTS ---
-            # bragg_device.py resets this to 5, so we MUST override it here to 31
             if record_3d_fields:
                 sim.fdtd.setnamed("field_profile_3D", "frequency points", n_3d_points)
                 print(f"Override: Set 3D monitor to {n_3d_points} points.")
@@ -176,7 +169,7 @@ def run_parameter_sweep():
             sim.fdtd.run()
             print(f"Run finished in {time.perf_counter() - start_time:.2f} sec")
 
-            # Process S-Params
+            # --- PROCESS S-PARAMS (Standard) ---
             wl, R, T, Loss, T_mat, S11, S21 = sim.get_s_and_t_matrix(
                 neff_mat_file=config.NEFF_DATA_PATH, correct_length=True, correct_envelope_and_t_phase=True
             )
@@ -184,43 +177,45 @@ def run_parameter_sweep():
             target_wl = wl[idx_peak]
             print(f"Resonance at: {target_wl * 1e9:.2f} nm")
 
-            # 2D Profile
+            # --- PROCESS 2D PROFILE ---
             f_x, I_x_1D, I_x_envelope, fwhm_val, actual_mon_wl = extract_and_process_field_profile(sim, target_wl)
 
-            # 3D Data Extraction
+            # --- EXTRACT 3D DATA (Modified to keep all wavelengths) ---
             field_3d_data = {}
             if sim.record_3d_fields:
                 print("Extracting 3D Field...")
                 res_3d = sim.fdtd.getresult("field_profile_3D", "E")
                 lam_3d = np.squeeze(res_3d['lambda'])
 
-                # Check if exact guess is included (Debugging info)
-                diff = np.min(np.abs(lam_3d - lambda_res_est))
-                if diff < 1e-12:
-                    print(f"Confirmed: {lambda_res_est * 1e6:.3f} um is in the 3D data.")
-
-                # Save ALL frequency points
                 print(f"Saving 3D field for all {len(lam_3d)} frequency points.")
 
+                # IMPORTANT: Save full data (no slicing on freq axis)
                 E_full = res_3d['E']
-                # E_full shape is typically (x, y, z, freq, 3) or (x, y, z, 3)
-                # We save it as is to preserve all frequency info.
 
                 field_3d_data = {
                     'x': np.squeeze(res_3d['x']),
                     'y': np.squeeze(res_3d['y']),
                     'z': np.squeeze(res_3d['z']),
-                    'E_res': E_full,  # Now contains all frequency points
+                    'E_res': E_full,
                     'lambda_3d': lam_3d
                 }
                 del res_3d, E_full
 
-                # Save
+                # --- SAVE RESULTS (Updated to match run_simulation.py keys) ---
             mat_data = {
-                'wl_m': wl, 'T': T, 'S21_complex': S21,
+                'wl_m': wl,
+                'wl_nm': wl * 1e9,  # ADDED: Standard wavelength vector in nm
+                'T': T,
+                'R': R,  # ADDED: Reflection
+                'loss': Loss,  # ADDED: Loss
+                'T_matrix': T_mat,  # ADDED: T-Matrix
+                'S11_complex': S11,  # ADDED: Complex S11
+                'S21_complex': S21,  # ADDED: Complex S21 (same as previous 'S21_complex')
                 'L_device': 2.0 * sim.x_grating_end,
                 'field_x': f_x,
                 'field_energy_density_1D': I_x_1D,
+                'field_envelope_1D': I_x_envelope,  # ADDED: Envelope 1D
+                'fwhm_m': fwhm_val,  # ADDED: FWHM
                 'field_3d': field_3d_data
             }
             sio.savemat(results_path, mat_data)

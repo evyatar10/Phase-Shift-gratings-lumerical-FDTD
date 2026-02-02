@@ -1,24 +1,24 @@
-% MATLAB Script: calculate_overlap_fixed.m
+% MATLAB Script: calculate_overlap_physics_based.m
 
 % --- USER CONFIGURATION ---
-% Physical Parameters (Must match Python simulation exactly)
+% Physical Parameters
 N_short = 60;       % Periods (each side) for the short device
 N_long  = 100;      % Periods (each side) for the long device
 pitch   = 500e-9;   % Grating pitch
-cav_len = pitch/2;  % Cavity length (Standard Pi-shift)
+cav_len = pitch/2;  % Cavity length
 
 % Paths
 filename_short = 'C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_v7_3d_profiles\results\result_60_periods_CONST_3D_crop.mat';
 filename_long  = 'C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_v7_3d_profiles\results\result_100_periods_CONST_3D_crop.mat';
 
 % Run Analysis
-analyze_overlap_strict(filename_long, filename_short, N_short, pitch, cav_len);
+analyze_overlap_physics(filename_long, filename_short, N_short, pitch, cav_len);
 
 
 % ---------------------------------------------------------
 % MAIN FUNCTION
 % ---------------------------------------------------------
-function analyze_overlap_strict(file_long, file_short, N_short, pitch, cav_len)
+function analyze_overlap_physics(file_long, file_short, N_short, pitch, cav_len)
 
     % 1. Load Data
     fprintf('Loading Long Device...\n');
@@ -26,90 +26,96 @@ function analyze_overlap_strict(file_long, file_short, N_short, pitch, cav_len)
     fprintf('Loading Short Device...\n');
     data_S = load(file_short);
 
-    % 2. Unpack Data
-    [xL, yL, zL, lamL, EL_All] = unpack_data_robust(data_L, 'Long');
-    [xS, yS, zS, lamS, ES_All] = unpack_data_robust(data_S, 'Short');
-
-    num_wls = length(lamS);
-    fprintf('Detected %d wavelength points.\n', num_wls);
-    if num_wls == 1
-        warning('File contains only 1 wavelength. Spectrum will be a single dot. Re-run Python simulation to fix.');
-    end
-
-    % 3. CALCULATE EXACT PHYSICAL EDGE
-    % Physical End = N_periods * pitch + half_cavity
-    x_phys_edge = (N_short * pitch) + (cav_len / 2);
-    
-    % Check if Data covers the Physical Edge
-    max_data_x = max(xS);
-    if x_phys_edge > max_data_x
-        fprintf('\nWARNING: Physical Edge (%.2f um) is outside Recorded Data (%.2f um).\n', x_phys_edge*1e6, max_data_x*1e6);
-        fprintf('Using maximum available data point instead.\n');
-        x_target_R = max_data_x;
-        x_target_L = min(xS);
+    % 2. Identify Resonance from Transmission Spectrum (T)
+    % We use the Short device spectrum as the reference for the "60 period" mode
+    if isfield(data_S, 'T') && isfield(data_S, 'wl_m')
+        T_spec = data_S.T;
+        wl_spec = data_S.wl_m;
+        
+        % Find Peak Transmission (Resonance)
+        [~, idx_peak_global] = max(T_spec);
+        wl_resonance_global = wl_spec(idx_peak_global);
+        
+        fprintf('Spectrum Analysis: True Resonance detected at %.3f nm\n', wl_resonance_global*1e9);
     else
-        x_target_R = x_phys_edge;
-        x_target_L = -x_phys_edge;
+        error('Variable "T" or "wl_m" not found in .mat file. Cannot find resonance.');
     end
-    
-    fprintf('Evaluating Overlap at X = +/- %.3f um\n', x_target_R*1e6);
 
-    % 4. Initialize Storage
+    % 3. Unpack 3D Data
+    [xL, yL, zL, lamL_3d, EL_All] = unpack_data_robust(data_L, 'Long');
+    [xS, yS, zS, lamS_3d, ES_All] = unpack_data_robust(data_S, 'Short');
+
+    num_wls = length(lamS_3d);
+    fprintf('3D Monitor contains %d wavelength points.\n', num_wls);
+
+    % 4. Map "True Resonance" to "3D Monitor Points"
+    % Find the index in the 3D data closest to the global resonance
+    [~, idx_res_3d] = min(abs(lamS_3d - wl_resonance_global));
+    
+    % Find "Off-Resonance" (Point in 3D data with lowest T)
+    % We map T values to the 3D wavelengths
+    T_at_3d_points = interp1(wl_spec, T_spec, lamS_3d, 'nearest');
+    [~, idx_off_3d] = min(T_at_3d_points);
+
+    fprintf('  -> Selected 3D Slice #%d for Resonance (%.3f nm)\n', idx_res_3d, lamS_3d(idx_res_3d)*1e9);
+    fprintf('  -> Selected 3D Slice #%d for Off-Resonance (%.3f nm)\n', idx_off_3d, lamS_3d(idx_off_3d)*1e9);
+
+    % 5. Define Physical Edges
+    x_edge_pos = (N_short * pitch) + (cav_len / 2);
+    x_target_L = -x_edge_pos;
+    x_target_R =  x_edge_pos;
+
+    % 6. Initialize Storage
     factors_left  = zeros(num_wls, 1);
     factors_right = zeros(num_wls, 1);
     
-    % Storage for plotting profiles
-    prof_best  = struct('x', [], 'raw', [], 'env', [], 'wl', 0, 'val_L', 0, 'val_R', 0, 'score', -1);
-    prof_worst = struct('x', [], 'raw', [], 'env', [], 'wl', 0, 'val_L', 0, 'val_R', 0, 'score', 999);
+    prof_res = struct('x', [], 'raw', [], 'env', [], 'wl', 0, 'val_L', 0, 'val_R', 0);
+    prof_off = struct('x', [], 'raw', [], 'env', [], 'wl', 0, 'val_L', 0, 'val_R', 0);
 
     % --- LOOP OVER WAVELENGTHS ---
     fprintf('Processing Overlaps...\n');
     for i = 1:num_wls
-        wl_current = lamS(i);
+        wl_current = lamS_3d(i);
         
-        % Extract Slices (Handle 4D/5D)
+        % Extract Slices
         E_L_slice = squeeze(EL_All(:, :, :, i, :));
         E_S_slice = squeeze(ES_All(:, :, :, i, :));
 
         % Calculate Spatial Overlap
         [x_common, overlap_profile] = calculate_spatial_overlap(xL, yL, zL, E_L_slice, xS, yS, zS, E_S_slice);
 
-        % Calculate Envelope (Fixed Extrapolation)
+        % Calculate Envelope (Extrapolated)
         [x_env, y_env] = calculate_envelope_extrapolated(x_common, overlap_profile);
 
-        % Extract Values at Edges
+        % Extract Values at Strict Edges
         val_L = interp1(x_env, y_env, x_target_L, 'linear', 'extrap');
         val_R = interp1(x_env, y_env, x_target_R, 'linear', 'extrap');
         
-        % Clamp (0 to 1)
+        % Clamp
         val_L = min(max(val_L, 0), 1);
         val_R = min(max(val_R, 0), 1);
         
         factors_left(i)  = val_L;
         factors_right(i) = val_R;
-        
-        avg_coupling = (val_L + val_R)/2;
 
-        % Store Best (Resonance)
-        if (i == 1) || (avg_coupling > prof_best.score)
-            prof_best.x = x_common;
-            prof_best.raw = overlap_profile;
-            prof_best.env = interp1(x_env, y_env, x_common, 'pchip', 'extrap');
-            prof_best.wl = wl_current;
-            prof_best.val_L = val_L;
-            prof_best.val_R = val_R;
-            prof_best.score = avg_coupling;
+        % Store Profile if it matches Resonance Index
+        if i == idx_res_3d
+            prof_res.x = x_common;
+            prof_res.raw = overlap_profile;
+            prof_res.env = interp1(x_env, y_env, x_common, 'pchip', 'extrap');
+            prof_res.wl = wl_current;
+            prof_res.val_L = val_L;
+            prof_res.val_R = val_R;
         end
         
-        % Store Worst (Off-Resonance)
-        if (i == 1) || (avg_coupling < prof_worst.score)
-            prof_worst.x = x_common;
-            prof_worst.raw = overlap_profile;
-            prof_worst.env = interp1(x_env, y_env, x_common, 'pchip', 'extrap');
-            prof_worst.wl = wl_current;
-            prof_worst.val_L = val_L;
-            prof_worst.val_R = val_R;
-            prof_worst.score = avg_coupling;
+        % Store Profile if it matches Off-Resonance Index
+        if i == idx_off_3d
+            prof_off.x = x_common;
+            prof_off.raw = overlap_profile;
+            prof_off.env = interp1(x_env, y_env, x_common, 'pchip', 'extrap');
+            prof_off.wl = wl_current;
+            prof_off.val_L = val_L;
+            prof_off.val_R = val_R;
         end
         
         if mod(i, 5) == 0, fprintf('  Completed %d / %d\n', i, num_wls); end
@@ -120,27 +126,32 @@ function analyze_overlap_strict(file_long, file_short, N_short, pitch, cav_len)
     % ---------------------------------------------------------
     
     % Graph 1: Resonance Profile
-    plot_spatial_result(prof_best, x_target_L, x_target_R, 'Resonance Profile (Max Coupling)');
+    plot_spatial_result(prof_res, x_target_L, x_target_R, 'Resonance Profile');
     
-    % Graph 2: Off-Resonance Profile (Only if distinct)
-    if num_wls > 1 && abs(prof_best.wl - prof_worst.wl) > 1e-12
-        plot_spatial_result(prof_worst, x_target_L, x_target_R, 'Off-Resonance Profile (Min Coupling)');
-    end
+    % Graph 2: Off-Resonance Profile
+    plot_spatial_result(prof_off, x_target_L, x_target_R, 'Off-Resonance Profile');
 
     % Graph 3: Coupling Spectrum
     figure('Name', 'Mismatch Coupling Spectrum', 'Color', 'w');
-    plot(lamS * 1e9, factors_left, 'b-o', 'LineWidth', 1.5, 'DisplayName', 'Left Junction (-X)');
+    plot(lamS_3d * 1e9, factors_left, 'b-o', 'LineWidth', 1.5, 'DisplayName', 'Left Junction (-X)');
     hold on;
-    plot(lamS * 1e9, factors_right, 'r--x', 'LineWidth', 1.5, 'DisplayName', 'Right Junction (+X)');
+    plot(lamS_3d * 1e9, factors_right, 'r--x', 'LineWidth', 1.5, 'DisplayName', 'Right Junction (+X)');
+    
+    % Mark the Resonance Point on the spectrum
+    xline(wl_resonance_global*1e9, 'k--', 'DisplayName', 'True Resonance');
     
     xlabel('Wavelength [nm]');
     ylabel('Coupling Factor \eta');
     title({'Junction Coupling Efficiency', ...
-           sprintf('Evaluated at X = +/- %.2f um', x_target_R*1e6)});
+           sprintf('Evaluated at Edges +/- %.2f um', x_target_R*1e6)});
     legend('Location', 'best');
     grid on;
     
-    fprintf('Done.\n');
+    % Print Final Coefficients for User
+    fprintf('\n--- FINAL COEFFICIENTS AT RESONANCE (%.3f nm) ---\n', wl_resonance_global*1e9);
+    fprintf('Left Edge Coeff:  %.4f\n', prof_res.val_L);
+    fprintf('Right Edge Coeff: %.4f\n', prof_res.val_R);
+    fprintf('Use these values for your Junction Matrix.\n');
 end
 
 % ---------------------------------------------------------
@@ -194,7 +205,7 @@ function [x_env, y_env] = calculate_envelope_extrapolated(x, y)
         x_env = x; y_env = y; return; 
     end
     
-    % Force column vectors (Fixes the vertcat error)
+    % Force column vectors
     x_peaks = locs(:);
     y_peaks = pks(:);
     
@@ -236,7 +247,7 @@ function plot_spatial_result(prof, x_L, x_R, title_str)
 end
 
 % ---------------------------------------------------------
-% HELPER: ROBUST UNPACK
+% HELPER: UNPACK
 % ---------------------------------------------------------
 function [x, y, z, lam, E_5D] = unpack_data_robust(data, name)
     if ~isfield(data, 'field_3d'), error('Missing field_3d in %s', name); end
