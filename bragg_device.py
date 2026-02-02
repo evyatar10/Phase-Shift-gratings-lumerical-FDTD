@@ -42,7 +42,11 @@ class PiShiftBraggFDTD:
                  use_z_symmetry=True,
                  use_constant_materials=False,
                  n_core_const=1.977,
-                 n_clad_const=1.44):
+                 n_clad_const=1.44,
+                 # --- NEW OPTIONAL 3D PARAMS ---
+                 record_3d_fields=False,
+                 field_3d_span_m=None,  # If None, records full device. If set, crops X span.
+                 downsample_yz=1):  # Default 1 to preserve resolution at interfaces
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -78,6 +82,11 @@ class PiShiftBraggFDTD:
         self.center_mod_depth = center_mod_depth_nm * 1e-9
 
         self.use_cavity_mesh_override = use_cavity_mesh_override
+
+        # --- NEW STATE VARS ---
+        self.record_3d_fields = record_3d_fields
+        self.field_3d_span_m = field_3d_span_m
+        self.downsample_yz = downsample_yz
 
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
 
@@ -382,7 +391,7 @@ class PiShiftBraggFDTD:
         fdtd.set("mode selection", "fundamental TE mode")
         fdtd.set("frequency dependent profile", 1)
 
-        # --- NEW MONITOR: Field Profile (Z-normal) ---
+        # --- Monitor: Field Profile (2D Z-normal) ---
         fdtd.addprofile()
         fdtd.set("name", "field_profile")
         fdtd.set("monitor type", "2D Z-normal")
@@ -393,10 +402,9 @@ class PiShiftBraggFDTD:
         fdtd.set("z", 0)
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
-        # CHANGED: Increased to 501 points for better resolution
         fdtd.set("frequency points", 501)
 
-        # --- NEW MONITORS: Time Domain (3 Points) ---
+        # --- Monitors: Time Domain (3 Points) ---
         def add_time_mon(name, x_pos):
             fdtd.addtime()
             fdtd.set("name", name)
@@ -409,6 +417,34 @@ class PiShiftBraggFDTD:
         add_time_mon("time_cavity", 0.0)
         add_time_mon("time_output", self.x_grating_end + 0.5e-6)
 
+        # --- NEW OPTIONAL 3D MONITOR ---
+        if self.record_3d_fields:
+            if self.field_3d_span_m:
+                x_span_3d = self.field_3d_span_m
+                print(f"3D Monitor: CROP Mode active. Span limited to {x_span_3d * 1e6:.2f} um")
+            else:
+                x_span_3d = 2.0 * self.x_grating_end + 1.0e-6
+
+            fdtd.addprofile()
+            fdtd.set("name", "field_profile_3D")
+            fdtd.set("monitor type", "3D")
+            fdtd.set("x", 0)
+            fdtd.set("x span", x_span_3d)
+            fdtd.set("y", 0)
+            fdtd.set("y span", 1.5 * self.width_wide)
+            fdtd.set("z", 0)
+            fdtd.set("z span", 1.5 * self.core_height)
+
+            # Safe settings to save space
+            fdtd.set("override global monitor settings", 1)
+            fdtd.set("use source limits", 1)
+            # Default to very few points to avoid RAM crash (will be set in update_scan too)
+            fdtd.set("frequency points", 5)
+            # Downsampling logic
+            fdtd.set("down sample x", 1)
+            fdtd.set("down sample y", self.downsample_yz)
+            fdtd.set("down sample z", self.downsample_yz)
+
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
         half_w = 0.5 * width_nm * 1e-9
@@ -419,6 +455,12 @@ class PiShiftBraggFDTD:
         self.fdtd.setglobalsource("wavelength stop", self.lam_max)
         self.fdtd.setglobalmonitor("frequency points", self.n_wl_points)
         self.fdtd.setnamed("FDTD::ports", "monitor frequency points", self.n_wl_points)
+
+        # Protect 3D monitor from having too many points
+        if self.record_3d_fields:
+            # Removed the faulty isnometric check.
+            # We know the monitor exists because record_3d_fields is True.
+            self.fdtd.setnamed("field_profile_3D", "frequency points", 5)
 
     def close(self):
         try:
@@ -437,7 +479,6 @@ class PiShiftBraggFDTD:
         use_single_neff = False
         single_neff_val = None
 
-        # Only prepare Neff data if we are actually doing length correction
         if correct_length:
             if self.use_constant_materials:
                 use_single_neff = True

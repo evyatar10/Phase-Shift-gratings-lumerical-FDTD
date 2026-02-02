@@ -138,9 +138,12 @@ def extract_and_process_field_profile(sim, target_wl):
 
 def run_single_sim():
     # 1. Parameters
-    lambda_res_est = 1.560e-6 #1.610
+    lambda_res_est = 1.560e-6  # Center of Scan
     scan_width_nm = 16.0
-    n_points = 3001
+
+    n_points_global = 3001  # For high-res S-parameters
+    n_3d_points = 31  # NEW: Odd number ensures center wl is captured
+
     avg_corr = 800e-9
     corr_depth = 200e-9
     w_wide = avg_corr + corr_depth / 2
@@ -150,31 +153,45 @@ def run_single_sim():
     calc_y_span = w_wide + 1.8 * lambda_res_est
     calc_z_span = core_h + 1.8 * lambda_res_est
 
+    # --- DEVICE & 3D RECORDING CONFIG ---
+    pitch = 500e-9
+    N_periods = 60
+
+    # Example: Defining a specific 3D recording span
+    N_periods_target_overlap = 40
+    cav_len = pitch / 2.0
+    overlap_len_m = 2.0 * (N_periods_target_overlap * pitch) + cav_len + 1.0e-6
+
     # 2. Initialize Simulation
     sim = PiShiftBraggFDTD(
-        pitch=500e-9,
-        n_periods_each_side=60,
+        pitch=pitch,
+        n_periods_each_side=N_periods,
         n_apod_periods_each_side=20,
         width_narrow=w_narrow,
         width_wide=w_wide,
         width_port=1000e-9,
         core_height=core_h,
         substrate_thickness=4e-6,
-        override_cavity_length_nm=False, # False = pitch/2
+        override_cavity_length_nm=False,  # False = pitch/2
         y_span=calc_y_span,
         z_span=calc_z_span,
         material_db_path=config.MATERIAL_DB_PATH,
         n_periods_dist_to_port=20,
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
-        n_wl_points=n_points,
+        n_wl_points=n_points_global,
         use_apodization=False,
         center_mod_depth_nm=4.0,
         use_cavity_mesh_override=True,
-        use_symmetry=True, # y symmetry
+        use_symmetry=True,  # y symmetry
         use_z_symmetry=True,
         use_constant_materials=True,
-        n_core_const=1.977
+        n_core_const=1.977,
+
+        # --- 3D FIELD SETTINGS ---
+        record_3d_fields=True,
+        field_3d_span_m=overlap_len_m,  # Set this to whatever length you need recorded
+        downsample_yz=1  # Keep default high resolution
     )
 
     # 3. Generate Filenames
@@ -190,7 +207,13 @@ def run_single_sim():
 
     # 4. Run
     sim.build()
-    sim.update_scan(center_lambda_m=lambda_res_est, width_nm=scan_width_nm, n_points=n_points)
+    sim.update_scan(center_lambda_m=lambda_res_est, width_nm=scan_width_nm, n_points=n_points_global)
+
+    # --- NEW: Override 3D Monitor Points ---
+    if sim.record_3d_fields:
+        sim.fdtd.setnamed("field_profile_3D", "frequency points", n_3d_points)
+        print(f"Override: Set 3D monitor to {n_3d_points} points to capture {lambda_res_est * 1e6:.3f} um.")
+
     sim.fdtd.save(layout_path)
     print(f"Saved layout to: {layout_path}")
 
@@ -199,7 +222,6 @@ def run_single_sim():
     print(f"Simulation time: {time.perf_counter() - start:.3f} seconds")
 
     # 5. Process S-parameters
-    # UPDATED to use the new flags instead of 'correct_phase'
     wl, R, T, Loss, T_mat, S11, S21 = sim.get_s_and_t_matrix(
         neff_mat_file=config.NEFF_DATA_PATH,
         correct_length=True,
@@ -212,12 +234,45 @@ def run_single_sim():
     target_wl = wl[idx_peak]
     print(f"Peak detected at: {target_wl * 1e9:.3f} nm (T = {T[idx_peak]:.3f})")
 
-    # --- CALL NEW FUNCTION ---
     f_x, I_x_1D, I_x_envelope, fwhm_val, actual_mon_wl = extract_and_process_field_profile(sim, target_wl)
 
     print(f"Calculated FWHM (Relative): {fwhm_val * 1e6:.4f} um")
 
-    # 7. Save
+    # --- 7. EXTRACT 3D DATA ---
+    field_3d_data = {}
+    if sim.record_3d_fields:
+        print("Extracting 3D Field data at resonance...")
+        # Access the raw result from the monitor
+        res_3d = sim.fdtd.getresult("field_profile_3D", "E")
+        lam_3d = np.squeeze(res_3d['lambda'])
+
+        # Check if exact guess is included (Debugging)
+        diff = np.min(np.abs(lam_3d - lambda_res_est))
+        if diff < 1e-12:
+            print(f"Confirmed: {lambda_res_est * 1e6:.3f} um is included in the 3D data.")
+
+        # Find index closest to ACTUAL resonance peak found in simulation
+        idx_3d = np.argmin(np.abs(lam_3d - target_wl))
+
+        # Extract E-field ONLY at that index to save space
+        E_full = res_3d['E']
+
+        if E_full.ndim == 5:
+            # Squeeze out the frequency dimension, keep (x,y,z,3)
+            E_res = E_full[..., idx_3d, :]
+        else:
+            E_res = E_full
+
+        field_3d_data = {
+            'x': np.squeeze(res_3d['x']),
+            'y': np.squeeze(res_3d['y']),
+            'z': np.squeeze(res_3d['z']),
+            'E_res': E_res,  # Contains Ex, Ey, Ez
+            'lambda_3d': lam_3d[idx_3d] if not np.isscalar(lam_3d) else lam_3d
+        }
+        del res_3d  # Free memory
+
+    # 8. Save
     mat_data = {
         'wl_m': wl, 'wl_nm': wl * 1e9,
         'T': T, 'R': R, 'loss': Loss,
@@ -226,29 +281,24 @@ def run_single_sim():
         'field_x': f_x,
         'field_energy_density_1D': I_x_1D,
         'field_envelope_1D': I_x_envelope,
-        'fwhm_m': fwhm_val
+        'fwhm_m': fwhm_val,
+        'field_3d': field_3d_data
     }
     sio.savemat(results_path, mat_data)
     print(f"Data saved to: {results_path}")
 
-    # 8. Export for Interconnect
+    # 9. Export for Interconnect
     print("Exporting for Interconnect...")
-    # Fetch matrices AGAIN with specific flags for Interconnect:
-    # correct_length=True (Removes pigtails/arms)
-    # correct_envelope_and_t_phase=False (KEEPS physical group delay/phase slope)
     _, _, _, _, _, S11_interconnect, S21_interconnect = sim.get_s_and_t_matrix(
         neff_mat_file=config.NEFF_DATA_PATH,
         correct_length=True,
         correct_envelope_and_t_phase=True
     )
-
     interconnect_file = os.path.join(config.RESULTS_DIR, f"interconnect_symmetric_{tag}.txt")
-    # Calling the symmetric export function from analysis.py
-    # NOTE: Ensure your analysis.py actually has this function!
     analysis.export_for_interconnect_symmetric(interconnect_file, wl, S11_interconnect, S21_interconnect)
     print(f"Interconnect data saved to: {interconnect_file}")
 
-    # 9. Plot
+    # 10. Plot
     fig1 = plt.figure(num="Spectrum", figsize=(10, 6))
     plt.plot(wl * 1e9, T, label="T (Modal)")
     plt.plot(wl * 1e9, R, label="R (Modal)")
@@ -263,9 +313,8 @@ def run_single_sim():
     plt.plot(f_x * 1e6, I_x_envelope, 'r-', linewidth=2.5, label="Field Envelope (Peak Tracing)")
     plt.plot(f_x * 1e6, I_x_1D, 'b-', alpha=0.3, linewidth=0.5, label="Raw |E|^2")
 
-    y_max =  np.max(I_x_envelope)
-    #y_min = np.min(I_x_envelope)
-    y_min = 0 # make it relative to zero, as edge is not when profile fully decays
+    y_max = np.max(I_x_envelope)
+    y_min = 0
     target_y = y_min + 0.5 * (y_max - y_min)
     plt.hlines(target_y, -fwhm_val * 1e6 / 2, fwhm_val * 1e6 / 2, colors='k', linestyles='dashed')
     plt.text(0, target_y * 1.05, f"FWHM = {fwhm_val * 1e6:.2f} um", ha='center', color='black', fontweight='bold')
