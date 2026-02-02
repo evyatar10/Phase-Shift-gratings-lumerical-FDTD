@@ -158,7 +158,7 @@ def run_single_sim():
     N_periods = 60
 
     # Example: Defining a specific 3D recording span
-    N_periods_target_overlap = 40
+    N_periods_target_overlap = 60
     cav_len = pitch / 2.0
     overlap_len_m = 2.0 * (N_periods_target_overlap * pitch) + cav_len + 1.0e-6
 

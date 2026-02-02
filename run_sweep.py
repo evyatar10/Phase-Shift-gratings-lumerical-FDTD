@@ -87,17 +87,17 @@ def extract_and_process_field_profile(sim, target_wl):
 
 def run_parameter_sweep():
     # Sweep Parameters
-    N_periods_list = [40, 60, 80, 100]
+    N_periods_list = [60, 80,100, 120]
 
     # Common Config
-    lambda_res_est = 1.560e-6
-    n_3d_points = 31
+    lambda_res_est = 1.56232e-6
+    n_3d_points = 51
     record_3d_fields = True
     export_interconnect_data = True
 
     pitch = 500e-9
     cav_len = pitch / 2.0
-    N_reference_for_crop = 40
+    N_reference_for_crop = 60
     crop_len_m = 2.0 * (N_reference_for_crop * pitch) + cav_len + 1.0e-6
 
     scan_width_nm = 16.0

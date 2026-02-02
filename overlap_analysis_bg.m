@@ -2,14 +2,14 @@
 
 % --- USER CONFIGURATION ---
 N_short = 60;       % Periods (each side) for the short device
-N_long  = 100;      % Periods (each side) for the long device
+N_long  = 120;      % Periods (each side) for the long device
 pitch   = 500e-9;   % Grating pitch
 cav_len = pitch/2;  % Cavity length
 
 % Paths
 base_dir = 'C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_v7_3d_profiles\results\';
 filename_short = fullfile(base_dir, 'result_60_periods_CONST_3D_crop.mat');
-filename_long  = fullfile(base_dir, 'result_100_periods_CONST_3D_crop.mat');
+filename_long  = fullfile(base_dir, 'result_120_periods_CONST_3D_crop.mat');
 
 % Run Analysis
 analyze_overlap_all(filename_long, filename_short, N_short, N_long, pitch, cav_len, base_dir);
