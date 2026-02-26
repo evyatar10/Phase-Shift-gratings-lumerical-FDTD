@@ -142,7 +142,7 @@ def run_single_sim():
     scan_width_nm = 16.0
 
     n_points_global = 3001  # For high-res S-parameters
-    n_3d_points = 31  # NEW: Odd number ensures center wl is captured
+    n_3d_points = 51  # NEW: Odd number ensures center wl is captured
 
     avg_corr = 800e-9
     corr_depth = 200e-9
@@ -158,7 +158,7 @@ def run_single_sim():
     N_periods = 60
 
     # Example: Defining a specific 3D recording span
-    N_periods_target_overlap = 60
+    N_periods_target_overlap = N_periods
     cav_len = pitch / 2.0
     overlap_len_m = 2.0 * (N_periods_target_overlap * pitch) + cav_len + 1.0e-6
 
@@ -166,12 +166,12 @@ def run_single_sim():
     sim = PiShiftBraggFDTD(
         pitch=pitch,
         n_periods_each_side=N_periods,
-        n_apod_periods_each_side=20,
+        n_apod_periods_each_side=10,
         width_narrow=w_narrow,
         width_wide=w_wide,
-        width_port=1000e-9,
+        width_port=1000e-9, #1562.684
         core_height=core_h,
-        substrate_thickness=4e-6,
+        substrate_thickness=10e-6,
         override_cavity_length_nm=False,  # False = pitch/2
         y_span=calc_y_span,
         z_span=calc_z_span,
@@ -180,7 +180,7 @@ def run_single_sim():
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
         n_wl_points=n_points_global,
-        use_apodization=False,
+        use_apodization=True,
         center_mod_depth_nm=4.0,
         use_cavity_mesh_override=True,
         use_symmetry=True,  # y symmetry

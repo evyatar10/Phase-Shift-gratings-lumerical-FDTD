@@ -4,28 +4,28 @@
 % Reference "Short" Device
 N_short = 80;
 % file_short_name = 'result_60_periods_CONST_3D_crop.mat';
-file_short_name = 'result_80_periods_CONST_3D_crop.mat';
+% file_short_name = 'result_80_periods_10_apodizations_CONST_3D_crop.mat';
 
 % List of "Long" Devices to Analyze
 % Format: {N_periods, 'filename.mat'}
-% long_devices = {
-%     70,  'result_70_periods_CONST_3D_crop.mat';
-%     80,  'result_80_periods_CONST_3D_crop.mat';
-%     90,  'result_90_periods_CONST_3D_crop.mat';
-%     100, 'result_100_periods_CONST_3D_crop.mat';
-%     110, 'result_110_periods_CONST_3D_crop.mat';
-%     120, 'result_120_periods_CONST_3D_crop.mat';
-% };
+ % long_devices = {
+ %    70,  'result_70_periods_10_apodizations_CONST_3D_crop.mat';
+ %    80,  'result_80_periods_10_apodizations_CONST_3D_crop.mat';
+ %    90,  'result_90_periods_10_apodizations_CONST_3D_crop.mat';
+ %    100, 'result_100_periods_10_apodizations_CONST_3D_crop.mat';
+ %    110, 'result_110_periods_10_apodizations_CONST_3D_crop.mat';
+ %    120, 'result_120_periods_10_apodizations_CONST_3D_crop.mat';
+ % };
 
- long_devices = {
-     100, 'result_100_periods_CONST_3D_crop.mat';
-     120, 'result_120_periods_CONST_3D_crop.mat';
+long_devices = {
+     100, 'result_100_periods_10_apodizations_CONST_3D_crop.mat';
+     120, 'result_120_periods_10_apodizations_CONST_3D_crop.mat';
 };
 
 % Physical Parameters
 pitch   = 500e-9;
 cav_len = pitch/2;
-base_dir = 'C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_v9_3d_profiles_min_80\results\';
+base_dir = 'C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_10_apodization_longer\results';
 
 % Run Batch
 run_batch_analysis(base_dir, file_short_name, N_short, long_devices, pitch, cav_len);

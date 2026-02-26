@@ -1,13 +1,14 @@
 % MATLAB Script: calculate_overlap_all_strategies.m
 % --- USER CONFIGURATION ---
 N_short = 80;       % Periods (each side) for the short device
-N_long  = 120;      % Periods (each side) for the long device
+N_long  = 150;      % Periods (each side) for the long device
 pitch   = 500e-9;   % Grating pitch
 cav_len = pitch/2;  % Cavity length
 % Paths
-base_dir = 'C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_v9_3d_profiles_min_80\results';
-filename_short = fullfile(base_dir, 'result_80_periods_CONST_3D_crop.mat');
-filename_long  = fullfile(base_dir, 'result_120_periods_CONST_3D_crop.mat');
+base_dir = "C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_min_80_apod_5\results";
+%'C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_v9_3d_profiles_min_80\results';
+filename_short = fullfile(base_dir, 'result_80_periods_5_apodizations_CONST_3D_crop.mat');
+filename_long  = fullfile(base_dir, 'result_150_periods_5_apodizations_CONST_3D_crop.mat');
 % Run Analysis
 analyze_overlap_all(filename_long, filename_short, N_short, N_long, pitch, cav_len, base_dir);
 % ---------------------------------------------------------
@@ -135,10 +136,10 @@ function analyze_overlap_all(file_long, file_short, N_short, N_long, pitch, cav_
     hold on;
     % Plot Left/Right (Original Size: LineWidth 1)
     plot(lamS_3d * 1e9, factors_left, 'b--', 'LineWidth', 1, 'DisplayName', 'Left Edge');
-    plot(lamS_3d * 1e9, factors_right, 'r--', 'LineWidth', 1, 'DisplayName', 'Right Edge');
+    % plot(lamS_3d * 1e9, factors_right, 'r--', 'LineWidth', 1, 'DisplayName', 'Right Edge');
     
     % Plot Global Average (Original Size: LineWidth 2)
-    plot(lamS_3d * 1e9, factors_global, 'g-o', 'LineWidth', 2, 'MarkerFaceColor', 'g', 'DisplayName', 'Global Average');
+    % plot(lamS_3d * 1e9, factors_global, 'g-o', 'LineWidth', 2, 'MarkerFaceColor', 'g', 'DisplayName', 'Global Average');
     
     xline(wl_resonance_global*1e9, 'k-', 'DisplayName', 'Resonance');
     

@@ -87,20 +87,20 @@ def extract_and_process_field_profile(sim, target_wl):
 
 def run_parameter_sweep():
     # Sweep Parameters
-    N_periods_list = [80,100,120]
+    N_periods_list = [80,150]
 
     # Common Config
-    lambda_res_est = 1.56232e-6
+    lambda_res_est = 1.562673e-6    #1.56232e-6
     n_3d_points = 51
     record_3d_fields = True
     export_interconnect_data = True
 
     pitch = 500e-9
     cav_len = pitch / 2.0
-    N_reference_for_crop = 80
+    N_reference_for_crop = 80 #N_periods_list[0]
     crop_len_m = 2.0 * (N_reference_for_crop * pitch) + cav_len + 1.0e-6
 
-    scan_width_nm = 16.0
+    scan_width_nm = 30.0
     n_points_global = 3001
     core_h = 350e-9
     w_wide = 900e-9
@@ -118,7 +118,7 @@ def run_parameter_sweep():
         sim = PiShiftBraggFDTD(
             pitch=pitch,
             n_periods_each_side=N_periods,
-            n_apod_periods_each_side=20,
+            n_apod_periods_each_side=5,
             width_narrow=w_narrow,
             width_wide=w_wide,
             width_port=1000e-9,
@@ -132,8 +132,8 @@ def run_parameter_sweep():
             n_wls_dist_port_to_pml=5.0,
             n_eff_guess=1.55,
             n_wl_points=n_points_global,
-            use_apodization=False,
-            center_mod_depth_nm=4.0,
+            use_apodization=True,
+            center_mod_depth_nm=10.0,
             use_cavity_mesh_override=True,
             use_symmetry=True,
             use_z_symmetry=True,
@@ -223,7 +223,7 @@ def run_parameter_sweep():
 
             if export_interconnect_data:
                 _, _, _, _, _, S11_int, S21_int = sim.get_s_and_t_matrix(
-                    neff_mat_file=config.NEFF_DATA_PATH, correct_length=True, correct_envelope_and_t_phase=False
+                    neff_mat_file=config.NEFF_DATA_PATH, correct_length=True, correct_envelope_and_t_phase=True
                 )
                 int_file = os.path.join(config.RESULTS_DIR, f"interconnect_symmetric_{file_tag}.txt")
                 analysis.export_for_interconnect_symmetric(int_file, wl, S11_int, S21_int)

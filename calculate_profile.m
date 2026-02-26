@@ -2,8 +2,8 @@
 
 % --- USER CONFIGURATION ---
 % Path to your result file
-base_dir = 'C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_v7_3d_profiles\results\';
-filename = fullfile(base_dir, 'result_60_periods_CONST_3D_crop.mat');
+base_dir = "C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_10_apodization_longer\results\";
+filename = fullfile(base_dir, 'result_80_periods_10_apodizations_CONST_3D_crop.mat');
 
 % Options
 compare_with_2d_slice = true;  % If true, extracts Z=0 slice and compares
