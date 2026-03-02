@@ -87,7 +87,7 @@ def extract_and_process_field_profile(sim, target_wl):
 
 def run_parameter_sweep():
     # Sweep Parameters
-    N_periods_list = [80,150]
+    N_periods_list = [80]
 
     # Common Config
     lambda_res_est = 1.562673e-6    #1.56232e-6
