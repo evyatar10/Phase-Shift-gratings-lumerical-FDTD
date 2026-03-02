@@ -133,7 +133,7 @@ hold off;
 
 % Get indices for the boundaries
 [~, idx_y_top] = min(abs(y - boundary_dist_y_um*1e-6));
-[~, idx_z_top] = min(abs(z - boundary_dist_z_um*1e-6));
+[~, idx_z0] = min(abs(z));
 
 % Extract complex field components at the boundary (Z=0, Y=boundary_dist)
 E_boundary_comp = squeeze(E_crop(:, idx_y_top, idx_z0, :)); % [x, components]
@@ -171,13 +171,39 @@ if ~isempty(kx_rad)
     % theta = asin(kx / k_clad); angle from broadside (Z-axis)
     theta_rad = asin(kx_rad / k_clad);
     theta_deg = rad2deg(theta_rad);
+    P_norm = P_rad / max(P_rad);
 
-    figure('Name', 'Angular Radiation Spectrum', 'Color', 'w', 'Position', [200 200 600 400]);
-    plot(theta_deg, P_rad / max(P_rad), 'LineWidth', 2);
+    % Analytical Calculation (Lorentzian Model)
+    compare_analytical = true;
+    dn = 0.013;              % Example index contrast
+    pitch = 500e-9;          % Grating pitch
+    n_eff_approx = 1.55;     % Approx mode index
+
+    % Fundamental physics parameters
+    kappa = 2 * dn / wl_3d_actual; % Coupling coeff approximation (m^-1)
+    k_scatter = (2*pi*n_eff_approx/wl_3d_actual) - (2*pi/pitch); % Primary scattered momentum
+
+    % Phase shift cavity causes a Lorentzian spread in k-space
+    P_analytical = (kappa^2) ./ ((kx_rad - k_scatter).^2 + kappa^2);
+    P_analytical_norm = P_analytical / max(P_analytical);
+
+    figure('Name', 'Angular Radiation Spectrum', 'Color', 'w', 'Position', [200 200 700 450]);
+    plot(theta_deg, P_norm, 'b-', 'LineWidth', 2, 'DisplayName', 'FDTD Numerical FFT');
+
+    if compare_analytical
+        hold on;
+        plot(theta_deg, P_analytical_norm, 'r--', 'LineWidth', 2, 'DisplayName', sprintf('Theory (\\Delta n=%.3f)', dn));
+        % Plot Critical Angle boundary markers
+        xline(90, 'k:', 'LineWidth', 1.5, 'HandleVisibility','off');
+        xline(-90, 'k:', 'LineWidth', 1.5, 'DisplayName', 'Critical Angle');
+        hold off;
+    end
+
     xlabel('Radiation Angle \theta (degrees from normal)');
     ylabel('Normalized Radiated Power');
     title({'Angular Spectrum of Radiation Loss', ...
         sprintf('Evaluated at Y = %.2f \\mum, Z = 0', boundary_dist_y_um)});
+    legend('Location', 'best');
     grid on;
     xlim([-90, 90]);
 else
