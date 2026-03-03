@@ -46,6 +46,9 @@ class PiShiftBraggFDTD:
                  # --- NEW OPTIONAL 3D PARAMS ---
                  record_3d_fields=False,
                  field_3d_span_m=None,  # If None, records full device. If set, crops X span.
+                 monitor_y_span_m=None,
+                 monitor_z_span_m=None,
+                 monitor_type="3D",     # Toggle between "3D" and "2D Z-normal"
                  downsample_yz=1):  # Default 1 to preserve resolution at interfaces
 
         self.pitch = pitch
@@ -86,6 +89,9 @@ class PiShiftBraggFDTD:
         # --- NEW STATE VARS ---
         self.record_3d_fields = record_3d_fields
         self.field_3d_span_m = field_3d_span_m
+        self.monitor_y_span_m = monitor_y_span_m
+        self.monitor_z_span_m = monitor_z_span_m
+        self.monitor_type = monitor_type
         self.downsample_yz = downsample_yz
 
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
@@ -427,14 +433,17 @@ class PiShiftBraggFDTD:
 
             fdtd.addprofile()
             fdtd.set("name", "field_profile_3D")
-            fdtd.set("monitor type", "3D")
+            fdtd.set("monitor type", self.monitor_type)
             fdtd.set("x", 0)
             fdtd.set("x span", x_span_3d)
             fdtd.set("y", 0)
-            fdtd.set("y span", 1.5 * self.width_wide)
-            fdtd.set("z", 0)
-            fdtd.set("z span", 1.5 * self.core_height)
-
+            fdtd.set("y span", self.monitor_y_span_m if self.monitor_y_span_m else 1.5 * self.width_wide)
+            
+            if self.monitor_type == "3D":
+                fdtd.set("z", 0)
+                fdtd.set("z span", self.monitor_z_span_m if self.monitor_z_span_m else 1.5 * self.core_height)
+                fdtd.set("down sample z", self.downsample_yz)
+                
             # Safe settings to save space
             fdtd.set("override global monitor settings", 1)
             fdtd.set("use source limits", 1)
@@ -443,7 +452,6 @@ class PiShiftBraggFDTD:
             # Downsampling logic
             fdtd.set("down sample x", 1)
             fdtd.set("down sample y", self.downsample_yz)
-            fdtd.set("down sample z", self.downsample_yz)
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points

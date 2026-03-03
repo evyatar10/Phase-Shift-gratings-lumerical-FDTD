@@ -138,7 +138,7 @@ def extract_and_process_field_profile(sim, target_wl):
 
 def run_single_sim():
     # 1. Parameters
-    lambda_res_est = 1.560e-6  # Center of Scan
+    lambda_res_est = 1.5625e-6  # Center of Scan
     scan_width_nm = 16.0
 
     n_points_global = 3001  # For high-res S-parameters
@@ -155,7 +155,7 @@ def run_single_sim():
 
     # --- DEVICE & 3D RECORDING CONFIG ---
     pitch = 500e-9
-    N_periods = 60
+    N_periods = 80
 
     # Example: Defining a specific 3D recording span
     N_periods_target_overlap = N_periods
@@ -180,7 +180,7 @@ def run_single_sim():
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
         n_wl_points=n_points_global,
-        use_apodization=True,
+        use_apodization=False,
         center_mod_depth_nm=4.0,
         use_cavity_mesh_override=True,
         use_symmetry=True,  # y symmetry
@@ -190,7 +190,10 @@ def run_single_sim():
 
         # --- 3D FIELD SETTINGS ---
         record_3d_fields=True,
-        field_3d_span_m=overlap_len_m,  # Set this to whatever length you need recorded
+        field_3d_span_m=None,  # None means record the full X span
+        monitor_y_span_m=1.5 * lambda_res_est,
+        monitor_z_span_m=1.5 * lambda_res_est,
+        monitor_type="2D Z-normal",
         downsample_yz=1  # Keep default high resolution
     )
 
@@ -319,6 +322,21 @@ def run_single_sim():
     plt.grid(True)
 
     print("Displaying plots...")
+    
+    # 11. Cleanup FDTD memory files (h5 and fsp)
+    try:
+        import glob
+        # Lumerical creates a folder with the same name as the .fsp file (minus the extension)
+        # e.g., layout_60_periods.fsp creates a folder named 'layout_60_periods' inside the layouts directory.
+        data_dir = layout_path.replace(".fsp", "")
+        if os.path.exists(data_dir):
+            h5_files = glob.glob(os.path.join(data_dir, "*.h5"))
+            for h5_file in h5_files:
+                os.remove(h5_file)
+                print(f"Cleaned up {h5_file}")
+    except Exception as e:
+        print(f"Warning: Could not clean up Lumerical temp files: {e}")
+
     plt.show()
 
     sim.close()

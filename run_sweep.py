@@ -140,7 +140,10 @@ def run_parameter_sweep():
             use_constant_materials=True,
             n_core_const=1.977,
             record_3d_fields=record_3d_fields,
-            field_3d_span_m=crop_len_m,
+            field_3d_span_m=None,  # None means record the full X span
+            monitor_y_span_m=1.5 * lambda_res_est,
+            monitor_z_span_m=1.5 * lambda_res_est,
+            monitor_type="2D Z-normal",
             downsample_yz=1
         )
 
@@ -232,7 +235,22 @@ def run_parameter_sweep():
             sim.close()
             del sim
             gc.collect()
-            print("Memory cleared.\n")
+            print("Memory cleared.")
+            
+            # Cleanup FDTD memory files (h5 and fsp) to save disk space
+            try:
+                import glob
+                # Lumerical creates a folder with the same name as the .fsp file (minus the extension)
+                data_dir = layout_path.replace(".fsp", "")
+                if os.path.exists(data_dir):
+                    h5_files = glob.glob(os.path.join(data_dir, "*.h5"))
+                    for h5_file in h5_files:
+                        os.remove(h5_file)
+                        print(f"Cleaned up {h5_file}")
+            except Exception as e:
+                print(f"Warning: Could not clean up Lumerical temp files: {e}")
+            
+            print("Iteration complete.\n")
 
 
 if __name__ == "__main__":

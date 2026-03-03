@@ -8,16 +8,16 @@ clear; close all; clc;
 %% --- USER CONFIGURATION ---
 % Path to your result file
 % Update this to the actual path of your simulation results
-result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_min_80_apod_5\results\result_80_periods_5_apodizations_CONST_3D_crop.mat" % Change this!
+result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles\results\result_80_periods_CONST.mat";
 
 % Options
 log_scale_db = true;    % true: plot 10*log10(|E|^2), false: linear |E|^2
-db_cutoff = -40;        % Minimum dB value to display relative to peak
+db_cutoff = -50;        % Minimum dB value to display relative to peak
 
 % Analysis Region Slicing
 x_slice_um = [-10, 10];      % X range to plot (around the phase shift at X=0)
-boundary_dist_y_um = 0.5;    % Distance from center to measure radiation in Y (top view)
-boundary_dist_z_um = 0.5;    % Distance from center to measure radiation in Z (side view)
+boundary_dist_y_um = 1.15;   % Evaluate at furthest edge of our new monitor! (Top View)
+boundary_dist_z_um = 1.15;   % Evaluate at furthest edge of our new monitor! (Side View)
 
 %% --- 1. Load Data ---
 fprintf('Loading Data from: %s\n', result_filepath);
@@ -69,8 +69,8 @@ x_sim = x(x_idx);
 E_crop = E_5D(x_idx, :, :, idx_3d, :);
 
 % Calculate |E|^2
-E_sq = sum(abs(E_crop).^2, 5); % Sum over Ex, Ey, Ez components [x, y, z, 1]
-E_sq = squeeze(E_sq); % Now it's a 3D matrix [x, y, z]
+E_sq = sum(abs(E_crop).^2, 5); % Sum over Ex, Ey, Ez components
+E_sq = reshape(E_sq, [size(E_crop, 1), size(E_crop, 2), size(E_crop, 3)]); % Enforce [Nx, Ny, Nz] shape explicitly
 
 peak_E2 = max(E_sq(:));
 
@@ -106,25 +106,31 @@ hold off;
 
 
 %% --- 4. Side View: XZ Plane (Y = 0) ---
-[~, idx_y0] = min(abs(y));
-fprintf('Extracting XZ slice at Y = %.3f um\n', y(idx_y0)*1e6);
+is_3d_data = length(z) > 1;
 
-E_xz = squeeze(E_plot(:, idx_y0, :));
+if is_3d_data
+    [~, idx_y0] = min(abs(y));
+    fprintf('Extracting XZ slice at Y = %.3f um\n', y(idx_y0)*1e6);
 
-figure('Name', 'Radiation Loss - Side View (XZ)', 'Color', 'w', 'Position', [150 150 800 400]);
-imagesc(x_sim*1e6, z*1e6, E_xz');
-set(gca, 'YDir', 'normal');
-colormap(jet);
-cb = colorbar;
-ylabel(cb, c_label);
-xlabel('Position X [\mum]');
-ylabel('Position Z [\mum]');
-title({'Side View: Radiation Loss (XZ Plane, Y \approx 0)', sprintf('\\lambda = %.3f nm', wl_3d_actual*1e9)});
-% Add line marking the boundary for angular analysis
-hold on;
-plot([min(x_sim) max(x_sim)]*1e6, [boundary_dist_z_um boundary_dist_z_um], 'k--', 'LineWidth', 1.5);
-plot([min(x_sim) max(x_sim)]*1e6, [-boundary_dist_z_um -boundary_dist_z_um], 'k--', 'LineWidth', 1.5);
-hold off;
+    E_xz = squeeze(E_plot(:, idx_y0, :));
+
+    figure('Name', 'Radiation Loss - Side View (XZ)', 'Color', 'w', 'Position', [150 150 800 400]);
+    imagesc(x_sim*1e6, z*1e6, E_xz');
+    set(gca, 'YDir', 'normal');
+    colormap(jet);
+    cb = colorbar;
+    ylabel(cb, c_label);
+    xlabel('Position X [\mum]');
+    ylabel('Position Z [\mum]');
+    title({'Side View: Radiation Loss (XZ Plane, Y \approx 0)', sprintf('\\lambda = %.3f nm', wl_3d_actual*1e9)});
+    % Add line marking the boundary for angular analysis
+    hold on;
+    plot([min(x_sim) max(x_sim)]*1e6, [boundary_dist_z_um boundary_dist_z_um], 'k--', 'LineWidth', 1.5);
+    plot([min(x_sim) max(x_sim)]*1e6, [-boundary_dist_z_um -boundary_dist_z_um], 'k--', 'LineWidth', 1.5);
+    hold off;
+else
+    fprintf('Data is 2D Z-normal. Skipping Side View (XZ Plane) plot.\n');
+end
 
 
 %% --- 5. Angular Spectrum Analysis ---
@@ -148,10 +154,17 @@ Nx = length(x_sim);
 % Define kx vector
 kx = (-Nx/2 : Nx/2 - 1) * (2*pi / (Nx * dx)); % rad/m
 
+% Apply a spatial Hann window to eliminate boundary truncation artifacts
+% (This stops the massive artificial "horns" at +/- 80 degrees)
+spatial_window = hann(Nx);
+E_windowed_x = E_boundary_x .* spatial_window;
+E_windowed_y = E_boundary_y .* spatial_window;
+E_windowed_z = E_boundary_z .* spatial_window;
+
 % Perform FFT (shift 0 to center)
-fft_Ex = fftshift(fft(E_boundary_x));
-fft_Ey = fftshift(fft(E_boundary_y));
-fft_Ez = fftshift(fft(E_boundary_z));
+fft_Ex = fftshift(fft(E_windowed_x));
+fft_Ey = fftshift(fft(E_windowed_y));
+fft_Ez = fftshift(fft(E_windowed_z));
 
 % Spectral power
 P_kx = abs(fft_Ex).^2 + abs(fft_Ey).^2 + abs(fft_Ez).^2;
@@ -184,18 +197,27 @@ if ~isempty(kx_rad)
     k_scatter = (2*pi*n_eff_approx/wl_3d_actual) - (2*pi/pitch); % Primary scattered momentum
 
     % Phase shift cavity causes a Lorentzian spread in k-space
-    P_analytical = (kappa^2) ./ ((kx_rad - k_scatter).^2 + kappa^2);
+    % We sum both the forward-scattered and backward-scattered components
+    % to make the theoretical curve symmetric (mirror-like) around 0 degrees.
+    P_analytical = (kappa^2) ./ ((kx_rad - k_scatter).^2 + kappa^2) + ...
+        (kappa^2) ./ ((kx_rad + k_scatter).^2 + kappa^2);
     P_analytical_norm = P_analytical / max(P_analytical);
 
     figure('Name', 'Angular Radiation Spectrum', 'Color', 'w', 'Position', [200 200 700 450]);
     plot(theta_deg, P_norm, 'b-', 'LineWidth', 2, 'DisplayName', 'FDTD Numerical FFT');
 
+    % Calculate True TIR Critical Angle
+    % Light inside the core with an angle larger than this cannot escape
+    % into the cladding due to Total Internal Reflection (TIR).
+    theta_TIR_rad = asin(n_clad / n_eff_approx);
+    theta_TIR_deg = rad2deg(theta_TIR_rad);
+
     if compare_analytical
         hold on;
         plot(theta_deg, P_analytical_norm, 'r--', 'LineWidth', 2, 'DisplayName', sprintf('Theory (\\Delta n=%.3f)', dn));
-        % Plot Critical Angle boundary markers
-        xline(90, 'k:', 'LineWidth', 1.5, 'HandleVisibility','off');
-        xline(-90, 'k:', 'LineWidth', 1.5, 'DisplayName', 'Critical Angle');
+        % Plot TIR Critical Angle boundary markers
+        xline(theta_TIR_deg, 'k:', 'LineWidth', 1.5, 'HandleVisibility','off');
+        xline(-theta_TIR_deg, 'k:', 'LineWidth', 1.5, 'DisplayName', 'TIR Critical Angle');
         hold off;
     end
 
@@ -211,7 +233,7 @@ else
 end
 
 fprintf('\n--- Analysis Complete ---\n');
-fprintf('Physics Note: High values in the angular spectrum indicate "critical" radiation angles.\n');
+fprintf('Calculated TIR Critical Angles (Core to Cladding): +/- %.2f degrees\n', theta_TIR_deg);
 
 
 %% --- HELPER FUNCTIONS ---
@@ -236,14 +258,14 @@ end
 lam = lam(:);
 
 E_raw = f3d.E_res;
-dims = size(E_raw);
-if ndims(E_raw) == 4
-    if dims(4) == 3 && length(lam) == 1
-        E_5D = reshape(E_raw, [dims(1), dims(2), dims(3), 1, dims(4)]);
-    else
-        E_5D = E_raw;
-    end
-else
-    E_5D = E_raw;
-end
+
+Nx = length(x);
+Ny = length(y);
+Nz = length(z);
+Nlam = length(lam);
+
+% Robustly reshape the extracted data strictly to the known physical axes
+% This flawlessly handles situations where SciPy/Numpy squeezed out singleton dimensions (e.g Nz=1)
+E_5D = reshape(E_raw, [Nx, Ny, Nz, Nlam, 3]);
+
 end
