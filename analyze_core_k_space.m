@@ -85,7 +85,7 @@ wl_3d_actual = lam_3d(idx_lam);
 % Determine Y slice index based on option
 if strcmp(extraction_position, 'boundary')
     [y_max_m, ~] = max(abs(y));
-    boundary_y_m = y_max_m - 0.2e-6; % Step back slightly to avoid PML boundary
+    boundary_y_m = y_max_m - 0.5e-6; % Step back slightly to avoid PML boundary
     [~, idx_y_extract] = min(abs(y - boundary_y_m));
 else
     [~, idx_y_extract] = min(abs(y)); % Default to Y=0 (Core)
@@ -97,20 +97,20 @@ E_core_comp = squeeze(E_5D(:, idx_y_extract, idx_z0, idx_lam, :)); % [Nx, 3] com
 E_sq_core = sum(abs(E_core_comp).^2, 2);
 
 % --- Plot 1: Real-Space Field Profile ---
-figure('Name', sprintf('Real-Space Field (%s)', extraction_position), 'Color', 'w', 'Position', [100 100 700 400]);
-plot(x*1e6, E_sq_core, 'b-', 'LineWidth', 1.5);
-xlabel('Position along grating (\mum)');
-ylabel('|E|^2 [V^2/m^2]');
-title(sprintf('Field Profile (|E|^2) at %s (Y=%.2f \\mum), \\lambda = %.3f nm', ...
-    extraction_position, y(idx_y_extract)*1e6, wl_3d_actual*1e9));
-grid on;
+%figure('Name', sprintf('Real-Space Field (%s)', extraction_position), 'Color', 'w', 'Position', [100 100 700 400]);
+%plot(x*1e6, E_sq_core, 'b-', 'LineWidth', 1.5);
+%xlabel('Position along grating (\mum)');
+%ylabel('|E|^2 [V^2/m^2]');
+%title(sprintf('Field Profile (|E|^2) at %s (Y=%.2f \\mum), \\lambda = %.3f nm', ...
+%    extraction_position, y(idx_y_extract)*1e6, wl_3d_actual*1e9));
+%grid on;
 
 % --- Plot 1b: Top View Field Profile (XY plane at Z=0) ---
 E_top_comp = squeeze(E_5D(:, :, idx_z0, idx_lam, :)); % [Nx, Ny, 3] components Ex, Ey, Ez
 E_sq_top = sum(abs(E_top_comp).^2, 3); % [Nx, Ny]
 E_sq_top_norm = E_sq_top / max(E_sq_top(:));
 E_sq_top_dB = 10 * log10(E_sq_top_norm);
-E_sq_top_dB(E_sq_top_dB < -60) = -60; % Threshold at -60 dB for visualization
+E_sq_top_dB(E_sq_top_dB < -70) = -70; % Threshold at -60 dB for visualization
 
 figure('Name', 'Top View Field Profile', 'Color', 'w', 'Position', [150 150 800 400]);
 imagesc(x*1e6, y*1e6, E_sq_top_dB');
@@ -147,7 +147,7 @@ E_yw = E_core_comp(:,2) .* window;
 E_zw = E_core_comp(:,3) .* window;
 
 dx = mean(diff(x));
-zoom_factor = 8;
+zoom_factor = 2;
 N_pad = Nx * zoom_factor;
 kx = (-N_pad/2 : N_pad/2 - 1)' * (2*pi / (N_pad * dx)); % Wavevector array [rad/m]
 
@@ -155,9 +155,9 @@ fft_Ex = fftshift(fft(E_xw, N_pad));
 fft_Ey = fftshift(fft(E_yw, N_pad));
 fft_Ez = fftshift(fft(E_zw, N_pad));
 
-% K-space Power Profile
+% K-space Power Profile (Absolute Magnitude)
 P_kx = abs(fft_Ex).^2 + abs(fft_Ey).^2 + abs(fft_Ez).^2;
-P_kx_norm = 10 * log10(P_kx / max(P_kx)); % Normalized dB scale
+P_kx_dB = 10 * log10(P_kx); % Absolute dB scale (not normalized to 0)
 
 %% --- 4. Physics Threshold Calculations ---
 k0 = 2*pi / wl_3d_actual;
@@ -175,12 +175,22 @@ fprintf('Free space wavevector (k0):  %.2e rad/m\n', k0);
 fprintf('Effective bound wavevector (k_neff): %.2e rad/m\n', k_neff);
 fprintf('Cladding boundary wavevector (k_clad): %.2e rad/m\n', k_clad);
 
+% Calculate the Critical Angle for Total Internal Reflection
+theta_TIR_rad = asin(n_clad / n_eff);
+theta_TIR_deg = rad2deg(theta_TIR_rad);
+fprintf('\n--- Critical Angle Analysis ---\n');
+fprintf('Critical Angle for TIR (theta_critical): %.2f degrees\n', theta_TIR_deg);
+fprintf('Angles > %.2f deg: Total Internal Reflection (Trapped)\n', theta_TIR_deg);
+fprintf('Angles < %.2f deg: Radiation Loss (Escapes into Cladding)\n', theta_TIR_deg);
+
 % --- Plot 2: K-Space Profile ---
 figure('Name', 'K-Space Profile', 'Color', 'w', 'Position', [150 150 800 500]);
-plot(kx/1e6, P_kx_norm, 'b-', 'LineWidth', 1.5, 'DisplayName', 'FFT Power Spectrum');
+plot(kx/1e6, P_kx_dB, 'b-', 'LineWidth', 1.5, 'DisplayName', 'FFT Power Spectrum');
 hold on;
 
-y_lims = [-60 5];
+y_max = max(P_kx_dB);
+y_min = y_max - 80; % Plot down to 80 dB below the peak
+y_lims = [y_min, y_max + 5];
 ylim(y_lims);
 
 % Fill the radiation region for visualization
@@ -196,7 +206,7 @@ xline(k_neff/1e6, 'k:', 'k_{neff} (Forward Bound Mode)', 'LineWidth', 1.5, 'Labe
 xline(-k_neff/1e6, 'k:', 'k_{neff} (Backward Bound Mode)', 'LineWidth', 1.5, 'LabelVerticalAlignment', 'bottom', 'HandleVisibility', 'off');
 
 xlabel('Wavevector K_x (rad / \mum)');
-ylabel('Normalized K-Space Power [dB]');
+ylabel('Absolute K-Space Power [dB]');
 title(sprintf('1D K-Space Field Profile at %s (Y=%.2f \\mum)', extraction_position, y(idx_y_extract)*1e6));
 xlim([-k_neff*1.5, k_neff*1.5]/1e6);
 legend('Location', 'northeast');
@@ -213,16 +223,24 @@ theta_rad = asin(kx_rad / k_clad);
 theta_deg = rad2deg(theta_rad);
 
 % Power scaling by Jacobian (cos(theta)) to project dx to dtheta
-P_rad_theta = P_rad .* cos(theta_rad);
-P_rad_theta_norm = P_rad_theta / max(P_rad_theta);
+% Absolute power calculation without normalization to max
+P_rad_theta = P_rad.* cos(theta_rad);
 
 % --- Plot 3: Extracted Radiation Angles ---
 figure('Name', 'Core Field Radiation Spectrum', 'Color', 'w', 'Position', [200 200 700 400]);
-plot(theta_deg, P_rad_theta_norm, 'k-', 'LineWidth', 2);
+plot(theta_deg, P_rad_theta, 'k-', 'LineWidth', 2, 'DisplayName', 'Radiated Power');
+hold on;
+% Calculate and Plot TIR Critical Angle boundary markers
+% This maps the critical angle inside the core onto this radiation plot
+xline(theta_TIR_deg, 'r--', 'LineWidth', 1.5, 'HandleVisibility','off');
+xline(-theta_TIR_deg, 'r--', 'LineWidth', 1.5, 'DisplayName', sprintf('TIR Critical Angle (%.2f\\circ)', theta_TIR_deg));
+hold off;
+
 xlabel('Radiation Angle \theta (degrees from normal)');
-ylabel('Linear Normalized Power');
+ylabel('Absolute Linear Power [a.u.]');
 title({'Power Radiating vs Angle (Derived directly from core field)', '|\theta| = arcsin(K_x / k_{clad})'});
 xlim([-90 90]);
+legend('Location', 'best');
 grid on;
 
 fprintf('\nAnalysis Complete. Check figures for real space, k-space, and angle mapping.\n');
@@ -246,16 +264,19 @@ E_top_yw = E_top_comp_2d(:,:,2) .* window_2d;
 E_top_zw = E_top_comp_2d(:,:,3) .* window_2d;
 
 % 2D Zero-padding for high resolution in K-space
-N_pad_x = Nx * 4;
-N_pad_y = Ny * 4;
+N_pad_x = Nx * 8;
+N_pad_y = Ny * 8;
 
 fft2_Ex = fftshift(fft2(E_top_xw, N_pad_x, N_pad_y));
 fft2_Ey = fftshift(fft2(E_top_yw, N_pad_x, N_pad_y));
 fft2_Ez = fftshift(fft2(E_top_zw, N_pad_x, N_pad_y));
 
 P_kxy = abs(fft2_Ex).^2 + abs(fft2_Ey).^2 + abs(fft2_Ez).^2;
-P_kxy_norm = 10 * log10(P_kxy / max(P_kxy(:)));
-P_kxy_norm(P_kxy_norm < -60) = -60;
+P_kxy_dB = 10 * log10(P_kxy);
+
+% Set a dynamic noise floor for the 2D plot based on its own peak
+dyn_floor = max(P_kxy_dB(:)) - 80;
+P_kxy_dB(P_kxy_dB < dyn_floor) = dyn_floor;
 
 % Compute 2D wavevectors
 dy = mean(diff(y));
@@ -263,11 +284,11 @@ kx_2d = (-N_pad_x/2 : N_pad_x/2 - 1) * (2*pi / (N_pad_x * dx));
 ky_2d = (-N_pad_y/2 : N_pad_y/2 - 1) * (2*pi / (N_pad_y * dy));
 
 figure('Name', '2D K-Space Top View', 'Color', 'w', 'Position', [250 250 800 600]);
-imagesc(kx_2d/1e6, ky_2d/1e6, P_kxy_norm');
+imagesc(kx_2d/1e6, ky_2d/1e6, P_kxy_dB');
 set(gca, 'YDir', 'normal');
 colormap(jet);
 cb = colorbar;
-ylabel(cb, 'Normalized 2D K-Space Power [dB]');
+ylabel(cb, 'Absolute 2D K-Space Power [dB]');
 xlabel('Wavevector K_x (rad / \mum)');
 ylabel('Wavevector K_y (rad / \mum)');
 title('2D K-Space Profile (XY Plane, Z\approx0)');

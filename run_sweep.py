@@ -106,7 +106,7 @@ def run_parameter_sweep():
     w_wide = 900e-9
     w_narrow = 700e-9
 
-    span_multiplier = 1.8
+    span_multiplier = 1.8 
     calc_y_span = w_wide + span_multiplier * lambda_res_est
     calc_z_span = core_h + span_multiplier * lambda_res_est
 
