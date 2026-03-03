@@ -150,8 +150,9 @@ def run_single_sim():
     w_narrow = avg_corr - corr_depth / 2
     core_h = 350e-9
 
-    calc_y_span = w_wide + 1.8 * lambda_res_est
-    calc_z_span = core_h + 1.8 * lambda_res_est
+    span_multiplier = 1.8
+    calc_y_span = w_wide + span_multiplier * lambda_res_est
+    calc_z_span = core_h + span_multiplier * lambda_res_est
 
     # --- DEVICE & 3D RECORDING CONFIG ---
     pitch = 500e-9
@@ -191,8 +192,8 @@ def run_single_sim():
         # --- 3D FIELD SETTINGS ---
         record_3d_fields=True,
         field_3d_span_m=None,  # None means record the full X span
-        monitor_y_span_m=1.5 * lambda_res_est,
-        monitor_z_span_m=1.5 * lambda_res_est,
+        monitor_y_span_m=calc_y_span,
+        monitor_z_span_m=calc_z_span,
         monitor_type="2D Z-normal",
         downsample_yz=1  # Keep default high resolution
     )

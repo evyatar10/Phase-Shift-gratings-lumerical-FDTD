@@ -434,14 +434,20 @@ class PiShiftBraggFDTD:
             fdtd.addprofile()
             fdtd.set("name", "field_profile_3D")
             fdtd.set("monitor type", self.monitor_type)
-            fdtd.set("x", 0)
-            fdtd.set("x span", x_span_3d)
-            fdtd.set("y", 0)
-            fdtd.set("y span", self.monitor_y_span_m if self.monitor_y_span_m else 1.5 * self.width_wide)
             
-            if self.monitor_type == "3D":
+            fdtd.set("x", 0)
+            if self.monitor_type != "2D X-normal":
+                fdtd.set("x span", x_span_3d)
+            
+            fdtd.set("y", 0)
+            if self.monitor_type != "2D Y-normal":
+                fdtd.set("y span", self.monitor_y_span_m if self.monitor_y_span_m else 1.5 * self.width_wide)
+            
+            if self.monitor_type != "2D Z-normal":
                 fdtd.set("z", 0)
                 fdtd.set("z span", self.monitor_z_span_m if self.monitor_z_span_m else 1.5 * self.core_height)
+            
+            if self.monitor_type in ["3D", "2D X-normal", "2D Y-normal"]:
                 fdtd.set("down sample z", self.downsample_yz)
                 
             # Safe settings to save space
@@ -450,8 +456,10 @@ class PiShiftBraggFDTD:
             # Default to very few points to avoid RAM crash (will be set in update_scan too)
             fdtd.set("frequency points", 5)
             # Downsampling logic
-            fdtd.set("down sample x", 1)
-            fdtd.set("down sample y", self.downsample_yz)
+            if self.monitor_type != "2D X-normal":
+                fdtd.set("down sample x", 1)
+            if self.monitor_type != "2D Y-normal":
+                fdtd.set("down sample y", self.downsample_yz)
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points

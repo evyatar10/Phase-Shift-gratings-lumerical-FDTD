@@ -106,6 +106,10 @@ def run_parameter_sweep():
     w_wide = 900e-9
     w_narrow = 700e-9
 
+    span_multiplier = 1.8
+    calc_y_span = w_wide + span_multiplier * lambda_res_est
+    calc_z_span = core_h + span_multiplier * lambda_res_est
+
     print(f"--- SWEEP CONFIGURATION ---")
     print(f"Sweeping N_periods: {N_periods_list}")
     print(f"Center Wavelength: {lambda_res_est * 1e6:.3f} um")
@@ -125,8 +129,8 @@ def run_parameter_sweep():
             core_height=core_h,
             substrate_thickness=4e-6,
             override_cavity_length_nm=False,
-            y_span=w_wide + 1.8 * lambda_res_est,
-            z_span=core_h + 1.8 * lambda_res_est,
+            y_span=calc_y_span,
+            z_span=calc_z_span,
             material_db_path=config.MATERIAL_DB_PATH,
             n_periods_dist_to_port=20,
             n_wls_dist_port_to_pml=5.0,
@@ -141,9 +145,9 @@ def run_parameter_sweep():
             n_core_const=1.977,
             record_3d_fields=record_3d_fields,
             field_3d_span_m=None,  # None means record the full X span
-            monitor_y_span_m=1.5 * lambda_res_est,
-            monitor_z_span_m=1.5 * lambda_res_est,
-            monitor_type="2D Z-normal",
+            monitor_y_span_m=calc_y_span,
+            monitor_z_span_m=calc_z_span,
+            monitor_type="2D X-normal",
             downsample_yz=1
         )
 

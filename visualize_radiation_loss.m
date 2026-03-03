@@ -12,12 +12,10 @@ result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\rad
 
 % Options
 log_scale_db = true;    % true: plot 10*log10(|E|^2), false: linear |E|^2
-db_cutoff = -50;        % Minimum dB value to display relative to peak
+db_cutoff = -60;        % Minimum dB value to display relative to peak
 
 % Analysis Region Slicing
 x_slice_um = [-10, 10];      % X range to plot (around the phase shift at X=0)
-boundary_dist_y_um = 1.15;   % Evaluate at furthest edge of our new monitor! (Top View)
-boundary_dist_z_um = 1.15;   % Evaluate at furthest edge of our new monitor! (Side View)
 
 %% --- 1. Load Data ---
 fprintf('Loading Data from: %s\n', result_filepath);
@@ -84,6 +82,13 @@ else
 end
 
 %% --- 3. Top View: XY Plane (Z = 0) ---
+% Automatically use the edge (maximum |y/z|) of the exported monitor data
+% We step back slightly (200 nm) from the absolute edge to avoid PML boundary artifacts
+[y_max_m, ~] = max(abs(y));
+boundary_dist_y_m = y_max_m - 0.2e-6;
+[~, idx_y_top] = min(abs(y - boundary_dist_y_m));
+boundary_dist_y_um = boundary_dist_y_m * 1e6;
+
 [~, idx_z0] = min(abs(z));
 fprintf('Extracting XY slice at Z = %.3f um\n', z(idx_z0)*1e6);
 
@@ -109,6 +114,10 @@ hold off;
 is_3d_data = length(z) > 1;
 
 if is_3d_data
+    % Automatically use the edge (maximum |z|) of the exported monitor data
+    [boundary_dist_z_m, ~] = max(abs(z));
+    boundary_dist_z_um = boundary_dist_z_m * 1e6;
+
     [~, idx_y0] = min(abs(y));
     fprintf('Extracting XZ slice at Y = %.3f um\n', y(idx_y0)*1e6);
 
@@ -133,12 +142,13 @@ else
 end
 
 
-%% --- 5. Angular Spectrum Analysis ---
+% 5. Angular Spectrum Analysis
 % Physics: To see the angles of radiation, we take the Fourier transform of the
 % field strictly OUTSIDE the core, in the cladding region.
 
-% Get indices for the boundaries
-[~, idx_y_top] = min(abs(y - boundary_dist_y_um*1e-6));
+% Using the automatically calculated maximum |y|
+fprintf('Evaluating Angular Spectrum at Y boundary: %.3f \\mu m\n', boundary_dist_y_um);
+
 [~, idx_z0] = min(abs(z));
 
 % Extract complex field components at the boundary (Z=0, Y=boundary_dist)
@@ -151,8 +161,13 @@ E_boundary_z = E_boundary_comp(:, 3);
 dx = mean(diff(x_sim));      % Spatial step in m
 Nx = length(x_sim);
 
-% Define kx vector
-kx = (-Nx/2 : Nx/2 - 1) * (2*pi / (Nx * dx)); % rad/m
+% ZERO-PADDING for high angular resolution
+% Padding the spatial domain interpolates the k-space domain, heavily increasing resolution
+zoom_factor = 8;
+N_pad = Nx * zoom_factor;
+
+% Define high-resolution kx vector
+kx = (-N_pad/2 : N_pad/2 - 1) * (2*pi / (N_pad * dx)); % rad/m
 
 % Apply a spatial Hann window to eliminate boundary truncation artifacts
 % (This stops the massive artificial "horns" at +/- 80 degrees)
@@ -161,20 +176,21 @@ E_windowed_x = E_boundary_x .* spatial_window;
 E_windowed_y = E_boundary_y .* spatial_window;
 E_windowed_z = E_boundary_z .* spatial_window;
 
-% Perform FFT (shift 0 to center)
-fft_Ex = fftshift(fft(E_windowed_x));
-fft_Ey = fftshift(fft(E_windowed_y));
-fft_Ez = fftshift(fft(E_windowed_z));
+% Perform Zero-Padded FFT (shift 0 to center)
+fft_Ex = fftshift(fft(E_windowed_x, N_pad));
+fft_Ey = fftshift(fft(E_windowed_y, N_pad));
+fft_Ez = fftshift(fft(E_windowed_z, N_pad));
 
-% Spectral power
+% Spectral power (Magnitude Squared of the Field Vector)
 P_kx = abs(fft_Ex).^2 + abs(fft_Ey).^2 + abs(fft_Ez).^2;
 
 % Convert kx to radiation angle theta
-% k_clad = 2*pi / lambda * n_clad
+% k_clad = 2*pi / wl_3d_actual * n_clad
 n_clad = 1.44; % Assuming SiO2 (Approximate)
 k_clad = (2*pi / wl_3d_actual) * n_clad;
 
-% Valid radiation angles exist only for |kx| < k_clad
+% Valid radiation angles exist only for |kx| < k_clad (This IS the critical angle boundary!)
+% Light with |kx| > k_clad is completely bound to the core due to Total Internal Reflection
 valid_kx_idx = abs(kx) <= k_clad;
 
 kx_rad = kx(valid_kx_idx);
@@ -184,13 +200,19 @@ if ~isempty(kx_rad)
     % theta = asin(kx / k_clad); angle from broadside (Z-axis)
     theta_rad = asin(kx_rad / k_clad);
     theta_deg = rad2deg(theta_rad);
-    P_norm = P_rad / max(P_rad);
+
+    % Apply Jacobian physical scaling factor cos(theta)
+    % Because P(\theta) d\theta = P(k_x) dk_x, and dk_x = k_clad * cos(\theta) d\theta.
+    % This correctly drops power to zero at grazing angles (+/- 90 deg).
+    P_rad_theta = P_rad .* cos(theta_rad);
+    P_norm = P_rad_theta / max(P_rad_theta);
 
     % Analytical Calculation (Lorentzian Model)
     compare_analytical = true;
     dn = 0.013;              % Example index contrast
     pitch = 500e-9;          % Grating pitch
-    n_eff_approx = 1.55;     % Approx mode index
+    n_eff_approx = wl_res / (2 * pitch); % Approx mode index from Bragg condition
+    fprintf('Calculated effective mode index (n_eff) from Bragg condition: %.4f\n', n_eff_approx);
 
     % Fundamental physics parameters
     kappa = 2 * dn / wl_3d_actual; % Coupling coeff approximation (m^-1)
@@ -199,9 +221,12 @@ if ~isempty(kx_rad)
     % Phase shift cavity causes a Lorentzian spread in k-space
     % We sum both the forward-scattered and backward-scattered components
     % to make the theoretical curve symmetric (mirror-like) around 0 degrees.
-    P_analytical = (kappa^2) ./ ((kx_rad - k_scatter).^2 + kappa^2) + ...
+    P_analytical_kx = (kappa^2) ./ ((kx_rad - k_scatter).^2 + kappa^2) + ...
         (kappa^2) ./ ((kx_rad + k_scatter).^2 + kappa^2);
-    P_analytical_norm = P_analytical / max(P_analytical);
+
+    % Scale analytical by cos(theta) to match the theta domain
+    P_analytical_theta = P_analytical_kx .* cos(theta_rad);
+    P_analytical_norm = P_analytical_theta / max(P_analytical_theta);
 
     figure('Name', 'Angular Radiation Spectrum', 'Color', 'w', 'Position', [200 200 700 450]);
     plot(theta_deg, P_norm, 'b-', 'LineWidth', 2, 'DisplayName', 'FDTD Numerical FFT');
