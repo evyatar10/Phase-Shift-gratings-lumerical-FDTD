@@ -87,67 +87,57 @@ fprintf('Critical Angle (Theoretical): %.2f deg\n', theta_critical_deg);
 
 %% --- 3. Process Math and Physics ---
 
-% 1. Use the entire unit vector 'ux' directly (this represents kx/k0)
-%    |ux| <= 1.0 corresponds to propagating radiation modes.
-%    |ux| > 1.0 corresponds to bound evanescent modes.
-ux_all = ux_1D;
+% 1. Convert unit vector 'ux' to physical angle in degrees
+%    Note: the Far-Field projection covers hemisphere so |ux| <= 1.0
+%    We filter out unphysical evanescent components (|ux| > 1)
+valid_idx = abs(ux_1D) <= 1.0;
+ux_valid = ux_1D(valid_idx);
+theta_rad = asin(ux_valid);
+theta_deg = rad2deg(theta_rad);
 
-% To safely calculate physical angles for the propagating part,
-% we clip the values going into asin() to [-1, 1] just for the angle vector,
-% but we keep the x-axis as ux directly to visualize everything.
-theta_rad_safe = asin(min(max(ux_all, -1), 1));
-theta_deg_safe = rad2deg(theta_rad_safe);
-
-% 2. Calculate raw intensity |E|^2 for ALL components
-I_E2 = abs(Ex_1D).^2 + abs(Ey_1D).^2 + abs(Ez_1D).^2;
+% 2. Calculate raw intensity |E|^2
+Ex_v = Ex_1D(valid_idx);
+Ey_v = Ey_1D(valid_idx);
+Ez_v = Ez_1D(valid_idx);
+I_E2 = abs(Ex_v).^2 + abs(Ey_v).^2 + abs(Ez_v).^2;
 
 % 3. Apply the Jacobian scaling logic required for Angular Projection
-%    Power/Angle = Intensity * cos(theta).
-%    For evanescent waves (|ux|>1), cos(theta) theoretically becomes imaginary
-%    (ikz), representing purely reactive power. We can plot the envelope by
-%    just scaling the propagating part and plotting intensity for the rest,
-%    or scaling everything by abs(cos(theta)) = abs(sqrt(1 - ux^2)).
-cos_theta = sqrt(abs(1 - ux_all.^2)); % abs to handle ux > 1 which would be imaginary
-P_all = I_E2 .* cos_theta;
+%    Power/Angle = Intensity * cos(theta)
+P_theta = I_E2 .* cos(theta_rad);
 
 % Normalize to 0 dB maximum for clean visualization
-P_theta_norm = P_all / max(P_all(:));
+P_theta_norm = P_theta / max(P_theta(:));
 P_theta_dB = 10 * log10(P_theta_norm);
 
-% Apply noise floor to avoid plotting infinite negative noise
-noise_floor_dB = -80;
+% Apply noise floor (cut to -30 dB)
+noise_floor_dB = -30;
 P_theta_dB(P_theta_dB < noise_floor_dB) = noise_floor_dB;
 
 %% --- 4. Plot Results ---
 figure('Name', 'Native Lumerical Far-Field Analysis', 'Color', 'w', 'Position', [100, 100, 800, 500]);
 
 % Main angular power line
-% We plot against the direction cosine (ux = sin(theta)) to natively support ux > 1
-plot(ux_all, P_theta_dB, 'b-', 'LineWidth', 2.0);
+plot(theta_deg, P_theta_dB, 'b-', 'LineWidth', 2.0);
 hold on;
 
-% Mark the critical angles using direction cosines (ux)
-ux_crit = sin(theta_critical_rad);
+% Mark the critical angles
 y_lims = ylim();
-xline(ux_crit, '--r', 'LineWidth', 1.5, 'Label', sprintf('+%.1f^\\circ (TIR Limit)', theta_critical_deg), 'LabelOrientation', 'horizontal', 'LabelHorizontalAlignment', 'center', 'LabelVerticalAlignment', 'bottom');
-xline(-ux_crit, '--r', 'LineWidth', 1.5, 'Label', sprintf('-%.1f^\\circ (TIR Limit)', theta_critical_deg), 'LabelOrientation', 'horizontal', 'LabelHorizontalAlignment', 'center', 'LabelVerticalAlignment', 'bottom');
-
-% Also mark the boundaries between Radiating and Evanescent zones (|ux| = 1)
-xline(1.0, '-k', 'LineWidth', 1.0, 'Label', 'Radiation Limit (+90^\circ)', 'LabelOrientation', 'horizontal', 'LabelHorizontalAlignment', 'center', 'LabelVerticalAlignment', 'top');
-xline(-1.0, '-k', 'LineWidth', 1.0, 'Label', 'Radiation Limit (-90^\circ)', 'LabelOrientation', 'horizontal', 'LabelHorizontalAlignment', 'center', 'LabelVerticalAlignment', 'top');
+xline(theta_critical_deg, '--r', 'LineWidth', 1.5, 'Label', sprintf('+%.1f^\\circ (TIR Limit)', theta_critical_deg), 'LabelOrientation', 'horizontal', 'LabelHorizontalAlignment', 'center', 'LabelVerticalAlignment', 'bottom');
+xline(-theta_critical_deg, '--r', 'LineWidth', 1.5, 'Label', sprintf('-%.1f^\\circ (TIR Limit)', theta_critical_deg), 'LabelOrientation', 'horizontal', 'LabelHorizontalAlignment', 'center', 'LabelVerticalAlignment', 'bottom');
 
 % Embellish the plot
 if isnan(dist_wls)
-    title_str = sprintf('Far-Field Power vs. Direction Cosine (ux = k_x/k_0)\n\\lambda = %.2f nm', lam_m * 1e9);
+    title_str = sprintf('Radiation Power vs. Angle (Native Far-Field Math)\n\\lambda = %.2f nm', lam_m * 1e9);
 else
-    title_str = sprintf('Far-Field Power vs. Direction Cosine (ux = k_x/k_0)\n\\lambda = %.2f nm, Monitor Distance = %.2f \\lambda', lam_m * 1e9, dist_wls);
+    title_str = sprintf('Radiation Power vs. Angle (Native Far-Field Math)\n\\lambda = %.2f nm, Monitor Distance = %.2f \\lambda', lam_m * 1e9, dist_wls);
 end
 title(title_str, 'FontSize', 14);
-xlabel('Direction Cosine u_x = sin(\theta) = k_x / k_0', 'FontSize', 12, 'FontWeight', 'bold');
-ylabel('Normalized Radiation Power density P(u_x) [dB]', 'FontSize', 12, 'FontWeight', 'bold');
-% Expand x-axis to show evanescent bounds
-xlim([min(-1.5, min(ux_all)) max(1.5, max(ux_all))]);
-ylim([-60 5]); % Keep nice bounds for typical phase-shift radiation
+xlabel('Radiation Angle \theta (degrees from Core Normal)', 'FontSize', 12, 'FontWeight', 'bold');
+ylabel('Normalized Radiation Power density P(\theta) [dB]', 'FontSize', 12, 'FontWeight', 'bold');
+xlim([-90 90]);
+
+% Cut plot to -30 dB floor
+ylim([-30 5]);
 grid on;
 hold off;
 
