@@ -49,7 +49,10 @@ class PiShiftBraggFDTD:
                  monitor_y_span_m=None,
                  monitor_z_span_m=None,
                  monitor_type="3D",     # Toggle between "3D" and "2D Z-normal"
-                 downsample_yz=1):  # Default 1 to preserve resolution at interfaces
+                 downsample_yz=1,       # Default 1 to preserve resolution at interfaces
+                 # --- NEW OPTIONAL FAR-FIELD MONITOR ---
+                 record_farfield=False,
+                 farfield_y_dist_m=None):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -93,6 +96,9 @@ class PiShiftBraggFDTD:
         self.monitor_z_span_m = monitor_z_span_m
         self.monitor_type = monitor_type
         self.downsample_yz = downsample_yz
+
+        self.record_farfield = record_farfield
+        self.farfield_y_dist_m = farfield_y_dist_m
 
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
 
@@ -461,6 +467,25 @@ class PiShiftBraggFDTD:
             if self.monitor_type != "2D Y-normal":
                 fdtd.set("down sample y", self.downsample_yz)
 
+        # --- NEW OPTIONAL FAR-FIELD MONITOR ---
+        if self.record_farfield:
+            fdtd.addprofile()
+            fdtd.set("name", "farfield_monitor")
+            fdtd.set("monitor type", "2D Y-normal")
+            
+            # Center the monitor precisely over the phase-shift cavity gap (now exactly at X=0)
+            fdtd.set("x", 0)
+            fdtd.set("x span", 2.0 * self.x_grating_end + 1.0e-6)
+            
+            y_pos = self.farfield_y_dist_m if self.farfield_y_dist_m is not None else 1.5e-6
+            fdtd.set("y", y_pos)
+            fdtd.set("z", 0)
+            fdtd.set("z span", self.monitor_z_span_m if self.monitor_z_span_m else 1.5 * self.core_height)
+            
+            fdtd.set("override global monitor settings", 1)
+            fdtd.set("use source limits", 1)
+            fdtd.set("frequency points", 5)
+
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
         half_w = 0.5 * width_nm * 1e-9
@@ -477,6 +502,9 @@ class PiShiftBraggFDTD:
             # Removed the faulty isnometric check.
             # We know the monitor exists because record_3d_fields is True.
             self.fdtd.setnamed("field_profile_3D", "frequency points", 5)
+            
+        if self.record_farfield:
+            self.fdtd.setnamed("farfield_monitor", "frequency points", 5)
 
     def close(self):
         try:
