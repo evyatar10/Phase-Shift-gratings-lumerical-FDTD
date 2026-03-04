@@ -467,14 +467,14 @@ class PiShiftBraggFDTD:
             if self.monitor_type != "2D Y-normal":
                 fdtd.set("down sample y", self.downsample_yz)
 
-        # --- NEW OPTIONAL FAR-FIELD MONITOR ---
+        # --- NEW OPTIONAL SIDE MONITOR ---
         if self.record_farfield:
             fdtd.addprofile()
-            fdtd.set("name", "farfield_monitor")
+            fdtd.set("name", "side_monitor")
             fdtd.set("monitor type", "2D Y-normal")
             
-            # Center the monitor precisely over the phase-shift cavity gap (now exactly at X=0)
-            fdtd.set("x", 0)
+            # Center the monitor precisely between the cavity and the right rectangle
+            fdtd.set("x", self.cavity_length / 2.0)
             fdtd.set("x span", 2.0 * self.x_grating_end + 1.0e-6)
             
             y_pos = self.farfield_y_dist_m if self.farfield_y_dist_m is not None else 1.5e-6
@@ -504,7 +504,7 @@ class PiShiftBraggFDTD:
             self.fdtd.setnamed("field_profile_3D", "frequency points", 5)
             
         if self.record_farfield:
-            self.fdtd.setnamed("farfield_monitor", "frequency points", 5)
+            self.fdtd.setnamed("side_monitor", "frequency points", 5)
 
     def close(self):
         try:

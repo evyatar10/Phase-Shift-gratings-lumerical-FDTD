@@ -150,7 +150,7 @@ def run_single_sim():
     w_narrow = avg_corr - corr_depth / 2
     core_h = 350e-9
 
-    span_multiplier = 1.8
+    span_multiplier = 4.5
     calc_y_span = w_wide + span_multiplier * lambda_res_est
     calc_z_span = core_h + span_multiplier * lambda_res_est
 
@@ -164,7 +164,7 @@ def run_single_sim():
     overlap_len_m = 2.0 * (N_periods_target_overlap * pitch) + cav_len + 1.0e-6
 
     # NEW: dynamic far-field distance
-    farfield_y_wls = 0.2
+    farfield_y_wls = 0.5
     calc_farfield_y = (calc_y_span / 2.0) - (farfield_y_wls * lambda_res_est)
 
     # 2. Initialize Simulation
@@ -278,22 +278,35 @@ def run_single_sim():
         del res_3d  # Free memory
         
         
-    farfield_data = {}
+    side_monitor_data = {}
     if getattr(sim, 'record_farfield', False):
-        print("Extracting Far Field from Lumerical Native Projection...")
-        # Explicitly use exact Far Field Projection at the center frequency
-        # Get farfield monitor wavelengths to correctly index the data
-        res_ff = sim.fdtd.getresult('farfield_monitor', 'E')
-        wl_ff_temp = np.atleast_1d(np.squeeze(res_ff['lambda']))
-        idx_f_ff = np.argmin(np.abs(wl_ff_temp - target_wl))
-        idx_f_1_based = int(idx_f_ff + 1)
-        actual_ff_wl = float(wl_ff_temp[idx_f_ff])
+        print("Extracting Near Field and Far Field from Side Monitor...")
+        # Get side monitor near field to extract both NF and index for FF
+        res_sm = sim.fdtd.getresult('side_monitor', 'E')
+        wl_sm_temp = np.atleast_1d(np.squeeze(res_sm['lambda']))
+        idx_f_sm = np.argmin(np.abs(wl_sm_temp - target_wl))
+        idx_f_1_based = int(idx_f_sm + 1)
+        actual_sm_wl = float(wl_sm_temp[idx_f_sm])
+        
+        # Near field extraction
+        nf_x = np.squeeze(res_sm['x'])
+        nf_y = np.squeeze(res_sm['y'])
+        nf_z = np.squeeze(res_sm['z'])
+        nf_E = res_sm['E']
+        
+        if nf_E.ndim == 5:
+            nf_E_res = nf_E[:, :, :, idx_f_sm, :]
+        elif nf_E.ndim == 4:
+            nf_E_res = nf_E[:, :, idx_f_sm, :]
+        else:
+            nf_E_res = nf_E[..., idx_f_sm, :]
         
         # Free up memory
-        del res_ff
+        del res_sm
         
+        # Far field Projection
         script = f"""
-        mname = 'farfield_monitor';
+        mname = 'side_monitor';
         idx_f = {idx_f_1_based};
         ux = linspace(-0.9999, 0.9999, 3001);
         uy = linspace(-0.9999, 0.9999, 51);  # Reduced Z-resolution to save RAM
@@ -303,24 +316,25 @@ def run_single_sim():
         """
         sim.fdtd.eval(script)
         
-        # We only output the raw vectors and electric fields
         ux_out = np.squeeze(sim.fdtd.getv("ux"))
         uy_out = np.squeeze(sim.fdtd.getv("uy"))
         E_ff_out = np.squeeze(sim.fdtd.getv("E_ff"))
         
-        # Perform array dissection explicitly in python to bypass Lumerical's string parsing bugs.
-        # Squeeze removes extra dimensions (like frequency if it's 1), so the last dimension is the vector (x, y, z)
         Ex_out = E_ff_out[..., 0]
         Ey_out = E_ff_out[..., 1]
         Ez_out = E_ff_out[..., 2]
         
-        farfield_data = {
-            'ux': ux_out,
-            'uy': uy_out,
-            'Ex': Ex_out,
-            'Ey': Ey_out,
-            'Ez': Ez_out,
-            'f_monitor': actual_ff_wl
+        side_monitor_data = {
+            'nf_x': nf_x,
+            'nf_y': nf_y,
+            'nf_z': nf_z,
+            'nf_E': nf_E_res,
+            'ff_ux': ux_out,
+            'ff_uy': uy_out,
+            'ff_Ex': Ex_out,
+            'ff_Ey': Ey_out,
+            'ff_Ez': Ez_out,
+            'f_monitor': actual_sm_wl
         }
 
     # 8. Save
@@ -334,7 +348,7 @@ def run_single_sim():
         'field_envelope_1D': I_x_envelope,
         'fwhm_m': fwhm_val,
         'field_3d': field_3d_data,
-        'farfield': farfield_data
+        'side_monitor': side_monitor_data
     }
     sio.savemat(results_path, mat_data)
     print(f"Data saved to: {results_path}")

@@ -9,7 +9,7 @@ clear; close all; clc;
 
 %% --- Configuration ---
 % Update this to the actual path of your simulation results
-result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles\results\result_80_periods_CONST.mat";
+result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_2\results\result_80_periods_CONST.mat";
 
 pitch = 500e-9; % Grating pitch in meters
 n_clad = 1.44;  % Approximate cladding refractive index
@@ -110,7 +110,10 @@ E_top_comp = squeeze(E_5D(:, :, idx_z0, idx_lam, :)); % [Nx, Ny, 3] components E
 E_sq_top = sum(abs(E_top_comp).^2, 3); % [Nx, Ny]
 E_sq_top_norm = E_sq_top / max(E_sq_top(:));
 E_sq_top_dB = 10 * log10(E_sq_top_norm);
-E_sq_top_dB(E_sq_top_dB < -70) = -70; % Threshold at -60 dB for visualization
+
+% Set a floor value for visualization (e.g., -60 dB)
+%floor_val = -70;
+%E_sq_top_dB(E_sq_top_dB < floor_val) = floor_val;
 
 figure('Name', 'Top View Field Profile', 'Color', 'w', 'Position', [150 150 800 400]);
 imagesc(x*1e6, y*1e6, E_sq_top_dB');
@@ -175,13 +178,17 @@ fprintf('Free space wavevector (k0):  %.2e rad/m\n', k0);
 fprintf('Effective bound wavevector (k_neff): %.2e rad/m\n', k_neff);
 fprintf('Cladding boundary wavevector (k_clad): %.2e rad/m\n', k_clad);
 
-% Calculate the Critical Angle for Total Internal Reflection
-theta_TIR_rad = asin(n_clad / n_eff);
-theta_TIR_deg = rad2deg(theta_TIR_rad);
-fprintf('\n--- Critical Angle Analysis ---\n');
-fprintf('Critical Angle for TIR (theta_critical): %.2f degrees\n', theta_TIR_deg);
-fprintf('Angles > %.2f deg: Total Internal Reflection (Trapped)\n', theta_TIR_deg);
-fprintf('Angles < %.2f deg: Radiation Loss (Escapes into Cladding)\n', theta_TIR_deg);
+% Calculate the Critical Angle for Total Internal Reflection relative to the guided mode
+% TIR occurs exactly when the parallel wavevector k_x matches k_clad.
+% Relative to the mode's momentum: k_x = k_neff * sin(theta_eff).
+% So at the critical angle: k_clad = k_neff * sin(theta_c) -> theta_c = asin(k_clad / k_neff)
+theta_TIR_eff_deg = asind(k_clad / k_neff);
+
+fprintf('\n--- Critical Angle Analysis (Relative to Mode Momentum) ---\n');
+fprintf('TIR Critical Angle (theta_c): %.2f degrees from normal\n', theta_TIR_eff_deg);
+fprintf('Internal Angles > %.2f deg: Total Internal Reflection (Trapped)\n', theta_TIR_eff_deg);
+fprintf('Internal Angles < %.2f deg: Radiation Loss (Escapes into Cladding)\n', theta_TIR_eff_deg);
+
 
 % --- Plot 2: K-Space Profile ---
 figure('Name', 'K-Space Profile', 'Color', 'w', 'Position', [150 150 800 500]);
@@ -212,98 +219,47 @@ xlim([-k_neff*1.5, k_neff*1.5]/1e6);
 legend('Location', 'northeast');
 grid on; hold off;
 
-%% --- 5. Radiation Angle Calculation ---
-% For components with |K_x| < k_clad (Radiation region):
-% Their spatial angle into the cladding is given by \theta = arcsin(K_x / k_clad)
-radiating_idx = abs(kx) <= k_clad;
-kx_rad = kx(radiating_idx);
-P_rad  = P_kx(radiating_idx);
+%% --- 5. Radiation Angle Plots ---
 
-theta_rad = asin(kx_rad / k_clad);
-theta_deg = rad2deg(theta_rad);
+% Option A: Angle in the Cladding (Theta Cladding)
+% Maps components with |k_x| <= k_clad to theta cladding
+idx_clad = abs(kx) <= k_clad;
+theta_cladding_deg = asind(kx(idx_clad) / k_clad);
+P_kx_dB_clad = P_kx_dB(idx_clad);
 
-% Power scaling by Jacobian (cos(theta)) to project dx to dtheta
-% Absolute power calculation without normalization to max
-P_rad_theta = P_rad.* cos(theta_rad);
+% --- Plot 3: Field Profile vs Theta Cladding ---
+figure('Name', 'Profile vs Theta Cladding', 'Color', 'w', 'Position', [150 200 700 400]);
+plot(theta_cladding_deg, P_kx_dB_clad, 'k-', 'LineWidth', 1.5);
+xlabel('\theta_{cladding} = arcsin(k_x / k_{clad}) [degrees]');
+ylabel('Absolute K-Space Power [dB]');
+title('K-Space Power vs \theta_{cladding}');
+ylim(y_lims); % Match limits from Figure 2
+xlim([-90 90]);
+grid on;
 
-% --- Plot 3: Extracted Radiation Angles ---
-figure('Name', 'Core Field Radiation Spectrum', 'Color', 'w', 'Position', [200 200 700 400]);
-plot(theta_deg, P_rad_theta, 'k-', 'LineWidth', 2, 'DisplayName', 'Radiated Power');
+
+% Option B: Angle in the Core / Effective (Theta Core)
+% Maps components with |k_x| <= k_neff to theta core
+idx_core = abs(kx) <= k_neff;
+theta_core_deg = asind(kx(idx_core) / k_neff);
+P_kx_dB_core = P_kx_dB(idx_core);
+
+% --- Plot 4: Field Profile vs Theta Core ---
+figure('Name', 'Profile vs Theta Core', 'Color', 'w', 'Position', [200 150 750 450]);
+plot(theta_core_deg, P_kx_dB_core, 'b-', 'LineWidth', 1.5);
+
+% Mark TIR boundaries
 hold on;
-% Calculate and Plot TIR Critical Angle boundary markers
-% This maps the critical angle inside the core onto this radiation plot
-xline(theta_TIR_deg, 'r--', 'LineWidth', 1.5, 'HandleVisibility','off');
-xline(-theta_TIR_deg, 'r--', 'LineWidth', 1.5, 'DisplayName', sprintf('TIR Critical Angle (%.2f\\circ)', theta_TIR_deg));
+xline(theta_TIR_eff_deg, 'r--', '\theta_{critical}', 'LineWidth', 1.5, 'LabelVerticalAlignment', 'bottom');
+xline(-theta_TIR_eff_deg, 'r--', 'LineWidth', 1.5);
 hold off;
 
-xlabel('Radiation Angle \theta (degrees from normal)');
-ylabel('Absolute Linear Power [a.u.]');
-title({'Power Radiating vs Angle (Derived directly from core field)', '|\theta| = arcsin(K_x / k_{clad})'});
+xlabel('\theta_{core} = arcsin(k_x / k_{neff}) [degrees]');
+ylabel('Absolute K-Space Power [dB]');
+title('K-Space Power vs \theta_{core}');
+ylim(y_lims); % Match limits from Figure 2
 xlim([-90 90]);
-legend('Location', 'best');
 grid on;
 
 fprintf('\nAnalysis Complete. Check figures for real space, k-space, and angle mapping.\n');
 
-%% --- 6. Top View K-Space (2D FFT) ---
-fprintf('\n--- Computing 2D K-Space for Top View ---\n');
-% Extract the exact top-view field (Z=0 plane)
-% Using E_5D which is already extracted in memory [Nx, Ny, Nz, Nlam, 3]
-E_top_comp_2d = squeeze(E_5D(:, :, idx_z0, idx_lam, :)); % [Nx, Ny, 3]
-
-% Apply 2D windowing to remove boundary artifacts
-% We reuse the X window defined in section 3 (either isolated or full structure)
-window_x = window;
-window_y = hann(Ny);
-[Wm_y, Wm_x] = meshgrid(window_y, window_x); % [Ny, Nx] meshgrid transposed!
-% Be careful with meshgrid: meshgrid(y, x) gives size [Nx, Ny]
-window_2d = Wm_x .* Wm_y;
-
-E_top_xw = E_top_comp_2d(:,:,1) .* window_2d;
-E_top_yw = E_top_comp_2d(:,:,2) .* window_2d;
-E_top_zw = E_top_comp_2d(:,:,3) .* window_2d;
-
-% 2D Zero-padding for high resolution in K-space
-N_pad_x = Nx * 8;
-N_pad_y = Ny * 8;
-
-fft2_Ex = fftshift(fft2(E_top_xw, N_pad_x, N_pad_y));
-fft2_Ey = fftshift(fft2(E_top_yw, N_pad_x, N_pad_y));
-fft2_Ez = fftshift(fft2(E_top_zw, N_pad_x, N_pad_y));
-
-P_kxy = abs(fft2_Ex).^2 + abs(fft2_Ey).^2 + abs(fft2_Ez).^2;
-P_kxy_dB = 10 * log10(P_kxy);
-
-% Set a dynamic noise floor for the 2D plot based on its own peak
-dyn_floor = max(P_kxy_dB(:)) - 80;
-P_kxy_dB(P_kxy_dB < dyn_floor) = dyn_floor;
-
-% Compute 2D wavevectors
-dy = mean(diff(y));
-kx_2d = (-N_pad_x/2 : N_pad_x/2 - 1) * (2*pi / (N_pad_x * dx));
-ky_2d = (-N_pad_y/2 : N_pad_y/2 - 1) * (2*pi / (N_pad_y * dy));
-
-figure('Name', '2D K-Space Top View', 'Color', 'w', 'Position', [250 250 800 600]);
-imagesc(kx_2d/1e6, ky_2d/1e6, P_kxy_dB');
-set(gca, 'YDir', 'normal');
-colormap(jet);
-cb = colorbar;
-ylabel(cb, 'Absolute 2D K-Space Power [dB]');
-xlabel('Wavevector K_x (rad / \mum)');
-ylabel('Wavevector K_y (rad / \mum)');
-title('2D K-Space Profile (XY Plane, Z\approx0)');
-
-% Overlay physics boundaries
-hold on;
-% Draw Radiation Circle |K| < K_clad
-th = linspace(0, 2*pi, 100);
-plot(k_clad*cos(th)/1e6, k_clad*sin(th)/1e6, 'w--', 'LineWidth', 2, 'DisplayName', 'Radiation Boundary (k_{clad})');
-
-% Draw lines for k_neff in x
-xline(k_neff/1e6, 'w:', 'k_{neff}', 'LineWidth', 1.5, 'HandleVisibility', 'off', 'LabelVerticalAlignment', 'bottom');
-xline(-k_neff/1e6, 'w:', 'LineWidth', 1.5, 'HandleVisibility', 'off');
-
-xlim([-k_neff*1.5, k_neff*1.5]/1e6);
-ylim([-5, 5]); % As requested by the user, limiting K_y axis manually
-legend('Location', 'northeast');
-grid on; hold off;
