@@ -9,19 +9,22 @@ clear; close all; clc;
 
 %% --- Configuration ---
 % Update this to the actual path of your simulation results
-result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_2\results\result_80_periods_CONST.mat";
+result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_2\results\result_80_periods_10_apodizations_CONST.mat";
 
 pitch = 500e-9; % Grating pitch in meters
 n_clad = 1.44;  % Approximate cladding refractive index
 
 % --- Defect Isolation Option ---
-isolate_defect = false;   % Set to true to ONLY analyze the radiation near x=0
-defect_width_um = 10;     % Width of the region to isolate around x=0 (in \mum)
+isolate_defect = true;    % Set to true to ONLY analyze the radiation near the defect
+defect_center_x_um = (pitch / 4) * 1e6;  % Center X coordinate of the defect (quarter pitch offset)
+defect_width_um = 30;     % Width of the region to isolate around the defect center (in \mum)
+window_type = 'hann';     % Window to apply: 'hann', 'tukey', or 'none' (rectangular)
 
 % --- Extraction Position Option ---
 % 'core'     : Evaluates K-space at the center of the core (Y = 0)
 % 'boundary' : Evaluates K-space at the edge of the simulation domain (far cladding)
 extraction_position = 'boundary';
+boundary_margin_um = 0.2; % Distance to step back from the simulation boundary (in \mum)
 
 %% --- 1. Load Data & Find Resonance ---
 fprintf('Loading data...\n');
@@ -85,7 +88,7 @@ wl_3d_actual = lam_3d(idx_lam);
 % Determine Y slice index based on option
 if strcmp(extraction_position, 'boundary')
     [y_max_m, ~] = max(abs(y));
-    boundary_y_m = y_max_m - 0.5e-6; % Step back slightly to avoid PML boundary
+    boundary_y_m = y_max_m - (boundary_margin_um * 1e-6); % Step back slightly to avoid PML boundary
     [~, idx_y_extract] = min(abs(y - boundary_y_m));
 else
     [~, idx_y_extract] = min(abs(y)); % Default to Y=0 (Core)
@@ -108,41 +111,91 @@ E_sq_core = sum(abs(E_core_comp).^2, 2);
 % --- Plot 1b: Top View Field Profile (XY plane at Z=0) ---
 E_top_comp = squeeze(E_5D(:, :, idx_z0, idx_lam, :)); % [Nx, Ny, 3] components Ex, Ey, Ez
 E_sq_top = sum(abs(E_top_comp).^2, 3); % [Nx, Ny]
-E_sq_top_norm = E_sq_top / max(E_sq_top(:));
-E_sq_top_dB = 10 * log10(E_sq_top_norm);
-
-% Set a floor value for visualization (e.g., -60 dB)
-%floor_val = -70;
-%E_sq_top_dB(E_sq_top_dB < floor_val) = floor_val;
+E_sq_top_dB = 10 * log10(E_sq_top); % Absolute dB, not normalized
 
 figure('Name', 'Top View Field Profile', 'Color', 'w', 'Position', [150 150 800 400]);
 imagesc(x*1e6, y*1e6, E_sq_top_dB');
 set(gca, 'YDir', 'normal');
 colormap(jet);
+
+% Limit dynamic range to 40 dB below maximum
+max_dB = max(E_sq_top_dB(:));
+dB_limit = 80;
+try
+    clim([max_dB - dB_limit, max_dB]);
+catch
+    caxis([max_dB - dB_limit, max_dB]); % Fallback for older MATLAB versions
+end
+
 cb = colorbar;
-ylabel(cb, '10*log_{10}(|E|^2/|E|^2_{max}) [dB]');
+ylabel(cb, '10*log_{10}(|E|^2) [dB]');
 xlabel('Position X [\mum]');
 ylabel('Position Y [\mum]');
 title(sprintf('Top View: Field Profile (XY Plane, Z\\approx 0) at \\lambda = %.3f nm', wl_3d_actual*1e9));
+
+% Add lines to indicate the extraction Y coordinate and window length
+hold on;
+y_ext_um = y(idx_y_extract)*1e6;
+
+if isolate_defect
+    % Draw a finite line showing the exact extraction window
+    x_start_um = defect_center_x_um - defect_width_um / 2;
+    x_end_um = defect_center_x_um + defect_width_um / 2;
+
+    plot([x_start_um, x_end_um], [y_ext_um, y_ext_um], 'w--', 'LineWidth', 1.5);
+
+    % Add a slight vertical offset so the text isn't flush with the line
+    y_text_offset = 0.15;
+    text(x_end_um, y_ext_um - y_text_offset, sprintf(' Extraction Y=%.2f \\mum', y_ext_um), 'Color', 'w', 'VerticalAlignment', 'top', 'HorizontalAlignment', 'right', 'FontWeight', 'bold');
+
+
+else
+    % Draw an infinite line across the whole domain
+    yline(y_ext_um, 'w--', sprintf('Extraction Y=%.2f \\mum', y_ext_um), 'LineWidth', 1.5, 'LabelVerticalAlignment', 'bottom');
+
+end
+hold off;
 
 
 %% --- 3. K-Space Transform (Spatial FFT) ---
 % Use a window to reduce finite-domain edge artifacts
 if isolate_defect
-    fprintf('\nIsolating phase-shift defect at x=0 (Analysis Width: %g \\mum)\n', defect_width_um);
+    fprintf('\nIsolating phase-shift defect at X=%.3f \\mum (Analysis Width: %g \\mum)\n', defect_center_x_um, defect_width_um);
+    center_m = defect_center_x_um * 1e-6;
     half_width_m = (defect_width_um / 2) * 1e-6;
-    valid_idx = abs(x) <= half_width_m;
+    valid_idx = abs(x - center_m) <= half_width_m;
 
     window = zeros(Nx, 1);
-    if sum(valid_idx) > 0
-        window(valid_idx) = hann(sum(valid_idx));
+    num_valid = sum(valid_idx);
+    if num_valid > 0
+        switch lower(window_type)
+            case 'hann'
+                window(valid_idx) = hann(num_valid);
+                fprintf('Applying Hann window.\n');
+            case 'tukey'
+                window(valid_idx) = tukeywin(num_valid, 0.3); % 30% taper
+                fprintf('Applying Tukey window (0.3 taper).\n');
+            case 'none'
+                window(valid_idx) = 1; % Rectangular window
+                fprintf('Applying no window (Rectangular).\n');
+            otherwise
+                warning('Unknown window_type. Defaulting to none.');
+                window(valid_idx) = 1;
+        end
     else
         warning('Defect width too small. Reverting to full length.');
-        window = hann(Nx);
+        window = ones(Nx, 1);
     end
 else
     fprintf('\nAnalyzing entire grating length (Full Field).\n');
-    window = hann(Nx);
+    switch lower(window_type)
+        case 'hann'
+            window = hann(Nx);
+        case 'tukey'
+            window = tukeywin(Nx, 0.3);
+        otherwise
+            window = ones(Nx, 1);
+    end
 end
 
 E_xw = E_core_comp(:,1) .* window;
@@ -150,7 +203,7 @@ E_yw = E_core_comp(:,2) .* window;
 E_zw = E_core_comp(:,3) .* window;
 
 dx = mean(diff(x));
-zoom_factor = 2;
+zoom_factor = 2; % Increased zoom_factor (zero-padding) to strictly interpolate K-space and eliminate jagged lines
 N_pad = Nx * zoom_factor;
 kx = (-N_pad/2 : N_pad/2 - 1)' * (2*pi / (N_pad * dx)); % Wavevector array [rad/m]
 
@@ -196,7 +249,7 @@ plot(kx/1e6, P_kx_dB, 'b-', 'LineWidth', 1.5, 'DisplayName', 'FFT Power Spectrum
 hold on;
 
 y_max = max(P_kx_dB);
-y_min = y_max - 80; % Plot down to 80 dB below the peak
+y_min = y_max - 40; % Plot down to 40 dB below the peak
 y_lims = [y_min, y_max + 5];
 ylim(y_lims);
 
@@ -215,7 +268,7 @@ xline(-k_neff/1e6, 'k:', 'k_{neff} (Backward Bound Mode)', 'LineWidth', 1.5, 'La
 xlabel('Wavevector K_x (rad / \mum)');
 ylabel('Absolute K-Space Power [dB]');
 title(sprintf('1D K-Space Field Profile at %s (Y=%.2f \\mum)', extraction_position, y(idx_y_extract)*1e6));
-xlim([-k_neff*1.5, k_neff*1.5]/1e6);
+xlim([-k_neff*1.3, k_neff*1.3]/1e6);
 legend('Location', 'northeast');
 grid on; hold off;
 
@@ -250,7 +303,8 @@ plot(theta_core_deg, P_kx_dB_core, 'b-', 'LineWidth', 1.5);
 
 % Mark TIR boundaries
 hold on;
-xline(theta_TIR_eff_deg, 'r--', '\theta_{critical}', 'LineWidth', 1.5, 'LabelVerticalAlignment', 'bottom');
+label_str = sprintf('\\theta_{critical} = %.1f^\\circ', theta_TIR_eff_deg);
+xline(theta_TIR_eff_deg, 'r--', label_str, 'LineWidth', 1.5, 'LabelVerticalAlignment', 'bottom');
 xline(-theta_TIR_eff_deg, 'r--', 'LineWidth', 1.5);
 hold off;
 

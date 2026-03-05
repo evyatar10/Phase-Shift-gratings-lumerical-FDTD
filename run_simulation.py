@@ -150,13 +150,13 @@ def run_single_sim():
     w_narrow = avg_corr - corr_depth / 2
     core_h = 350e-9
 
-    span_multiplier = 4.5
+    span_multiplier = 6
     calc_y_span = w_wide + span_multiplier * lambda_res_est
     calc_z_span = core_h + span_multiplier * lambda_res_est
 
     # --- DEVICE & 3D RECORDING CONFIG ---
     pitch = 500e-9
-    N_periods = 80
+    N_periods = 100
 
     # Example: Defining a specific 3D recording span
     N_periods_target_overlap = N_periods
@@ -185,8 +185,8 @@ def run_single_sim():
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
         n_wl_points=n_points_global,
-        use_apodization=False,
-        center_mod_depth_nm=4.0,
+        use_apodization=True,
+        center_mod_depth_nm=10.0,
         use_cavity_mesh_override=True,
         use_symmetry=True,  # y symmetry
         use_z_symmetry=True,
