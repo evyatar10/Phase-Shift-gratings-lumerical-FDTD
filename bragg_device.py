@@ -43,13 +43,15 @@ class PiShiftBraggFDTD:
                  use_constant_materials=False,
                  n_core_const=1.977,
                  n_clad_const=1.44,
-                 # --- NEW OPTIONAL 3D PARAMS ---
-                 record_3d_fields=False,
-                 field_3d_span_m=None,  # If None, records full device. If set, crops X span.
+                 # --- NEW OPTIONAL 2D PARAMS ---
+                 record_2d_fields_top_and_cross=False,
+                 field_2d_x_span_m=None,  # If None, records full device. If set, crops X span for XY.
                  monitor_y_span_m=None,
                  monitor_z_span_m=None,
-                 monitor_type="3D",     # Toggle between "3D" and "2D Z-normal"
                  downsample_yz=1,       # Default 1 to preserve resolution at interfaces
+                 # --- NEW OPTIONAL 3D PARAMS ---
+                 record_3d_fields=False,
+                 field_3d_span_m=None,
                  # --- NEW OPTIONAL FAR-FIELD MONITOR ---
                  record_farfield=False,
                  farfield_y_dist_m=None):
@@ -90,11 +92,14 @@ class PiShiftBraggFDTD:
         self.use_cavity_mesh_override = use_cavity_mesh_override
 
         # --- NEW STATE VARS ---
+        self.record_2d_fields_top_and_cross = record_2d_fields_top_and_cross
+        self.field_2d_x_span_m = field_2d_x_span_m
+        
         self.record_3d_fields = record_3d_fields
         self.field_3d_span_m = field_3d_span_m
+        
         self.monitor_y_span_m = monitor_y_span_m
         self.monitor_z_span_m = monitor_z_span_m
-        self.monitor_type = monitor_type
         self.downsample_yz = downsample_yz
 
         self.record_farfield = record_farfield
@@ -403,10 +408,10 @@ class PiShiftBraggFDTD:
         fdtd.set("mode selection", "fundamental TE mode")
         fdtd.set("frequency dependent profile", 1)
 
-        # --- Monitor: Field Profile (2D Z-normal) ---
+        # --- Monitor: Central Mode Tracking (1D X-axis) ---
         fdtd.addprofile()
         fdtd.set("name", "field_profile")
-        fdtd.set("monitor type", "2D Z-normal")
+        fdtd.set("monitor type", "2D Z-normal")  # This is usually kept thin to trace peak field
         fdtd.set("x", 0)
         fdtd.set("x span", 2.0 * self.x_grating_end + 2.0e-6)
         fdtd.set("y", 0)
@@ -429,7 +434,54 @@ class PiShiftBraggFDTD:
         add_time_mon("time_cavity", 0.0)
         add_time_mon("time_output", self.x_grating_end + 0.5e-6)
 
-        # --- NEW OPTIONAL 3D MONITOR ---
+        y_span_val = self.monitor_y_span_m if self.monitor_y_span_m else 1.5 * self.width_wide
+        z_span_val = self.monitor_z_span_m if self.monitor_z_span_m else 1.5 * self.core_height
+
+        # --- OPTIONAL TOP & CROSS 2D MONITORS ---
+        if self.record_2d_fields_top_and_cross:
+            # 1. Top View (XY Plane)
+            if self.field_2d_x_span_m:
+                x_span_xy = self.field_2d_x_span_m
+                print(f"2D XY Monitor: CROP Mode active. Span limited to {x_span_xy * 1e6:.2f} um")
+            else:
+                x_span_xy = 2.0 * self.x_grating_end + 1.0e-6
+
+            fdtd.addprofile()
+            fdtd.set("name", "field_profile_2D_XY")
+            fdtd.set("monitor type", "2D Z-normal")
+            fdtd.set("x", 0)
+            fdtd.set("x span", x_span_xy)
+            fdtd.set("y", 0)
+            fdtd.set("y span", y_span_val)
+            fdtd.set("z", 0)  # Locked to core center 
+            
+            # Safe settings to save space
+            fdtd.set("override global monitor settings", 1)
+            fdtd.set("use source limits", 1)
+            fdtd.set("frequency points", 5)
+            # Downsampling
+            fdtd.set("down sample x", 1)
+            fdtd.set("down sample y", self.downsample_yz)
+
+            # 2. Cross Section View (YZ Plane)
+            fdtd.addprofile()
+            fdtd.set("name", "field_profile_2D_YZ_cross")
+            fdtd.set("monitor type", "2D X-normal")
+            fdtd.set("x", self.cavity_length / 2.0)  # Locked to Phase Shift Defect Center
+            fdtd.set("y", 0)
+            fdtd.set("y span", y_span_val)
+            fdtd.set("z", 0)
+            fdtd.set("z span", z_span_val)
+
+            # Safe settings to save space
+            fdtd.set("override global monitor settings", 1)
+            fdtd.set("use source limits", 1)
+            fdtd.set("frequency points", 5)
+            # Downsampling
+            fdtd.set("down sample y", self.downsample_yz)
+            fdtd.set("down sample z", self.downsample_yz)
+
+        # --- OPTIONAL FULL 3D MONITOR ---
         if self.record_3d_fields:
             if self.field_3d_span_m:
                 x_span_3d = self.field_3d_span_m
@@ -439,35 +491,24 @@ class PiShiftBraggFDTD:
 
             fdtd.addprofile()
             fdtd.set("name", "field_profile_3D")
-            fdtd.set("monitor type", self.monitor_type)
-            
+            fdtd.set("monitor type", "3D")
             fdtd.set("x", 0)
-            if self.monitor_type != "2D X-normal":
-                fdtd.set("x span", x_span_3d)
-            
+            fdtd.set("x span", x_span_3d)
             fdtd.set("y", 0)
-            if self.monitor_type != "2D Y-normal":
-                fdtd.set("y span", self.monitor_y_span_m if self.monitor_y_span_m else 1.5 * self.width_wide)
+            fdtd.set("y span", y_span_val)
+            fdtd.set("z", 0)
+            fdtd.set("z span", z_span_val)
             
-            if self.monitor_type != "2D Z-normal":
-                fdtd.set("z", 0)
-                fdtd.set("z span", self.monitor_z_span_m if self.monitor_z_span_m else 1.5 * self.core_height)
-            
-            if self.monitor_type in ["3D", "2D X-normal", "2D Y-normal"]:
-                fdtd.set("down sample z", self.downsample_yz)
-                
             # Safe settings to save space
             fdtd.set("override global monitor settings", 1)
             fdtd.set("use source limits", 1)
-            # Default to very few points to avoid RAM crash (will be set in update_scan too)
             fdtd.set("frequency points", 5)
-            # Downsampling logic
-            if self.monitor_type != "2D X-normal":
-                fdtd.set("down sample x", 1)
-            if self.monitor_type != "2D Y-normal":
-                fdtd.set("down sample y", self.downsample_yz)
+            # Downsampling
+            fdtd.set("down sample x", 1)
+            fdtd.set("down sample y", self.downsample_yz)
+            fdtd.set("down sample z", self.downsample_yz)
 
-        # --- NEW OPTIONAL SIDE MONITOR ---
+        # --- OPTIONAL SIDE MONITOR (FARFIELD) ---
         if self.record_farfield:
             fdtd.addprofile()
             fdtd.set("name", "side_monitor")
@@ -497,10 +538,12 @@ class PiShiftBraggFDTD:
         self.fdtd.setglobalmonitor("frequency points", self.n_wl_points)
         self.fdtd.setnamed("FDTD::ports", "monitor frequency points", self.n_wl_points)
 
-        # Protect 3D monitor from having too many points
+        # Protect all large monitors from having too many frequency points
+        if self.record_2d_fields_top_and_cross:
+            self.fdtd.setnamed("field_profile_2D_XY", "frequency points", 5)
+            self.fdtd.setnamed("field_profile_2D_YZ_cross", "frequency points", 5)
+            
         if self.record_3d_fields:
-            # Removed the faulty isnometric check.
-            # We know the monitor exists because record_3d_fields is True.
             self.fdtd.setnamed("field_profile_3D", "frequency points", 5)
             
         if self.record_farfield:

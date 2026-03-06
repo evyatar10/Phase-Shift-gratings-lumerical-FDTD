@@ -106,7 +106,7 @@ def extract_and_process_field_profile(sim, target_wl):
 
     # 2. Find closest wavelength index
     idx_mon = np.argmin(np.abs(f_lam - target_wl))
-    print(f"Extracting field at monitor wavelength: {f_lam[idx_mon] * 1e9:.3f} nm")
+    print(f"Extracting 1D core field tracking at monitor wavelength: {f_lam[idx_mon] * 1e9:.3f} nm")
 
     # 3. Extract E-field at resonance
     if f_E.ndim == 5:
@@ -142,7 +142,7 @@ def run_single_sim():
     scan_width_nm = 16.0
 
     n_points_global = 3001  # For high-res S-parameters
-    n_3d_points = 51  # NEW: Odd number ensures center wl is captured
+    n_2d_points = 51  # Odd number ensures center wl is captured
 
     avg_corr = 800e-9
     corr_depth = 200e-9
@@ -154,16 +154,15 @@ def run_single_sim():
     calc_y_span = w_wide + span_multiplier * lambda_res_est
     calc_z_span = core_h + span_multiplier * lambda_res_est
 
-    # --- DEVICE & 3D RECORDING CONFIG ---
+    # --- DEVICE & RECORDING CONFIG ---
     pitch = 500e-9
     N_periods = 100
 
-    # Example: Defining a specific 3D recording span
     N_periods_target_overlap = N_periods
     cav_len = pitch / 2.0
     overlap_len_m = 2.0 * (N_periods_target_overlap * pitch) + cav_len + 1.0e-6
 
-    # NEW: dynamic far-field distance
+    # far-field distance
     farfield_y_wls = 0.5
     calc_farfield_y = (calc_y_span / 2.0) - (farfield_y_wls * lambda_res_est)
 
@@ -185,7 +184,7 @@ def run_single_sim():
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
         n_wl_points=n_points_global,
-        use_apodization=True,
+        use_apodization=False,
         center_mod_depth_nm=10.0,
         use_cavity_mesh_override=True,
         use_symmetry=True,  # y symmetry
@@ -193,16 +192,19 @@ def run_single_sim():
         use_constant_materials=True,
         n_core_const=1.977,
 
-        # --- 3D FIELD SETTINGS ---
-        record_3d_fields=True,
-        field_3d_span_m=None,  # None means record the full X span
+        # --- 2D TOP & CROSS FIELD SETTINGS ---
+        record_2d_fields_top_and_cross=True,
+        field_2d_x_span_m=None,  # None means record the full X span
         monitor_y_span_m=calc_y_span,
         monitor_z_span_m=calc_z_span,
-        monitor_type="2D Z-normal",
         downsample_yz=1,  # Keep default high resolution
         
+        # --- 3D MONITORS ---
+        record_3d_fields=False,
+        field_3d_span_m=None,
+        
         # --- FAR FIELD ---
-        record_farfield=True,
+        record_farfield=False,
         farfield_y_dist_m=calc_farfield_y
     )
 
@@ -221,10 +223,14 @@ def run_single_sim():
     sim.build()
     sim.update_scan(center_lambda_m=lambda_res_est, width_nm=scan_width_nm, n_points=n_points_global)
 
-    # --- NEW: Override 3D Monitor Points ---
-    if sim.record_3d_fields:
-        sim.fdtd.setnamed("field_profile_3D", "frequency points", n_3d_points)
-        print(f"Override: Set 3D monitor to {n_3d_points} points to capture {lambda_res_est * 1e6:.3f} um.")
+    # --- Override Large Monitor Points ---
+    if sim.record_2d_fields_top_and_cross:
+        sim.fdtd.setnamed("field_profile_2D_XY", "frequency points", n_2d_points)
+        sim.fdtd.setnamed("field_profile_2D_YZ_cross", "frequency points", n_2d_points)
+        print(f"Override: Set 2D monitors to {n_2d_points} points.")
+    if getattr(sim, 'record_3d_fields', False):
+        sim.fdtd.setnamed("field_profile_3D", "frequency points", n_2d_points)
+        print(f"Override: Set 3D monitor to {n_2d_points} points.")
 
     sim.fdtd.save(layout_path)
     print(f"Saved layout to: {layout_path}")
@@ -250,45 +256,60 @@ def run_single_sim():
 
     print(f"Calculated FWHM (Relative): {fwhm_val * 1e6:.4f} um")
 
-    # --- 7. EXTRACT 3D DATA ---
+    # --- 7. EXTRACT 2D TOP & CROSS SECTION DATA ---
+    field_xy_data = {}
+    field_yz_cross_data = {}
+    
+    if sim.record_2d_fields_top_and_cross:
+        print("Extracting 2D XY (Top View) data...")
+        res_xy = sim.fdtd.getresult("field_profile_2D_XY", "E")
+        lam_xy = np.squeeze(res_xy['lambda'])
+
+        field_xy_data = {
+            'x': np.squeeze(res_xy['x']),
+            'y': np.squeeze(res_xy['y']),
+            'z': np.squeeze(res_xy['z']),
+            'E_res': res_xy['E'],  # Contains all freq points
+            'lambda_3d': lam_xy
+        }
+        del res_xy
+        
+        print("Extracting 2D YZ (Cross Section View) data...")
+        res_yz = sim.fdtd.getresult("field_profile_2D_YZ_cross", "E")
+        
+        field_yz_cross_data = {
+            'x': np.squeeze(res_yz['x']),
+            'y': np.squeeze(res_yz['y']),
+            'z': np.squeeze(res_yz['z']),
+            'E_res': res_yz['E'],  # Contains all freq points
+            'lambda_3d': lam_xy
+        }
+        del res_yz
+
     field_3d_data = {}
-    if sim.record_3d_fields:
-        print("Extracting 3D Field data...")
-        # Access the raw result from the monitor
+    if getattr(sim, 'record_3d_fields', False):
+        print("Extracting full 3D Field data...")
         res_3d = sim.fdtd.getresult("field_profile_3D", "E")
         lam_3d = np.squeeze(res_3d['lambda'])
-
-        # Check if exact guess is included (Debugging)
-        diff = np.min(np.abs(lam_3d - lambda_res_est))
-        if diff < 1e-12:
-            print(f"Confirmed: {lambda_res_est * 1e6:.3f} um is included in the 3D data.")
-
-        # SAVE ALL FREQUENCY POINTS
-        # We do not slice [..., idx, :] anymore.
-        print(f"Saving all {len(lam_3d)} frequency points from 3D monitor.")
-        E_full = res_3d['E']
-
+        
         field_3d_data = {
             'x': np.squeeze(res_3d['x']),
             'y': np.squeeze(res_3d['y']),
             'z': np.squeeze(res_3d['z']),
-            'E_res': E_full,  # Contains all freq points
+            'E_res': res_3d['E'],
             'lambda_3d': lam_3d
         }
-        del res_3d  # Free memory
-        
-        
+        del res_3d
+
     side_monitor_data = {}
     if getattr(sim, 'record_farfield', False):
         print("Extracting Near Field and Far Field from Side Monitor...")
-        # Get side monitor near field to extract both NF and index for FF
         res_sm = sim.fdtd.getresult('side_monitor', 'E')
         wl_sm_temp = np.atleast_1d(np.squeeze(res_sm['lambda']))
         idx_f_sm = np.argmin(np.abs(wl_sm_temp - target_wl))
         idx_f_1_based = int(idx_f_sm + 1)
         actual_sm_wl = float(wl_sm_temp[idx_f_sm])
         
-        # Near field extraction
         nf_x = np.squeeze(res_sm['x'])
         nf_y = np.squeeze(res_sm['y'])
         nf_z = np.squeeze(res_sm['z'])
@@ -301,17 +322,13 @@ def run_single_sim():
         else:
             nf_E_res = nf_E[..., idx_f_sm, :]
         
-        # Free up memory
         del res_sm
         
-        # Far field Projection
         script = f"""
         mname = 'side_monitor';
         idx_f = {idx_f_1_based};
         ux = linspace(-0.9999, 0.9999, 3001);
-        uy = linspace(-0.9999, 0.9999, 51);  # Reduced Z-resolution to save RAM
-        
-        # farfieldexact3d computes the raw complex Electric fields
+        uy = linspace(-0.9999, 0.9999, 51);
         E_ff = farfieldexact3d(mname, ux, uy, idx_f);
         """
         sim.fdtd.eval(script)
@@ -347,6 +364,8 @@ def run_single_sim():
         'field_energy_density_1D': I_x_1D,
         'field_envelope_1D': I_x_envelope,
         'fwhm_m': fwhm_val,
+        'field_xy': field_xy_data,
+        'field_yz_cross': field_yz_cross_data,
         'field_3d': field_3d_data,
         'side_monitor': side_monitor_data
     }
@@ -397,7 +416,6 @@ def run_single_sim():
     try:
         import glob
         # Lumerical creates a folder with the same name as the .fsp file (minus the extension)
-        # e.g., layout_60_periods.fsp creates a folder named 'layout_60_periods' inside the layouts directory.
         data_dir = layout_path.replace(".fsp", "")
         if os.path.exists(data_dir):
             h5_files = glob.glob(os.path.join(data_dir, "*.h5"))
