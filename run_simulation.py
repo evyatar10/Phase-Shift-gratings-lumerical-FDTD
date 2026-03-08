@@ -150,7 +150,7 @@ def run_single_sim():
     w_narrow = avg_corr - corr_depth / 2
     core_h = 350e-9
 
-    span_multiplier = 6
+    span_multiplier = 4
     calc_y_span = w_wide + span_multiplier * lambda_res_est
     calc_z_span = core_h + span_multiplier * lambda_res_est
 
@@ -204,7 +204,7 @@ def run_single_sim():
         field_3d_span_m=None,
         
         # --- FAR FIELD ---
-        record_farfield=False,
+        record_farfield=True,
         farfield_y_dist_m=calc_farfield_y
     )
 
@@ -223,7 +223,7 @@ def run_single_sim():
     sim.build()
     sim.update_scan(center_lambda_m=lambda_res_est, width_nm=scan_width_nm, n_points=n_points_global)
 
-    # --- Override Large Monitor Points ---
+    # --- Override Large Monitor Points & Spatial Crop ---
     if sim.record_2d_fields_top_and_cross:
         sim.fdtd.setnamed("field_profile_2D_XY", "frequency points", n_2d_points)
         sim.fdtd.setnamed("field_profile_2D_YZ_cross", "frequency points", n_2d_points)
@@ -231,6 +231,18 @@ def run_single_sim():
     if getattr(sim, 'record_3d_fields', False):
         sim.fdtd.setnamed("field_profile_3D", "frequency points", n_2d_points)
         print(f"Override: Set 3D monitor to {n_2d_points} points.")
+
+    # FORCE THE SIDE MONITOR TO ONLY MEASURE 30um AROUND THE DEFECT
+    crop_script = """
+    if (havedata('side_monitor')) { switchtolayout; }
+    select("side_monitor");
+    set("x span", 30e-6); 
+    """
+    try:
+        sim.fdtd.eval(crop_script)
+        print("Override: Cropped 'side_monitor' to 30 um around the defect.")
+    except Exception as e:
+        print(f"Warning: Could not resize side monitor: {e}")
 
     sim.fdtd.save(layout_path)
     print(f"Saved layout to: {layout_path}")
@@ -303,17 +315,19 @@ def run_single_sim():
 
     side_monitor_data = {}
     if getattr(sim, 'record_farfield', False):
-        print("Extracting Near Field and Far Field from Side Monitor...")
-        res_sm = sim.fdtd.getresult('side_monitor', 'E')
-        wl_sm_temp = np.atleast_1d(np.squeeze(res_sm['lambda']))
+        print("Extracting Far Field hemisphere from 30um side_monitor...")
+        
+        # Pull wavelength
+        res_temp = sim.fdtd.getresult('side_monitor', 'E')
+        wl_sm_temp = np.atleast_1d(np.squeeze(res_temp['lambda']))
         idx_f_sm = np.argmin(np.abs(wl_sm_temp - target_wl))
         idx_f_1_based = int(idx_f_sm + 1)
         actual_sm_wl = float(wl_sm_temp[idx_f_sm])
         
-        nf_x = np.squeeze(res_sm['x'])
-        nf_y = np.squeeze(res_sm['y'])
-        nf_z = np.squeeze(res_sm['z'])
-        nf_E = res_sm['E']
+        nf_x = np.squeeze(res_temp['x'])
+        nf_y = np.squeeze(res_temp['y'])
+        nf_z = np.squeeze(res_temp['z'])
+        nf_E = res_temp['E']
         
         if nf_E.ndim == 5:
             nf_E_res = nf_E[:, :, :, idx_f_sm, :]
@@ -321,25 +335,25 @@ def run_single_sim():
             nf_E_res = nf_E[:, :, idx_f_sm, :]
         else:
             nf_E_res = nf_E[..., idx_f_sm, :]
-        
-        del res_sm
+        del res_temp
         
         script = f"""
         mname = 'side_monitor';
         idx_f = {idx_f_1_based};
-        ux = linspace(-0.9999, 0.9999, 3001);
-        uy = linspace(-0.9999, 0.9999, 51);
-        E_ff = farfieldexact3d(mname, ux, uy, idx_f);
+        na = 201;  # High res for smooth 3D plotting
+        nb = 201; 
+        
+        # Native robust Lumerical commands that DO NOT CRASH
+        E_ff = farfieldvector3d(mname, idx_f, na, nb);
+        ux = farfieldux(mname, idx_f, na, nb);
+        uy = farfielduy(mname, idx_f, na, nb);
         """
+
         sim.fdtd.eval(script)
         
         ux_out = np.squeeze(sim.fdtd.getv("ux"))
         uy_out = np.squeeze(sim.fdtd.getv("uy"))
         E_ff_out = np.squeeze(sim.fdtd.getv("E_ff"))
-        
-        Ex_out = E_ff_out[..., 0]
-        Ey_out = E_ff_out[..., 1]
-        Ez_out = E_ff_out[..., 2]
         
         side_monitor_data = {
             'nf_x': nf_x,
@@ -348,9 +362,9 @@ def run_single_sim():
             'nf_E': nf_E_res,
             'ff_ux': ux_out,
             'ff_uy': uy_out,
-            'ff_Ex': Ex_out,
-            'ff_Ey': Ey_out,
-            'ff_Ez': Ez_out,
+            'ff_Ex': E_ff_out[..., 0],
+            'ff_Ey': E_ff_out[..., 1],
+            'ff_Ez': E_ff_out[..., 2],
             'f_monitor': actual_sm_wl
         }
 

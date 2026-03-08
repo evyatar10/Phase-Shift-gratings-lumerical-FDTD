@@ -54,7 +54,8 @@ class PiShiftBraggFDTD:
                  field_3d_span_m=None,
                  # --- NEW OPTIONAL FAR-FIELD MONITOR ---
                  record_farfield=False,
-                 farfield_y_dist_m=None):
+                 farfield_y_dist_m=None,
+                 farfield_z_dist_m=None):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -104,6 +105,7 @@ class PiShiftBraggFDTD:
 
         self.record_farfield = record_farfield
         self.farfield_y_dist_m = farfield_y_dist_m
+        self.farfield_z_dist_m = farfield_z_dist_m
 
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
 
@@ -508,20 +510,23 @@ class PiShiftBraggFDTD:
             fdtd.set("down sample y", self.downsample_yz)
             fdtd.set("down sample z", self.downsample_yz)
 
-        # --- OPTIONAL SIDE MONITOR (FARFIELD) ---
+        # --- OPTIONAL FARFIELD MONITORS ---
         if self.record_farfield:
+            # Side monitor (normal to Y axis) to capture sideways-radiating field
             fdtd.addprofile()
             fdtd.set("name", "side_monitor")
             fdtd.set("monitor type", "2D Y-normal")
             
-            # Center the monitor precisely between the cavity and the right rectangle
-            fdtd.set("x", self.cavity_length / 2.0)
+            # Position monitor along the side
+            y_pos = self.farfield_y_dist_m if self.farfield_y_dist_m is not None else 1.5 * self.width_wide
+            fdtd.set("x", 0)
             fdtd.set("x span", 2.0 * self.x_grating_end + 1.0e-6)
-            
-            y_pos = self.farfield_y_dist_m if self.farfield_y_dist_m is not None else 1.5e-6
             fdtd.set("y", y_pos)
+            
+            # Z span covers the same height as the device monitors
+            z_span_val = self.monitor_z_span_m if self.monitor_z_span_m else 1.5 * self.core_height
             fdtd.set("z", 0)
-            fdtd.set("z span", self.monitor_z_span_m if self.monitor_z_span_m else 1.5 * self.core_height)
+            fdtd.set("z span", z_span_val)
             
             fdtd.set("override global monitor settings", 1)
             fdtd.set("use source limits", 1)

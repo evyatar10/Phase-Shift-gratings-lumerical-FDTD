@@ -10,7 +10,7 @@ clear; close all; clc;
 
 %% --- Configuration ---
 % Update this to the actual path of your simulation results
-result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_4\results\result_100_periods_CONST.mat";
+result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_5_long\results\result_100_periods_CONST.mat";
 
 pitch = 500e-9; % Grating pitch in meters
 n_clad = 1.44;  % Approximate cladding refractive index
