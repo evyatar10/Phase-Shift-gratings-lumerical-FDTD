@@ -203,7 +203,7 @@ def run_manual_reprocessing(layout_path, manual_resonance_nm=None, save_images=T
 
 # --- EXAMPLE USAGE ---
 if __name__ == "__main__":
-    MY_LAYOUT = os.path.join(config.LAYOUTS_DIR, "layout_150_periods_CONST.fsp")
+    MY_LAYOUT = os.path.join(config.LAYOUTS_DIR, r"C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_5_long\layouts\layout_60_periods_CONST.fsp")
 
     # Set save_full_mat=True to generate the new file
     run_manual_reprocessing(MY_LAYOUT, manual_resonance_nm=1562.37, save_images=True, save_full_mat=True)

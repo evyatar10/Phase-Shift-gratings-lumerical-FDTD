@@ -31,7 +31,7 @@ Ez = double(squeeze(ff_data.ff_Ez));
 ux = ux(:);
 uy = uy(:);
 
-fprintf('--- 3D Spherical Radiation Analysis (30um Defect Area) ---\n');
+fprintf('--- 3D Spherical Radiation Analysis (Top Monitor, 30um Window) ---\n');
 fprintf('Wavelength: %.3f nm\n', lam_m * 1e9);
 
 %% --- 2. Process Math and Physics into 3D Sphere ---
@@ -66,7 +66,7 @@ P_2D_norm = P_2D / max_P;
 P_2D_dB = real(10 * log10(P_2D_norm));
 
 % Apply noise floor
-noise_floor_dB = -60;
+noise_floor_dB = -80;
 P_2D_dB(P_2D_dB < noise_floor_dB) = noise_floor_dB;
 
 % --- Calculate Spherical Coordinates for 3D Surface ---
@@ -94,7 +94,7 @@ cb = colorbar;
 ylabel(cb, 'Normalized Intensity [dB]', 'FontWeight', 'bold');
 caxis([noise_floor_dB 0]);
 
-title(sprintf('3D Radiation Pattern (30 \\mu m Window)\n\\lambda = %.2f nm', lam_m * 1e9), 'FontSize', 14);
+title(sprintf('Top Radiation Pattern (30 \\mu m Window)\n\\lambda = %.2f nm', lam_m * 1e9), 'FontSize', 14);
 xlabel('X (Along Grating)', 'FontWeight', 'bold');
 ylabel('Y (Across Grating)', 'FontWeight', 'bold');
 zlabel('Z (Radiation Upwards)', 'FontWeight', 'bold');

@@ -138,6 +138,7 @@ def extract_and_process_field_profile(sim, target_wl):
 
 def run_single_sim():
     # 1. Parameters
+    cleanup_lumerical_data = False  # Set True to delete .h5 files after run (saves disk, but hides data in Lumerical GUI)
     lambda_res_est = 1.5625e-6  # Center of Scan
     scan_width_nm = 16.0
 
@@ -150,21 +151,25 @@ def run_single_sim():
     w_narrow = avg_corr - corr_depth / 2
     core_h = 350e-9
 
-    span_multiplier = 4
+    span_multiplier = 3
     calc_y_span = w_wide + span_multiplier * lambda_res_est
     calc_z_span = core_h + span_multiplier * lambda_res_est
 
     # --- DEVICE & RECORDING CONFIG ---
     pitch = 500e-9
-    N_periods = 100
+    N_periods = 60
 
     N_periods_target_overlap = N_periods
     cav_len = pitch / 2.0
     overlap_len_m = 2.0 * (N_periods_target_overlap * pitch) + cav_len + 1.0e-6
 
-    # far-field distance
+    # far-field distance for Y
     farfield_y_wls = 0.5
     calc_farfield_y = (calc_y_span / 2.0) - (farfield_y_wls * lambda_res_est)
+    
+    # far-field distance for Z
+    farfield_z_wls = 0.5
+    calc_farfield_z = (calc_z_span / 2.0) - (farfield_z_wls * lambda_res_est)
 
     # 2. Initialize Simulation
     sim = PiShiftBraggFDTD(
@@ -205,7 +210,8 @@ def run_single_sim():
         
         # --- FAR FIELD ---
         record_farfield=True,
-        farfield_y_dist_m=calc_farfield_y
+        farfield_y_dist_m=calc_farfield_y,
+        farfield_z_dist_m=calc_farfield_z
     )
 
     # 3. Generate Filenames
@@ -231,18 +237,11 @@ def run_single_sim():
     if getattr(sim, 'record_3d_fields', False):
         sim.fdtd.setnamed("field_profile_3D", "frequency points", n_2d_points)
         print(f"Override: Set 3D monitor to {n_2d_points} points.")
-
-    # FORCE THE SIDE MONITOR TO ONLY MEASURE 30um AROUND THE DEFECT
-    crop_script = """
-    if (havedata('side_monitor')) { switchtolayout; }
-    select("side_monitor");
-    set("x span", 30e-6); 
-    """
-    try:
-        sim.fdtd.eval(crop_script)
-        print("Override: Cropped 'side_monitor' to 30 um around the defect.")
-    except Exception as e:
-        print(f"Warning: Could not resize side monitor: {e}")
+    if sim.record_farfield:
+        # Force 1 point so both monitors record only at the resonance wavelength
+        sim.fdtd.setnamed("side_monitor", "frequency points", 1)
+        sim.fdtd.setnamed("top_monitor",  "frequency points", 1)
+        print("Override: Far-field monitors set to 1 frequency point (resonance wavelength only).")
 
     sim.fdtd.save(layout_path)
     print(f"Saved layout to: {layout_path}")
@@ -313,61 +312,6 @@ def run_single_sim():
         }
         del res_3d
 
-    side_monitor_data = {}
-    if getattr(sim, 'record_farfield', False):
-        print("Extracting Far Field hemisphere from 30um side_monitor...")
-        
-        # Pull wavelength
-        res_temp = sim.fdtd.getresult('side_monitor', 'E')
-        wl_sm_temp = np.atleast_1d(np.squeeze(res_temp['lambda']))
-        idx_f_sm = np.argmin(np.abs(wl_sm_temp - target_wl))
-        idx_f_1_based = int(idx_f_sm + 1)
-        actual_sm_wl = float(wl_sm_temp[idx_f_sm])
-        
-        nf_x = np.squeeze(res_temp['x'])
-        nf_y = np.squeeze(res_temp['y'])
-        nf_z = np.squeeze(res_temp['z'])
-        nf_E = res_temp['E']
-        
-        if nf_E.ndim == 5:
-            nf_E_res = nf_E[:, :, :, idx_f_sm, :]
-        elif nf_E.ndim == 4:
-            nf_E_res = nf_E[:, :, idx_f_sm, :]
-        else:
-            nf_E_res = nf_E[..., idx_f_sm, :]
-        del res_temp
-        
-        script = f"""
-        mname = 'side_monitor';
-        idx_f = {idx_f_1_based};
-        na = 201;  # High res for smooth 3D plotting
-        nb = 201; 
-        
-        # Native robust Lumerical commands that DO NOT CRASH
-        E_ff = farfieldvector3d(mname, idx_f, na, nb);
-        ux = farfieldux(mname, idx_f, na, nb);
-        uy = farfielduy(mname, idx_f, na, nb);
-        """
-
-        sim.fdtd.eval(script)
-        
-        ux_out = np.squeeze(sim.fdtd.getv("ux"))
-        uy_out = np.squeeze(sim.fdtd.getv("uy"))
-        E_ff_out = np.squeeze(sim.fdtd.getv("E_ff"))
-        
-        side_monitor_data = {
-            'nf_x': nf_x,
-            'nf_y': nf_y,
-            'nf_z': nf_z,
-            'nf_E': nf_E_res,
-            'ff_ux': ux_out,
-            'ff_uy': uy_out,
-            'ff_Ex': E_ff_out[..., 0],
-            'ff_Ey': E_ff_out[..., 1],
-            'ff_Ez': E_ff_out[..., 2],
-            'f_monitor': actual_sm_wl
-        }
-
     # 8. Save
     mat_data = {
         'wl_m': wl, 'wl_nm': wl * 1e9,
@@ -380,8 +324,7 @@ def run_single_sim():
         'fwhm_m': fwhm_val,
         'field_xy': field_xy_data,
         'field_yz_cross': field_yz_cross_data,
-        'field_3d': field_3d_data,
-        'side_monitor': side_monitor_data
+        'field_3d': field_3d_data
     }
     sio.savemat(results_path, mat_data)
     print(f"Data saved to: {results_path}")
@@ -425,19 +368,19 @@ def run_single_sim():
     plt.grid(True)
 
     print("Displaying plots...")
-    
-    # 11. Cleanup FDTD memory files (h5 and fsp)
-    try:
-        import glob
-        # Lumerical creates a folder with the same name as the .fsp file (minus the extension)
-        data_dir = layout_path.replace(".fsp", "")
-        if os.path.exists(data_dir):
-            h5_files = glob.glob(os.path.join(data_dir, "*.h5"))
-            for h5_file in h5_files:
-                os.remove(h5_file)
-                print(f"Cleaned up {h5_file}")
-    except Exception as e:
-        print(f"Warning: Could not clean up Lumerical temp files: {e}")
+
+    # 11. Optionally clean up Lumerical .h5 data files
+    if cleanup_lumerical_data:
+        try:
+            import glob
+            data_dir = layout_path.replace(".fsp", "")
+            if os.path.exists(data_dir):
+                h5_files = glob.glob(os.path.join(data_dir, "*.h5"))
+                for h5_file in h5_files:
+                    os.remove(h5_file)
+                    print(f"Cleaned up {h5_file}")
+        except Exception as e:
+            print(f"Warning: Could not clean up Lumerical temp files: {e}")
 
     plt.show()
 

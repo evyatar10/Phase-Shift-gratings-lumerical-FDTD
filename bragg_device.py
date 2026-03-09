@@ -512,25 +512,40 @@ class PiShiftBraggFDTD:
 
         # --- OPTIONAL FARFIELD MONITORS ---
         if self.record_farfield:
-            # Side monitor (normal to Y axis) to capture sideways-radiating field
+            # ---- Side monitor (2D Y-normal): captures radiation out the waveguide sides ----
             fdtd.addprofile()
             fdtd.set("name", "side_monitor")
             fdtd.set("monitor type", "2D Y-normal")
-            
-            # Position monitor along the side
+
             y_pos = self.farfield_y_dist_m if self.farfield_y_dist_m is not None else 1.5 * self.width_wide
             fdtd.set("x", 0)
             fdtd.set("x span", 2.0 * self.x_grating_end + 1.0e-6)
             fdtd.set("y", y_pos)
-            
-            # Z span covers the same height as the device monitors
-            z_span_val = self.monitor_z_span_m if self.monitor_z_span_m else 1.5 * self.core_height
+
+            z_span_ff = self.monitor_z_span_m if self.monitor_z_span_m else 1.5 * self.core_height
             fdtd.set("z", 0)
-            fdtd.set("z span", z_span_val)
-            
+            fdtd.set("z span", z_span_ff)
+
             fdtd.set("override global monitor settings", 1)
             fdtd.set("use source limits", 1)
-            fdtd.set("frequency points", 5)
+            fdtd.set("frequency points", 1)  # record at resonance wavelength only
+
+            # ---- Top monitor (2D Z-normal): captures radiation out the top (vertical) ----
+            fdtd.addprofile()
+            fdtd.set("name", "top_monitor")
+            fdtd.set("monitor type", "2D Z-normal")
+
+            z_pos = self.farfield_z_dist_m if self.farfield_z_dist_m is not None else 1.5 * self.core_height
+            fdtd.set("x", 0)
+            fdtd.set("x span", 2.0 * self.x_grating_end + 1.0e-6)
+            fdtd.set("y", 0)
+            y_span_ff = self.monitor_y_span_m if self.monitor_y_span_m else 1.5 * self.width_wide
+            fdtd.set("y span", y_span_ff)
+            fdtd.set("z", z_pos)
+
+            fdtd.set("override global monitor settings", 1)
+            fdtd.set("use source limits", 1)
+            fdtd.set("frequency points", 1)  # record at resonance wavelength only
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points
@@ -552,7 +567,8 @@ class PiShiftBraggFDTD:
             self.fdtd.setnamed("field_profile_3D", "frequency points", 5)
             
         if self.record_farfield:
-            self.fdtd.setnamed("side_monitor", "frequency points", 5)
+            self.fdtd.setnamed("side_monitor", "frequency points", 1)
+            self.fdtd.setnamed("top_monitor", "frequency points", 1)
 
     def close(self):
         try:
