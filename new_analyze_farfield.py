@@ -160,7 +160,7 @@ def analyze_farfield(fsp_path, monitor_name, target_wl):
 
 if __name__ == "__main__":
     # Ensure this is pointing to a file generated AFTER the recent script updates
-    layout_file = os.path.join(config.LAYOUTS_DIR, r"C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_5_long\layouts\layout_60_periods_CONST.fsp")
+    layout_file = os.path.join(config.LAYOUTS_DIR, r"C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_5_long\layouts\layout_100_periods_CONST.fsp")
     
     # Target resonance wavelength
     target_resonance = 1.562e-6 
