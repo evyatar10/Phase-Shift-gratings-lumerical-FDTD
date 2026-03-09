@@ -11,6 +11,66 @@ from bragg_device import PiShiftBraggFDTD
 import analysis  # Ensure this module has the export function!
 import config
 
+# ── Far-field extraction config ──────────────────────────────────────────
+FF_RES  = 201   # ux/uy grid resolution  (must match plot_farfield.m)
+IDX_F   = 1     # 1-based frequency index (monitors record 1 point)
+
+
+def extract_farfield(fdtd, monitor_name):
+    """
+    Pull far-field data from one monitor via Lumerical eval().
+    Returns dict with E2, ux, uy, lam  or  None on failure.
+    """
+    print(f"  Extracting far-field: {monitor_name}")
+    try:
+        res = fdtd.getresult(monitor_name, "E")
+        lam = float(np.squeeze(res["lambda"]))
+        print(f"    lam = {lam*1e9:.3f} nm")
+    except Exception as e:
+        print(f"    ERROR: no data [{e}]")
+        return None
+
+    script = f"""
+    mname = '{monitor_name}';
+    idx   = {IDX_F};
+    res   = {FF_RES};
+    E2 = farfield3d(mname, idx, res, res);
+    ux = farfieldux(mname, idx, res, res);
+    uy = farfielduy(mname, idx, res, res);
+    """
+    try:
+        fdtd.eval(script)
+    except Exception as e:
+        print(f"    ERROR in eval [{e}]")
+        return None
+
+    E2 = np.squeeze(fdtd.getv("E2"))
+    ux = np.squeeze(fdtd.getv("ux"))
+    uy = np.squeeze(fdtd.getv("uy"))
+    return {"E2": E2, "ux": ux, "uy": uy, "lam": lam}
+
+
+def extract_monitor_nearfield(fdtd, monitor_name):
+    """
+    Extract the 2D E-field recorded on a planar profile monitor surface.
+    Returns a dict with x, y, z, E_res (complex, all freq pts), lambda_arr,
+    or None on failure.
+    """
+    print(f"  Extracting near-field from monitor surface: {monitor_name}")
+    try:
+        res = fdtd.getresult(monitor_name, "E")
+    except Exception as e:
+        print(f"    ERROR: could not read E from {monitor_name} [{e}]")
+        return None
+
+    return {
+        "x":          np.squeeze(res["x"]),
+        "y":          np.squeeze(res["y"]),
+        "z":          np.squeeze(res["z"]),
+        "E_res":      res["E"],          # complex array, all freq points
+        "lambda_arr": np.squeeze(res["lambda"]),
+    }
+
 
 def find_bragg_resonance(wl, T):
     """
@@ -316,6 +376,28 @@ def run_single_sim():
         }
         del res_3d
 
+    # --- 7.5  FAR-FIELD DATA (E2, ux, uy) + NEAR-FIELD (E on monitor surface) ---
+    farfield_side  = {}
+    farfield_top   = {}
+    nearfield_side = {}
+    nearfield_top  = {}
+    if sim.record_farfield:
+        print("\nExtracting far-field data...")
+        d = extract_farfield(sim.fdtd, "side_monitor")
+        if d is not None:
+            farfield_side = d
+        d = extract_farfield(sim.fdtd, "top_monitor")
+        if d is not None:
+            farfield_top = d
+
+        print("\nExtracting near-field (E on monitor surfaces)...")
+        nf = extract_monitor_nearfield(sim.fdtd, "side_monitor")
+        if nf is not None:
+            nearfield_side = nf
+        nf = extract_monitor_nearfield(sim.fdtd, "top_monitor")
+        if nf is not None:
+            nearfield_top = nf
+
     # 8. Save
     mat_data = {
         'wl_m': wl, 'wl_nm': wl * 1e9,
@@ -328,7 +410,14 @@ def run_single_sim():
         'fwhm_m': fwhm_val,
         'field_xy': field_xy_data,
         'field_yz_cross': field_yz_cross_data,
-        'field_3d': field_3d_data
+        'field_3d': field_3d_data,
+        # --- far-field ---
+        'farfield_side':  farfield_side,
+        'farfield_top':   farfield_top,
+        'farfield_config': {'ff_res': FF_RES},
+        # --- near-field (E on monitor surfaces) ---
+        'nearfield_side': nearfield_side,
+        'nearfield_top':  nearfield_top,
     }
     sio.savemat(results_path, mat_data)
     print(f"Data saved to: {results_path}")
