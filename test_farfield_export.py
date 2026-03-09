@@ -50,6 +50,9 @@ SAVE_PATH  = FSP_PATH.replace(".fsp", "_farfield_export.mat")
 FF_RES     = 201        # ux/uy grid resolution
 IDX_F      = 1          # 1-based frequency index (monitors record 1 point each)
 HALF_ANGLE = 30         # degrees for cone-power metric
+SCALE_DB         = False  # False = linear 0-1; True = dB scale
+DB_FLOOR         = -40    # dB floor (only when SCALE_DB=True)
+CUSTOM_ANGLE_DEG = 26.7   # specific cone half-angle to mark (degrees) — orange X
 
 # ─── EXTRACTION ────────────────────────────────────────────────────────────────
 def extract(fdtd, monitor_name):
@@ -91,14 +94,91 @@ def extract(fdtd, monitor_name):
 # ─── HELPERS ───────────────────────────────────────────────────────────────────
 def _normalize(E2, ux, uy):
     """
-    Normalise E2 to [0, 1] within the hemisphere.
-    Set all hemisphere-exterior pixels to 0  (→ blue in jet, like Lumerical).
-    Returns (E2_norm, UX, UY) where shapes are (len_ux, len_uy).
+    Prepare E2 for display.
+    SCALE_DB=False → linear, normalised 0-1   (like Lumerical's image())
+    SCALE_DB=True  → dB,     clipped to DB_FLOOR  (better for side-lobe visibility)
+    In both cases, hemisphere exterior = 0 → blue corners, no transparent pixels.
     """
     UX, UY  = np.meshgrid(ux, uy, indexing='ij')
     valid   = (UX**2 + UY**2) <= 1.0
     max_val = np.max(E2[valid])
-    return np.where(valid, E2 / max_val, 0.0), UX, UY
+    if SCALE_DB:
+        with np.errstate(divide='ignore', invalid='ignore'):
+            E2_dB = 10 * np.log10(E2 / max_val)
+        # Map DB_FLOOR→0 and 0 dB→1 linearly for colormap
+        E2_norm = np.where(valid,
+                           np.clip((E2_dB - DB_FLOOR) / (-DB_FLOOR), 0, 1),
+                           0.0)
+    else:
+        E2_norm = np.where(valid, E2 / max_val, 0.0)
+    return E2_norm, UX, UY
+
+
+def _width_at_thresh(profile, axis_uc, frac):
+    """Width in degrees where profile drops to `frac` * max (e.g. frac=0.5 for -3dB)."""
+    thresh = np.max(profile) * frac
+    above = profile >= thresh
+    crossings = np.where(np.diff(above.astype(int)))[0]
+    if len(crossings) < 2:
+        return None
+    def interp(i):
+        x0, x1 = axis_uc[i], axis_uc[i+1]
+        y0, y1 = profile[i], profile[i+1]
+        uc = x0 + (thresh - y0) / (y1 - y0) * (x1 - x0)
+        return np.degrees(np.arcsin(np.clip(abs(uc), 0, 1))) * np.sign(uc)
+    return abs(interp(crossings[-1]) - interp(crossings[0]))
+
+
+def _fwhm_deg(profile, axis_uc):
+    return _width_at_thresh(profile, axis_uc, 0.5)
+
+
+def _analyze_lobe(E2, ux, uy):
+    """Find peak, compute 3 dB beam width in ux and uy directions."""
+    UX, UY = np.meshgrid(ux, uy, indexing='ij')
+    E2_v   = np.where((UX**2 + UY**2) <= 1.0, E2, 0.0)
+
+    peak_idx = np.unravel_index(np.argmax(E2_v), E2_v.shape)
+    i_ux, i_uy = peak_idx
+    peak_ux = ux[i_ux]; peak_uy = uy[i_uy]
+    r_peak  = np.sqrt(peak_ux**2 + peak_uy**2)
+    theta_peak = np.degrees(np.arcsin(np.clip(r_peak, 0, 1)))
+    phi_peak   = np.degrees(np.arctan2(peak_uy, peak_ux))
+
+    fwhm_ux = _fwhm_deg(E2_v[:, i_uy], ux)
+    fwhm_uy = _fwhm_deg(E2_v[i_ux, :], uy)
+
+    print(f"  Lobe peak: ux={peak_ux:.3f}, uy={peak_uy:.3f}")
+    print(f"  Center angle: {theta_peak:.1f} deg  (azimuth {phi_peak:.1f} deg)")
+    if fwhm_ux: print(f"  -3 dB width along UX: {fwhm_ux:.1f} deg")
+    if fwhm_uy: print(f"  -3 dB width along UY: {fwhm_uy:.1f} deg  (half-angle {fwhm_uy/2:.1f} deg)")
+    return r_peak, theta_peak, fwhm_ux, fwhm_uy
+
+def _draw_x_cone(ax, ux_peak, fwhm_uy_deg, h_rotated=False,
+                 color='deepskyblue', lw=1.8, ls='--', label=None):
+    """
+    Draw an X cone (two crossing lines) at ±half_angle in the UY direction.
+    fwhm_uy_deg is the FULL angular width; the half-angle = fwhm_uy_deg/2.
+    Label is placed ON the figure near the upper-right arm tip.
+    """
+    if fwhm_uy_deg is None:
+        return
+    uy_half = np.sin(np.radians(fwhm_uy_deg / 2))   # uc half-width
+    if h_rotated:  # H=uy, V=ux
+        ax.plot([-uy_half, uy_half], [-ux_peak, ux_peak], color=color, lw=lw, ls=ls, zorder=6)
+        ax.plot([-uy_half, uy_half], [ux_peak, -ux_peak], color=color, lw=lw, ls=ls, zorder=6)
+        # place label near upper-right tip, slightly inward
+        if label:
+            ax.text(uy_half * 0.75, ux_peak * 0.85, label, color=color,
+                    fontsize=9, fontweight='bold', ha='center', va='bottom', zorder=7,
+                    bbox=dict(boxstyle='round,pad=0.15', fc='#0d0d1a', alpha=0.7, ec='none'))
+    else:          # H=ux, V=uy
+        ax.plot([-ux_peak, ux_peak], [-uy_half, uy_half], color=color, lw=lw, ls=ls, zorder=6)
+        ax.plot([-ux_peak, ux_peak], [uy_half, -uy_half], color=color, lw=lw, ls=ls, zorder=6)
+        if label:
+            ax.text(ux_peak * 0.75, uy_half * 0.85, label, color=color,
+                    fontsize=9, fontweight='bold', ha='center', va='bottom', zorder=7,
+                    bbox=dict(boxstyle='round,pad=0.15', fc='#0d0d1a', alpha=0.7, ec='none'))
 
 
 def _deg_ticks(ax):
@@ -164,10 +244,22 @@ def make_figure(data, monitor_name):
 
     E2_norm, UX, UY = _normalize(E2, ux, uy)
 
+    # ── Lobe analysis (always uses raw E2, not dB) ──────────────────────
+    print(f"\n[Lobe analysis — {monitor_name}]")
+    r_peak, theta_peak, fwhm_ux, fwhm_uy = _analyze_lobe(E2, ux, uy)
+    UX2, UY2 = np.meshgrid(ux, uy, indexing='ij')
+    E2_masked = np.where((UX2**2 + UY2**2) <= 1.0, E2, 0.0)
+    pi = np.unravel_index(np.argmax(E2_masked), E2_masked.shape)
+    peak_ux_val = ux[pi[0]]
+    peak_uy_val = uy[pi[1]]
+
     fig, (ax_xy, ax_pol) = plt.subplots(1, 2, figsize=(15, 6.5))
+    fwhm_str = ""
+    if fwhm_ux: fwhm_str += f"  |  UX width: {fwhm_ux:.1f}deg"
+    if fwhm_uy: fwhm_str += f"  UY width: {fwhm_uy:.1f}deg"
     fig.suptitle(
         f"{monitor_name}   [lam = {lam*1e9:.2f} nm]   "
-        f"(cone {HALF_ANGLE}deg: {data['cone_pct']:.1f}% of total)",
+        f"center {theta_peak:.1f}deg{fwhm_str}",
         fontweight='bold')
 
     if monitor_name == "top_monitor":
@@ -180,6 +272,14 @@ def make_figure(data, monitor_name):
         ax_xy.set_xlabel("uy  (Y-direction)", fontsize=10)
         ax_xy.set_ylabel("ux  (X-direction)", fontsize=10)
         ax_xy.set_title("XY Map  (ux/uy)")
+        # white dashed – -3 dB (FWHM) half-angle
+        _draw_x_cone(ax_xy, peak_ux_val, fwhm_uy, h_rotated=True,
+                     color='deepskyblue',
+                     label=f"-3 dB: {fwhm_uy/2:.1f}°" if fwhm_uy else None)
+        # orange dashed – fixed user angle
+        _draw_x_cone(ax_xy, peak_ux_val, CUSTOM_ANGLE_DEG * 2, h_rotated=True,
+                     color='orange',
+                     label=f"{CUSTOM_ANGLE_DEG}°")
 
         # ─── Polar map ───
         _imshow(ax_pol, E2_norm,
@@ -190,6 +290,12 @@ def make_figure(data, monitor_name):
         ax_pol.set_xlabel("ty [deg]  (Y-direction)", fontsize=10)
         ax_pol.set_ylabel("tx [deg]  (X-direction)", fontsize=10)
         ax_pol.set_title("Polar Map  (tx left, ty bottom)")
+        _draw_x_cone(ax_pol, peak_ux_val, fwhm_uy, h_rotated=True,
+                     color='deepskyblue',
+                     label=f"-3 dB: {fwhm_uy/2:.1f}°" if fwhm_uy else None)
+        _draw_x_cone(ax_pol, peak_ux_val, CUSTOM_ANGLE_DEG * 2, h_rotated=True,
+                     color='orange',
+                     label=f"{CUSTOM_ANGLE_DEG}°")
 
     else:  # side_monitor
         # H = ux (X), V = uy (Z)
@@ -201,6 +307,12 @@ def make_figure(data, monitor_name):
         ax_xy.set_xlabel("ux  (X-direction)", fontsize=10)
         ax_xy.set_ylabel("uy  (Z-direction)", fontsize=10)
         ax_xy.set_title("XY Map  (ux/uy)")
+        _draw_x_cone(ax_xy, peak_ux_val, fwhm_uy, h_rotated=False,
+                     color='deepskyblue',
+                     label=f"-3 dB: {fwhm_uy/2:.1f}°" if fwhm_uy else None)
+        _draw_x_cone(ax_xy, peak_ux_val, CUSTOM_ANGLE_DEG * 2, h_rotated=False,
+                     color='orange',
+                     label=f"{CUSTOM_ANGLE_DEG}°")
 
         # ─── Polar map ───
         _imshow(ax_pol, E2_norm.T,
@@ -211,9 +323,16 @@ def make_figure(data, monitor_name):
         ax_pol.set_xlabel("tx [deg]  (X-direction)", fontsize=10)
         ax_pol.set_ylabel("tz [deg]  (Z-direction)", fontsize=10)
         ax_pol.set_title("Polar Map  (tx horizontal, tz vertical)")
+        _draw_x_cone(ax_pol, peak_ux_val, fwhm_uy, h_rotated=False,
+                     color='deepskyblue',
+                     label=f"-3 dB: {fwhm_uy/2:.1f}°" if fwhm_uy else None)
+        _draw_x_cone(ax_pol, peak_ux_val, CUSTOM_ANGLE_DEG * 2, h_rotated=False,
+                     color='orange',
+                     label=f"{CUSTOM_ANGLE_DEG}°")
 
+    scale_str = f"dB  (floor {DB_FLOOR} dB)" if SCALE_DB else "linear  (0-1)"
     cbar = fig.colorbar(im, ax=[ax_xy, ax_pol], shrink=0.8, pad=0.02)
-    cbar.set_label("Normalised E2  (linear, 0-1)", fontsize=9)
+    cbar.set_label(f"Normalised E2  [{scale_str}]", fontsize=9)
     cbar.ax.tick_params(labelsize=8, colors='white')
     plt.tight_layout()
     return fig
