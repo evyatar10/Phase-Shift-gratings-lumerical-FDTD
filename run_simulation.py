@@ -151,13 +151,13 @@ def run_single_sim():
     w_narrow = avg_corr - corr_depth / 2
     core_h = 350e-9
 
-    span_multiplier = 3
+    span_multiplier = 4
     calc_y_span = w_wide + span_multiplier * lambda_res_est
     calc_z_span = core_h + span_multiplier * lambda_res_est
 
     # --- DEVICE & RECORDING CONFIG ---
     pitch = 500e-9
-    N_periods = 60
+    N_periods = 100
 
     N_periods_target_overlap = N_periods
     cav_len = pitch / 2.0
@@ -166,10 +166,13 @@ def run_single_sim():
     # far-field distance for Y
     farfield_y_wls = 0.5
     calc_farfield_y = (calc_y_span / 2.0) - (farfield_y_wls * lambda_res_est)
-    
+
     # far-field distance for Z
     farfield_z_wls = 0.5
     calc_farfield_z = (calc_z_span / 2.0) - (farfield_z_wls * lambda_res_est)
+
+    # far-field monitor X window (centered on defect)
+    farfield_x_span_m = 20e-6  # 20 µm window around the phase-shift defect
 
     # 2. Initialize Simulation
     sim = PiShiftBraggFDTD(
@@ -189,7 +192,7 @@ def run_single_sim():
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
         n_wl_points=n_points_global,
-        use_apodization=False,
+        use_apodization=True,
         center_mod_depth_nm=10.0,
         use_cavity_mesh_override=True,
         use_symmetry=True,  # y symmetry
@@ -210,6 +213,7 @@ def run_single_sim():
         
         # --- FAR FIELD ---
         record_farfield=True,
+        farfield_x_span_m=farfield_x_span_m,
         farfield_y_dist_m=calc_farfield_y,
         farfield_z_dist_m=calc_farfield_z
     )

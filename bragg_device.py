@@ -54,6 +54,7 @@ class PiShiftBraggFDTD:
                  field_3d_span_m=None,
                  # --- NEW OPTIONAL FAR-FIELD MONITOR ---
                  record_farfield=False,
+                 farfield_x_span_m=20e-6,
                  farfield_y_dist_m=None,
                  farfield_z_dist_m=None):
 
@@ -104,6 +105,7 @@ class PiShiftBraggFDTD:
         self.downsample_yz = downsample_yz
 
         self.record_farfield = record_farfield
+        self.farfield_x_span_m = farfield_x_span_m
         self.farfield_y_dist_m = farfield_y_dist_m
         self.farfield_z_dist_m = farfield_z_dist_m
 
@@ -428,8 +430,8 @@ class PiShiftBraggFDTD:
             fdtd.addtime()
             fdtd.set("name", name)
             fdtd.set("monitor type", "Point")
-            fdtd.set("x", x_pos);
-            fdtd.set("y", 0);
+            fdtd.set("x", x_pos)
+            fdtd.set("y", 0)
             fdtd.set("z", 0)
 
         add_time_mon("time_input", -self.x_grating_end - 0.5e-6)
@@ -518,8 +520,8 @@ class PiShiftBraggFDTD:
             fdtd.set("monitor type", "2D Y-normal")
 
             y_pos = self.farfield_y_dist_m if self.farfield_y_dist_m is not None else 1.5 * self.width_wide
-            fdtd.set("x", 0)
-            fdtd.set("x span", 2.0 * self.x_grating_end + 1.0e-6)
+            fdtd.set("x", self.cavity_length / 2.0)  # centered on phase-shift defect
+            fdtd.set("x span", self.farfield_x_span_m)
             fdtd.set("y", y_pos)
 
             z_span_ff = self.monitor_z_span_m if self.monitor_z_span_m else 1.5 * self.core_height
@@ -536,8 +538,8 @@ class PiShiftBraggFDTD:
             fdtd.set("monitor type", "2D Z-normal")
 
             z_pos = self.farfield_z_dist_m if self.farfield_z_dist_m is not None else 1.5 * self.core_height
-            fdtd.set("x", 0)
-            fdtd.set("x span", 2.0 * self.x_grating_end + 1.0e-6)
+            fdtd.set("x", self.cavity_length / 2.0)  # centered on phase-shift defect
+            fdtd.set("x span", self.farfield_x_span_m)
             fdtd.set("y", 0)
             y_span_ff = self.monitor_y_span_m if self.monitor_y_span_m else 1.5 * self.width_wide
             fdtd.set("y span", y_span_ff)
