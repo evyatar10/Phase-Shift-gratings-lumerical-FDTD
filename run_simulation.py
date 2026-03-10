@@ -263,8 +263,8 @@ def run_single_sim():
         # --- 2D TOP & CROSS FIELD SETTINGS ---
         record_2d_fields_top_and_cross=True,
         field_2d_x_span_m=None,  # None means record the full X span
-        monitor_y_span_m=calc_y_span,
-        monitor_z_span_m=calc_z_span,
+        monitor_y_span_m=calc_y_span - 0.5 * lambda_res_est,
+        monitor_z_span_m=calc_z_span - 0.5 * lambda_res_est,
         downsample_yz=1,  # Keep default high resolution
         
         # --- 3D MONITORS ---
