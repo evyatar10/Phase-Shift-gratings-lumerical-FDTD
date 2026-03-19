@@ -15,19 +15,21 @@
 %
 % All analysis parameters (HALF_ANGLE, CUSTOM_ANGLE_DEG) are defined here only.
 
-clear; clc; close all;
+clear; clc;
+%close all;
 
 % ── CONFIG ─────────────────────────────────────────────────────────────────
-RESULTS_DIR      = 'C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_5_long\results';
-MAT_FILE         = fullfile(RESULTS_DIR, 'result_100_periods_10_apodizations_CONST.mat');
+RESULTS_DIR      = 'C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_7\results';
+MAT_FILE         = fullfile(RESULTS_DIR, 'result_100_periods_CONST.mat');
 
 SCALE_DB         = false;   % false = linear  |  true = dB
 DB_FLOOR         = -40;     % dB floor  (only when SCALE_DB=true)
 HALF_ANGLE       = 30;      % degrees — unused currently
 CUSTOM_ANGLE_DEG = 22.8;    % analytic critical angle (degrees)
-PLOT_X_CONES     = false;    % true = draw the X-cone overlays and labels
+PLOT_X_CONES     = true;    % true = draw the X-cone overlays and labels
 
 NF_SCALE         = 0.85;    % scale factor for the near-field subplot (1 = full default size)
+NF_CROP_X_UM     = 60;      % crop near-field X to ±N µm  ([] = no crop)
 
 % Parse simulation description from filename (e.g. result_100_periods_10_apodizations_CONST.mat)
 [~, fname_stem, ~] = fileparts(MAT_FILE);
@@ -68,13 +70,13 @@ for k = 1:2
 
     fprintf('\n=== %s ===\n', mname);
     make_figure(E2, ux, uy, lam, is_top, mname, nf_struct, ...
-        SCALE_DB, DB_FLOOR, HALF_ANGLE, CUSTOM_ANGLE_DEG, NF_SCALE, SIM_DESC, PLOT_X_CONES);
+        SCALE_DB, DB_FLOOR, HALF_ANGLE, CUSTOM_ANGLE_DEG, NF_SCALE, SIM_DESC, PLOT_X_CONES, NF_CROP_X_UM);
 end
 
 
 %% ═══════════════════════════════════════════════════════════════════════════
 function make_figure(E2, ux, uy, lam, is_top, monitor_name, nf_struct, ...
-    SCALE_DB, DB_FLOOR, HALF_ANGLE, CUSTOM_ANGLE_DEG, NF_SCALE, SIM_DESC, PLOT_X_CONES) %#ok<INUSD>
+    SCALE_DB, DB_FLOOR, HALF_ANGLE, CUSTOM_ANGLE_DEG, NF_SCALE, SIM_DESC, PLOT_X_CONES, NF_CROP_X_UM) %#ok<INUSD>
 
 % Compute hemisphere mask
 [UX, UY] = meshgrid(ux, uy);
@@ -131,7 +133,7 @@ nf_ok = false;
 h_nf  = []; v_nf = [];
 if ~isempty(nf_struct)
     try
-        [E2_nf, h_nf, v_nf, h_lbl, v_lbl] = get_nf_image(nf_struct, lam, is_top);
+        [E2_nf, h_nf, v_nf, h_lbl, v_lbl] = get_nf_image(nf_struct, lam, is_top, NF_CROP_X_UM);
         imagesc(ax_nf, h_nf*1e6, v_nf*1e6, E2_nf);  % raw E², no normalisation
         colormap(ax_nf, jet);                          % same colormap as far-field
         set(ax_nf, 'YDir','normal');
@@ -152,10 +154,15 @@ if ~nf_ok
     set(ax_nf, 'XTick',[], 'YTick',[]);
 end
 
-if is_top
-    title(ax_nf, 'Near Field  — Top View (XY plane, |E|^2)', 'FontSize', 11);
+if ~isempty(NF_CROP_X_UM)
+    crop_str = sprintf('  [X cropped to \\pm%g µm]', NF_CROP_X_UM);
 else
-    title(ax_nf, 'Near Field  — Side View (XZ plane, |E|^2)', 'FontSize', 11);
+    crop_str = '';
+end
+if is_top
+    title(ax_nf, ['Near Field  — Top View (XY plane, |E|^2)' crop_str], 'FontSize', 11);
+else
+    title(ax_nf, ['Near Field  — Side View (XZ plane, |E|^2)' crop_str], 'FontSize', 11);
 end
 
 % ══ RIGHT: Far field XY map ═══════════════════════════════════════════════
@@ -225,7 +232,7 @@ end  % make_figure
 
 %% ── HELPERS ────────────────────────────────────────────────────────────────
 
-function [E2_nf, h_axis, v_axis, h_lbl, v_lbl] = get_nf_image(nf, lam_res, is_top)
+function [E2_nf, h_axis, v_axis, h_lbl, v_lbl] = get_nf_image(nf, lam_res, is_top, crop_x_um)
 % Extract E2 = |Ex|^2 + |Ey|^2 + |Ez|^2 at resonance from the monitor surface.
 %
 % nf is the nearfield_top or nearfield_side struct saved by run_simulation.py:
@@ -269,6 +276,13 @@ else
     h_axis = z_ax(:);  v_axis = x_ax(:);
     h_lbl  = 'z  (vertical)  [µm]';
     v_lbl  = 'x  (along grating)  [µm]';
+end
+
+% Crop X (v_axis) if requested
+if ~isempty(crop_x_um)
+    mask   = abs(v_axis) <= crop_x_um * 1e-6;
+    v_axis = v_axis(mask);
+    E2_nf  = E2_nf(mask, :);
 end
 end
 

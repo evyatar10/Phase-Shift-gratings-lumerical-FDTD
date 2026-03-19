@@ -4,7 +4,7 @@
 clear; clc;
 close all;
 %% User settings
-% Filter range in microns for the combined loss and transmission plots
+% Filter range in microns for the combined loss and transmission plots5
 LAMBDA_MIN_UM = 1.54;
 LAMBDA_MAX_UM = 1.59;
 

@@ -6,11 +6,12 @@
 % 4. Highlights radiation region (|kx| < k_clad) vs decaying bound region (|kx| > k_clad).
 % Evaluates BOTH XY (Top View) and YZ (Cross Section at Phase Shift).
 
-clear; close all; clc;
+clear; clc;
+%close all;
 
 %% --- Configuration ---
 % Update this to the actual path of your simulation results
-result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_5_long\results\result_60_periods_CONST.mat";
+result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_6\results\result_100_periods_10_apodizations_CONST.mat";
 
 pitch = 500e-9; % Grating pitch in meters
 n_clad = 1.44;  % Approximate cladding refractive index

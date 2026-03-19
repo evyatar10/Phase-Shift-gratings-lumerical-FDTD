@@ -4,7 +4,7 @@
 clear; clc; close all;
 
 %% --- 1. Load Data ---
-data_file = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_5_long\results\result_100_periods_CONST.mat";
+data_file = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_6\results\result_100_periods_CONST.mat";
 
 fprintf('Loading data...\n');
 if ~exist(data_file, 'file')
