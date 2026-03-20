@@ -37,7 +37,7 @@ def run_convergence():
     w_narrow = avg_corr - corr_depth / 2
     core_h = 350e-9
 
-    span_multiplier = 4
+    span_multiplier = 6
     calc_y_span = w_wide + span_multiplier * lambda_res_est
     calc_z_span = core_h + span_multiplier * lambda_res_est
 
@@ -86,7 +86,7 @@ def run_convergence():
         n_wls_dist_port_to_pml=5.0,
         n_eff_guess=1.55,
         n_wl_points=n_points_global,
-        use_apodization=False,
+        use_apodization=True,
         center_mod_depth_nm=10.0,
         use_cavity_mesh_override=True,
         use_symmetry=True,
@@ -219,6 +219,8 @@ def run_convergence():
         "ff_res": FF_RES,
         "core_h": core_h,
         "w_wide": w_wide,
+        "calc_y_span": calc_y_span,
+        "calc_z_span": calc_z_span,
         # Distance arrays
         "top_z_positions": top_z_positions,
         "side_y_positions": side_y_positions,

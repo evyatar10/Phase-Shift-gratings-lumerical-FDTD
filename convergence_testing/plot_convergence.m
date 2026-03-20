@@ -6,6 +6,7 @@
 %   Figure 3: FWHM half-angle vs monitor distance (convergence plot)
 
 clear; clc;
+close all;
 
 % ── CONFIG ─────────────────────────────────────────────────────────────────
 RESULTS_DIR = 'C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_8\results';
@@ -18,6 +19,15 @@ n = double(data.n_steps);
 lambda_res = double(data.lambda_res);
 core_h = double(data.core_h);
 w_wide = double(data.w_wide);
+% calc_z/y_span may not exist in older .mat files — recompute from formula
+if isfield(data, 'calc_z_span')
+    calc_z_span = double(data.calc_z_span);
+    calc_y_span = double(data.calc_y_span);
+else
+    span_multiplier = 6;
+    calc_z_span = core_h + span_multiplier * lambda_res;
+    calc_y_span = w_wide + span_multiplier * lambda_res;
+end
 
 top_ux = double(data.top_ux(:));
 top_uy = double(data.top_uy(:));
@@ -32,6 +42,10 @@ top_dist_um = (top_z - core_h / 2) * 1e6;
 top_dist_lam = (top_z - core_h / 2) / lambda_res;
 side_dist_um = (side_y - w_wide / 2) * 1e6;
 side_dist_lam = (side_y - w_wide / 2) / lambda_res;
+
+% Distance to PML boundary
+top_pml_lam  = (calc_z_span / 2 - top_z)  / lambda_res;
+side_pml_lam = (calc_y_span / 2 - side_y) / lambda_res;
 
 % Near-field axes
 top_nf_x = double(data.top_nf_x(:));
@@ -69,8 +83,8 @@ for i = 1:n
     set(ax_nf, 'YDir', 'normal');
     axis(ax_nf, 'tight');
     colormap(ax_nf, jet);
-    title(ax_nf, sprintf('z = %.2f \\mum\n(%.2f\\lambda from core)', ...
-        top_z(i) * 1e6, top_dist_lam(i)), 'FontSize', 9);
+    title(ax_nf, sprintf('z = %.2f \\mum\n%.2f\\lambda from core  |  %.2f\\lambda to PML', ...
+        top_z(i) * 1e6, top_dist_lam(i), top_pml_lam(i)), 'FontSize', 9);
     if i == 1
         ylabel(ax_nf, 'x [\\mum]');
     end
@@ -126,8 +140,8 @@ for i = 1:n
     set(ax_nf, 'YDir', 'normal');
     axis(ax_nf, 'tight');
     colormap(ax_nf, jet);
-    title(ax_nf, sprintf('y = %.2f \\mum\n(%.2f\\lambda from edge)', ...
-        side_y(i) * 1e6, side_dist_lam(i)), 'FontSize', 9);
+    title(ax_nf, sprintf('y = %.2f \\mum\n%.2f\\lambda from core  |  %.2f\\lambda to PML', ...
+        side_y(i) * 1e6, side_dist_lam(i), side_pml_lam(i)), 'FontSize', 9);
     if i == 1
         ylabel(ax_nf, 'x [\\mum]');
     end
@@ -158,9 +172,7 @@ end
 %% ═══════════════════════════════════════════════════════════════════════════
 %  FIGURE 3: FWHM vs Distance (Convergence Plot)
 %  ═══════════════════════════════════════════════════════════════════════════
-fig3 = figure('Name', 'FWHM Convergence', 'Position', [100 100 1000 450]);
-sgtitle('Far-Field FWHM Half-Angle vs Monitor Distance', ...
-    'FontWeight', 'bold', 'FontSize', 14);
+fig3 = figure('Name', 'FWHM Convergence', 'Position', [100 100 1050 540]);
 
 % ── Top monitors ──
 top_fwhm_half = zeros(1, n);
@@ -178,19 +190,26 @@ for i = 1:n
         i, top_z(i)*1e6, top_dist_lam(i), top_fwhm_half(i));
 end
 
-subplot(1, 2, 1);
+% Explicit positions: [left, bottom, width, height] in normalized units.
+% Secondary axes is made taller by 'lift' so its top x-axis line sits above
+% the main axes top, leaving room for the subplot title in that gap.
+lift = 0.10;
+sp1 = [0.08, 0.13, 0.38, 0.52];
+sp2 = [0.58, 0.13, 0.38, 0.52];
+
+ax1 = axes('Position', sp1);
 plot(top_dist_lam, top_fwhm_half, '-o', 'LineWidth', 2, 'MarkerSize', 8, ...
     'MarkerFaceColor', [0.2 0.5 0.8], 'Color', [0.2 0.5 0.8]);
-xlabel('Distance from core surface [\lambda]', 'FontSize', 11);
+xlabel('Distance from core [\lambda]', 'FontSize', 11);
 ylabel('FWHM half-angle [deg]', 'FontSize', 11);
-title('Top Monitor (Z-normal)', 'FontSize', 12);
+title(sprintf('Top Monitor (Z-normal)\n(core height = %.2f \\lambda)', ...
+    core_h / lambda_res), 'FontSize', 12);
 grid on;
-% Add secondary X axis in um
-ax1 = gca;
-ax1_pos = ax1.Position;
-ax1b = axes('Position', ax1_pos, 'XAxisLocation', 'top', 'Color', 'none', ...
-    'YTick', [], 'XLim', [top_dist_um(1) top_dist_um(end)]);
-xlabel(ax1b, 'Distance from core surface [\mum]', 'FontSize', 10);
+% Secondary top axis: distance to PML [λ], reversed (far from core = close to PML)
+ax1b = axes('Position', sp1 + [0, 0, 0, lift], ...
+    'XAxisLocation', 'top', 'Color', 'none', 'YTick', [], ...
+    'XLim', [top_pml_lam(end) top_pml_lam(1)], 'XDir', 'reverse');
+xlabel(ax1b, 'Distance to PML [\lambda]', 'FontSize', 10);
 
 % ── Side monitors ──
 side_fwhm_half = zeros(1, n);
@@ -204,23 +223,26 @@ for i = 1:n
     slice_uy = E2_i(pi_ux, :);
     fwhm_deg = compute_fwhm_deg(slice_uy, side_uy');
     side_fwhm_half(i) = fwhm_deg / 2;
-    fprintf('Side monitor %d (y=%.2f um, %.2f lam): FWHM half-angle = %.2f deg\n', ...
+    fprintf('Side monitor %d (y=%.2f um, %.2f lam from core): FWHM half-angle = %.2f deg\n', ...
         i, side_y(i)*1e6, side_dist_lam(i), side_fwhm_half(i));
 end
 
-subplot(1, 2, 2);
+ax2 = axes('Position', sp2);
 plot(side_dist_lam, side_fwhm_half, '-s', 'LineWidth', 2, 'MarkerSize', 8, ...
     'MarkerFaceColor', [0.8 0.4 0.2], 'Color', [0.8 0.4 0.2]);
-xlabel('Distance from waveguide edge [\lambda]', 'FontSize', 11);
+xlabel('Distance from core [\lambda]', 'FontSize', 11);
 ylabel('FWHM half-angle [deg]', 'FontSize', 11);
-title('Side Monitor (Y-normal)', 'FontSize', 12);
+title(sprintf('Side Monitor (Y-normal)\n(core width = %.2f \\lambda)', ...
+    w_wide / lambda_res), 'FontSize', 12);
 grid on;
-% Secondary X axis in um
-ax2 = gca;
-ax2_pos = ax2.Position;
-ax2b = axes('Position', ax2_pos, 'XAxisLocation', 'top', 'Color', 'none', ...
-    'YTick', [], 'XLim', [side_dist_um(1) side_dist_um(end)]);
-xlabel(ax2b, 'Distance from waveguide edge [\mum]', 'FontSize', 10);
+% Secondary top axis: distance to PML [λ], reversed
+ax2b = axes('Position', sp2 + [0, 0, 0, lift], ...
+    'XAxisLocation', 'top', 'Color', 'none', 'YTick', [], ...
+    'XLim', [side_pml_lam(end) side_pml_lam(1)], 'XDir', 'reverse');
+xlabel(ax2b, 'Distance to PML [\lambda]', 'FontSize', 10);
+
+sgtitle('Far-Field FWHM Half-Angle vs Monitor Distance', ...
+    'FontWeight', 'bold', 'FontSize', 13);
 
 
 %% ── HELPER: compute_fwhm_deg ─────────────────────────────────────────────
