@@ -49,7 +49,7 @@ class GeometryConfig:
 class GratingConfig:
     """Bragg grating periodicity and cavity parameters."""
     pitch_m: float = 500e-9                     # Grating period
-    n_periods_each_side: int = 60              # Number of periods on each side of the pi-shift cavity
+    n_periods_each_side: int = 80              # Number of periods on each side of the pi-shift cavity
     override_cavity_length_nm: Optional[float] = None  # None or False = default (pitch/2)
 
 
@@ -62,14 +62,20 @@ class ApodizationConfig:
     """
     Apodization settings (width modulation tapering).
 
-    Currently only linear gradient is implemented:
-    - Modulation depth varies linearly from center_mod_depth_nm at the cavity
-      to the full corrugation_depth at the grating edges.
-    - The transition occurs over n_apod_periods_each_side periods.
+    Two profile methods are supported:
+    - 'linear': modulation depth varies linearly from center_mod_depth_nm
+      at the cavity to the full corrugation_depth at the grating edges.
+    - 'tanh': modulation depth follows tanh(a * 2 * frac) / tanh(2 * a),
+      where 'a' is tanh_steepness. This concentrates the transition
+      near the grating edge, giving a flatter center region.
+
+    The transition occurs over n_apod_periods_each_side periods.
     """
     enabled: bool = False                        # Enable/disable apodization
     n_apod_periods_each_side: int = 10          # Number of tapered periods on each side
     center_mod_depth_nm: float = 10.0           # Modulation depth at the cavity center (nm)
+    method: str = 'linear'                       # Apodization profile: 'linear' or 'tanh'
+    tanh_steepness: float = 2.0                  # Steepness parameter for tanh profile
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -92,8 +98,6 @@ class SpectralConfig:
 @dataclass
 class MeshConfig:
     """FDTD simulation domain sizing and mesh settings."""
-     # y/z_span = geometry + multiplier * lambda
-    span_multiplier: float = 5.0 # 5 for farfield, 1.8 for normal                
     n_periods_dist_to_port: int = 20            # Distance from grating edge to port (in periods)
     n_wls_dist_port_to_pml: float = 5.0         # Distance from port to PML (in wavelengths)
     use_cavity_mesh_override: bool = True        # Extra mesh refinement at the cavity
@@ -256,14 +260,19 @@ class SimulationConfig:
     # ── Derived properties ────────────────────────────────────────────────
 
     @property
+    def _span_multiplier(self) -> float:
+        """Span multiplier for y/z domain sizing: extended when farfield monitors are on."""
+        return 5.0 if self.farfield.enabled else 1.8
+
+    @property
     def y_span(self) -> float:
         """Simulation domain Y extent (derived from geometry + mesh + spectral)."""
-        return self.geometry.width_wide_m + self.mesh.span_multiplier * self.spectral.center_wavelength_m
+        return self.geometry.width_wide_m + self._span_multiplier * self.spectral.center_wavelength_m
 
     @property
     def z_span(self) -> float:
         """Simulation domain Z extent (derived from geometry + mesh + spectral)."""
-        return self.geometry.core_height_m + self.mesh.span_multiplier * self.spectral.center_wavelength_m
+        return self.geometry.core_height_m + self._span_multiplier * self.spectral.center_wavelength_m
 
     # ── Mapping to PiShiftBraggFDTD constructor ───────────────────────────
 
@@ -320,6 +329,8 @@ class SimulationConfig:
             n_wl_points=sp.n_wl_points,
             use_apodization=ap.enabled,
             center_mod_depth_nm=ap.center_mod_depth_nm,
+            apod_method=ap.method if ap.enabled else 'linear',
+            tanh_steepness=ap.tanh_steepness,
             use_cavity_mesh_override=me.use_cavity_mesh_override,
             use_symmetry=sy.use_y_symmetry,
             use_z_symmetry=sy.use_z_symmetry,

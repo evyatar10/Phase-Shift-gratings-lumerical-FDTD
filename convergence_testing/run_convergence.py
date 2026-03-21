@@ -24,16 +24,18 @@ import config
 N_STEPS = 6         # number of monitor distances to test
 
 
+CONVERGENCE_SPAN_MULT = 6  # Extra-large domain: more room for far monitors than standard (5×)
+
+
 def run_convergence(cfg: SimulationConfig = None):
     if cfg is None:
         cfg = SimulationConfig()
-        cfg.mesh.span_multiplier = 6  # Larger domain for convergence testing
 
     lam = cfg.spectral.center_wavelength_m
     core_h = cfg.geometry.core_height_m
     w_wide = cfg.geometry.width_wide_m
-    calc_y_span = cfg.y_span
-    calc_z_span = cfg.z_span
+    calc_y_span = w_wide + CONVERGENCE_SPAN_MULT * lam
+    calc_z_span = core_h + CONVERGENCE_SPAN_MULT * lam
 
     farfield_x_span_m = cfg.farfield.farfield_x_span_m
     monitor_y_span_m = calc_y_span - 0.5 * lam
@@ -64,7 +66,9 @@ def run_convergence(cfg: SimulationConfig = None):
     cfg.farfield.enabled = False
 
     device_kwargs = cfg.to_device_kwargs()
-    # Override monitor spans for this test
+    # Use the 6× domain instead of the config-derived spans
+    device_kwargs['y_span'] = calc_y_span
+    device_kwargs['z_span'] = calc_z_span
     device_kwargs['monitor_y_span_m'] = monitor_y_span_m
     device_kwargs['monitor_z_span_m'] = monitor_z_span_m
 

@@ -1,7 +1,9 @@
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 import numpy as np
 import scipy.io as sio
 import matplotlib.pyplot as plt
-import os
 import importlib.util
 import config
 import analysis  # Added for T-matrix calculation

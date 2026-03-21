@@ -403,7 +403,7 @@ def run_simple_sim(cfg: SimulationConfig = None):
         # Defaults for simple grating that differ from pi-shift
         cfg.spectral.center_wavelength_m = 1.560e-6
         cfg.spectral.scan_width_nm = 42.0
-        cfg.mesh.span_multiplier = 1.8
+        cfg.farfield.enabled = False
         cfg.phase_correction.do_envelope_correction = False
 
     # Create device from shared config

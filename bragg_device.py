@@ -37,6 +37,8 @@ class PiShiftBraggFDTD:
                  n_wl_points=401,
                  use_apodization=False,
                  center_mod_depth_nm=40.0,
+                 apod_method='linear',
+                 tanh_steepness=2.0,
                  use_cavity_mesh_override=False,
                  use_symmetry=True,
                  use_z_symmetry=True,
@@ -90,6 +92,8 @@ class PiShiftBraggFDTD:
         self.n_wl_points = n_wl_points
         self.use_apodization = use_apodization
         self.center_mod_depth = center_mod_depth_nm * 1e-9
+        self.apod_method = apod_method
+        self.tanh_steepness = tanh_steepness
 
         self.use_cavity_mesh_override = use_cavity_mesh_override
 
@@ -340,11 +344,16 @@ class PiShiftBraggFDTD:
         n_total = self.n_periods_each_side
         n_apod = self.n_apod_periods_each_side
 
+        apod_method = self.apod_method
+        tanh_steepness = self.tanh_steepness
+
         def get_mod_depth(d):
             if d <= n_apod and n_total > 1:
                 denom = (n_apod - 1) if (n_apod > 1 and n_apod == n_total) else n_apod
                 if denom == 0: return full_depth_center
                 frac = (d - 1) / float(denom)
+                if apod_method == 'tanh':
+                    frac = np.tanh(tanh_steepness * 2.0 * frac) / np.tanh(2.0 * tanh_steepness)
                 return full_depth_center + (full_depth_edge - full_depth_center) * frac
             else:
                 return full_depth_edge

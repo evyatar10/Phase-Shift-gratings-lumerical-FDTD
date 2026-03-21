@@ -20,7 +20,7 @@ clear; clc;
 %close all;
 
 % ── CONFIG ─────────────────────────────────────────────────────────────────
-RESULTS_DIR      = 'C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_7\results';
+RESULTS_DIR      = 'C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_8\results';
 MAT_FILE         = fullfile(RESULTS_DIR, 'result_100_periods_CONST.mat');
 
 SCALE_DB         = false;   % false = linear  |  true = dB
@@ -30,7 +30,7 @@ CUSTOM_ANGLE_DEG = 22.8;    % analytic critical angle (degrees)
 PLOT_X_CONES     = true;    % true = draw the X-cone overlays and labels
 
 NF_SCALE         = 0.85;    % scale factor for the near-field subplot (1 = full default size)
-NF_CROP_X_UM     = 60;      % crop near-field X to ±N µm  ([] = no crop)
+NF_CROP_X_UM     = [];      % crop near-field X to ±N µm  ([] = no crop)
 
 % Parse simulation description from filename (e.g. result_100_periods_10_apodizations_CONST.mat)
 [~, fname_stem, ~] = fileparts(MAT_FILE);
