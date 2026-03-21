@@ -1,6 +1,7 @@
 % analyze_farfield_radiation.m
 % Analyzes the Far-Field radiation pattern projected directly by Lumerical FDTD.
 
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 clear; clc; close all;
 
 %% --- 1. Load Data ---

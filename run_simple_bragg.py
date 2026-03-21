@@ -1,28 +1,44 @@
-import numpy as np
+"""
+Simple (uniform) Bragg grating simulation — no pi-shift cavity, no apodization.
+
+Uses SimpleBraggFDTD device class with shared config from simulation_config.py.
+
+Usage:
+    python run_simple_bragg.py
+"""
+
 import os
 import time
 import importlib.util
+
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy.io as sio
 
-# Import your existing modules
-import config
 import analysis
+import config
+from post_processing import SParameters, export_interconnect
+from simulation_config import SimulationConfig
 
-# Try to import lumapi
+# Import lumapi
 try:
     import lumapi
 except ImportError:
-    LUMAPI_PATH = r"C:\\Program Files\\Lumerical\\v252\\api\\python\\lumapi.py"
-    spec = importlib.util.spec_from_file_location("lumapi", LUMAPI_PATH)
+    spec = importlib.util.spec_from_file_location("lumapi", config.LUMAPI_PATH)
     lumapi = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(lumapi)
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# SimpleBraggFDTD Device Class
+# ═══════════════════════════════════════════════════════════════════════════════
+
 class SimpleBraggFDTD:
+    """Uniform Bragg grating (no cavity, no apodization)."""
+
     def __init__(self,
                  pitch=500e-9,
-                 n_periods=40,  # Total number of periods
+                 n_periods=40,
                  width_narrow=700e-9,
                  width_wide=900e-9,
                  width_port=1000e-9,
@@ -68,13 +84,9 @@ class SimpleBraggFDTD:
         self.n_eff_guess = n_eff_guess
         self.n_wl_points = n_wl_points
 
-        # Calculate Geometry
+        # Derived geometry
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
-
-        # Total length of the grating
         self.L_grating = self.n_periods * self.pitch
-
-        # We center the grating at x=0, so the end coordinate is half the length
         self.x_grating_end = self.L_grating / 2.0
 
         self.dist_grating_to_port = n_periods_dist_to_port * self.pitch
@@ -93,12 +105,10 @@ class SimpleBraggFDTD:
         self._setup_materials()
 
     def _setup_materials(self):
-        # COPY OF ORIGINAL MATERIAL SETUP
         if self.use_constant_materials:
             print(f"Using CONSTANT Materials: SiN={self.n_core_const}, SiO2={self.n_clad_const}")
             const_sin = "SiN_Const_Custom"
             const_sio2 = "SiO2_Const_Custom"
-
             eps_sin = self.n_core_const ** 2
             eps_sio2 = self.n_clad_const ** 2
 
@@ -106,17 +116,14 @@ class SimpleBraggFDTD:
             f_vector = [0; 1000e12];
             eps_sin_vector = [{eps_sin}; {eps_sin}];
             eps_sio2_vector = [{eps_sio2}; {eps_sio2}];
-
             if (materialexists("{const_sin}")) {{ deletematerial("{const_sin}"); }}
             if (materialexists("{const_sio2}")) {{ deletematerial("{const_sio2}"); }}
-
             new_mat = addmaterial("Sampled data");
             setmaterial(new_mat, "name", "{const_sin}");
             data_sin = matrix(2, 2);
             data_sin(1:2, 1) = f_vector;
-            data_sin(1:2, 2) = eps_sin_vector; 
+            data_sin(1:2, 2) = eps_sin_vector;
             setmaterial("{const_sin}", "sampled data", data_sin);
-
             new_mat2 = addmaterial("Sampled data");
             setmaterial(new_mat2, "name", "{const_sio2}");
             data_sio2 = matrix(2, 2);
@@ -147,16 +154,14 @@ class SimpleBraggFDTD:
         script = f'''
         if (materialexists("{custom_sin}")) {{ deletematerial("{custom_sin}"); }}
         if (materialexists("{custom_sio2}")) {{ deletematerial("{custom_sio2}"); }}
-
         if (materialexists("{src_core}")) {{
             m1 = copymaterial("{src_core}");
             setmaterial(m1, "name", "{custom_sin}");
         }} else {{
             addmaterial("Dielectric");
             set("name", "{custom_sin}");
-            set("Refractive Index", 2.0); 
+            set("Refractive Index", 2.0);
         }}
-
         if (materialexists("{src_clad}")) {{
             m2 = copymaterial("{src_clad}");
             setmaterial(m2, "name", "{custom_sio2}");
@@ -165,23 +170,21 @@ class SimpleBraggFDTD:
             set("name", "{custom_sio2}");
             set("Refractive Index", 1.44);
         }}
-
         if (materialexists("{custom_sin}")) {{
             setmaterial("{custom_sin}", "specify fit range", 1);
             setmaterial("{custom_sin}", "wavelength min", {safe_lam_min});
             setmaterial("{custom_sin}", "wavelength max", {safe_lam_max});
-            setmaterial("{custom_sin}", "imaginary weight", 2); 
+            setmaterial("{custom_sin}", "imaginary weight", 2);
             setmaterial("{custom_sin}", "max coefficients", 8);
             setmaterial("{custom_sin}", "tolerance", 0.001);
             setmaterial("{custom_sin}", "make fit passive", 1);
             setmaterial("{custom_sin}", "improve numerical stability", 1);
         }}
-
         if (materialexists("{custom_sio2}")) {{
             setmaterial("{custom_sio2}", "specify fit range", 1);
             setmaterial("{custom_sio2}", "wavelength min", {safe_lam_min});
             setmaterial("{custom_sio2}", "wavelength max", {safe_lam_max});
-            setmaterial("{custom_sio2}", "imaginary weight", 2); 
+            setmaterial("{custom_sio2}", "imaginary weight", 2);
             setmaterial("{custom_sio2}", "max coefficients", 8);
             setmaterial("{custom_sio2}", "tolerance", 0.001);
             setmaterial("{custom_sio2}", "make fit passive", 1);
@@ -234,8 +237,6 @@ class SimpleBraggFDTD:
         fdtd.set("dt stability factor", 0.5)
 
     def _add_aligned_mesh_override(self, cells_per_half_period=5):
-        # EXACTLY matching the mesh logic from previous code,
-        # but simplified to a single box since there is no cavity.
         fdtd = self.fdtd
         half_pitch = 0.5 * self.pitch
         n_cells_half = max(1, int(cells_per_half_period))
@@ -247,12 +248,10 @@ class SimpleBraggFDTD:
         y_span_override = max_device_width * 1.2
         z_span_override = self.core_height
 
-        # Create one single mesh override covering the entire grating area
-        # from -x_grating_end to +x_grating_end
         fdtd.addmesh()
         fdtd.set("name", "mesh_grating")
         fdtd.set("x", 0)
-        fdtd.set("x span", 2.0 * self.x_grating_end)  # Full length
+        fdtd.set("x span", 2.0 * self.x_grating_end)
         fdtd.set("y", 0.0)
         fdtd.set("y span", y_span_override)
         fdtd.set("z", 0.0)
@@ -283,24 +282,20 @@ class SimpleBraggFDTD:
             fdtd.set("x min", x1)
             fdtd.set("x max", x2)
 
-        # 1. Start from the left edge of the grating
         x_start = -self.x_grating_end
         x = x_start
 
-        # 2. Add Left Infinite Waveguide
+        # Left infinite waveguide
         add_core_segment(-self.x_sim_boundary - 1e-6, x_start, self.width_port, name_prefix="wg_left_inf")
 
-        # 3. Add Grating Periods
-        # No apodization, no cavity. Simple loop.
+        # Grating periods (no apodization, no cavity)
         for i in range(self.n_periods):
-            # Narrow segment
             add_core_segment(x, x + half_pitch, self.width_narrow, name_prefix=f"narrow_{i}")
             x += half_pitch
-            # Wide segment
             add_core_segment(x, x + half_pitch, self.width_wide, name_prefix=f"wide_{i}")
             x += half_pitch
 
-        # 4. Add Right Infinite Waveguide
+        # Right infinite waveguide
         add_core_segment(x, self.x_sim_boundary + 1e-6, self.width_port, name_prefix="wg_right_inf")
 
     def _add_source_and_monitors(self):
@@ -359,9 +354,6 @@ class SimpleBraggFDTD:
             pass
 
     def get_s_and_t_matrix(self, neff_mat_file=None, correct_length=True, correct_envelope_and_t_phase=True):
-        """
-        UPDATED: Now accepts separate flags for length correction and envelope/phase correction.
-        """
         res1 = self.fdtd.getresult("FDTD::ports::Port_1", "expansion for port monitor")
         res2 = self.fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
         wl = np.squeeze(res1["lambda"])
@@ -372,7 +364,6 @@ class SimpleBraggFDTD:
         use_single_neff = False
         single_neff_val = None
 
-        # Only gather neff if length correction is actually requested
         if correct_length:
             if self.use_constant_materials:
                 use_single_neff = True
@@ -381,7 +372,6 @@ class SimpleBraggFDTD:
                 mid_idx = len(neff_vec) // 2
                 single_neff_val = neff_vec[mid_idx]
                 print(f"Using Single Neff for Correction: {np.real(single_neff_val):.4f}")
-
             elif not (neff_mat_file and os.path.exists(neff_mat_file)):
                 n1_res = self.fdtd.getresult("FDTD::ports::Port_1", "neff")
                 n2_res = self.fdtd.getresult("FDTD::ports::Port_2", "neff")
@@ -402,57 +392,38 @@ class SimpleBraggFDTD:
         return wl, R_modal, T_modal, Loss_radiation, T_matrix, S11_sim, S21_sim
 
 
-def run_simple_sim():
-    # 1. Parameters
-    lambda_res_est = 1.560e-6
-    scan_width_nm = 42.0
-    n_points = 3001
-    avg_corr = 800e-9
-    corr_depth = 200e-9
-    w_wide = avg_corr + corr_depth / 2
-    w_narrow = avg_corr - corr_depth / 2
-    core_h = 350e-9
+# ═══════════════════════════════════════════════════════════════════════════════
+# Runner
+# ═══════════════════════════════════════════════════════════════════════════════
 
-    calc_y_span = w_wide + 1.8 * lambda_res_est
-    calc_z_span = core_h + 1.8 * lambda_res_est
+def run_simple_sim(cfg: SimulationConfig = None):
+    """Run a simple (uniform) Bragg grating simulation."""
+    if cfg is None:
+        cfg = SimulationConfig()
+        # Defaults for simple grating that differ from pi-shift
+        cfg.spectral.center_wavelength_m = 1.560e-6
+        cfg.spectral.scan_width_nm = 42.0
+        cfg.mesh.span_multiplier = 1.8
+        cfg.phase_correction.do_envelope_correction = False
 
-    # User requested 40 periods total
-    N_total = 40
+    # Create device from shared config
+    sim = SimpleBraggFDTD(**cfg.to_simple_device_kwargs())
 
-    # 2. Initialize Simulation
-    sim = SimpleBraggFDTD(
-        pitch=500e-9,
-        n_periods=N_total,  # Total periods
-        width_narrow=w_narrow,
-        width_wide=w_wide,
-        width_port=1000e-9,
-        core_height=core_h,
-        substrate_thickness=4e-6,
-        y_span=calc_y_span,
-        z_span=calc_z_span,
-        material_db_path=config.MATERIAL_DB_PATH,
-        n_periods_dist_to_port=30,
-        n_wls_dist_port_to_pml=5.0,
-        n_eff_guess=1.55,
-        n_wl_points=n_points,
-        use_symmetry=True,  # y symmetry
-        use_z_symmetry=True,
-        use_constant_materials=True,
-        n_core_const=1.977
-    )
-
-    # 3. Generate Filenames
-    tag = f"SimpleBragg_{N_total}_periods"
+    # Generate filename
+    tag = f"SimpleBragg_{sim.n_periods}_periods"
     if sim.use_constant_materials:
         tag += "_CONST"
 
-    # --- SAVE LOCATION ---
     layout_path = os.path.join(config.LAYOUTS_DIR, f"layout_{tag}.fsp")
     results_path = os.path.join(config.RESULTS_DIR, f"result_{tag}.mat")
 
-    # 4. Run
+    # Build and run
     sim.build()
-    sim.update_scan(center_lambda_m=lambda_res_est, width_nm=scan_width_nm, n_points=n_points)
+    sim.update_scan(
+        center_lambda_m=cfg.spectral.center_wavelength_m,
+        width_nm=cfg.spectral.scan_width_nm,
+        n_points=cfg.spectral.n_wl_points,
+    )
 
     sim.fdtd.save(layout_path)
     print(f"Saved layout to: {layout_path}")
@@ -461,15 +432,15 @@ def run_simple_sim():
     sim.fdtd.run()
     print(f"Simulation time: {time.perf_counter() - start:.3f} seconds")
 
-    # 5. Process S-parameters
-    # UPDATED: Length correction ON, Envelope/Phase correction ON (User request)
+    # Process S-parameters
     wl, R, T, Loss, T_mat, S11, S21 = sim.get_s_and_t_matrix(
         neff_mat_file=config.NEFF_DATA_PATH,
-        correct_length=True,
-        correct_envelope_and_t_phase=False
+        correct_length=cfg.phase_correction.do_length_correction,
+        correct_envelope_and_t_phase=cfg.phase_correction.do_envelope_correction,
     )
+    s_params = SParameters(wl=wl, R=R, T=T, Loss=Loss, T_mat=T_mat, S11=S11, S21=S21)
 
-    # 6. Save Data
+    # Save
     mat_data = {
         'wl_m': wl, 'wl_nm': wl * 1e9,
         'T': T, 'R': R, 'loss': Loss,
@@ -479,17 +450,16 @@ def run_simple_sim():
     sio.savemat(results_path, mat_data)
     print(f"Data saved to: {results_path}")
 
-    # 7. Export for INTERCONNECT (New addition)
-    print("Exporting for Interconnect...")
-    interconnect_file = os.path.join(config.RESULTS_DIR, f"interconnect_symmetric_{tag}.txt")
-    analysis.export_for_interconnect_symmetric(interconnect_file, wl, S11, S21)
-    print(f"Interconnect data saved to: {interconnect_file}")
+    # Export for INTERCONNECT (respects cfg flag)
+    if cfg.run.export_interconnect:
+        print("Exporting for INTERCONNECT...")
+        export_interconnect(s_params, config.RESULTS_DIR, tag)
 
-    # 8. Plot R and T
+    # Plot
     plt.figure(figsize=(10, 6))
     plt.plot(wl * 1e9, T, label="T (Modal) = |S21|^2", color='blue')
     plt.plot(wl * 1e9, R, label="R (Modal) = |S11|^2", color='red')
-    plt.title(f"Simple Bragg Grating Response\nPeriods: {N_total}")
+    plt.title(f"Simple Bragg Grating Response\nPeriods: {sim.n_periods}")
     plt.xlabel("Wavelength [nm]")
     plt.ylabel("Normalized power")
     plt.legend()
@@ -502,4 +472,15 @@ def run_simple_sim():
 
 
 if __name__ == "__main__":
-    run_simple_sim()
+    # Create config — override simple grating defaults here:
+    cfg = SimulationConfig()
+    cfg.spectral.center_wavelength_m = 1.560e-6
+    cfg.spectral.scan_width_nm = 42.0
+    cfg.mesh.span_multiplier = 1.8
+    cfg.phase_correction.do_envelope_correction = False
+
+    # Example overrides:
+    # cfg.simple_grating.n_periods_total = 80
+    # cfg.geometry.core_height_m = 400e-9
+
+    run_simple_sim(cfg)

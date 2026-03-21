@@ -6,6 +6,7 @@
 % 4. Highlights radiation region (|kx| < k_clad) vs decaying bound region (|kx| > k_clad).
 % Evaluates BOTH XY (Top View) and YZ (Cross Section at Phase Shift).
 
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 clear; clc;
 %close all;
 

@@ -1,4 +1,5 @@
 % MATLAB Script: calculate_overlap_all_strategies.m
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 % --- USER CONFIGURATION ---
 N_short = 80;       % Periods (each side) for the short device
 N_long  = 150;      % Periods (each side) for the long device

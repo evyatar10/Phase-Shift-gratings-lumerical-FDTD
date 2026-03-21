@@ -5,6 +5,7 @@
 %   Figure 2: Side monitor grid (near-field + far-field at each Y distance)
 %   Figure 3: FWHM half-angle vs monitor distance (convergence plot)
 
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 clear; clc;
 close all;
 

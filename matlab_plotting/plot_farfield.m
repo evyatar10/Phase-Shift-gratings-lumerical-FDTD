@@ -15,6 +15,7 @@
 %
 % All analysis parameters (HALF_ANGLE, CUSTOM_ANGLE_DEG) are defined here only.
 
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 clear; clc;
 %close all;
 

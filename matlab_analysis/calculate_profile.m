@@ -1,4 +1,5 @@
 % MATLAB Script: calculate_profile_fwhm_comparison.m
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 
 % --- USER CONFIGURATION ---
 % Path to your result file

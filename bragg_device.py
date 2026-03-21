@@ -8,8 +8,8 @@ import analysis
 try:
     import lumapi
 except ImportError:
-    LUMAPI_PATH = r"C:\\Program Files\\Lumerical\\v252\\api\\python\\lumapi.py"
-    spec = importlib.util.spec_from_file_location("lumapi", LUMAPI_PATH)
+    import config as _cfg
+    spec = importlib.util.spec_from_file_location("lumapi", _cfg.LUMAPI_PATH)
     lumapi = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(lumapi)
 
@@ -62,7 +62,7 @@ class PiShiftBraggFDTD:
         self.n_periods_each_side = n_periods_each_side
 
         if n_apod_periods_each_side is None:
-            self.n_apod_periods_each_side = n_periods_each_side
+            self.n_apod_periods_each_side = 0
         else:
             self.n_apod_periods_each_side = max(
                 1, min(n_apod_periods_each_side, n_periods_each_side)
@@ -273,7 +273,6 @@ class PiShiftBraggFDTD:
 
     def _add_aligned_mesh_override(self, cells_per_half_period=5, max_cavity_dx=40e-9):
         fdtd = self.fdtd
-        import math
         half_pitch = 0.5 * self.pitch
         n_cells_half = max(1, int(cells_per_half_period))
         dx_grating = half_pitch / float(n_cells_half)
@@ -457,9 +456,9 @@ class PiShiftBraggFDTD:
             fdtd.set("x span", x_span_xy)
             fdtd.set("y", 0)
             fdtd.set("y span", y_span_val)
-            fdtd.set("z", 0)  # Locked to core center 
-            
-            # Safe settings to save space
+            fdtd.set("z", 0)  # Locked to core center
+
+            # Defaults (overridden by apply_monitor_overrides after build)
             fdtd.set("override global monitor settings", 1)
             fdtd.set("use source limits", 1)
             fdtd.set("frequency points", 5)
@@ -559,18 +558,8 @@ class PiShiftBraggFDTD:
         self.fdtd.setglobalsource("wavelength stop", self.lam_max)
         self.fdtd.setglobalmonitor("frequency points", self.n_wl_points)
         self.fdtd.setnamed("FDTD::ports", "monitor frequency points", self.n_wl_points)
-
-        # Protect all large monitors from having too many frequency points
-        if self.record_2d_fields_top_and_cross:
-            self.fdtd.setnamed("field_profile_2D_XY", "frequency points", 5)
-            self.fdtd.setnamed("field_profile_2D_YZ_cross", "frequency points", 5)
-            
-        if self.record_3d_fields:
-            self.fdtd.setnamed("field_profile_3D", "frequency points", 5)
-            
-        if self.record_farfield:
-            self.fdtd.setnamed("side_monitor", "frequency points", 1)
-            self.fdtd.setnamed("top_monitor", "frequency points", 1)
+        # Note: frequency points for 2D/3D/far-field monitors are set by
+        # apply_monitor_overrides() in sim_helpers.py after this call.
 
     def close(self):
         try:

@@ -5,6 +5,7 @@
 % 3. Converts to K-Space and compares absolute dB power profiles at BOTH core and boundary.
 % Now does this for both XY (Top View) and YZ (Cross Section at Phase Shift).
 
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 clear; close all; clc;
 
 %% --- Configuration ---

@@ -1,5 +1,5 @@
 % MATLAB Script: batch_overlap_analysis.m
-
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 % --- USER CONFIGURATION ---
 % Reference "Short" Device
 N_short = 80;

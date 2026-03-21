@@ -2,6 +2,7 @@
 % Extracts the YZ cross-section field profile, draws a circular extraction
 % boundary, and plots the field power versus the angle along that circle.
 
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 clear; close all; clc;
 
 %% --- Configuration ---

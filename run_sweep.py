@@ -1,337 +1,89 @@
-import shutil
-import time
-import os
+"""
+Parameter sweep runner for Pi-Shift Bragg Grating FDTD.
+
+Runs run_simulation.run_single_sim() once per value in sweep.values,
+overriding the parameter specified by sweep.parameter each iteration.
+Post-simulation analysis for each run is handled by post_processing.py.
+
+Usage:
+    python run_sweep.py
+
+Configure the sweep in the __main__ block below, or import and call:
+    from simulation_config import SimulationConfig
+    from run_sweep import run_sweep
+    cfg = SimulationConfig()
+    cfg.sweep.parameter = "grating.n_periods_each_side"
+    cfg.sweep.values = [80, 100, 120]
+    run_sweep(cfg)
+"""
+
+import copy
 import gc
+
 import matplotlib.pyplot as plt
-import scipy.io as sio
-import scipy.integrate
-import scipy.signal
-from scipy.interpolate import interp1d
-import numpy as np
-from bragg_device import PiShiftBraggFDTD
-import analysis
-import config
+
+from simulation_config import SimulationConfig, set_nested_attr
+from run_simulation import run_single_sim
 
 
-# --- HELPER FUNCTIONS ---
+def run_sweep(base_cfg: SimulationConfig) -> None:
+    """
+    Run the simulation once per sweep value, overriding the target parameter.
 
-def find_bragg_resonance(wl, T):
-    stopband_indices = np.where(T < 0.6)[0]
-    if len(stopband_indices) == 0:
-        stopband_indices = np.where(T < 0.85)[0]
-    if len(stopband_indices) == 0:
-        print("Warning: No stopband detected. Using global maximum.")
-        return np.argmax(T)
-    idx_start = stopband_indices[0]
-    idx_end = stopband_indices[-1]
-    T_roi = T[idx_start: idx_end + 1]
-    return idx_start + np.argmax(T_roi)
+    Uses dot notation from base_cfg.sweep.parameter to identify the config field.
+    Each iteration receives a deep copy of the config so changes don't leak.
+    """
+    param_path = base_cfg.sweep.parameter
+    values = base_cfg.sweep.values
 
+    print(f"{'=' * 60}")
+    print(f"PARAMETER SWEEP")
+    print(f"  Parameter : {param_path}")
+    print(f"  Values    : {values}")
+    print(f"  INTERCONNECT export: {base_cfg.run.export_interconnect}")
+    print(f"{'=' * 60}\n")
 
-def calculate_fwhm_relative(x, y):
-    y_max, y_min = np.max(y), np.min(y)
-    target_level = y_min + 0.5 * (y_max - y_min)
-    signs = np.sign(y - target_level)
-    zero_crossings = np.where(np.diff(signs))[0]
-    if len(zero_crossings) >= 2:
-        def get_x_interp(idx):
-            y1, y2 = y[idx], y[idx + 1]
-            x1, x2 = x[idx], x[idx + 1]
-            slope = (y2 - y1) / (x2 - x1)
-            return x1 + (target_level - y1) / slope if slope != 0 else x1
+    for i, value in enumerate(values):
+        print(f"\n>>> RUN {i + 1}/{len(values)}: {param_path} = {value} <<<\n")
 
-        return get_x_interp(zero_crossings[-1]) - get_x_interp(zero_crossings[0])
-    return 0.0
-
-
-def extract_envelope_peaks(x, y):
-    y = np.squeeze(y)
-    x = np.squeeze(x)
-    if y.ndim == 0: y = np.atleast_1d(y)
-    if x.ndim == 0: x = np.atleast_1d(x)
-    peaks, _ = scipy.signal.find_peaks(y)
-    if len(peaks) < 2: return y
-    f_interp = interp1d(x[peaks], y[peaks], kind='cubic', bounds_error=False, fill_value=(y[peaks[0]], y[peaks[-1]]))
-    return f_interp(x)
-
-
-def extract_and_process_field_profile(sim, target_wl):
-    field_data = sim.fdtd.getresult("field_profile", "E")
-    f_lam = np.squeeze(field_data['lambda'])
-    f_x = np.squeeze(field_data['x'])
-    f_y = np.squeeze(field_data['y'])
-    idx_mon = np.argmin(np.abs(f_lam - target_wl))
-
-    f_E = field_data['E']
-    if f_E.ndim == 5:
-        E_res = f_E[:, :, 0, idx_mon, :]
-    elif f_E.ndim == 4:
-        E_res = f_E[:, :, idx_mon, :]
-    else:
-        E_res = f_E[..., idx_mon, :]
-
-    I_xy = np.sum(np.abs(E_res) ** 2, axis=-1)
-    I_x_1D = scipy.integrate.trapezoid(I_xy, f_y, axis=1)
-    I_x_1D = np.squeeze(I_x_1D)
-
-    valid_indices = np.abs(f_x) <= sim.x_grating_end
-    f_x = f_x[valid_indices]
-    I_x_1D = I_x_1D[valid_indices]
-    I_x_envelope = extract_envelope_peaks(f_x, I_x_1D)
-    fwhm_val = calculate_fwhm_relative(f_x, I_x_envelope)
-
-    return f_x, I_x_1D, I_x_envelope, fwhm_val, f_lam[idx_mon]
-
-
-# --- SWEEP RUNNER ---
-
-def run_parameter_sweep():
-    # Sweep Parameters
-    N_periods_list = [80]
-
-    # Common Config
-    lambda_res_est = 1.562673e-6    #1.56232e-6
-    n_3d_points = 51
-    record_3d_fields = False
-    export_interconnect_data = True
-
-    pitch = 500e-9
-    cav_len = pitch / 2.0
-    N_reference_for_crop = 80 #N_periods_list[0]
-    crop_len_m = 2.0 * (N_reference_for_crop * pitch) + cav_len + 1.0e-6
-
-    scan_width_nm = 30.0
-    n_points_global = 3001
-    core_h = 350e-9
-    w_wide = 900e-9
-    w_narrow = 700e-9
-
-    span_multiplier = 1.8 
-    calc_y_span = w_wide + span_multiplier * lambda_res_est
-    calc_z_span = core_h + span_multiplier * lambda_res_est
-
-    # NEW: dynamic monitor placement distance
-    farfield_dist_wls = 0.3
-    calc_farfield_y = (calc_y_span / 2.0) - (farfield_dist_wls * lambda_res_est)
-    
-    # shrink the 2D side monitor Z-span so it stays exactly 0.3 wls inside the PML
-    calc_monitor_z_span = calc_z_span - 2.0 * farfield_dist_wls * lambda_res_est
-
-    print(f"--- SWEEP CONFIGURATION ---")
-    print(f"Sweeping N_periods: {N_periods_list}")
-    print(f"Center Wavelength: {lambda_res_est * 1e6:.3f} um")
-    print(f"3D Monitor: {n_3d_points} points")
-    print(f"---------------------------\n")
-
-    for i, N_periods in enumerate(N_periods_list):
-        print(f"\n>>> STARTING RUN {i + 1}/{len(N_periods_list)}: N_periods = {N_periods} <<<")
-
-        sim = PiShiftBraggFDTD(
-            pitch=pitch,
-            n_periods_each_side=N_periods,
-            n_apod_periods_each_side=5,
-            width_narrow=w_narrow,
-            width_wide=w_wide,
-            width_port=1000e-9,
-            core_height=core_h,
-            substrate_thickness=4e-6,
-            override_cavity_length_nm=False,
-            y_span=calc_y_span,
-            z_span=calc_z_span,
-            material_db_path=config.MATERIAL_DB_PATH,
-            n_periods_dist_to_port=20,
-            n_wls_dist_port_to_pml=5.0,
-            n_eff_guess=1.55,
-            n_wl_points=n_points_global,
-            use_apodization=True,
-            center_mod_depth_nm=10.0,
-            use_cavity_mesh_override=True,
-            use_symmetry=True,
-            use_z_symmetry=True,
-            use_constant_materials=True,
-            n_core_const=1.977,
-            record_3d_fields=record_3d_fields,
-            field_3d_span_m=None,  # None means record the full X span
-            monitor_y_span_m=calc_y_span,
-            monitor_z_span_m=calc_monitor_z_span,
-            downsample_yz=1,
-            
-            # --- FAR FIELD ---
-            record_farfield=True,
-            farfield_y_dist_m=calc_farfield_y,
-            farfield_z_dist_m=calc_farfield_y
-        )
-
-        N = sim.n_periods_each_side
-        Napod = sim.n_apod_periods_each_side
-        use_apod = bool(sim.use_apodization) and (Napod is not None) and (Napod > 0)
-        cav_tag = f"_L_cav_{int(sim.cavity_length * 1e9)}" if sim.cavity_length != sim.pitch / 2.0 else ""
-        mat_tag = "_CONST" if sim.use_constant_materials else ""
-        base_tag = f"{N}_periods_{Napod}_apodizations{cav_tag}{mat_tag}" if use_apod else f"{N}_periods{cav_tag}{mat_tag}"
-        file_tag = f"{base_tag}_3D_crop" if record_3d_fields else base_tag
-
-        layout_path = os.path.join(config.LAYOUTS_DIR, f"layout_{file_tag}.fsp")
-        results_path = os.path.join(config.RESULTS_DIR, f"result_{file_tag}.mat")
+        iter_cfg = copy.deepcopy(base_cfg)
+        set_nested_attr(iter_cfg, param_path, value)
 
         try:
-            sim.build()
-            sim.update_scan(center_lambda_m=lambda_res_est, width_nm=scan_width_nm, n_points=n_points_global)
-
-            if record_3d_fields:
-                sim.fdtd.setnamed("field_profile_3D", "frequency points", n_3d_points)
-                print(f"Override: Set 3D monitor to {n_3d_points} points.")
-
-            sim.fdtd.save(layout_path)
-
-            start_time = time.perf_counter()
-            sim.fdtd.run()
-            print(f"Run finished in {time.perf_counter() - start_time:.2f} sec")
-
-            # --- PROCESS S-PARAMS (Standard) ---
-            wl, R, T, Loss, T_mat, S11, S21 = sim.get_s_and_t_matrix(
-                neff_mat_file=config.NEFF_DATA_PATH, correct_length=True, correct_envelope_and_t_phase=True
-            )
-            idx_peak = find_bragg_resonance(wl, T)
-            target_wl = wl[idx_peak]
-            print(f"Resonance at: {target_wl * 1e9:.2f} nm")
-
-            # --- PROCESS 2D PROFILE ---
-            f_x, I_x_1D, I_x_envelope, fwhm_val, actual_mon_wl = extract_and_process_field_profile(sim, target_wl)
-
-            # --- EXTRACT 3D DATA (Modified to keep all wavelengths) ---
-            field_3d_data = {}
-            if sim.record_3d_fields:
-                print("Extracting 3D Field...")
-                res_3d = sim.fdtd.getresult("field_profile_3D", "E")
-                lam_3d = np.squeeze(res_3d['lambda'])
-
-                print(f"Saving 3D field for all {len(lam_3d)} frequency points.")
-
-                # IMPORTANT: Save full data (no slicing on freq axis)
-                E_full = res_3d['E']
-
-                field_3d_data = {
-                    'x': np.squeeze(res_3d['x']),
-                    'y': np.squeeze(res_3d['y']),
-                    'z': np.squeeze(res_3d['z']),
-                    'E_res': E_full,
-                    'lambda_3d': lam_3d
-                }
-                del res_3d, E_full
-                
-            monitor_YZ_data = {}
-            monitor_XY_data = {}
-            if getattr(sim, 'record_farfield', False):
-                print("Extracting Near Field and Far Field from Transverse Monitors (YZ and XY)...")
-                
-                def extract_1d_plane(mname, sweep_axis):
-                    res = sim.fdtd.getresult(mname, 'E')
-                    if res is None: return {}
-                    
-                    wl_m_temp = np.atleast_1d(np.squeeze(res['lambda']))
-                    idx_f = np.argmin(np.abs(wl_m_temp - target_wl))
-                    idx_f_1_based = int(idx_f + 1)
-                    actual_wl = float(wl_m_temp[idx_f])
-                    
-                    nf_x = np.squeeze(res['x'])
-                    nf_y = np.squeeze(res['y'])
-                    nf_z = np.squeeze(res['z'])
-                    nf_E = res['E']
-                    
-                    if nf_E.ndim == 5:
-                        nf_E_res = nf_E[:, :, :, idx_f, :]
-                    elif nf_E.ndim == 4:
-                        nf_E_res = nf_E[:, :, idx_f, :]
-                    else:
-                        nf_E_res = nf_E[..., idx_f, :]
-                        
-                    script = f"""
-                    mname = '{mname}';
-                    idx_f = {idx_f_1_based};
-                    """
-                    if sweep_axis == 'ux':
-                        script += """
-                        ux = linspace(-0.9999, 0.9999, 3001);
-                        uy = 0;
-                        """
-                    else:
-                        script += """
-                        uy = linspace(-0.9999, 0.9999, 3001);
-                        ux = 0; 
-                        """
-                    script += "E_ff = farfieldexact3d(mname, ux, uy, idx_f);"
-                    
-                    sim.fdtd.eval(script)
-                    
-                    ux_out = np.squeeze(sim.fdtd.getv("ux"))
-                    uy_out = np.squeeze(sim.fdtd.getv("uy"))
-                    E_ff_out = np.squeeze(sim.fdtd.getv("E_ff"))
-                    
-                    if E_ff_out.ndim == 2:
-                        Ex_out = E_ff_out[..., 0]
-                        Ey_out = E_ff_out[..., 1]
-                        Ez_out = E_ff_out[..., 2]
-                    else:
-                        Ex_out, Ey_out, Ez_out = 0, 0, 0
-
-                    return {
-                        'nf_x': nf_x, 'nf_y': nf_y, 'nf_z': nf_z, 'nf_E': nf_E_res,
-                        'ff_ux': ux_out, 'ff_uy': uy_out,
-                        'ff_Ex': Ex_out, 'ff_Ey': Ey_out, 'ff_Ez': Ez_out,
-                        'f_monitor': actual_wl
-                    }
-
-                monitor_YZ_data = extract_1d_plane('monitor_YZ', sweep_axis='ux')  # Project along X
-
-                # --- SAVE RESULTS (Updated to match run_simulation.py keys) ---
-            mat_data = {
-                'wl_m': wl,
-                'wl_nm': wl * 1e9,  # ADDED: Standard wavelength vector in nm
-                'T': T,
-                'R': R,  # ADDED: Reflection
-                'loss': Loss,  # ADDED: Loss
-                'T_matrix': T_mat,  # ADDED: T-Matrix
-                'S11_complex': S11,  # ADDED: Complex S11
-                'S21_complex': S21,  # ADDED: Complex S21 (same as previous 'S21_complex')
-                'L_device': 2.0 * sim.x_grating_end,
-                'field_x': f_x,
-                'field_energy_density_1D': I_x_1D,
-                'field_envelope_1D': I_x_envelope,  # ADDED: Envelope 1D
-                'fwhm_m': fwhm_val,  # ADDED: FWHM
-                'field_3d': field_3d_data,
-                'monitor_YZ': monitor_YZ_data
-            }
-            sio.savemat(results_path, mat_data)
-            print(f"Saved: {results_path}")
-
-            if export_interconnect_data:
-                _, _, _, _, _, S11_int, S21_int = sim.get_s_and_t_matrix(
-                    neff_mat_file=config.NEFF_DATA_PATH, correct_length=True, correct_envelope_and_t_phase=True
-                )
-                int_file = os.path.join(config.RESULTS_DIR, f"interconnect_symmetric_{file_tag}.txt")
-                analysis.export_for_interconnect_symmetric(int_file, wl, S11_int, S21_int)
-
+            run_single_sim(iter_cfg)
+        except Exception as e:
+            print(f"ERROR in sweep iteration {i + 1}: {e}")
+            raise
         finally:
-            sim.close()
-            del sim
+            plt.close("all")  # prevent figure accumulation across sweep iterations
             gc.collect()
-            print("Memory cleared.")
-            
-            # Cleanup FDTD memory files (h5 and fsp) to save disk space
-            try:
-                import glob
-                # Lumerical creates a folder with the same name as the .fsp file (minus the extension)
-                data_dir = layout_path.replace(".fsp", "")
-                if os.path.exists(data_dir):
-                    h5_files = glob.glob(os.path.join(data_dir, "*.h5"))
-                    for h5_file in h5_files:
-                        os.remove(h5_file)
-                        print(f"Cleaned up {h5_file}")
-            except Exception as e:
-                print(f"Warning: Could not clean up Lumerical temp files: {e}")
-            
-            print("Iteration complete.\n")
+            print("Memory cleared.\n")
 
+    print(f"\n{'=' * 60}")
+    print(f"SWEEP COMPLETE: {len(values)} runs finished.")
+    print(f"{'=' * 60}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Entry point
+# ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    run_parameter_sweep()
+    cfg = SimulationConfig()
+
+    # ── Configure the sweep ──────────────────────────────────────────────
+    cfg.sweep.parameter = "grating.n_periods_each_side"
+    cfg.sweep.values = [80, 100, 120]
+
+    # ── Runtime options ──────────────────────────────────────────────────
+    # cfg.run.export_interconnect = False   # Skip INTERCONNECT .txt export
+    # cfg.run.cleanup_lumerical_data = True # Delete .h5 temp files after each run
+
+    # ── Override base config for all sweep runs (optional) ───────────────
+    # cfg.spectral.center_wavelength_m = 1.562673e-6
+    # cfg.spectral.scan_width_nm = 30.0
+    # cfg.apodization.n_apod_periods_each_side = 5
+    # cfg.monitors.record_3d_fields = True
+    # cfg.farfield.enabled = True
+
+    run_sweep(cfg)
