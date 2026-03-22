@@ -29,13 +29,13 @@ card = ExperimentCard(
     pitch_nm=PITCH_NM,
     corrugation_depth_nm=500,
     center_mod_depth_nm=4,
-    apod_method='tanh',
+    apod_method='none',
     tanh_steepness=0.4,
     cavity_length_nm=CAVITY_LENGTH_NM,
     label="528nm-pitch tanh sweep",
 )
 
-cfg = card.to_sweep_config("n_periods_each_side", [60, 80, 100, 120])
+cfg = card.to_sweep_config("n_periods_each_side", [60])
 
 if __name__ == "__main__":
     run_sweep(cfg)

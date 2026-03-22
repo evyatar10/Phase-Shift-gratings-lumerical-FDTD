@@ -208,7 +208,8 @@ def generate_file_tag(sim):
     """
     Generate a descriptive file tag from simulation parameters.
 
-    Returns a string like: "100_periods_10_apodizations_CONST"
+    Returns a string like: "100_periods_10_apod_CONST" (linear)
+                        or "100_periods_10_apod_tanh_CONST" (tanh)
     """
     N = sim.n_periods_each_side
     Napod = sim.n_apod_periods_each_side
@@ -221,7 +222,8 @@ def generate_file_tag(sim):
     mat_tag = "_CONST" if sim.use_constant_materials else ""
 
     if use_apod:
-        return f"{N}_periods_{Napod}_apodizations{cav_tag}{mat_tag}"
+        tanh_tag = "_tanh" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""
+        return f"{N}_periods_{Napod}_apod{tanh_tag}{cav_tag}{mat_tag}"
     else:
         return f"{N}_periods{cav_tag}{mat_tag}"
 

@@ -45,7 +45,7 @@ class ExperimentCard:
 
     n_periods_each_side: int = 40
     center_mod_depth_nm: float = 10.0
-    apod_method: str = 'linear'
+    apod_method: str = 'none'
     tanh_steepness: float = 2.0
     corrugation_depth_nm: float = 200.0
     pitch_nm: float = 500.0
@@ -66,7 +66,6 @@ class ExperimentCard:
         cfg.grating.pitch_m = self.pitch_nm * 1e-9
         cfg.geometry.corrugation_depth_m = self.corrugation_depth_nm * 1e-9
         cfg.apodization.center_mod_depth_nm = self.center_mod_depth_nm
-        cfg.apodization.method = self.apod_method
         cfg.apodization.tanh_steepness = self.tanh_steepness
 
         if self.cavity_length_nm is not None:
@@ -75,9 +74,13 @@ class ExperimentCard:
         if self.n_apod_periods_each_side is not None:
             cfg.apodization.n_apod_periods_each_side = self.n_apod_periods_each_side
 
-        # Auto-enable apodization when center depth differs from full corrugation
-        if self.center_mod_depth_nm < self.corrugation_depth_nm:
-            cfg.apodization.enabled = True
+        if self.apod_method == 'none':
+            cfg.apodization.enabled = False
+        else:
+            cfg.apodization.method = self.apod_method
+            # Auto-enable apodization when center depth differs from full corrugation
+            if self.center_mod_depth_nm < self.corrugation_depth_nm:
+                cfg.apodization.enabled = True
 
         return cfg
 

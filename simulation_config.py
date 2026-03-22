@@ -62,7 +62,8 @@ class ApodizationConfig:
     """
     Apodization settings (width modulation tapering).
 
-    Two profile methods are supported:
+    Three profile methods are supported:
+    - 'none': no apodization — uniform grating with constant corrugation depth.
     - 'linear': modulation depth varies linearly from center_mod_depth_nm
       at the cavity to the full corrugation_depth at the grating edges.
     - 'tanh': modulation depth follows tanh(a * 2 * frac) / tanh(2 * a),
@@ -86,7 +87,8 @@ class ApodizationConfig:
 class SpectralConfig:
     """Wavelength scan range and frequency resolution."""
     center_wavelength_m: float = 1.5625e-6      # Center of the wavelength scan
-    scan_width_nm: float = 16.0                 # Total scan bandwidth (nm)
+    # pervious was 16.0 nm, at 1.5625e-6  
+    scan_width_nm: float = 200.0                 # Total scan bandwidth (nm)
     n_wl_points: int = 3001                     # Number of wavelength points (S-parameters)
     n_2d_monitor_points: int = 51               # Frequency points for 2D/3D monitors
 
@@ -148,7 +150,7 @@ class MonitorConfig:
 @dataclass
 class FarFieldConfig:
     """Far-field radiation monitor settings."""
-    enabled: bool = True                        # Enable side and top far-field monitors
+    enabled: bool = False                        # Enable side and top far-field monitors
     farfield_x_span_m: float = 30e-6            # X extent of far-field monitors
     farfield_dist_wls: float = 0.8              # Monitor distance from PML edge (in wavelengths)
     ff_resolution: int = 201                    # Far-field ux/uy grid resolution
