@@ -36,6 +36,8 @@ _CARD_FIELD_MAP = {
     "pitch_nm":                ("grating.pitch_m",                    lambda v: v * 1e-9),
     "n_apod_periods_each_side": ("apodization.n_apod_periods_each_side", None),
     "cavity_length_nm":         ("grating.override_cavity_length_nm",   None),
+    "center_wavelength_nm":     ("spectral.center_wavelength_m",        lambda v: v * 1e-9),
+    "scan_width_nm":            ("spectral.scan_width_nm",              None),
 }
 
 
@@ -51,6 +53,8 @@ class ExperimentCard:
     pitch_nm: float = 500.0
     cavity_length_nm: Optional[float] = None    # None = default (pitch / 2)
     n_apod_periods_each_side: Optional[int] = None
+    center_wavelength_nm: Optional[float] = None  # None = use SimulationConfig default (1562.5 nm)
+    scan_width_nm: Optional[float] = None         # None = use SimulationConfig default (200 nm)
     label: str = ''
 
     def to_config(self, base: Optional[SimulationConfig] = None) -> SimulationConfig:
@@ -73,6 +77,12 @@ class ExperimentCard:
 
         if self.n_apod_periods_each_side is not None:
             cfg.apodization.n_apod_periods_each_side = self.n_apod_periods_each_side
+
+        if self.center_wavelength_nm is not None:
+            cfg.spectral.center_wavelength_m = self.center_wavelength_nm * 1e-9
+
+        if self.scan_width_nm is not None:
+            cfg.spectral.scan_width_nm = self.scan_width_nm
 
         if self.apod_method == 'none':
             cfg.apodization.enabled = False
@@ -118,6 +128,16 @@ class ExperimentCard:
 # Convenience runners
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def _print_card_results(results: dict) -> None:
+    """Print the key spectral results from a completed experiment card."""
+    res_nm  = results.get('resonance_wavelength_nm')
+    fwhm_nm = results.get('spectral_fwhm_nm')
+    if res_nm is not None:
+        print(f"  Resonance : {res_nm:.3f} nm")
+    if fwhm_nm is not None:
+        print(f"  Δλ (FWHM) : {fwhm_nm:.4f} nm")
+
+
 def run_card(card: ExperimentCard, base: Optional[SimulationConfig] = None) -> dict:
     """Run a single simulation from an experiment card."""
     from run_simulation import run_single_sim
@@ -125,7 +145,9 @@ def run_card(card: ExperimentCard, base: Optional[SimulationConfig] = None) -> d
     print(f"\n{'=' * 60}")
     print(f"EXPERIMENT: {card.label or card}")
     print(f"{'=' * 60}\n")
-    return run_single_sim(card.to_config(base))
+    results = run_single_sim(card.to_config(base))
+    _print_card_results(results)
+    return results
 
 
 def run_cards(
@@ -142,6 +164,7 @@ def run_cards(
         print(f"\n>>> CARD {i + 1}/{len(cards)}: {card.label or card} <<<\n")
         try:
             r = run_single_sim(card.to_config(base))
+            _print_card_results(r)
             results.append(r)
         except Exception as e:
             print(f"ERROR in card {i + 1}: {e}")

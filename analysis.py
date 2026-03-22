@@ -3,30 +3,16 @@ import scipy.io as sio
 from scipy.interpolate import interp1d
 import scipy.constants as xc
 import os
+from sim_helpers import find_bragg_resonance
 
 
 def align_phases_at_resonance_peak(wl, S11, S21, target_phase=0.5 * np.pi):
     """
-    Aligns phases by finding the resonance peak using a "Stopband Logic".
+    Aligns phases by finding the resonance peak and shifting S-parameter
+    phases so that S21 has the target phase at the resonance wavelength.
     """
-    # Calculate Transmission scalar
     T = np.abs(S21) ** 2
-
-    # 1. Define Stopband Mask
-    is_stopband = T < 0.5
-    if not np.any(is_stopband):
-        is_stopband = T < 0.8
-
-    # 2. Find Resonance Peak Index
-    if np.any(is_stopband):
-        stopband_indices = np.where(is_stopband)[0]
-        idx_start = stopband_indices[0]
-        idx_end = stopband_indices[-1]
-        T_roi = T[idx_start: idx_end + 1]
-        local_peak_idx = np.argmax(T_roi)
-        idx_peak = idx_start + local_peak_idx
-    else:
-        idx_peak = np.argmax(T)
+    idx_peak = find_bragg_resonance(wl, T)
 
     # 3. Get Phase at that specific Peak
     current_phase_val = np.angle(S21[idx_peak])

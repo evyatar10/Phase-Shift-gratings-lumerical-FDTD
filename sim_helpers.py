@@ -80,29 +80,34 @@ def extract_monitor_nearfield(fdtd, monitor_name):
 
 # ── Resonance detection ──────────────────────────────────────────────────────
 
-def find_bragg_resonance(wl, T, stopband_threshold=0.6, fallback_threshold=0.85):
+def find_bragg_resonance(wl, T):
     """
-    Find the resonance peak index by identifying the stopband region.
+    Find the cavity resonance peak using a threshold-free combined metric.
 
-    Looks for a transmission dip (stopband) and finds the peak within it.
-    Falls back to global maximum if no stopband is detected.
+    Scores every local maximum by  sharpness × dip_depth:
+      - sharpness  = prominence / (width + 1)   →  high for narrow peaks
+      - dip_depth  = 1 - base_level             →  high for peaks inside the bandgap
+
+    The cavity resonance wins because it is simultaneously the sharpest
+    feature AND sits inside the deepest dip (the stopband floor ≈ 0).
     """
-    stopband_indices = np.where(T < stopband_threshold)[0]
+    from scipy.signal import find_peaks, peak_prominences, peak_widths
 
-    if len(stopband_indices) == 0:
-        stopband_indices = np.where(T < fallback_threshold)[0]
+    peaks, _ = find_peaks(T)
 
-    if len(stopband_indices) == 0:
-        print("Warning: No stopband detected. Using global maximum.")
+    if len(peaks) == 0:
+        print("Warning: No peaks detected. Using global maximum.")
         return np.argmax(T)
 
-    idx_start = stopband_indices[0]
-    idx_end = stopband_indices[-1]
+    prominences, left_bases, right_bases = peak_prominences(T, peaks)
+    widths, _, _, _ = peak_widths(T, peaks, rel_height=0.5)
 
-    T_roi = T[idx_start: idx_end + 1]
-    local_peak_idx = np.argmax(T_roi)
+    sharpness = prominences / (widths + 1)
+    base_level = 0.5 * (T[left_bases] + T[right_bases])
+    dip_depth = 1.0 - base_level
+    score = sharpness * dip_depth
 
-    return idx_start + local_peak_idx
+    return peaks[np.argmax(score)]
 
 
 # ── Field profile processing ─────────────────────────────────────────────────

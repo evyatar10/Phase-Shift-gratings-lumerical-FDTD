@@ -64,9 +64,10 @@ class SParameters:
 @dataclass
 class ResonanceResult:
     """Location of the cavity resonance peak."""
-    idx:           int    # Index into S-parameter wavelength array
-    wavelength_m:  float  # Resonance wavelength [m]
-    transmission:  float  # Transmission at resonance (peak value inside stopband)
+    idx:             int    # Index into S-parameter wavelength array
+    wavelength_m:    float  # Resonance wavelength [m]
+    transmission:    float  # Transmission at resonance (peak value inside stopband)
+    spectral_fwhm_m: float  # Half-power (3 dB) spectral bandwidth [m]
 
 
 @dataclass
@@ -109,12 +110,18 @@ def find_resonance(s_params: SParameters) -> ResonanceResult:
 
     Uses stopband-based detection (looks for the transmission peak inside
     the low-T region). Falls back to the global maximum if no stopband is found.
+    Also computes the half-power (3 dB) spectral bandwidth via peak_widths.
     """
+    from scipy.signal import peak_widths
+
     idx = find_bragg_resonance(s_params.wl, s_params.T)
+    widths, _, _, _ = peak_widths(s_params.T, [idx], rel_height=0.5)
+    dw = float(s_params.wl[1] - s_params.wl[0])
     return ResonanceResult(
         idx=idx,
         wavelength_m=float(s_params.wl[idx]),
         transmission=float(s_params.T[idx]),
+        spectral_fwhm_m=float(widths[0]) * dw,
     )
 
 
@@ -282,6 +289,9 @@ def assemble_results(
         'T_matrix':      s_params.T_mat,
         'S11_complex':   s_params.S11,
         'S21_complex':   s_params.S21,
+        # Resonance
+        'resonance_wavelength_nm': resonance.wavelength_m * 1e9,
+        'spectral_fwhm_nm':        resonance.spectral_fwhm_m * 1e9,
         # Device geometry
         'L_device':      2.0 * sim.x_grating_end,
         # 1D field profile
