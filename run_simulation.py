@@ -47,6 +47,8 @@ def run_single_sim(cfg: SimulationConfig) -> dict:
     tag = generate_file_tag(sim)
     if cfg.monitors.record_3d_fields:
         tag += "_3D"
+    if cfg.farfield.enabled:
+        tag += "_ff"
 
     layout_path  = os.path.join(config.LAYOUTS_DIR, f"layout_{tag}.fsp")
     results_path = os.path.join(config.RESULTS_DIR,  f"result_{tag}.mat")
@@ -69,14 +71,16 @@ def run_single_sim(cfg: SimulationConfig) -> dict:
     print(f"Simulation time: {time.perf_counter() - start:.3f} seconds")
 
     # ── 4. Post-simulation analysis (extraction → processing → saving) ────
-    results = post_processing.analyze_simulation(sim, cfg, results_path, tag)
+    try:
+        results = post_processing.analyze_simulation(sim, cfg, results_path, tag)
+    finally:
+        # ── 5. Cleanup temp files ─────────────────────────────────────────
+        if cfg.run.cleanup_lumerical_data:
+            _cleanup_lumerical_temp_files(layout_path)
 
-    # ── 5. Cleanup temp files ─────────────────────────────────────────────
-    if cfg.run.cleanup_lumerical_data:
-        _cleanup_lumerical_temp_files(layout_path)
+        plt.close("all")  # discard figures — do not block on plt.show()
+        sim.close()       # free Lumerical session memory
 
-    plt.show()
-    sim.close()
     return results
 
 

@@ -55,6 +55,7 @@ class ExperimentCard:
     n_apod_periods_each_side: Optional[int] = None
     center_wavelength_nm: Optional[float] = None  # None = use SimulationConfig default (1562.5 nm)
     scan_width_nm: Optional[float] = None         # None = use SimulationConfig default (200 nm)
+    farfield: bool = False                        # Enable far-field monitors
     label: str = ''
 
     def to_config(self, base: Optional[SimulationConfig] = None) -> SimulationConfig:
@@ -83,6 +84,8 @@ class ExperimentCard:
 
         if self.scan_width_nm is not None:
             cfg.spectral.scan_width_nm = self.scan_width_nm
+
+        cfg.farfield.enabled = self.farfield
 
         if self.apod_method == 'none':
             cfg.apodization.enabled = False

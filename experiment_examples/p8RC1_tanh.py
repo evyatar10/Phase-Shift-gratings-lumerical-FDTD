@@ -25,9 +25,10 @@ from run_sweep import run_sweep
 PITCH_NM = 528.0
 CAVITY_LENGTH_NM = PITCH_NM / 2 #- 105  # = 264 - 105 = 159 nm
 
-# Spectral window — adjust to bracket the expected resonance
-CENTER_WAVELENGTH_NM = 1625.582   # Estimated resonance wavelength (nm)
-SCAN_WIDTH_NM = 16.0           # Simulation scan bandwidth (nm)
+CENTER_WAVELENGTH_NM = 1631.194   # Estimated resonance wavelength (nm)
+SCAN_WIDTH_NM = 16.0              # Simulation scan bandwidth (nm)
+
+SWEEP_N_PERIODS = [60]  # n_periods_each_side values to sweep
 
 card = ExperimentCard(
     pitch_nm=PITCH_NM,
@@ -39,9 +40,9 @@ card = ExperimentCard(
     n_apod_periods_each_side=20,
     center_wavelength_nm=CENTER_WAVELENGTH_NM,
     scan_width_nm=SCAN_WIDTH_NM,
+    farfield=True,
     label="528nm-pitch tanh sweep",
 )
 
 if __name__ == "__main__":
-    cfg = card.to_sweep_config("n_periods_each_side", [60, 80, 100, 120])
-    run_sweep(cfg)
+    run_sweep(card.to_sweep_config("n_periods_each_side", SWEEP_N_PERIODS))
