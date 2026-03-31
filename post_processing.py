@@ -180,6 +180,14 @@ def extract_2d_fields(sim) -> dict:
     }
     del res_xy
 
+    try:
+        print("  Extracting Poynting vector for XY monitor...")
+        P_xy = sim.fdtd.getresult("field_profile_2D_XY", "P")
+        xy_data['P_res'] = P_xy['P']
+        del P_xy
+    except Exception as e:
+        print(f"  Warning: Could not extract Poynting vector for XY: {e}")
+
     print("Extracting 2D YZ (Cross Section View) data...")
     res_yz = sim.fdtd.getresult("field_profile_2D_YZ_cross", "E")
     yz_data = {
@@ -190,6 +198,14 @@ def extract_2d_fields(sim) -> dict:
         'lambda_3d': np.squeeze(res_yz['lambda']),
     }
     del res_yz
+
+    try:
+        print("  Extracting Poynting vector for YZ monitor...")
+        P_yz = sim.fdtd.getresult("field_profile_2D_YZ_cross", "P")
+        yz_data['P_res'] = P_yz['P']
+        del P_yz
+    except Exception as e:
+        print(f"  Warning: Could not extract Poynting vector for YZ: {e}")
 
     return {'xy': xy_data, 'yz_cross': yz_data}
 

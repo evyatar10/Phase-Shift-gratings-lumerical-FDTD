@@ -31,6 +31,7 @@ SCAN_WIDTH_NM = 16.0              # Simulation scan bandwidth (nm)
 SWEEP_N_PERIODS = [60]  # n_periods_each_side values to sweep
 
 card = ExperimentCard(
+    n_periods_each_side=60,         # explicit — was relying on old card default of 40
     pitch_nm=PITCH_NM,
     corrugation_depth_nm=500,
     center_mod_depth_nm=4,

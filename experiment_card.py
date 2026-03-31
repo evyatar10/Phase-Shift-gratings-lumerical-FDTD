@@ -43,57 +43,66 @@ _CARD_FIELD_MAP = {
 
 @dataclass
 class ExperimentCard:
-    """Simplified experiment specification — only the knobs that vary between devices."""
+    """
+    Simplified experiment specification — only the knobs that vary between devices.
 
-    n_periods_each_side: int = 40
-    center_mod_depth_nm: float = 10.0
-    apod_method: str = 'none'
-    tanh_steepness: float = 2.0
-    corrugation_depth_nm: float = 200.0
-    pitch_nm: float = 500.0
-    cavity_length_nm: Optional[float] = None    # None = default (pitch / 2)
+    All fields default to None, meaning "use SimulationConfig default".
+    Only explicitly set fields override the base config.
+    """
+
+    n_periods_each_side: Optional[int] = None
+    center_mod_depth_nm: Optional[float] = None
+    apod_method: Optional[str] = None              # 'none', 'linear', 'tanh', or None (use config default)
+    tanh_steepness: Optional[float] = None
+    corrugation_depth_nm: Optional[float] = None
+    pitch_nm: Optional[float] = None
+    cavity_length_nm: Optional[float] = None       # None = default (pitch / 2)
     n_apod_periods_each_side: Optional[int] = None
-    center_wavelength_nm: Optional[float] = None  # None = use SimulationConfig default (1562.5 nm)
-    scan_width_nm: Optional[float] = None         # None = use SimulationConfig default (200 nm)
-    farfield: bool = False                        # Enable far-field monitors
+    center_wavelength_nm: Optional[float] = None
+    scan_width_nm: Optional[float] = None
+    farfield: Optional[bool] = None
     label: str = ''
 
     def to_config(self, base: Optional[SimulationConfig] = None) -> SimulationConfig:
         """
         Produce a full SimulationConfig by applying card values on top of defaults.
 
+        Only fields explicitly set (non-None) override the base config.
         If *base* is provided it is deep-copied first; otherwise a fresh
         SimulationConfig() with all defaults is used.
         """
         cfg = copy.deepcopy(base) if base else SimulationConfig()
 
-        cfg.grating.n_periods_each_side = self.n_periods_each_side
-        cfg.grating.pitch_m = self.pitch_nm * 1e-9
-        cfg.geometry.corrugation_depth_m = self.corrugation_depth_nm * 1e-9
-        cfg.apodization.center_mod_depth_nm = self.center_mod_depth_nm
-        cfg.apodization.tanh_steepness = self.tanh_steepness
-
+        if self.n_periods_each_side is not None:
+            cfg.grating.n_periods_each_side = self.n_periods_each_side
+        if self.pitch_nm is not None:
+            cfg.grating.pitch_m = self.pitch_nm * 1e-9
+        if self.corrugation_depth_nm is not None:
+            cfg.geometry.corrugation_depth_m = self.corrugation_depth_nm * 1e-9
+        if self.center_mod_depth_nm is not None:
+            cfg.apodization.center_mod_depth_nm = self.center_mod_depth_nm
+        if self.tanh_steepness is not None:
+            cfg.apodization.tanh_steepness = self.tanh_steepness
         if self.cavity_length_nm is not None:
             cfg.grating.override_cavity_length_nm = self.cavity_length_nm
-
         if self.n_apod_periods_each_side is not None:
             cfg.apodization.n_apod_periods_each_side = self.n_apod_periods_each_side
-
         if self.center_wavelength_nm is not None:
             cfg.spectral.center_wavelength_m = self.center_wavelength_nm * 1e-9
-
         if self.scan_width_nm is not None:
             cfg.spectral.scan_width_nm = self.scan_width_nm
+        if self.farfield is not None:
+            cfg.farfield.enabled = self.farfield
 
-        cfg.farfield.enabled = self.farfield
-
-        if self.apod_method == 'none':
-            cfg.apodization.enabled = False
-        else:
-            cfg.apodization.method = self.apod_method
-            # Auto-enable apodization when center depth differs from full corrugation
-            if self.center_mod_depth_nm < self.corrugation_depth_nm:
-                cfg.apodization.enabled = True
+        # Apodization enable/disable logic
+        if self.apod_method is not None:
+            if self.apod_method == 'none':
+                cfg.apodization.enabled = False
+            else:
+                cfg.apodization.method = self.apod_method
+                if (self.center_mod_depth_nm is not None
+                        and self.center_mod_depth_nm < cfg.geometry.corrugation_depth_m * 1e9):
+                    cfg.apodization.enabled = True
 
         return cfg
 
