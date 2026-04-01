@@ -493,6 +493,23 @@ class PiShiftBraggFDTD:
             fdtd.set("down sample y", self.downsample_yz)
             fdtd.set("down sample z", self.downsample_yz)
 
+            # 3. Side View (XZ Plane) — Y-normal at y=0
+            fdtd.addprofile()
+            fdtd.set("name", "field_profile_2D_XZ_side")
+            fdtd.set("monitor type", "2D Y-normal")
+            fdtd.set("x", 0)
+            fdtd.set("x span", x_span_xy)
+            fdtd.set("y", 0)
+            fdtd.set("z", 0)
+            fdtd.set("z span", z_span_val)
+
+            fdtd.set("override global monitor settings", 1)
+            fdtd.set("use source limits", 1)
+            fdtd.set("frequency points", 5)
+            # Downsampling
+            fdtd.set("down sample x", 1)
+            fdtd.set("down sample z", self.downsample_yz)
+
         # --- OPTIONAL FULL 3D MONITOR ---
         if self.record_3d_fields:
             if self.field_3d_span_m:

@@ -24,10 +24,10 @@ arrows_per_axis       = 30;
 min_skip              = 2;        % Never sample every single grid point
 arrow_color           = 'c';
 arrow_linewidth       = 0.9;
-arrow_scale           = 0.6;      % MATLAB quiver scale multiplier
+arrow_scale           = 0.45;     % MATLAB quiver scale multiplier
 poynting_threshold_dB = 55;       % Show arrows where field is within this many dB of max
 log_compress_k        = 10;       % log1p compression strength; higher = more uniform sizes
-arrow_min_frac        = 0.35;     % Minimum arrow length as fraction of max (0=none, 1=all equal)
+arrow_min_frac        = 0.60;     % Minimum arrow length as fraction of max (0=none, 1=all equal)
 jitter_frac           = 0.0;      % Sampling jitter as fraction of skip (0=grid, 0.5=±skip/2)
 
 % --- Geometry Overlay ---
@@ -74,6 +74,10 @@ end
 
 d_xy = data.field_xy;
 d_yz = data.field_yz_cross;
+has_xz = isfield(data, 'field_xz_side');
+if has_xz
+    d_xz = data.field_xz_side;
+end
 
 % XY plane
 x_xy = double(d_xy.x); y_xy = double(d_xy.y); z_xy = double(d_xy.z);
@@ -101,6 +105,22 @@ end
 has_poynting_yz = isfield(d_yz, 'P_res') && ~isempty(d_yz.P_res);
 if has_poynting_yz
     P_5D_yz = reshape(double(d_yz.P_res), [Nx_yz, Ny_yz, Nz_yz, Nlam, 3]);
+end
+
+% XZ plane
+if has_xz
+    x_xz = double(d_xz.x); y_xz = double(d_xz.y); z_xz = double(d_xz.z);
+    Nx_xz = length(x_xz); Ny_xz = length(y_xz); Nz_xz = length(z_xz);
+    E_5D_xz = reshape(d_xz.E_res, [Nx_xz, Ny_xz, Nz_xz, Nlam, 3]);
+
+    has_poynting_xz = isfield(d_xz, 'P_res') && ~isempty(d_xz.P_res);
+    if has_poynting_xz
+        P_5D_xz = reshape(double(d_xz.P_res), [Nx_xz, Ny_xz, Nz_xz, Nlam, 3]);
+    end
+
+    skip_x_xz = max(min_skip, round(Nx_xz / arrows_per_axis));
+    skip_z_xz = max(min_skip, round(Nz_xz / arrows_per_axis));
+    fprintf('XZ quiver grid: skip_x=%d, skip_z=%d (from %dx%d)\n', skip_x_xz, skip_z_xz, Nx_xz, Nz_xz);
 end
 
 if show_poynting && ~has_poynting_xy && ~has_poynting_yz
@@ -192,11 +212,53 @@ if show_geometry
 end
 hold off;
 
+%% --- 5. Plot XZ Plane (Side View) ---
+if has_xz
+    fprintf('--- XZ Plane (Side View) ---\n');
+
+    [~, idx_y0_xz] = min(abs(y_xz));
+    E_plane_xz = squeeze(E_5D_xz(:, idx_y0_xz, :, idx_lam, :));  % (Nx, Nz, 3)
+    I_xz = sum(abs(E_plane_xz).^2, 3);
+    I_xz_dB = 10 * log10(I_xz);
+
+    figure('Name', 'XZ Field + Poynting', 'Color', 'w', 'Position', [200 100 950 500]);
+    imagesc(x_xz*1e6, z_xz*1e6, I_xz_dB');
+    set(gca, 'YDir', 'normal');
+    colormap(field_colormap);
+
+    max_dB_xz = max(I_xz_dB(:));
+    try clim([max_dB_xz - dB_limit, max_dB_xz]); catch; caxis([max_dB_xz - dB_limit, max_dB_xz]); end
+
+    cb = colorbar;
+    ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
+    xlabel('Position X [\mum]');
+    ylabel('Position Z [\mum]');
+    title(sprintf('XZ View: Field Profile + Poynting at \\lambda = %.3f nm', wl_3d_actual*1e9));
+
+    hold on;
+    if show_poynting && has_poynting_xz
+        Px_xz = squeeze(P_5D_xz(:, idx_y0_xz, :, idx_lam, 1));
+        Pz_xz = squeeze(P_5D_xz(:, idx_y0_xz, :, idx_lam, 3));
+        draw_poynting_quiver(x_xz*1e6, z_xz*1e6, Px_xz, Pz_xz, ...
+            skip_x_xz, skip_z_xz, arrow_scale, arrow_color, arrow_linewidth, ...
+            I_xz_dB, max_dB_xz, poynting_threshold_dB, log_compress_k, arrow_min_frac, jitter_frac);
+    end
+
+    if show_geometry
+        wg_hh = core_height / 2 * 1e6;
+        xl = xlim;
+        plot(xl, [ wg_hh  wg_hh], 'w--', 'LineWidth', 1);
+        plot(xl, [-wg_hh -wg_hh], 'w--', 'LineWidth', 1);
+    end
+    hold off;
+else
+    fprintf('XZ side view data not available. Re-run simulation to include it.\n');
+end
+
 fprintf('\nDone.\n');
 
 
 %% --- Local Functions ---
-
 function draw_poynting_quiver(coord1, coord2, P1, P2, skip1, skip2, scale, color, lw, I_dB, max_dB, threshold_dB, log_k, min_frac, jitter_frac)
 % Overlay Poynting vector arrows with log-compressed, floor-bounded display.
     n1 = numel(coord1);
@@ -243,6 +305,43 @@ function draw_poynting_quiver(coord1, coord2, P1, P2, skip1, skip2, scale, color
     c2_range = max(c2_q) - min(c2_q);
     mask = mask & (C1q >= min(c1_q) + 0.01*c1_range) & (C1q <= max(c1_q) - 0.01*c1_range) ...
                & (C2q >= min(c2_q) + 0.01*c2_range) & (C2q <= max(c2_q) - 0.01*c2_range);
+
+    % --- Local direction coherence filter ---
+    % In complex interference regions (e.g. near the phase-shift defect), adjacent
+    % Poynting vectors can point in rapidly varying directions, creating visual clutter.
+    % Suppress arrows whose direction disagrees with the local 3x3 neighborhood mean.
+    % Only visualisation is affected; no physical data is modified.
+    P1_unit = P1_q ./ (Pmag + 1e-30);
+    P2_unit = P2_q ./ (Pmag + 1e-30);
+    w = double(mask);                                    % weight by already-valid region
+    local_mean1 = conv2(P1_unit .* w, ones(3,3)/9, 'same');
+    local_mean2 = conv2(P2_unit .* w, ones(3,3)/9, 'same');
+    local_mag   = sqrt(local_mean1.^2 + local_mean2.^2) + 1e-30;
+    coherence   = (P1_unit .* local_mean1 + P2_unit .* local_mean2) ./ local_mag;
+    mask        = mask & (coherence > 0.55);             % keep arrows that align with neighbours
+
+    % --- Remove converging (intersecting) arrow pairs ---
+    % Two adjacent arrows intersect when they point toward each other along the axis
+    % that connects them. Keep the stronger (higher Pmag) of each converging pair.
+    % Grid layout: rows = dim2 (coord2/Z), cols = dim1 (coord1/X).
+
+    % Along X: adjacent columns pointing toward each other in X
+    rmv = false(size(mask));
+    valid_x   = mask(:,1:end-1) & mask(:,2:end);
+    conv_x    = (P1_unit(:,1:end-1) > 0.25) & (P1_unit(:,2:end) < -0.25) & valid_x;
+    keep_left = Pmag(:,1:end-1) >= Pmag(:,2:end);
+    rmv(:,1:end-1) = rmv(:,1:end-1) | (conv_x & ~keep_left);
+    rmv(:,2:end)   = rmv(:,2:end)   | (conv_x &  keep_left);
+    mask = mask & ~rmv;
+
+    % Along Z: adjacent rows pointing toward each other in Z
+    rmv = false(size(mask));
+    valid_z  = mask(1:end-1,:) & mask(2:end,:);
+    conv_z   = (P2_unit(1:end-1,:) > 0.25) & (P2_unit(2:end,:) < -0.25) & valid_z;
+    keep_top = Pmag(1:end-1,:) >= Pmag(2:end,:);
+    rmv(1:end-1,:) = rmv(1:end-1,:) | (conv_z & ~keep_top);
+    rmv(2:end,:)   = rmv(2:end,:)   | (conv_z &  keep_top);
+    mask = mask & ~rmv;
 
     vis_scale = vis_scale .* mask;
 

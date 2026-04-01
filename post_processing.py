@@ -207,7 +207,26 @@ def extract_2d_fields(sim) -> dict:
     except Exception as e:
         print(f"  Warning: Could not extract Poynting vector for YZ: {e}")
 
-    return {'xy': xy_data, 'yz_cross': yz_data}
+    print("Extracting 2D XZ (Side View) data...")
+    res_xz = sim.fdtd.getresult("field_profile_2D_XZ_side", "E")
+    xz_data = {
+        'x':        np.squeeze(res_xz['x']),
+        'y':        np.squeeze(res_xz['y']),
+        'z':        np.squeeze(res_xz['z']),
+        'E_res':    res_xz['E'],
+        'lambda_3d': np.squeeze(res_xz['lambda']),
+    }
+    del res_xz
+
+    try:
+        print("  Extracting Poynting vector for XZ monitor...")
+        P_xz = sim.fdtd.getresult("field_profile_2D_XZ_side", "P")
+        xz_data['P_res'] = P_xz['P']
+        del P_xz
+    except Exception as e:
+        print(f"  Warning: Could not extract Poynting vector for XZ: {e}")
+
+    return {'xy': xy_data, 'yz_cross': yz_data, 'xz_side': xz_data}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -321,6 +340,7 @@ def assemble_results(
     if fields_2d:
         results['field_xy']       = fields_2d.get('xy', np.array([]))
         results['field_yz_cross'] = fields_2d.get('yz_cross', np.array([]))
+        results['field_xz_side']  = fields_2d.get('xz_side', np.array([]))
 
     # 3D field monitor
     if fields_3d:
