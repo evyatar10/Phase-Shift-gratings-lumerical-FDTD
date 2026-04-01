@@ -11,7 +11,7 @@ addpath(fileparts(fileparts(mfilename('fullpath'))));
 clear; clc;
 close all;
 %% --- Configuration ---
-result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\leaky_modes\results\result_80_periods_CONST_ff.mat";
+result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\leaky_modes_v2\results\result_80_periods_10_apod_CONST_ff.mat";
 
 % Crop bounds [um]
 crop_val = 12;
@@ -22,7 +22,7 @@ y_range_xy = [-inf, inf];
 
 % Visual parameters
 field_colormap        = 'hot';
-dB_limit              = 60;
+dB_limit              = 60; %60
 
 % --- Algorithm selection ---
 % true  → smoothed overlay (spatial averaging, staggered grid, cleaner on zoomed views)
@@ -55,39 +55,53 @@ smooth_opts.density_factor  = 0.85;
 smooth_opts.power_law_exp   = 0.25;
 smooth_opts.base_size       = 0.6;
 
-% Geometry overlay
-avg_corrugation_width = 800e-9;   % [m]
-core_height           = 350e-9;   % [m]
+% Geometry overlay — physical dimensions (must match simulation)
+avg_corrugation_width = 800e-9;   % average corrugation width [m] (used for XY / YZ views)
+corrugation_depth     = 300e-9;   % full corrugation depth [m] (= wide - narrow)
+core_height           = 350e-9;   % waveguide slab height [m]
+pitch                 = 500e-9;   % grating pitch [m]
+% derived widths:
+width_narrow = avg_corrugation_width - corrugation_depth / 2;
+width_wide   = avg_corrugation_width + corrugation_depth / 2;
+geom_color            = [0.7 0.7 0.7]; % structure overlay color
+geom_lw               = 1.5;           % structure line width
 
-%% --- 1. Load Data & Find Resonance ---
+% --- Structure drawing mode for XZ side view ---
+% 'uniform'  : all periods have equal corrugation (width_narrow / width_wide above)
+% 'apodized' : corrugation tapers toward the cavity center (see apodization params below)
+geom_mode             = 'uniform';
+
+% --- Apodization parameters (only used when geom_mode = 'apodized') ---
+% Mirrors bragg_device.py: modulation depth ramps from center_mod_depth (at d=1,
+% nearest defect) up to (width_wide - width_narrow) (at d > n_apod, toward edges).
+center_mod_depth_nm   = 4.0;    % corrugation depth at grating center [nm]
+apod_method           = 'linear'; % 'linear' or 'tanh' — must match simulation
+tanh_steepness        = 2.0;      % only used when apod_method = 'tanh'
+
+% --- Auto-detection overrides ---
+% Parameters are resolved automatically (data file → filename parsing → L_device inference).
+% Set a value here to override any auto-detected result; leave [] for auto.
+n_periods_override     = [];  % e.g. 80
+n_apod_override        = [];  % e.g. 10  (ignored when geom_mode = 'uniform')
+cavity_length_override = [];  % [m] e.g. 250e-9  (default: pitch/2)
+
+%% --- 1. Load Data ---
 fprintf('Loading data...\n');
 if ~exist(result_filepath, 'file')
     error('File not found! Please check result_filepath.');
 end
 data = load(result_filepath);
 
-T  = squeeze(data.T);
-wl = squeeze(data.wl_m);
+wl_res = double(data.resonance_wavelength_nm) * 1e-9;
+fprintf('Resonance wavelength: %.3f nm\n', wl_res*1e9);
 
-stopband_indices = find(T < 0.6);
-if isempty(stopband_indices)
-    stopband_indices = find(T < 0.85);
-end
+%% --- 2. Resolve Geometry Parameters ---
+% Priority: manual override > data file fields > filename parsing > L_device inference
+[n_periods_r, n_apod_r, cavity_length_r] = resolve_geometry_params( ...
+    result_filepath, data, pitch, n_periods_override, n_apod_override, ...
+    cavity_length_override);
 
-if isempty(stopband_indices)
-    [~, idx_peak] = max(T);
-    fprintf('Warning: Stopband not detected. Using global maximum.\n');
-else
-    idx_start = stopband_indices(1);
-    idx_end   = stopband_indices(end);
-    [~, local_peak_idx] = max(T(idx_start:idx_end));
-    idx_peak = idx_start + local_peak_idx - 1;
-end
-
-wl_res = wl(idx_peak);
-fprintf('Resonance at %.3f nm (T = %.3f)\n', wl_res*1e9, T(idx_peak));
-
-%% --- 2. Plot XZ Plane (Zoomed Side View) ---
+%% --- 3. Plot XZ Plane (Zoomed Side View) ---
 if isfield(data, 'field_xz_side')
     fprintf('\n--- XZ Plane (Zoomed Side View) ---\n');
     d = data.field_xz_side;
@@ -118,7 +132,7 @@ if isfield(data, 'field_xz_side')
     set(gca, 'YDir', 'normal');
     colormap(field_colormap);
     max_dB = max(I_xz_dB(:));
-    try clim([max_dB - dB_limit, max_dB]); catch; caxis([max_dB - dB_limit, max_dB]); end
+    clim([max_dB - dB_limit, max_dB]);
     cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
     xlabel('Position X [\mum]'); ylabel('Position Z [\mum]');
     title(sprintf('XZ Zoomed: Field + Poynting at \\lambda = %.3f nm', wl_plot*1e9));
@@ -137,16 +151,20 @@ if isfield(data, 'field_xz_side')
         end
     end
 
-    wg_hh = core_height / 2 * 1e6;
-    xl = xlim;
-    plot(xl, [ wg_hh  wg_hh], 'w--', 'LineWidth', 1);
-    plot(xl, [-wg_hh -wg_hh], 'w--', 'LineWidth', 1);
+    xl = xlim; yl = ylim;
+    [xp, wp] = make_grating_profile(pitch, width_narrow, width_wide, ...
+        n_periods_r, cavity_length_r, core_height, ...
+        n_apod_r, center_mod_depth_nm*1e-9, geom_mode, apod_method, tanh_steepness);
+    plot(xp*1e6,  wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
+    plot(xp*1e6, -wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
+    plot([0 0], yl, ':', 'Color', geom_color, 'LineWidth', 1.0);   % defect / phase-shift marker
+    xlim(xl); ylim(yl);
     hold off;
 else
     fprintf('XZ side view data not available.\n');
 end
 
-%% --- 3. Plot YZ Plane (Full Range Cross Section) ---
+%% --- 4. Plot YZ Plane (Full Range Cross Section) ---
 if isfield(data, 'field_yz_cross')
     fprintf('--- YZ Plane (Cross Section) ---\n');
     d = data.field_yz_cross;
@@ -172,7 +190,7 @@ if isfield(data, 'field_yz_cross')
     set(gca, 'YDir', 'normal');
     colormap(field_colormap);
     max_dB_yz = max(I_yz_dB(:));
-    try clim([max_dB_yz - dB_limit, max_dB_yz]); catch; caxis([max_dB_yz - dB_limit, max_dB_yz]); end
+    clim([max_dB_yz - dB_limit, max_dB_yz]);
     cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
     xlabel('Position Y [\mum]'); ylabel('Position Z [\mum]');
     title(sprintf('YZ Cross Section: Field + Poynting at \\lambda = %.3f nm', wl_plot*1e9));
@@ -194,13 +212,17 @@ if isfield(data, 'field_yz_cross')
     wg_hw = avg_corrugation_width / 2 * 1e6;
     wg_hh = core_height / 2 * 1e6;
     rectangle('Position', [-wg_hw, -wg_hh, 2*wg_hw, 2*wg_hh], ...
-              'EdgeColor', 'w', 'LineStyle', '--', 'LineWidth', 1);
+              'EdgeColor', geom_color, 'LineStyle', '-', 'LineWidth', geom_lw);
+    xl2 = xlim; yl2 = ylim;
+    text(xl2(1) + 0.03*(xl2(2)-xl2(1)), yl2(2) - 0.05*(yl2(2)-yl2(1)), ...
+         'Phase-shift defect x-section', 'Color', geom_color, 'FontSize', 8, ...
+         'VerticalAlignment', 'top');
     hold off;
 else
     fprintf('YZ cross-section data not available.\n');
 end
 
-%% --- 4. Plot XY Plane (Zoomed Top View) ---
+%% --- 5. Plot XY Plane (Zoomed Top View) ---
 if isfield(data, 'field_xy')
     fprintf('--- XY Plane (Zoomed Top View) ---\n');
     d = data.field_xy;
@@ -231,7 +253,7 @@ if isfield(data, 'field_xy')
     set(gca, 'YDir', 'normal');
     colormap(field_colormap);
     max_dB_xy = max(I_xy_dB(:));
-    try clim([max_dB_xy - dB_limit, max_dB_xy]); catch; caxis([max_dB_xy - dB_limit, max_dB_xy]); end
+    clim([max_dB_xy - dB_limit, max_dB_xy]);
     cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
     xlabel('Position X [\mum]'); ylabel('Position Y [\mum]');
     title(sprintf('XY Zoomed: Field + Poynting at \\lambda = %.3f nm', wl_plot*1e9));
@@ -252,8 +274,8 @@ if isfield(data, 'field_xy')
 
     wg_hw = avg_corrugation_width / 2 * 1e6;
     xl = xlim;
-    plot(xl, [ wg_hw  wg_hw], 'w--', 'LineWidth', 1);
-    plot(xl, [-wg_hw -wg_hw], 'w--', 'LineWidth', 1);
+    plot(xl, [ wg_hw  wg_hw], '-', 'Color', geom_color, 'LineWidth', geom_lw);
+    plot(xl, [-wg_hw -wg_hw], '-', 'Color', geom_color, 'LineWidth', geom_lw);
     hold off;
 else
     fprintf('XY top view data not available.\n');
@@ -263,6 +285,150 @@ fprintf('\nDone.\n');
 
 
 %% === Local Functions ===
+
+function [n_per, n_apod, cav_len] = resolve_geometry_params( ...
+        fpath, data, pitch, n_per_manual, n_apod_manual, cav_len_manual)
+% Resolve grating geometry parameters from multiple sources (highest→lowest priority):
+%   1. Manual override arguments
+%   2. Data file fields (future-proof: data.n_periods, data.n_apod_periods, data.cavity_length_m)
+%   3. Filename parsing  (e.g. "80_periods_10_apod_tanh_L_cav_250_CONST_ff")
+%   4. L_device inference  (data.L_device = 2*(n_periods*pitch + cav_len/2))
+%   5. Hard error if n_periods still unknown
+
+    n_per   = n_per_manual;
+    n_apod  = n_apod_manual;
+    cav_len = cav_len_manual;
+
+    % --- Data file fields (stored by future versions of post_processing.py) ---
+    if isempty(n_per)   && isfield(data, 'n_periods');            n_per   = double(data.n_periods);            end
+    if isempty(n_per)   && isfield(data, 'n_periods_each_side'); n_per   = double(data.n_periods_each_side);  end
+    if isempty(n_apod)  && isfield(data, 'n_apod_periods');      n_apod  = double(data.n_apod_periods);       end
+    if isempty(cav_len) && isfield(data, 'cavity_length_m'); cav_len = double(data.cavity_length_m); end
+
+    % --- Filename parsing ---
+    % Filename convention from sim_helpers.generate_file_tag():
+    %   {N}_periods[_{Napod}_apod[_tanh]][_L_cav_{len_nm}][_CONST][_ff]
+    [~, fname] = fileparts(fpath);
+
+    if isempty(n_per)
+        tok = regexp(fname, '(\d+)_periods', 'tokens', 'once');
+        if ~isempty(tok); n_per = str2double(tok{1}); end
+    end
+    if isempty(n_apod)
+        tok = regexp(fname, '_(\d+)_apod', 'tokens', 'once');
+        if ~isempty(tok); n_apod = str2double(tok{1}); end
+    end
+    if isempty(cav_len)
+        tok = regexp(fname, 'L_cav_(\d+)', 'tokens', 'once');
+        if ~isempty(tok); cav_len = str2double(tok{1}) * 1e-9; end
+    end
+    if ~isempty(regexp(fname, '_tanh', 'once'))
+        fprintf('  Filename suggests tanh apodization — set apod_method=''tanh'' if drawing apodized.\n');
+    end
+
+    % --- L_device inference (cross-check / fallback for n_periods) ---
+    if isempty(n_per) && isfield(data, 'L_device')
+        cav_try  = ternary(~isempty(cav_len), cav_len, pitch / 2);
+        n_calc   = (double(data.L_device) / 2 - cav_try / 2) / pitch;
+        n_round  = round(n_calc);
+        if abs(n_calc - n_round) < 0.02
+            n_per = n_round;
+            fprintf('  n_periods inferred from L_device: %d\n', n_per);
+        end
+    end
+
+    % --- Defaults ---
+    if isempty(cav_len); cav_len = pitch / 2; end
+    if isempty(n_apod);  n_apod  = 0;         end
+    if isempty(n_per)
+        error(['Could not determine n_periods from data file or filename.\n' ...
+               'Set n_periods_override manually in the Configuration section.']);
+    end
+
+    fprintf('Geometry: n_periods=%d, n_apod=%d, cavity_length=%.0f nm\n', ...
+        n_per, n_apod, cav_len * 1e9);
+end
+
+
+function out = ternary(cond, a, b)
+% Inline ternary helper (avoids ifelse verbosity).
+    if cond; out = a; else; out = b; end
+end
+
+
+function [x_vec, w_half_vec] = make_grating_profile(pitch, w_narrow, w_wide, ...
+        n_periods, cav_length, core_height, n_apod, center_mod_depth, geom_mode, ...
+        apod_method, tanh_steepness)
+% Build a step-function XZ boundary profile for the grating corrugation.
+%
+% The XZ plane at Y=0 cuts through the waveguide slab. The physical Z boundary
+% is always core_height/2 (the real slab edge). To represent the Y-corrugation
+% schematically in this view:
+%   - Narrow sub-periods : drawn at  ±core_height/2  (real slab edge)
+%   - Wide  sub-periods  : drawn at  ±(core_height/2 + delta(d))
+%     where delta(d) = mod_depth(d)/2 is the Y-modulation half-depth.
+%
+% For 'uniform' mode : mod_depth = w_wide - w_narrow  (same every period)
+% For 'apodized' mode: mod_depth(d) ramps from center_mod_depth (d=1, near defect)
+%   to (w_wide - w_narrow) (d > n_apod, toward edges), exactly mirroring the
+%   logic in bragg_device.py::get_mod_depth(d).
+
+    half_pitch      = pitch / 2;
+    h_base          = core_height / 2;         % physical slab Z half-height [m]
+    full_depth_edge = w_wide - w_narrow;       % full modulation depth at grating edges [m]
+
+    % --- Per-period modulation half-depths ---
+    hw_wide = zeros(1, n_periods);
+    for d = 1:n_periods
+        if strcmp(geom_mode, 'apodized') && n_apod > 0 && d <= n_apod
+            % Ramp from center_mod_depth (d=1) toward full_depth_edge (d=n_apod).
+            % denom = n_apod (standard case: n_apod < n_periods).
+            frac = (d - 1) / n_apod;
+            if strcmp(apod_method, 'tanh')
+                frac = tanh(tanh_steepness * 2 * frac) / tanh(2 * tanh_steepness);
+            end
+            mod_depth = center_mod_depth + (full_depth_edge - center_mod_depth) * frac;
+        else
+            mod_depth = full_depth_edge;
+        end
+        hw_wide(d) = h_base + mod_depth / 2;
+    end
+
+    % --- Build ordered segment list ---
+    % Left arm : d = n_periods → 1  (outer to inner, mirrors Python _add_bragg_core)
+    % Cavity   : single narrow segment
+    % Right arm: d = 1 → n_periods  (inner to outer)
+    n_segs = 4 * n_periods + 1;
+    seg_xl = zeros(1, n_segs);
+    seg_xr = zeros(1, n_segs);
+    seg_hw = zeros(1, n_segs);
+    k = 0;
+    x = -(n_periods * pitch + cav_length / 2);   % x_grating_start
+
+    for d = n_periods:-1:1
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=h_base;      x=x+half_pitch;
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide(d);  x=x+half_pitch;
+    end
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+cav_length; seg_hw(k)=h_base; x=x+cav_length;
+    for d = 1:n_periods
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=h_base;      x=x+half_pitch;
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide(d);  x=x+half_pitch;
+    end
+
+    % --- Convert to step-function polyline ---
+    x_vec      = seg_xl(1);
+    w_half_vec = seg_hw(1);
+    for i = 1:k
+        hw = seg_hw(i);
+        if i > 1 && abs(seg_hw(i) - seg_hw(i-1)) > 1e-30
+            x_vec(end+1)      = seg_xl(i);  %#ok<AGROW>
+            w_half_vec(end+1) = hw;         %#ok<AGROW>
+        end
+        x_vec(end+1)      = seg_xr(i);     %#ok<AGROW>
+        w_half_vec(end+1) = hw;            %#ok<AGROW>
+    end
+end
+
 
 function [coord_crop, idx] = crop_to_range(coord_m, range_um)
 % Return indices and coordinate values within [range_um(1), range_um(2)] microns.

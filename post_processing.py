@@ -328,7 +328,12 @@ def assemble_results(
         'resonance_wavelength_nm': resonance.wavelength_m * 1e9,
         'spectral_fwhm_nm':        resonance.spectral_fwhm_m * 1e9,
         # Device geometry
-        'L_device':      2.0 * sim.x_grating_end,
+        'L_device':               2.0 * sim.x_grating_end,
+        'pitch_m':                sim.pitch,
+        'n_periods_each_side':    sim.n_periods_each_side,
+        'core_height_m':          sim.core_height,
+        'avg_corrugation_width_m': 0.5 * (sim.width_narrow + sim.width_wide),
+        'corrugation_depth_m':    sim.width_wide - sim.width_narrow,
         # 1D field profile
         'field_x':                  field_profile.x,
         'field_energy_density_1D':  field_profile.intensity_1d,

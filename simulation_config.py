@@ -25,7 +25,7 @@ from typing import Optional
 class GeometryConfig:
     """Waveguide cross-section and corrugation geometry."""
     avg_corrugation_width_m: float = 800e-9     # Average width of corrugated section
-    corrugation_depth_m: float = 200e-9         # Full width difference (wide - narrow)
+    corrugation_depth_m: float = 300e-9         # Full width difference (wide - narrow)
     core_height_m: float = 350e-9               # Si3N4 core thickness
     width_port_m: float = 1000e-9               # Access waveguide width at ports
     substrate_thickness_m: float = 10e-6        # SiO2 substrate thickness
@@ -72,9 +72,9 @@ class ApodizationConfig:
 
     The transition occurs over n_apod_periods_each_side periods.
     """
-    enabled: bool = False                        # Enable/disable apodization
+    enabled: bool = True                        # Enable/disable apodization
     n_apod_periods_each_side: int = 10          # Number of tapered periods on each side
-    center_mod_depth_nm: float = 10.0           # Modulation depth at the cavity center (nm)
+    center_mod_depth_nm: float = 4.0           # Modulation depth at the cavity center (nm)
     method: str = 'linear'                       # Apodization profile: 'linear' or 'tanh'
     tanh_steepness: float = 2.0                  # Steepness parameter for tanh profile
 
