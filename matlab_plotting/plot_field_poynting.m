@@ -19,14 +19,16 @@ field_colormap = 'hot';
 dB_limit       = 60;
 
 % --- Poynting Vector Overlay ---
-show_poynting      = true;
-arrows_per_axis    = 40;
-min_skip           = 2;        % Never sample every single grid point
-arrow_color        = 'c';
-arrow_linewidth    = 0.8;
-arrow_scale        = 0.5;
-poynting_threshold_dB = 55;    % Show arrows where field is within this many dB of max
-power_law_exp      = 0.3;      % Gentle magnitude scaling
+show_poynting         = true;
+arrows_per_axis       = 30;
+min_skip              = 2;        % Never sample every single grid point
+arrow_color           = 'c';
+arrow_linewidth       = 0.9;
+arrow_scale           = 0.6;      % MATLAB quiver scale multiplier
+poynting_threshold_dB = 55;       % Show arrows where field is within this many dB of max
+log_compress_k        = 10;       % log1p compression strength; higher = more uniform sizes
+arrow_min_frac        = 0.35;     % Minimum arrow length as fraction of max (0=none, 1=all equal)
+jitter_frac           = 0.0;      % Sampling jitter as fraction of skip (0=grid, 0.5=±skip/2)
 
 % --- Geometry Overlay ---
 show_geometry         = true;
@@ -140,7 +142,7 @@ if show_poynting && has_poynting_xy
     Py_xy = squeeze(P_5D_xy(:, :, idx_z0_xy, idx_lam, 2));
     draw_poynting_quiver(x_xy*1e6, y_xy*1e6, Px_xy, Py_xy, ...
         skip_x_xy, skip_y_xy, arrow_scale, arrow_color, arrow_linewidth, ...
-        I_xy_dB, max_dB, poynting_threshold_dB, power_law_exp);
+        I_xy_dB, max_dB, poynting_threshold_dB, log_compress_k, arrow_min_frac, jitter_frac);
 end
 
 if show_geometry
@@ -179,7 +181,7 @@ if show_poynting && has_poynting_yz
     Pz_yz = squeeze(P_5D_yz(idx_x0_yz, :, :, idx_lam, 3));
     draw_poynting_quiver(y_yz*1e6, z_yz*1e6, Py_yz, Pz_yz, ...
         skip_y_yz, skip_z_yz, arrow_scale, arrow_color, arrow_linewidth, ...
-        I_yz_dB, max_dB_yz, poynting_threshold_dB, power_law_exp);
+        I_yz_dB, max_dB_yz, poynting_threshold_dB, log_compress_k, arrow_min_frac, jitter_frac);
 end
 
 if show_geometry
@@ -195,11 +197,26 @@ fprintf('\nDone.\n');
 
 %% --- Local Functions ---
 
-function draw_poynting_quiver(coord1, coord2, P1, P2, skip1, skip2, scale, color, lw, I_dB, max_dB, threshold_dB, pwr)
-% Overlay Poynting vector arrows with magnitude-scaled lengths.
-% Arrows shown where field intensity is within threshold_dB of max_dB.
-    idx1 = 1:skip1:numel(coord1);
-    idx2 = 1:skip2:numel(coord2);
+function draw_poynting_quiver(coord1, coord2, P1, P2, skip1, skip2, scale, color, lw, I_dB, max_dB, threshold_dB, log_k, min_frac, jitter_frac)
+% Overlay Poynting vector arrows with log-compressed, floor-bounded display.
+    n1 = numel(coord1);
+    n2 = numel(coord2);
+
+    % --- Uniform or jittered sampling ---
+    base1 = (1:skip1:n1)';
+    base2 = (1:skip2:n2)';
+    if jitter_frac > 0
+        half1 = floor(skip1 * jitter_frac / 2);
+        half2 = floor(skip2 * jitter_frac / 2);
+        if half1 > 0; jit1 = randi([-half1, half1], size(base1)); else; jit1 = zeros(size(base1)); end
+        if half2 > 0; jit2 = randi([-half2, half2], size(base2)); else; jit2 = zeros(size(base2)); end
+        idx1 = unique(max(1, min(n1, base1 + jit1)));
+        idx2 = unique(max(1, min(n2, base2 + jit2)));
+    else
+        idx1 = base1;
+        idx2 = base2;
+    end
+
     c1_q = coord1(idx1);
     c2_q = coord2(idx2);
     [C1q, C2q] = meshgrid(c1_q, c2_q);
@@ -207,28 +224,31 @@ function draw_poynting_quiver(coord1, coord2, P1, P2, skip1, skip2, scale, color
     P1_q = P1(idx1, idx2).';
     P2_q = P2(idx1, idx2).';
 
+    % --- Magnitude normalization ---
     Pmag = sqrt(P1_q.^2 + P2_q.^2);
     Pmag_max = max(Pmag(:));
     if Pmag_max == 0; return; end
     Pmag_norm = Pmag / Pmag_max;
 
-    % Mask based on field intensity dB: show arrows where field > max_dB - threshold_dB
+    % Log compression + minimum floor for balanced arrow sizes
+    log_norm = log1p(Pmag_norm * log_k) / log1p(log_k);
+    vis_scale = min_frac + (1 - min_frac) * log_norm;
+
+    % --- dB intensity mask ---
     I_dB_q = I_dB(idx1, idx2).';
     mask = I_dB_q >= (max_dB - threshold_dB);
 
-    % Proportional edge margin (1% of each axis range)
+    % Exclude 1% edge margin
     c1_range = max(c1_q) - min(c1_q);
     c2_range = max(c2_q) - min(c2_q);
-    margin1 = 0.01 * c1_range;
-    margin2 = 0.01 * c2_range;
-    mask = mask & (C1q >= min(c1_q) + margin1) & (C1q <= max(c1_q) - margin1) ...
-               & (C2q >= min(c2_q) + margin2) & (C2q <= max(c2_q) - margin2);
+    mask = mask & (C1q >= min(c1_q) + 0.01*c1_range) & (C1q <= max(c1_q) - 0.01*c1_range) ...
+               & (C2q >= min(c2_q) + 0.01*c2_range) & (C2q <= max(c2_q) - 0.01*c2_range);
 
-    % Power-law magnitude scaling: direction * Pmag_norm^pwr
-    mag_scale = Pmag_norm.^pwr .* mask;
+    vis_scale = vis_scale .* mask;
 
-    P1_draw = (P1_q ./ (Pmag + 1e-30)) .* mag_scale;
-    P2_draw = (P2_q ./ (Pmag + 1e-30)) .* mag_scale;
+    % Unit direction vectors scaled by vis_scale; MATLAB auto-scales the longest to a good size
+    P1_draw = (P1_q ./ (Pmag + 1e-30)) .* vis_scale;
+    P2_draw = (P2_q ./ (Pmag + 1e-30)) .* vis_scale;
 
-    quiver(C1q, C2q, P1_draw, P2_draw, scale, color, 'LineWidth', lw);
+    quiver(C1q, C2q, P1_draw, P2_draw, scale, 'Color', color, 'LineWidth', lw);
 end
