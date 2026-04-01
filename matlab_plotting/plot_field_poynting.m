@@ -1,26 +1,37 @@
 % plot_field_poynting.m
 % Plots 2D field profiles (|E|^2 in dB) with Poynting vector arrows overlaid.
 % Generates figures for both XY (top view) and YZ (cross-section) planes.
+%
+% Uses the same draw_poynting_quiver approach as the microcavity project,
+% with per-axis skip to handle non-square domains.
 
 addpath(fileparts(fileparts(mfilename('fullpath'))));
 clear; clc;
 
 %% --- Configuration ---
-result_filepath = "C:\Users\evyat\Lumerical\new_experiment_comparison\p8rc1_tanh\results\result_80_periods_CONST.mat";
+result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\leaky_modes\results\result_80_periods_CONST_ff.mat";
 
 pitch = 500e-9;   % Grating pitch [m]
 n_clad = 1.44;    % Cladding refractive index
 
 % --- Colormap & Dynamic Range ---
-field_colormap = 'hot';    % 'hot' (recommended) or 'jet'
-dB_limit       = 60;       % Dynamic range in dB
+field_colormap = 'hot';
+dB_limit       = 60;
 
 % --- Poynting Vector Overlay ---
-show_poynting   = true;
-quiver_skip     = 5;       % Arrow spacing: every Nth grid point
-arrow_color     = 'c';     % Cyan — good contrast with hot
-arrow_linewidth = 1.0;
-arrow_scale     = 0.4;     % quiver auto-scale factor
+show_poynting      = true;
+arrows_per_axis    = 40;
+min_skip           = 2;        % Never sample every single grid point
+arrow_color        = 'c';
+arrow_linewidth    = 0.8;
+arrow_scale        = 0.5;
+poynting_threshold_dB = 55;    % Show arrows where field is within this many dB of max
+power_law_exp      = 0.3;      % Gentle magnitude scaling
+
+% --- Geometry Overlay ---
+show_geometry         = true;
+avg_corrugation_width = 800e-9;   % [m]
+core_height           = 350e-9;   % [m]
 
 %% --- 1. Load Data & Find Resonance ---
 fprintf('Loading data...\n');
@@ -79,7 +90,7 @@ x_yz = double(d_yz.x); y_yz = double(d_yz.y); z_yz = double(d_yz.z);
 Nx_yz = length(x_yz); Ny_yz = length(y_yz); Nz_yz = length(z_yz);
 E_5D_yz = reshape(d_yz.E_res, [Nx_yz, Ny_yz, Nz_yz, Nlam, 3]);
 
-% Poynting vectors (available if post-processing includes P)
+% Poynting vectors
 has_poynting_xy = isfield(d_xy, 'P_res') && ~isempty(d_xy.P_res);
 if has_poynting_xy
     P_5D_xy = reshape(double(d_xy.P_res), [Nx_xy, Ny_xy, Nz_xy, Nlam, 3]);
@@ -93,6 +104,14 @@ end
 if show_poynting && ~has_poynting_xy && ~has_poynting_yz
     fprintf('Warning: Poynting data not found in .mat file. Re-run Python post-processing to include it.\n');
 end
+
+% Compute adaptive skip per axis (with minimum to avoid over-dense sampling)
+skip_x_xy = max(min_skip, round(Nx_xy / arrows_per_axis));
+skip_y_xy = max(min_skip, round(Ny_xy / arrows_per_axis));
+skip_y_yz = max(min_skip, round(Ny_yz / arrows_per_axis));
+skip_z_yz = max(min_skip, round(Nz_yz / arrows_per_axis));
+fprintf('XY quiver grid: skip_x=%d, skip_y=%d (from %dx%d)\n', skip_x_xy, skip_y_xy, Nx_xy, Ny_xy);
+fprintf('YZ quiver grid: skip_y=%d, skip_z=%d (from %dx%d)\n', skip_y_yz, skip_z_yz, Ny_yz, Nz_yz);
 
 %% --- 3. Plot XY Plane ---
 fprintf('\n--- XY Plane (Top View) ---\n');
@@ -120,7 +139,15 @@ if show_poynting && has_poynting_xy
     Px_xy = squeeze(P_5D_xy(:, :, idx_z0_xy, idx_lam, 1));
     Py_xy = squeeze(P_5D_xy(:, :, idx_z0_xy, idx_lam, 2));
     draw_poynting_quiver(x_xy*1e6, y_xy*1e6, Px_xy, Py_xy, ...
-        quiver_skip, arrow_scale, arrow_color, arrow_linewidth);
+        skip_x_xy, skip_y_xy, arrow_scale, arrow_color, arrow_linewidth, ...
+        I_xy_dB, max_dB, poynting_threshold_dB, power_law_exp);
+end
+
+if show_geometry
+    wg_hw = avg_corrugation_width / 2 * 1e6;
+    xl = xlim;
+    plot(xl, [ wg_hw  wg_hw], 'w--', 'LineWidth', 1);
+    plot(xl, [-wg_hw -wg_hw], 'w--', 'LineWidth', 1);
 end
 hold off;
 
@@ -151,7 +178,15 @@ if show_poynting && has_poynting_yz
     Py_yz = squeeze(P_5D_yz(idx_x0_yz, :, :, idx_lam, 2));
     Pz_yz = squeeze(P_5D_yz(idx_x0_yz, :, :, idx_lam, 3));
     draw_poynting_quiver(y_yz*1e6, z_yz*1e6, Py_yz, Pz_yz, ...
-        quiver_skip, arrow_scale, arrow_color, arrow_linewidth);
+        skip_y_yz, skip_z_yz, arrow_scale, arrow_color, arrow_linewidth, ...
+        I_yz_dB, max_dB_yz, poynting_threshold_dB, power_law_exp);
+end
+
+if show_geometry
+    wg_hw = avg_corrugation_width / 2 * 1e6;
+    wg_hh = core_height / 2 * 1e6;
+    rectangle('Position', [-wg_hw, -wg_hh, 2*wg_hw, 2*wg_hh], ...
+              'EdgeColor', 'w', 'LineStyle', '--', 'LineWidth', 1);
 end
 hold off;
 
@@ -160,15 +195,15 @@ fprintf('\nDone.\n');
 
 %% --- Local Functions ---
 
-function draw_poynting_quiver(coord1, coord2, P1, P2, skip, scale, color, lw)
-% Overlay Poynting vector arrows on an imagesc plot.
-    idx1 = centered_skip_indices(numel(coord1), skip);
-    idx2 = centered_skip_indices(numel(coord2), skip);
+function draw_poynting_quiver(coord1, coord2, P1, P2, skip1, skip2, scale, color, lw, I_dB, max_dB, threshold_dB, pwr)
+% Overlay Poynting vector arrows with magnitude-scaled lengths.
+% Arrows shown where field intensity is within threshold_dB of max_dB.
+    idx1 = 1:skip1:numel(coord1);
+    idx2 = 1:skip2:numel(coord2);
     c1_q = coord1(idx1);
     c2_q = coord2(idx2);
     [C1q, C2q] = meshgrid(c1_q, c2_q);
 
-    % Transpose to match imagesc orientation (rows=coord2, cols=coord1)
     P1_q = P1(idx1, idx2).';
     P2_q = P2(idx1, idx2).';
 
@@ -177,30 +212,23 @@ function draw_poynting_quiver(coord1, coord2, P1, P2, skip, scale, color, lw)
     if Pmag_max == 0; return; end
     Pmag_norm = Pmag / Pmag_max;
 
-    % Mask out negligibly weak arrows
-    mask = Pmag_norm > 0.005;
+    % Mask based on field intensity dB: show arrows where field > max_dB - threshold_dB
+    I_dB_q = I_dB(idx1, idx2).';
+    mask = I_dB_q >= (max_dB - threshold_dB);
 
-    % Mask arrows near edges to prevent clipping
-    margin = 0.05;  % um
-    c1_min = min(c1_q); c1_max = max(c1_q);
-    c2_min = min(c2_q); c2_max = max(c2_q);
-    mask = mask & (C1q >= c1_min + margin) & (C1q <= c1_max - margin) ...
-               & (C2q >= c2_min + margin) & (C2q <= c2_max - margin);
+    % Proportional edge margin (1% of each axis range)
+    c1_range = max(c1_q) - min(c1_q);
+    c2_range = max(c2_q) - min(c2_q);
+    margin1 = 0.01 * c1_range;
+    margin2 = 0.01 * c2_range;
+    mask = mask & (C1q >= min(c1_q) + margin1) & (C1q <= max(c1_q) - margin1) ...
+               & (C2q >= min(c2_q) + margin2) & (C2q <= max(c2_q) - margin2);
 
-    % Power-law scaling for visually balanced arrow sizes
-    sc = Pmag_norm.^0.35 .* mask;
+    % Power-law magnitude scaling: direction * Pmag_norm^pwr
+    mag_scale = Pmag_norm.^pwr .* mask;
 
-    % Normalize direction, apply scale
-    P1_draw = (P1_q ./ (Pmag + 1e-30)) .* sc;
-    P2_draw = (P2_q ./ (Pmag + 1e-30)) .* sc;
+    P1_draw = (P1_q ./ (Pmag + 1e-30)) .* mag_scale;
+    P2_draw = (P2_q ./ (Pmag + 1e-30)) .* mag_scale;
 
     quiver(C1q, C2q, P1_draw, P2_draw, scale, color, 'LineWidth', lw);
-end
-
-function idx = centered_skip_indices(n, skip)
-% Generate indices centered on the midpoint of 1:n, spaced by skip.
-    mid = ceil(n / 2);
-    lo = mid:-skip:1;
-    hi = mid+skip:skip:n;
-    idx = sort([lo, hi]);
 end
