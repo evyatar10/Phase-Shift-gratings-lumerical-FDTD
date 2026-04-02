@@ -25,7 +25,7 @@ from typing import Optional
 class GeometryConfig:
     """Waveguide cross-section and corrugation geometry."""
     avg_corrugation_width_m: float = 800e-9     # Average width of corrugated section
-    corrugation_depth_m: float = 300e-9         # Full width difference (wide - narrow)
+    corrugation_depth_m: float = 200e-9         # Full width difference (wide - narrow)
     core_height_m: float = 350e-9               # Si3N4 core thickness
     width_port_m: float = 1000e-9               # Access waveguide width at ports
     substrate_thickness_m: float = 10e-6        # SiO2 substrate thickness

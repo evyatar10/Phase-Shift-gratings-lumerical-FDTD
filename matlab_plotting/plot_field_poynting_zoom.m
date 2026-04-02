@@ -11,7 +11,7 @@ addpath(fileparts(fileparts(mfilename('fullpath'))));
 clear; clc;
 close all;
 %% --- Configuration ---
-result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\leaky_modes_v2\results\result_80_periods_10_apod_CONST_ff.mat";
+result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\leaky_modes_v2\results\result_80_periods_CONST_ff.mat";
 
 % Crop bounds [um]
 crop_val = 12;
@@ -69,7 +69,7 @@ geom_lw               = 1.5;           % structure line width
 % --- Structure drawing mode for XZ side view ---
 % 'uniform'  : all periods have equal corrugation (width_narrow / width_wide above)
 % 'apodized' : corrugation tapers toward the cavity center (see apodization params below)
-geom_mode             = 'uniform';
+geom_mode             = 'apodized';
 
 % --- Apodization parameters (only used when geom_mode = 'apodized') ---
 % Mirrors bragg_device.py: modulation depth ramps from center_mod_depth (at d=1,
@@ -101,7 +101,13 @@ fprintf('Resonance wavelength: %.3f nm\n', wl_res*1e9);
     result_filepath, data, pitch, n_periods_override, n_apod_override, ...
     cavity_length_override);
 
-%% --- 3. Plot XZ Plane (Zoomed Side View) ---
+if n_apod_r > 0
+    geom_str = sprintf('N=%d periods, %d apodized', n_periods_r, n_apod_r);
+else
+    geom_str = sprintf('N=%d periods', n_periods_r);
+end
+
+%% --- 3. Plot XZ Plane (Side View) ---
 if isfield(data, 'field_xz_side')
     fprintf('\n--- XZ Plane (Zoomed Side View) ---\n');
     d = data.field_xz_side;
@@ -135,7 +141,7 @@ if isfield(data, 'field_xz_side')
     clim([max_dB - dB_limit, max_dB]);
     cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
     xlabel('Position X [\mum]'); ylabel('Position Z [\mum]');
-    title(sprintf('XZ Zoomed: Field + Poynting at \\lambda = %.3f nm', wl_plot*1e9));
+    title(sprintf('XZ Zoomed Side View — %s | \\lambda = %.3f nm', geom_str, wl_plot*1e9));
 
     hold on;
     if isfield(d, 'P_res') && ~isempty(d.P_res)
@@ -157,7 +163,7 @@ if isfield(data, 'field_xz_side')
         n_apod_r, center_mod_depth_nm*1e-9, geom_mode, apod_method, tanh_steepness);
     plot(xp*1e6,  wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
     plot(xp*1e6, -wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
-    plot([0 0], yl, ':', 'Color', geom_color, 'LineWidth', 1.0);   % defect / phase-shift marker
+    draw_cavity_hatch(0, 0, cavity_length_r*1e6, core_height*1e6, geom_color, geom_lw, 0.15);
     xlim(xl); ylim(yl);
     hold off;
 else
@@ -193,7 +199,7 @@ if isfield(data, 'field_yz_cross')
     clim([max_dB_yz - dB_limit, max_dB_yz]);
     cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
     xlabel('Position Y [\mum]'); ylabel('Position Z [\mum]');
-    title(sprintf('YZ Cross Section: Field + Poynting at \\lambda = %.3f nm', wl_plot*1e9));
+    title(sprintf('YZ Cross Section — %s | \\lambda = %.3f nm', geom_str, wl_plot*1e9));
 
     hold on;
     if isfield(d, 'P_res') && ~isempty(d.P_res)
@@ -256,7 +262,7 @@ if isfield(data, 'field_xy')
     clim([max_dB_xy - dB_limit, max_dB_xy]);
     cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
     xlabel('Position X [\mum]'); ylabel('Position Y [\mum]');
-    title(sprintf('XY Zoomed: Field + Poynting at \\lambda = %.3f nm', wl_plot*1e9));
+    title(sprintf('XY Zoomed Top View — %s | \\lambda = %.3f nm', geom_str, wl_plot*1e9));
 
     hold on;
     if isfield(d, 'P_res') && ~isempty(d.P_res)
@@ -276,6 +282,7 @@ if isfield(data, 'field_xy')
     xl = xlim;
     plot(xl, [ wg_hw  wg_hw], '-', 'Color', geom_color, 'LineWidth', geom_lw);
     plot(xl, [-wg_hw -wg_hw], '-', 'Color', geom_color, 'LineWidth', geom_lw);
+    draw_cavity_hatch(0, 0, cavity_length_r*1e6, avg_corrugation_width*1e6, geom_color, geom_lw, 0.15);
     hold off;
 else
     fprintf('XY top view data not available.\n');
@@ -426,6 +433,33 @@ function [x_vec, w_half_vec] = make_grating_profile(pitch, w_narrow, w_wide, ...
         end
         x_vec(end+1)      = seg_xr(i);     %#ok<AGROW>
         w_half_vec(end+1) = hw;            %#ok<AGROW>
+    end
+end
+
+
+function draw_cavity_hatch(x_cen, y_cen, w, h, color, lw, spacing)
+% Draw a hatched rectangle (45-degree diagonal stripes) to mark the cavity region.
+%   (x_cen, y_cen) : rectangle centre [µm]
+%   w, h           : full width and height [µm]
+%   spacing        : stripe pitch [µm]
+    x0 = x_cen - w/2;  x1 = x_cen + w/2;
+    y0 = y_cen - h/2;  y1 = y_cen + h/2;
+
+    % Outline
+    plot([x0 x1 x1 x0 x0], [y0 y0 y1 y1 y0], '-', 'Color', color, 'LineWidth', lw);
+
+    % -45-degree stripes: y = -x + offset, clipped to the rectangle
+    % offset = x + y at each corner; ranges from (x0+y0) to (x1+y1)
+    offsets = (x0 + y0) : spacing : (x1 + y1);
+    for off = offsets
+        pts = zeros(0, 2);
+        yL = -x0 + off;  if yL >= y0 && yL <= y1; pts(end+1,:) = [x0, yL]; end %#ok<AGROW>
+        yR = -x1 + off;  if yR >= y0 && yR <= y1; pts(end+1,:) = [x1, yR]; end %#ok<AGROW>
+        xB =  off - y0;  if xB >  x0 && xB <  x1; pts(end+1,:) = [xB, y0]; end %#ok<AGROW>
+        xT =  off - y1;  if xT >  x0 && xT <  x1; pts(end+1,:) = [xT, y1]; end %#ok<AGROW>
+        if size(pts, 1) == 2
+            plot([pts(1,1) pts(2,1)], [pts(1,2) pts(2,2)], '-', 'Color', color, 'LineWidth', lw*0.6);
+        end
     end
 end
 
