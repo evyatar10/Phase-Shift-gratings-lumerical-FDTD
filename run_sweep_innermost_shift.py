@@ -22,7 +22,7 @@ from bragg_device_shifted import PiShiftBraggFDTDWithShift
 from sim_helpers import apply_monitor_overrides, generate_file_tag
 from simulation_config import SimulationConfig
 
-SHIFT_VALUES_M = [120e-9, 160e-9]
+SHIFT_VALUES_M = [105e-9]
 
 
 def run_single_sim_with_shift(cfg: SimulationConfig, shift_m: float) -> dict:
@@ -31,8 +31,10 @@ def run_single_sim_with_shift(cfg: SimulationConfig, shift_m: float) -> dict:
     kwargs['innermost_tooth_shift_m'] = shift_m
     sim = PiShiftBraggFDTDWithShift(**kwargs)
 
-    # Build file tag — append shift suffix for non-zero values
+    # Build file tag — append FF and shift suffixes as needed
     base_tag = generate_file_tag(sim)
+    if cfg.farfield.enabled:
+        base_tag += "_ff"
     if shift_m > 0.0:
         shift_nm = int(round(shift_m * 1e9))
         tag = f"{base_tag}_shift_{shift_nm}nm"
@@ -104,7 +106,6 @@ def plot_sweep_results(all_results: list) -> None:
     ax.legend()
     ax.grid(True)
     plt.tight_layout()
-    plt.savefig("innermost_shift_sweep.png", dpi=150)
     plt.show()
 
 

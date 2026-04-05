@@ -11,7 +11,7 @@ addpath(fileparts(fileparts(mfilename('fullpath'))));
 clear; clc;
 %close all;
 %% --- Configuration ---
-result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\leaky_modes_v2\results\result_80_periods_CONST_shift_35nm.mat";
+result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\leaky_modes_v2\results\result_80_periods_CONST_ff_shift_105nm.mat";
 
 % Crop bounds [um]
 crop_val = 12;

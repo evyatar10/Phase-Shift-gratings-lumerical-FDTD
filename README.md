@@ -16,23 +16,39 @@
 ├── config.py                    # Machine-specific paths (edit this)
 ├── run_simulation.py            # Core simulation pipeline
 ├── run_sweep.py                 # Parameter sweep (thin wrapper)
+├── run_sweep_innermost_shift.py # Innermost tooth shift sweep
+├── run_experiment.py            # Experiment card runner (examples)
 ├── run_simple_bragg.py          # Simple uniform grating (no cavity)
+├── experiment_card.py           # ExperimentCard dataclass + run_card/run_cards
 ├── bragg_device.py              # PiShiftBraggFDTD device builder
+├── bragg_device_shifted.py      # PiShiftBraggFDTDWithShift (innermost tooth shift)
 ├── analysis.py                  # Phase correction & S-parameter processing
+├── post_processing.py           # Full post-simulation analysis pipeline
 ├── sim_helpers.py               # Shared helper functions
-├── calc_neff_vs_wl.py           # FDE mode solver for neff data
-├── plots.py                     # Python plotting utility
-├── post_proccess_bragg.py       # Re-process saved simulations
+├── python_tools/
+│   ├── calc_neff_vs_wl.py       # FDE mode solver for neff data
+│   ├── plot_loss_spectra.py     # Plot radiation loss spectra
+│   ├── farfield_export.py       # Far-field data export utility
+│   ├── analyze_farfield.py      # Far-field analysis tool
+│   └── overlap_analysis.py      # Overlap integral tool
+├── experiment_examples/
+│   └── p8RC1_tanh.py            # Example experiment card (tanh apodization)
 ├── convergence_testing/
 │   └── run_convergence.py       # Far-field convergence test
 ├── matlab_plotting/
-│   ├── plot_farfield.m          # Near-field + far-field visualization
 │   ├── plot_fdtd.m              # T/R/Loss/Phase spectra
-│   └── plot_convergence.m       # Far-field vs monitor distance
+│   ├── plot_farfield.m          # Near-field + far-field visualization
+│   ├── plot_convergence.m       # Far-field vs monitor distance
+│   ├── plot_field_poynting.m    # Field + Poynting vector plots
+│   ├── plot_field_poynting_overlay.m  # Overlaid field/Poynting visualization
+│   ├── plot_field_poynting_zoom.m     # Zoomed field/Poynting view
+│   ├── plot_resonance_vs_shift.m      # Resonance wavelength vs innermost tooth shift
+│   └── save_figures_interactive.m     # Interactive figure export helper
 └── matlab_analysis/
     ├── analyze_farfield_radiation.m   # 3D spherical radiation patterns
     ├── analyze_core_k_space.m         # FFT k-space analysis
     ├── analyze_yz_circle_power.m      # YZ circular power extraction
+    ├── analyze_radiation_recycling.m  # Radiation recycling analysis
     ├── compare_simulations.m          # Compare two simulation results
     ├── calculate_profile.m            # 3D field profile FWHM
     ├── overlap_analysis_many.m        # Batch overlap integrals
@@ -58,6 +74,16 @@
    python run_sweep.py
    ```
 
+5. **Run an innermost tooth shift sweep:**
+   ```bash
+   python run_sweep_innermost_shift.py
+   ```
+
+6. **Run with an experiment card:**
+   ```bash
+   python run_experiment.py
+   ```
+
 ## Configuration
 
 ### Two config files
@@ -73,7 +99,7 @@
 |-------|-----------|-------------|
 | `GeometryConfig` | `avg_corrugation_width_m`, `corrugation_depth_m`, `core_height_m` | Waveguide cross-section |
 | `GratingConfig` | `pitch_m`, `n_periods_each_side` | Bragg grating periodicity |
-| `ApodizationConfig` | `enabled`, `n_apod_periods_each_side`, `center_mod_depth_nm` | Width modulation tapering |
+| `ApodizationConfig` | `enabled`, `method`, `n_apod_periods_each_side`, `center_mod_depth_nm`, `tanh_steepness` | Width modulation tapering |
 | `SpectralConfig` | `center_wavelength_m`, `scan_width_nm`, `n_wl_points` | Wavelength scan range |
 | `MeshConfig` | `span_multiplier`, `n_periods_dist_to_port` | Domain sizing and mesh |
 | `MaterialConfig` | `use_constant_materials`, `n_core_const`, `n_eff_guess` | Refractive index settings |
@@ -96,6 +122,10 @@ cfg.grating.n_periods_each_side = 120
 # Enable/disable apodization
 cfg.apodization.enabled = False
 
+# Apodization profile: 'none', 'linear', or 'tanh'
+cfg.apodization.method = 'tanh'
+cfg.apodization.tanh_steepness = 2.5
+
 # Apodization depth at the cavity center
 cfg.apodization.center_mod_depth_nm = 20.0
 
@@ -108,24 +138,82 @@ cfg.material.use_constant_materials = False
 
 ## Apodization
 
-The grating supports **linear gradient apodization** for sidelobe suppression.
+The grating supports three apodization profiles for sidelobe suppression, controlled by `ApodizationConfig.method`:
 
-When enabled, the corrugation depth (width modulation) varies linearly:
-- At the **cavity center**: modulation = `center_mod_depth_nm` (small)
-- At the **grating edges**: modulation = full `corrugation_depth_m` (large)
-- The transition occurs over `n_apod_periods_each_side` periods on each side
+- **`'none'`** — uniform grating, constant corrugation depth throughout
+- **`'linear'`** — modulation depth varies linearly from `center_mod_depth_nm` at the cavity to the full `corrugation_depth_m` at the grating edges
+- **`'tanh'`** — modulation depth follows a tanh profile, concentrating the transition near the grating edge for a flatter center region
 
-This creates a smooth taper that reduces abrupt impedance discontinuities at the grating boundaries.
+The transition occurs over `n_apod_periods_each_side` periods on each side.
 
 **Parameters:**
 
 | Field | Default | Description |
 |-------|---------|-------------|
-| `apodization.enabled` | `True` | Enable/disable apodization |
-| `apodization.n_apod_periods_each_side` | `10` | Number of tapered periods per side |
-| `apodization.center_mod_depth_nm` | `10.0` | Modulation depth at cavity (nm) |
+| `apodization.enabled` | `False` | Enable/disable apodization |
+| `apodization.method` | `'linear'` | Profile shape: `'none'`, `'linear'`, or `'tanh'` |
+| `apodization.n_apod_periods_each_side` | `1` | Number of tapered periods per side |
+| `apodization.center_mod_depth_nm` | `160.0` | Modulation depth at cavity (nm) |
+| `apodization.tanh_steepness` | `2.0` | Steepness `a` for tanh profile |
 
-When `enabled = False`, all periods use the full corrugation depth (uniform grating with cavity).
+## Innermost Tooth Shift
+
+`bragg_device_shifted.py` provides `PiShiftBraggFDTDWithShift`, a subclass of `PiShiftBraggFDTD` that shifts the innermost grating tooth on each side of the cavity by a distance `delta`:
+
+```
+Before: ...[L_narrow_1: hp][L_wide_1: hp][cavity][R_narrow_1: hp][R_wide_1: hp]...
+After:  ...[L_narrow_1: hp-δ][L_wide_1: hp][cavity+2δ][R_narrow_1: hp][R_wide_1: hp-δ]...
+```
+
+The cavity grows by `2*delta`; the innermost narrow half-periods shrink by `delta`. Total device length is preserved.
+
+**Usage:**
+```python
+from bragg_device_shifted import PiShiftBraggFDTDWithShift
+
+sim = PiShiftBraggFDTDWithShift(**kwargs, innermost_tooth_shift_m=105e-9)
+```
+
+`run_sweep_innermost_shift.py` sweeps over a list of shift values, saves a `.mat` result per shift, and plots all transmission spectra on one figure. The MATLAB script `matlab_plotting/plot_resonance_vs_shift.m` can then visualize the resonance wavelength as a function of shift.
+
+## Experiment Cards
+
+`experiment_card.py` provides a simplified parameter interface for comparing against fabricated devices. An `ExperimentCard` specifies only the parameters that differ between experiments; everything else uses `SimulationConfig` defaults.
+
+```python
+from experiment_card import ExperimentCard, run_card, run_cards
+
+# Single device
+card = ExperimentCard(
+    n_periods_each_side=50,
+    center_mod_depth_nm=15,
+    apod_method='tanh',
+    tanh_steepness=2.5,
+    label="Sample A",
+)
+run_card(card)
+
+# Compare multiple devices
+run_cards([
+    ExperimentCard(n_periods_each_side=40, center_mod_depth_nm=10, label="Dev1"),
+    ExperimentCard(n_periods_each_side=60, center_mod_depth_nm=20, label="Dev2"),
+])
+```
+
+**Supported card fields:**
+
+| Field | Config path | Notes |
+|-------|------------|-------|
+| `n_periods_each_side` | `grating.n_periods_each_side` | |
+| `center_mod_depth_nm` | `apodization.center_mod_depth_nm` | |
+| `apod_method` | `apodization.method` | `'none'`, `'linear'`, `'tanh'` |
+| `tanh_steepness` | `apodization.tanh_steepness` | |
+| `corrugation_depth_nm` | `geometry.corrugation_depth_m` | auto-converted to m |
+| `pitch_nm` | `grating.pitch_m` | auto-converted to m |
+| `n_apod_periods_each_side` | `apodization.n_apod_periods_each_side` | |
+| `cavity_length_nm` | `grating.override_cavity_length_nm` | `None` = default (pitch/2) |
+| `center_wavelength_nm` | `spectral.center_wavelength_m` | auto-converted to m |
+| `scan_width_nm` | `spectral.scan_width_nm` | |
 
 ## Phase Correction
 
@@ -188,6 +276,23 @@ cfg.sweep.values = [5, 10, 20, 50]
 
 Each sweep iteration creates a deep copy of the config, overrides the target parameter, and runs the full simulation pipeline.
 
+## Post-Processing Pipeline
+
+`post_processing.py` is the main analysis entry point after the FDTD solver completes. It runs the following pipeline stages in order:
+
+1. S-parameter extraction and phase correction
+2. Resonance detection
+3. Field profile extraction and FWHM
+4. 2D field monitor extraction
+5. 3D field monitor extraction
+6. Far-field and near-field extraction
+7. Results assembly
+8. Save to `.mat`
+9. INTERCONNECT export
+10. Plotting
+
+Each stage is a standalone function and can be called independently (e.g., to re-run only far-field analysis on an already-loaded session).
+
 ## MATLAB Post-Processing
 
 ### Plotting (`matlab_plotting/`)
@@ -195,12 +300,18 @@ Each sweep iteration creates a deep copy of the config, overrides the target par
 - **plot_fdtd.m** — Transmission, reflection, loss, and phase from .mat result files
 - **plot_farfield.m** — Near-field monitor surface and far-field radiation patterns
 - **plot_convergence.m** — Far-field convergence with monitor distance
+- **plot_field_poynting.m** — Field intensity and Poynting vector visualization
+- **plot_field_poynting_overlay.m** — Overlaid field and Poynting vector plots
+- **plot_field_poynting_zoom.m** — Zoomed-in field/Poynting view
+- **plot_resonance_vs_shift.m** — Resonance wavelength vs innermost tooth shift
+- **save_figures_interactive.m** — Interactive helper for exporting figures
 
 ### Analysis (`matlab_analysis/`)
 
 - **analyze_farfield_radiation.m** — 3D spherical radiation pattern (hemisphere surf plot + polar cuts)
 - **analyze_core_k_space.m** — FFT analysis of intracavity field profile in k-space
 - **analyze_yz_circle_power.m** — Power distribution along circular boundary in YZ cross-section
+- **analyze_radiation_recycling.m** — Radiation recycling analysis
 - **compare_simulations.m** — Side-by-side comparison of two simulation results
 - **calculate_profile.m** — 3D field profile FWHM analysis
 - **overlap_analysis_many.m** — Batch overlap integral computation between devices

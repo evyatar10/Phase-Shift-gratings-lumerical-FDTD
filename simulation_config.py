@@ -72,9 +72,9 @@ class ApodizationConfig:
 
     The transition occurs over n_apod_periods_each_side periods.
     """
-    enabled: bool = False                        # Enable/disable apodization
-    n_apod_periods_each_side: int = 10          # Number of tapered periods on each side
-    center_mod_depth_nm: float = 4.0           # Modulation depth at the cavity center (nm)
+    enabled: bool = True                        # Enable/disable apodization
+    n_apod_periods_each_side: int = 5          # Number of tapered periods on each side was 10
+    center_mod_depth_nm: float = 100.0           # Modulation depth at the cavity center (nm) was 4
     method: str = 'linear'                       # Apodization profile: 'linear' or 'tanh'
     tanh_steepness: float = 2.0                  # Steepness parameter for tanh profile
 
