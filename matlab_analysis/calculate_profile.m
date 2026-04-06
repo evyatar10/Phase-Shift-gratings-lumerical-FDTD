@@ -1,183 +1,280 @@
-% MATLAB Script: calculate_profile_fwhm_comparison.m
+% MATLAB Script: calculate_profile.m
+clear all;
+close all;
+clc;
 addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 
 % --- USER CONFIGURATION ---
-% Path to your result file
-base_dir = "C:\Users\evyat\Lumerical\long_bragg_grating_interconnect\bragg_fdtd_elements_10_apodization_longer\results\";
-filename = fullfile(base_dir, 'result_80_periods_10_apodizations_CONST_3D_crop.mat');
+% Add or remove file paths to compare profiles side by side
+base_dir = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\leaky_modes_v2\results";
 
-% Options
-compare_with_2d_slice = true;  % If true, extracts Z=0 slice and compares
+file_list = {
+    fullfile(base_dir, 'result_80_periods_CONST.mat'), ...
+    fullfile(base_dir, 'result_80_periods_10_apod_CONST.mat'), ...
+    fullfile(base_dir, 'result_80_periods_CONST_shift_105nm.mat'), ...
+    fullfile(base_dir, 'result_80_periods_1_apod_CONST_shift_105nm.mat'), ...
+};
+
+% Human-readable label for each file (shown as subplot title)
+% Must match file_list order and length
+labels = {
+    '80 Periods', ...
+    '80 Periods, 10 Apodizations', ...
+    '80 Periods, 105 nm Shift', ...
+    '80 Periods, 1 Apodization, 105 nm Shift', ...
+};
 
 % Run Analysis
-analyze_field_profile_fwhm(filename, compare_with_2d_slice);
+compare_profiles(file_list, labels);
 
 
 % ---------------------------------------------------------
-% MAIN FUNCTION
+% MAIN: Load each file, extract 2D profile, plot side by side
 % ---------------------------------------------------------
-function analyze_field_profile_fwhm(filepath, do_2d_compare)
+function compare_profiles(file_list, labels)
+n = numel(file_list);
+if n == 0, error('file_list is empty. Please provide at least one file path.'); end
+if nargin < 2 || isempty(labels)
+    labels = repmat({''}, 1, n);  % no labels if omitted
+end
 
-% 1. Load Data
-fprintf('Loading Data from: %s\n', filepath);
-if ~exist(filepath, 'file'), error('File not found!'); end
+% Layout: 2x2 for 4 files, single row for <=3, 3-column grid for more
+if n <= 3
+    ncols = n; nrows = 1;
+elseif n == 4
+    ncols = 2; nrows = 2;
+else
+    ncols = 3; nrows = ceil(n / 3);
+end
+
+fig_w = 520 * ncols;
+fig_h = 420 * nrows;
+figure('Name', 'Mode Profile Comparison', 'Color', 'w', ...
+       'Position', [80, 80, fig_w, fig_h]);
+
+for i = 1:n
+    filepath = file_list{i};
+    fprintf('\n--- Processing File %d / %d ---\n', i, n);
+    fprintf('Path: %s\n', filepath);
+
+    [x, I_x_2d, I_env_2d, fwhm, xL, xR, yHM, wl_res, T_peak] = extract_2d_profile(filepath);
+
+    ax = subplot(nrows, ncols, i);
+    plot_profile(ax, x, I_x_2d, I_env_2d, fwhm, xL, xR, yHM, wl_res, labels{i}, T_peak);
+end
+end
+
+
+% ---------------------------------------------------------
+% EXTRACT 2D PROFILE FROM A SINGLE FILE
+% ---------------------------------------------------------
+function [x, I_x_2d, I_env_2d, fwhm, xL, xR, yHM, wl_res, T_peak] = extract_2d_profile(filepath)
+if ~exist(filepath, 'file')
+    error('File not found: %s', filepath);
+end
 data = load(filepath);
 
-% 2. Identify Resonance
-if isfield(data, 'T') && isfield(data, 'wl_m')
-    [~, idx_peak] = max(data.T);
-    wl_res = data.wl_m(idx_peak);
-    fprintf('Spectrum Analysis: Resonance detected at %.3f nm\n', wl_res*1e9);
+% ---- PATH A: pre-processed file (new format) ----
+% Detected by presence of field_energy_density_1D
+if isfield(data, 'field_energy_density_1D') && isfield(data, 'field_x')
+
+    x      = double(data.field_x(:));
+    I_x_2d = double(data.field_energy_density_1D(:));
+
+    if isfield(data, 'field_envelope_1D')
+        I_env_2d = double(data.field_envelope_1D(:));
+    else
+        [I_env_2d, ~, ~] = calculate_envelope(x, I_x_2d);
+    end
+
+    if isfield(data, 'resonance_wavelength_nm')
+        wl_res = double(data.resonance_wavelength_nm) * 1e-9;
+    elseif isfield(data, 'wl_m') && isfield(data, 'T')
+        [~, idx_peak] = max(data.T);
+        wl_res = data.wl_m(idx_peak);
+    else
+        wl_res = NaN;
+    end
+
+    % Peak transmission at resonance wavelength
+    if isfield(data, 'T') && isfield(data, 'wl_m')
+        [~, idx_res] = min(abs(data.wl_m - wl_res));
+        T_peak = double(data.T(idx_res));
+    else
+        T_peak = NaN;
+    end
+
+    [fwhm, xL, xR, yHM] = calculate_fwhm_relative(x, I_env_2d);
+    fprintf('Pre-processed format detected. FWHM: %.2f um at %.3f nm  |  T_peak = %.4f\n', ...
+        fwhm * 1e6, wl_res * 1e9, T_peak);
+
+% ---- PATH B: raw 3D field file (legacy format) ----
 else
-    error('Variable "T" or "wl_m" not found inside the .mat file.');
-end
+    if isfield(data, 'T') && isfield(data, 'wl_m')
+        [~, idx_peak] = max(data.T);
+        wl_res  = data.wl_m(idx_peak);
+        T_peak  = double(data.T(idx_peak));
+    else
+        error('Cannot identify resonance wavelength in: %s', filepath);
+    end
 
-% 3. Unpack 3D Data
-[x, y, z, lam_3d, E_5D] = unpack_data_robust(data);
+    [x, y, z, lam_3d, E_5D] = unpack_data_robust(data);
 
-% Find the 3D monitor index closest to the resonance
-[~, idx_3d] = min(abs(lam_3d - wl_res));
-wl_3d_actual = lam_3d(idx_3d);
+    [~, idx_wl] = min(abs(lam_3d - wl_res));
+    wl_res = lam_3d(idx_wl);
+    fprintf('Raw format: resonance at %.3f nm\n', wl_res * 1e9);
 
-fprintf('Extracting Field Profile at 3D Monitor Point #%d (%.3f nm)\n', ...
-    idx_3d, wl_3d_actual*1e9);
-
-% --- PROCESS A: 3D INTEGRATED (Volumetric) ---
-E_slice_3d = squeeze(E_5D(:, :, :, idx_3d, :));
-E_sq_3d = sum(abs(E_slice_3d).^2, 4); % Sum components
-I_xy_3d = trapz(z, E_sq_3d, 3);       % Integ Z
-I_x_3d  = trapz(y, I_xy_3d, 2);       % Integ Y
-
-[I_env_3d, ~, ~] = calculate_envelope(x, I_x_3d);
-[fwhm_3d, xL_3d, xR_3d, yHM_3d] = calculate_fwhm_relative(x, I_env_3d);
-
-% --- PROCESS B: 2D SLICE (Z=0 Center Cut) ---
-if do_2d_compare
-    % Find index closest to Z=0
     [~, idx_z0] = min(abs(z));
-    z_val = z(idx_z0);
-    fprintf('Extracting 2D Slice at Z = %.3f um\n', z_val*1e6);
+    fprintf('2D slice at Z = %.3f um\n', z(idx_z0) * 1e6);
 
-    E_slice_2d = squeeze(E_5D(:, :, idx_z0, idx_3d, :)); % [x, y, components]
-    E_sq_2d = sum(abs(E_slice_2d).^2, 3);
-    I_x_2d  = trapz(y, E_sq_2d, 2); % Integ Y only
-
-    % Normalize 2D to match 3D peak for comparison plotting
-    scale_factor = max(I_env_3d) / max(I_x_2d);
-    I_x_2d = I_x_2d * scale_factor;
+    E_slice_2d = squeeze(E_5D(:, :, idx_z0, idx_wl, :));
+    E_sq_2d    = sum(abs(E_slice_2d).^2, 3);
+    I_x_2d     = trapz(y, E_sq_2d, 2);
 
     [I_env_2d, ~, ~] = calculate_envelope(x, I_x_2d);
-    [fwhm_2d, xL_2d, xR_2d, yHM_2d] = calculate_fwhm_relative(x, I_env_2d);
+    [fwhm, xL, xR, yHM] = calculate_fwhm_relative(x, I_env_2d);
+    fprintf('2D Profile FWHM: %.2f um\n', fwhm * 1e6);
+end
 end
 
-% --- REPORT RESULTS ---
-fprintf('\n--- RESULTS ---\n');
-fprintf('3D Integrated FWHM: %.4f mm (%.2f um)\n', fwhm_3d*1e3, fwhm_3d*1e6);
-if do_2d_compare
-    fprintf('2D Slice (Z=0) FWHM: %.4f mm (%.2f um)\n', fwhm_2d*1e3, fwhm_2d*1e6);
-    fprintf('Difference: %.2f%%\n', abs(fwhm_3d - fwhm_2d)/fwhm_3d * 100);
-end
 
 % ---------------------------------------------------------
-% PLOTTING
+% PLOT A SINGLE PROFILE (reference-image style)
 % ---------------------------------------------------------
-figure('Name', 'Resonance Field Profile Comparison', 'Color', 'w');
+function plot_profile(ax, x, I_x_2d, I_env_2d, fwhm, xL, xR, yHM, wl_res, label, T_peak)
+axes(ax);
 hold on;
 
-% --- Plot 3D Data ---
-plot(x * 1e6, I_x_3d, 'Color', [0.7 0.7 1], 'LineWidth', 0.5, 'DisplayName', '3D Raw');
-plot(x * 1e6, I_env_3d, 'b-', 'LineWidth', 2, 'DisplayName', '3D Envelope');
+% --- Raw |E|^2 as shaded area (blue, semi-transparent) ---
+area(x * 1e6, I_x_2d, ...
+    'FaceColor', [0.75 0.75 1], ...
+    'EdgeColor', [0.55 0.55 0.85], ...
+    'FaceAlpha', 0.55, ...
+    'LineWidth', 0.4, ...
+    'DisplayName', 'Raw |E|^2');
 
-if fwhm_3d > 0
-    % Marker 3D (Blue Dashed)
-    plot([xL_3d, xR_3d]*1e6, [yHM_3d, yHM_3d], '--', 'Color', 'b', ...
-        'LineWidth', 1.5, 'DisplayName', sprintf('3D FWHM: %.2f um', fwhm_3d*1e6));
+% --- Field envelope (red solid line) ---
+plot(x * 1e6, I_env_2d, ...
+    'r-', 'LineWidth', 2, ...
+    'DisplayName', 'Field Envelope');
+
+% --- FWHM annotation ---
+if fwhm > 0
+    % Dashed horizontal line at half-maximum
+    plot([xL, xR] * 1e6, [yHM, yHM], ...
+        'k--', 'LineWidth', 1.5, ...
+        'HandleVisibility', 'off');
+
+    % Text label centred above the line
+    text(mean([xL, xR]) * 1e6, yHM * 1.08, ...
+        sprintf('FWHM = %.2f \\mum', fwhm * 1e6), ...
+        'HorizontalAlignment', 'center', ...
+        'FontWeight', 'bold', ...
+        'FontSize', 10, ...
+        'Color', 'k');
 end
 
-% --- Plot 2D Data (Optional) ---
-if do_2d_compare
-    plot(x * 1e6, I_env_2d, 'g--', 'LineWidth', 2, 'DisplayName', '2D Slice Envelope (Z=0)');
-
-    if fwhm_2d > 0
-        % Marker 2D (Green Dotted) - Shifted slightly down to visualize
-        plot([xL_2d, xR_2d]*1e6, [yHM_2d, yHM_2d]*0.95, ':', 'Color', [0 0.6 0], ...
-            'LineWidth', 1.5, 'DisplayName', sprintf('2D FWHM: %.2f um', fwhm_2d*1e6));
-    end
+% --- Formatting ---
+xlabel('Position x [\mum]', 'FontSize', 10);
+ylabel('Integrated Energy Density (a.u.)', 'FontSize', 10);
+if isnan(T_peak)
+    t_str = sprintf('Mode Profile @ %.2f nm', wl_res * 1e9);
+else
+    t_str = sprintf('Mode Profile @ %.2f nm  |  \\bf\\color[rgb]{0.85,0.40,0.00}T_{peak} = %.4f\\rm\\color{black}', wl_res * 1e9, T_peak);
 end
-
-xlabel('Position X [\mum]');
-ylabel('Integrated Energy Density (a.u.)');
-title({'Field Profile Comparison', ...
-    sprintf('\\lambda_{res} = %.3f nm', wl_3d_actual*1e9)});
-legend('Location', 'best');
+if ~isempty(label)
+    title({label, t_str}, 'FontSize', 11, 'Interpreter', 'tex');
+else
+    title(t_str, 'FontSize', 11, 'Interpreter', 'tex');
+end
+legend('Location', 'best', 'FontSize', 9);
 grid on;
-xlim([min(x)*1e6, max(x)*1e6]);
+xlim([min(x) * 1e6, max(x) * 1e6]);
+set(ax, 'Box', 'on', 'Color', 'w', 'GridColor', [0.8 0.8 0.8], ...
+    'GridAlpha', 0.7, 'LineWidth', 0.8);
 hold off;
 end
 
+
 % ---------------------------------------------------------
-% HELPER: ENVELOPE
+% HELPER: ENVELOPE (Hilbert transform)
 % ---------------------------------------------------------
 function [env, x_pks, y_pks] = calculate_envelope(x, y)
-% Physically accurate Envelope calculation using the Hilbert Transform!
-
-% The analytic signal is defined as A(t) = y(t) + j*H(y(t))
 analytic_signal = hilbert(double(y));
-
-% The envelope is simply the magnitude of the analytic signal
 env = abs(analytic_signal);
-
-% Smooth it slightly to remove any remaining high-frequency carrier jitter
 env = smoothdata(env, 'gaussian', 50);
-
-% Findpeaks returned purely for backwards compatibility with plot variables
 [y_pks, x_pks] = findpeaks(env, double(x));
 end
 
+
 % ---------------------------------------------------------
-% HELPER: FWHM
+% HELPER: FWHM (interpolated zero-crossings)
 % ---------------------------------------------------------
 function [width, x1, x2, y_target] = calculate_fwhm_relative(x, y)
 y_max = max(y); y_min = min(y);
 y_target = y_min + 0.5 * (y_max - y_min);
 
-above = y > y_target;
+above    = y > y_target;
 crossings = diff(above);
-indices = find(crossings ~= 0);
+indices   = find(crossings ~= 0);
 
-if length(indices) < 2, width=0; x1=0; x2=0; return; end
+if length(indices) < 2, width = 0; x1 = 0; x2 = 0; return; end
 
 x_cross = zeros(length(indices), 1);
 for k = 1:length(indices)
-    idx = indices(k);
-    y1 = y(idx); y2 = y(idx+1);
-    x1_pt = x(idx); x2_pt = x(idx+1);
-    slope = (y2 - y1) / (x2_pt - x1_pt);
-    x_cross(k) = x1_pt + (y_target - y1) / slope;
+    idx  = indices(k);
+    slope = (y(idx+1) - y(idx)) / (x(idx+1) - x(idx));
+    x_cross(k) = x(idx) + (y_target - y(idx)) / slope;
 end
 
-x1 = x_cross(1); x2 = x_cross(end);
+x1    = x_cross(1);
+x2    = x_cross(end);
 width = x2 - x1;
 end
 
+
 % ---------------------------------------------------------
-% HELPER: UNPACK
+% HELPER: UNPACK 3D FIELD DATA
 % ---------------------------------------------------------
 function [x, y, z, lam, E_5D] = unpack_data_robust(data)
-if ~isfield(data, 'field_3d'), error('Missing field_3d'); end
-f3d = data.field_3d;
-x = double(f3d.x); y = double(f3d.y); z = double(f3d.z);
+% Resolve the struct that holds x/y/z/E_res
+if isfield(data, 'field_3d')
+    f3d = data.field_3d;
+elseif isfield(data, 'field')
+    f3d = data.field;
+elseif isfield(data, 'monitor')
+    f3d = data.monitor;
+else
+    % Print available top-level fields to help diagnose unknown layouts
+    fprintf('\n[unpack_data_robust] Top-level fields in .mat file:\n');
+    disp(fieldnames(data));
+    % Check if coordinates live directly at the top level
+    if isfield(data, 'x') && isfield(data, 'E_res')
+        f3d = data;
+    else
+        error(['Cannot find field data. Expected "field_3d", "field", or "monitor" ' ...
+               '(or top-level x/E_res). See field list above.']);
+    end
+end
+x = double(f3d.x);
+y = double(f3d.y);
+z = double(f3d.z);
 
-if isfield(f3d, 'lambda_3d'), lam = double(f3d.lambda_3d);
-elseif isfield(f3d, 'lambda'), lam = double(f3d.lambda);
-else, lam = 1.55e-6; end
+if isfield(f3d, 'lambda_3d'),     lam = double(f3d.lambda_3d);
+elseif isfield(f3d, 'lambda'),    lam = double(f3d.lambda);
+else,                             lam = 1.55e-6;
+end
 lam = lam(:);
 
 E_raw = f3d.E_res;
-dims = size(E_raw);
+dims  = size(E_raw);
 if ndims(E_raw) == 4
     if dims(4) == 3 && length(lam) == 1
         E_5D = reshape(E_raw, [dims(1), dims(2), dims(3), 1, dims(4)]);
-    else, E_5D = E_raw; end
-else, E_5D = E_raw; end
+    else
+        E_5D = E_raw;
+    end
+else
+    E_5D = E_raw;
+end
 end
