@@ -17,24 +17,33 @@ class PiShiftBraggFDTDWithShift(PiShiftBraggFDTD):
     Subclass of PiShiftBraggFDTD that supports an optional shift of the
     innermost grating tooth on each side of the cavity.
 
-    All constructor arguments are identical to the parent class, with one
-    additional optional keyword:
+    All constructor arguments are identical to the parent class, with two
+    additional optional keywords:
 
         innermost_tooth_shift_m (float): Distance [m] to shift the innermost
             tooth away from the cavity center on each side. Default 0.0.
             Must satisfy 0 < delta < half_pitch when non-zero.
 
-    Physical effect (around cavity, left to right):
-        Before: ...[L_narrow_2: hp][L_wide_2: hp][L_narrow_1: hp][L_wide_1: hp][cavity: cav_len][R_narrow_1: hp][R_wide_1: hp][R_narrow_2: hp][R_wide_2: hp]...
-        After:  ...[L_narrow_2: hp][L_wide_2: hp][L_narrow_1: hp-delta][L_wide_1: hp][cavity: cav_len+2*delta][R_narrow_1: hp][R_wide_1: hp][R_narrow_2: hp-delta][R_wide_2: hp]...
+        lengthen_cavity (bool): Controls whether the cavity is enlarged to
+            compensate for the tooth shortening. Default True.
+            - True:  cavity grows by 2*delta so total device length equals
+                     the non-shifted device.
+            - False: cavity stays at cavity_length so total device length is
+                     2*delta shorter than the non-shifted device.
 
-    Cavity grows by 2*delta. L_narrow_1 (left innermost) and R_narrow_2 (right second-from-cavity)
-    each shrink by delta. All other periods unchanged. Total length preserved.
+    Physical effect (around cavity, left to right):
+        Before:               ...[L_narrow_1: hp][L_wide_1: hp][cavity: cav_len][R_narrow_1: hp][R_wide_1: hp][R_narrow_2: hp]...
+        After (lengthen=True): ...[L_narrow_1: hp-d][L_wide_1: hp][cavity: cav_len+2d][R_narrow_1: hp][R_wide_1: hp][R_narrow_2: hp-d]...
+        After (lengthen=False):...[L_narrow_1: hp-d][L_wide_1: hp][cavity: cav_len ][R_narrow_1: hp][R_wide_1: hp][R_narrow_2: hp-d]...
+
+    L_narrow_1 (left innermost) and R_narrow_2 (right second-from-cavity)
+    each shrink by delta. All other periods unchanged.
     """
 
-    def __init__(self, *args, innermost_tooth_shift_m=0.0, **kwargs):
+    def __init__(self, *args, innermost_tooth_shift_m=0.0, lengthen_cavity=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.innermost_tooth_shift_m = float(innermost_tooth_shift_m)
+        self.lengthen_cavity = bool(lengthen_cavity)
 
     def _add_bragg_core(self):
         """
@@ -120,9 +129,10 @@ class PiShiftBraggFDTDWithShift(PiShiftBraggFDTD):
         add_core_segment(x, x + half_pitch, W_wide[1], name_prefix="L_wide_1")
         x += half_pitch
 
-        # Cavity: enlarged by 2*delta
-        add_core_segment(x, x + self.cavity_length + 2 * delta, W_narrow[1], name_prefix="cavity")
-        x += self.cavity_length + 2 * delta
+        # Cavity: enlarged by 2*delta only when lengthen_cavity=True
+        cavity_extra = 2 * delta if self.lengthen_cavity else 0.0
+        add_core_segment(x, x + self.cavity_length + cavity_extra, W_narrow[1], name_prefix="cavity")
+        x += self.cavity_length + cavity_extra
 
         # Right innermost period (d = 1): unchanged — adjacent narrow stays at full half_pitch
         add_core_segment(x, x + half_pitch, W_narrow[1], name_prefix="R_narrow_1")
