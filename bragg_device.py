@@ -40,6 +40,7 @@ class PiShiftBraggFDTD:
                  apod_method='linear',
                  tanh_steepness=2.0,
                  use_cavity_mesh_override=False,
+                 cells_per_half_period=5,
                  use_symmetry=True,
                  use_z_symmetry=True,
                  use_constant_materials=False,
@@ -96,6 +97,7 @@ class PiShiftBraggFDTD:
         self.tanh_steepness = tanh_steepness
 
         self.use_cavity_mesh_override = use_cavity_mesh_override
+        self.cells_per_half_period = int(cells_per_half_period)
 
         # --- NEW STATE VARS ---
         self.record_2d_fields_top_and_cross = record_2d_fields_top_and_cross
@@ -242,7 +244,7 @@ class PiShiftBraggFDTD:
     def build(self):
         self._reset_layout()
         self._add_fdtd_region()
-        self._add_aligned_mesh_override()
+        self._add_aligned_mesh_override(self.cells_per_half_period)
         self._add_bragg_core()
         self._add_source_and_monitors()
 

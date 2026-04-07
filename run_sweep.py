@@ -71,6 +71,9 @@ def run_sweep(base_cfg: SimulationConfig) -> None:
 if __name__ == "__main__":
     cfg = SimulationConfig()
 
+    # Simulation mode: "accurate" (dx≈35nm, cells=7) or "optimization" (dx=50nm, cells=5)
+    cfg.mesh.simulation_mode = "optimization"
+
     # ── Configure the sweep ──────────────────────────────────────────────
     cfg.sweep.parameter = "grating.n_periods_each_side"
     cfg.sweep.values = [80, 100, 120]

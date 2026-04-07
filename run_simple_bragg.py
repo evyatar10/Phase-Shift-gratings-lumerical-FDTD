@@ -54,6 +54,7 @@ class SimpleBraggFDTD:
                  n_eff_guess=1.55,
                  coarse_width_nm=150,
                  n_wl_points=401,
+                 cells_per_half_period=5,
                  use_symmetry=True,
                  use_z_symmetry=True,
                  use_constant_materials=False,
@@ -83,6 +84,7 @@ class SimpleBraggFDTD:
         self.use_z_symmetry = use_z_symmetry
         self.n_eff_guess = n_eff_guess
         self.n_wl_points = n_wl_points
+        self.cells_per_half_period = int(cells_per_half_period)
 
         # Derived geometry
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
@@ -203,7 +205,7 @@ class SimpleBraggFDTD:
     def build(self):
         self._reset_layout()
         self._add_fdtd_region()
-        self._add_aligned_mesh_override()
+        self._add_aligned_mesh_override(self.cells_per_half_period)
         self._add_bragg_core()
         self._add_source_and_monitors()
 

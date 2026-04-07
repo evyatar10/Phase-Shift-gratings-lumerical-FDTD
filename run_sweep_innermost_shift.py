@@ -120,10 +120,13 @@ def plot_sweep_results(all_results: list) -> None:
 if __name__ == "__main__":
     cfg = SimulationConfig()
 
+    # Simulation mode: "accurate" (dx≈35nm, cells=7) or "optimization" (dx=50nm, cells=5)
+    cfg.mesh.simulation_mode = "optimization"
+
     # Optional overrides (uncomment to use):
     # cfg.spectral.center_wavelength_m = 1.5625e-6
     # cfg.monitors.record_2d_fields = False
     # cfg.farfield.enabled = False
 
-    all_results = run_sweep_innermost_shift(cfg, lengthen_cavity=False)
+    all_results = run_sweep_innermost_shift(cfg, lengthen_cavity=True)
     plot_sweep_results(all_results)

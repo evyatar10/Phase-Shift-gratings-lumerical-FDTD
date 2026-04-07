@@ -49,7 +49,7 @@ class GeometryConfig:
 class GratingConfig:
     """Bragg grating periodicity and cavity parameters."""
     pitch_m: float = 500e-9                     # Grating period
-    n_periods_each_side: int = 80              # Number of periods on each side of the pi-shift cavity
+    n_periods_each_side: int = 60              # Number of periods on each side of the pi-shift cavity
     override_cavity_length_nm: Optional[float] = None  # None or False = default (pitch/2)
 
 
@@ -97,12 +97,29 @@ class SpectralConfig:
 # Mesh & Domain
 # ═══════════════════════════════════════════════════════════════════════════════
 
+_MESH_MODE_CELLS = {
+    "accurate":     7,   # 250 nm / 7 ≈ 35.7 nm dx  — use for final/accurate results
+    "optimization": 5,   # 250 nm / 5 = 50 nm dx     — use for sweeps and optimization
+}
+
+
 @dataclass
 class MeshConfig:
     """FDTD simulation domain sizing and mesh settings."""
     n_periods_dist_to_port: int = 20            # Distance from grating edge to port (in periods)
     n_wls_dist_port_to_pml: float = 5.0         # Distance from port to PML (in wavelengths)
     use_cavity_mesh_override: bool = True        # Extra mesh refinement at the cavity
+    simulation_mode: str = "accurate"            # "accurate" (dx≈35nm) or "optimization" (dx=50nm)
+
+    @property
+    def cells_per_half_period(self) -> int:
+        """Number of mesh cells per half-pitch in X (controls dx)."""
+        if self.simulation_mode not in _MESH_MODE_CELLS:
+            raise ValueError(
+                f"Unknown simulation_mode '{self.simulation_mode}'. "
+                f"Choose from: {list(_MESH_MODE_CELLS.keys())}"
+            )
+        return _MESH_MODE_CELLS[self.simulation_mode]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -334,6 +351,7 @@ class SimulationConfig:
             apod_method=ap.method if ap.enabled else 'linear',
             tanh_steepness=ap.tanh_steepness,
             use_cavity_mesh_override=me.use_cavity_mesh_override,
+            cells_per_half_period=me.cells_per_half_period,
             use_symmetry=sy.use_y_symmetry,
             use_z_symmetry=sy.use_z_symmetry,
             use_constant_materials=ma.use_constant_materials,
@@ -383,6 +401,7 @@ class SimulationConfig:
             n_wls_dist_port_to_pml=sg.n_wls_dist_port_to_pml,
             n_eff_guess=ma.n_eff_guess,
             n_wl_points=sp.n_wl_points,
+            cells_per_half_period=self.mesh.cells_per_half_period,
             use_symmetry=sy.use_y_symmetry,
             use_z_symmetry=sy.use_z_symmetry,
             use_constant_materials=ma.use_constant_materials,

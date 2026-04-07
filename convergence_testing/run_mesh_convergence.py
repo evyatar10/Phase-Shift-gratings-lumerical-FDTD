@@ -1,22 +1,23 @@
 """
-Mesh convergence testing for Q factor — Pi-Shift Bragg Grating FDTD.
+Mesh convergence testing — Pi-Shift Bragg Grating FDTD.
 
-Tests three mesh parameters sequentially (coordinate descent), using Q factor
-(= lambda_resonance / FWHM) as the convergence metric.  Runs are sequential:
-FDTD uses the full GPU for each simulation, so parallelism is not possible
-on a single machine.
+Tests two mesh parameters sequentially (coordinate descent).  The convergence
+metric and threshold are configurable (see user-editable settings below):
+  "Q"      — Q factor (lambda/FWHM); threshold 2.0% (typical published FDTD standard)
+  "lambda" — resonance wavelength;   threshold 1.0% (Ansys/Lumerical standard)
 
-Sweep order and default values:
-  Phase A — cells_per_half_period  [3, 4, 5, 6, 7, 8]   controls dx
+Sweep order:
+  Phase A — cells_per_half_period  [4, 5, 6, 7, 8, 10]  controls dx
   Phase B — dz_divisor             [5, 7, 9, 12, 15]     controls dz = core_height / divisor
-  Phase C — dy_divisor             [8, 10, 13, 17, 22]   controls dy = width_narrow / divisor
+  (dy_divisor not swept — dy=50 nm / 13 cells across narrow width is well-resolved)
 
 Each phase fixes the best-converged value from the previous phase.
-Early stopping: if |Delta_Q / Q| < CONVERGENCE_THRESHOLD for two consecutive
-mesh values, the phase stops and recommends the coarser of those two.
+Early stopping: if |Δmetric/metric| < threshold for two consecutive mesh values,
+the phase stops and recommends the coarser of those two.
 
-Results are checkpointed to JSON after every run so the script can be
-restarted without repeating completed simulations.
+Results are checkpointed to a JSON file named checkpoint_p{N_PERIODS}_{METRIC}.json
+after every run.  Different (periods, metric) combinations write separate files and
+never overwrite each other.
 
 Run from the project root:
     python convergence_testing/run_mesh_convergence.py
@@ -44,12 +45,25 @@ from simulation_config import SimulationConfig
 # User-editable settings
 # ═════════════════════════════════════════════════════════════════════════════
 
-CONVERGENCE_THRESHOLD = 0.005   # 0.5% — stop phase when |Delta_Q/Q| < this
+# ── Convergence metric ───────────────────────────────────────────────────────
+# Set CONVERGENCE_METRIC to "Q" or "lambda".
+# Each metric has its own threshold based on published FDTD standards:
+#   lambda — 1.0%: Ansys/Lumerical stated standard for resonance wavelength
+#   Q      — 2.0%: typical published FDTD standard for mesh convergence of Q.
+#             Note: Lumerical's 0.2% criterion refers to auto-shutoff convergence
+#             (field decay within a single run), NOT mesh-to-mesh convergence.
+CONVERGENCE_METRIC   = "Q"      # "Q" or "lambda"
+N_PERIODS_EACH_SIDE  = 80       # device length; also encoded in checkpoint filename
 
-# Sweep values for each phase (coarse → fine)
-PHASE_A_VALUES = [3, 4, 5, 6, 7, 8]        # cells_per_half_period
-PHASE_B_VALUES = [5, 7, 9, 12, 15]          # dz_divisor
-PHASE_C_VALUES = [8, 10, 13, 17, 22]        # dy_divisor
+THRESHOLD_LAMBDA = 0.010        # 1.0% — for lambda convergence metric
+THRESHOLD_Q      = 0.020        # 2.0% — for Q convergence metric
+
+# Sweep values for each phase (coarse → fine).
+# cells=3 removed from Phase A: too coarse, guaranteed non-converged, wastes a run.
+# Phase C (dy_divisor) dropped: dy=50 nm is already 13 cells across the 650 nm
+# narrow width — well-resolved and not a convergence concern.
+PHASE_A_VALUES = [4, 5, 6, 7, 8, 10]        # cells_per_half_period (controls dx)
+PHASE_B_VALUES = [5, 7, 9, 12, 15]          # dz_divisor            (controls dz)
 
 # Default (current production) values — used as fixed values in other phases
 DEFAULT_CELLS  = 5
@@ -63,7 +77,10 @@ DEFAULT_DY_DIV = 13
 CONV_DIR     = os.path.join(config.BASE_SAVE_DIR, "mesh_convergence")
 LAYOUTS_DIR  = os.path.join(CONV_DIR, "layouts")
 RESULTS_DIR  = os.path.join(CONV_DIR, "results")
-CHECKPOINT   = os.path.join(CONV_DIR, "checkpoint.json")
+# Checkpoint filename encodes periods + metric so different run configurations
+# never overwrite each other (e.g. checkpoint_p80_Q.json vs checkpoint_p60_lambda.json).
+CHECKPOINT   = os.path.join(CONV_DIR,
+    f"checkpoint_p{N_PERIODS_EACH_SIDE}_{CONVERGENCE_METRIC}.json")
 
 os.makedirs(LAYOUTS_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -154,6 +171,15 @@ def _make_cfg() -> SimulationConfig:
     cfg.monitors.record_3d_fields  = False
     cfg.farfield.enabled           = False
     cfg.run.cleanup_lumerical_data = True
+    # Fewer periods: shorter device → faster sim + faster auto-shutoff (lower Q
+    # decays quicker). 40 periods is enough to see a clear resonance and get a
+    # stable Q ratio for convergence comparison purposes.
+    cfg.grating.n_periods_each_side = N_PERIODS_EACH_SIDE
+    # Narrow scan: 20 nm is sufficient to capture the cavity resonance peak
+    # and avoids wasting DFT points outside the stopband.
+    cfg.spectral.scan_width_nm = 20.0
+    # Fewer DFT monitor points: 3001 is overkill for just locating the resonance.
+    cfg.spectral.n_wl_points = 1001
     return cfg
 
 
@@ -216,7 +242,6 @@ def _run_one(cfg: SimulationConfig,
     )
 
     layout_path  = os.path.join(LAYOUTS_DIR, f"layout_{tag}.fsp")
-    results_path = os.path.join(RESULTS_DIR,  f"result_{tag}.mat")
 
     sim.build()
     sim.update_scan(
@@ -235,10 +260,17 @@ def _run_one(cfg: SimulationConfig,
     try:
         s_params  = extract_s_parameters(sim, cfg)
         resonance = find_resonance(s_params)
-        Q = resonance.wavelength_m / resonance.spectral_fwhm_m
+        # find_resonance computes FWHM as peak_width_samples * dw, where
+        # dw = wl[1] - wl[0].  Lumerical returns wavelengths in descending
+        # order (sampled uniformly in frequency), so dw < 0 and FWHM comes
+        # out negative.  abs() corrects the sign without touching the
+        # original post_processing.py.
+        fwhm_m = abs(resonance.spectral_fwhm_m)
+        Q = resonance.wavelength_m / fwhm_m
         print(f"  lambda_res = {resonance.wavelength_m * 1e9:.4f} nm  "
-              f"FWHM = {resonance.spectral_fwhm_m * 1e12:.2f} pm  "
-              f"Q = {Q:.0f}")
+              f"FWHM = {fwhm_m * 1e12:.2f} pm  "
+              f"Q = {Q:.2f}  "
+              f"T_res = {resonance.transmission:.4f}")
     finally:
         plt.close("all")
         sim.close()
@@ -252,7 +284,8 @@ def _run_one(cfg: SimulationConfig,
         "dz_nm":        round(dz_nm,  2),
         "Q":            Q,
         "resonance_nm": resonance.wavelength_m * 1e9,
-        "fwhm_pm":      resonance.spectral_fwhm_m * 1e12,
+        "fwhm_pm":      fwhm_m * 1e12,
+        "transmission": float(resonance.transmission),
         "sim_time_s":   round(elapsed, 1),
     }
 
@@ -268,20 +301,26 @@ def _run_phase(phase: str,
                fixed_dy_div: float,
                fixed_dz_div: float,
                cfg: SimulationConfig,
-               checkpoint: dict) -> tuple:
+               checkpoint: dict,
+               metric: str,
+               threshold: float) -> tuple:
     """
     Sweep one parameter while fixing the others.
 
+    metric    : "Q" or "lambda" — which quantity drives convergence checking.
+    threshold : fractional threshold (e.g. 0.02 = 2%) for the chosen metric.
+
     Returns (results_list, best_value) where best_value is the coarser of
-    the two values that first showed |Delta_Q/Q| < CONVERGENCE_THRESHOLD for
+    the two values that first showed |Delta_metric/metric| < threshold for
     two consecutive steps.  Falls back to the finest value if no convergence.
     """
     print(f"\n{'=' * 62}")
-    print(f"  Phase {phase}: sweeping {param}")
+    print(f"  Phase {phase}: sweeping {param}  [metric={metric}, threshold={threshold*100:.1f}%]")
     print(f"  Fixed: cells={fixed_cells}, dy_div={fixed_dy_div}, dz_div={fixed_dz_div}")
     print(f"{'=' * 62}")
 
     results         = []
+    prev_wl         = None
     prev_Q          = None
     converged_count = 0
     best_value      = values[-1]   # fallback: finest mesh
@@ -304,24 +343,30 @@ def _run_phase(phase: str,
             _save_checkpoint(checkpoint)
 
         results.append(rec)
-        Q = rec["Q"]
+        wl = rec["resonance_nm"]
+        Q  = rec["Q"]
 
-        # Convergence check
-        if prev_Q is not None:
-            delta = abs(Q - prev_Q) / max(abs(prev_Q), 1e-12)
-            if delta < CONVERGENCE_THRESHOLD:
+        # Convergence check on the selected metric
+        if prev_wl is not None:
+            if metric == "Q":
+                delta = abs(Q - prev_Q) / max(abs(prev_Q), 1e-12)
+                label = f"|ΔQ/Q| = {delta * 100:.3f}%"
+            else:
+                delta = abs(wl - prev_wl) / max(abs(prev_wl), 1e-12)
+                label = f"|Δλ/λ| = {delta * 100:.3f}%"
+
+            if delta < threshold:
                 converged_count += 1
                 if converged_count >= 2:
                     best_value = values[i - 1]   # coarser value, already stable
-                    print(f"\n  Converged at {param}={val}  "
-                          f"(|Delta_Q/Q| = {delta * 100:.3f}%)")
-                    print(f"  Using {param} = {best_value}  "
-                          f"(coarser, already stable)")
+                    print(f"\n  Converged at {param}={val}  ({label})")
+                    print(f"  Using {param} = {best_value}  (coarser, already stable)")
                     break
             else:
                 converged_count = 0
 
-        prev_Q = Q
+        prev_wl = wl
+        prev_Q  = Q
     else:
         print(f"\n  No convergence within sweep range. "
               f"Using finest value: {param} = {best_value}")
@@ -334,30 +379,38 @@ def _run_phase(phase: str,
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _print_table(phase: str, param_label: str, results: list) -> None:
-    col = 20
-    sep = "─" * 80
-    header = (f"  {'Param val':<{col}} {'dx(nm)':<9} {'dy(nm)':<9} {'dz(nm)':<9}"
-              f" {'Q':>12}  {'Delta_Q%':>9}  {'Time(s)':>8}")
+    col = 12
+    sep = "─" * 118
+    header = (f"  {'Param val':<{col}} {'dx(nm)':<8} {'dy(nm)':<8} {'dz(nm)':<8}"
+              f" {'lambda(nm)':>12}  {'FWHM(pm)':>10}  {'Q':>10}"
+              f"  {'T_res':>7}  {'Δλ%':>10}  {'ΔQ%':>10}  {'Time(s)':>8}")
     print(f"\n{sep}")
     print(f"  Phase {phase} — {param_label}")
     print(sep)
     print(header)
     print(sep)
 
-    prev_Q = None
+    prev_wl = None
+    prev_Q  = None
     for r in results:
-        # Pick the swept parameter value for display
         val = r.get("cells") if param_label == "cells_per_half_period" else \
               r.get("dz_div") if param_label == "dz_divisor" else \
               r.get("dy_div")
-        dq_str = "   —"
+        dlam_str = "         —"
+        dQ_str   = "         —"
+        if prev_wl is not None:
+            dlam = (r["resonance_nm"] - prev_wl) / abs(prev_wl) * 100
+            dlam_str = f"{dlam:+.4f}%"
         if prev_Q is not None:
-            dq = (r["Q"] - prev_Q) / abs(prev_Q) * 100
-            dq_str = f"{dq:+.3f}%"
-        print(f"  {str(val):<{col}} {r['dx_nm']:<9.1f} {r['dy_nm']:<9.1f} "
-              f"{r['dz_nm']:<9.1f} {r['Q']:>12.0f}  {dq_str:>9}  "
-              f"{r['sim_time_s']:>8.1f}")
-        prev_Q = r["Q"]
+            dQ = (r["Q"] - prev_Q) / abs(prev_Q) * 100
+            dQ_str = f"{dQ:+.4f}%"
+        t_res = r.get("transmission", float("nan"))
+        print(f"  {str(val):<{col}} {r['dx_nm']:<8.1f} {r['dy_nm']:<8.1f} "
+              f"{r['dz_nm']:<8.1f} {r['resonance_nm']:>12.4f}  {r['fwhm_pm']:>10.2f}"
+              f"  {r['Q']:>10.2f}  {t_res:>7.4f}  {dlam_str:>10}  {dQ_str:>10}"
+              f"  {r['sim_time_s']:>8.1f}")
+        prev_wl = r["resonance_nm"]
+        prev_Q  = r["Q"]
     print(sep)
 
 
@@ -370,10 +423,12 @@ def main():
     checkpoint = _load_checkpoint()
 
     half_pitch = cfg.grating.pitch_m / 2.0
+    threshold  = THRESHOLD_Q if CONVERGENCE_METRIC == "Q" else THRESHOLD_LAMBDA
 
     print("\n" + "=" * 62)
-    print("  MESH CONVERGENCE — Q Factor")
-    print(f"  Convergence threshold : {CONVERGENCE_THRESHOLD * 100:.1f}%")
+    print("  MESH CONVERGENCE")
+    print(f"  Convergence metric    : {CONVERGENCE_METRIC}  "
+          f"(threshold {threshold * 100:.1f}%)")
     print(f"  Periods each side     : {cfg.grating.n_periods_each_side}")
     print(f"  Current defaults      : cells={DEFAULT_CELLS} "
           f"(dx={half_pitch / DEFAULT_CELLS * 1e9:.0f} nm), "
@@ -390,6 +445,7 @@ def main():
         fixed_cells=DEFAULT_CELLS, fixed_dy_div=DEFAULT_DY_DIV,
         fixed_dz_div=DEFAULT_DZ_DIV,
         cfg=cfg, checkpoint=checkpoint,
+        metric=CONVERGENCE_METRIC, threshold=threshold,
     )
     _print_table("A", "cells_per_half_period", res_A)
 
@@ -399,21 +455,12 @@ def main():
         fixed_cells=best_cells, fixed_dy_div=DEFAULT_DY_DIV,
         fixed_dz_div=DEFAULT_DZ_DIV,
         cfg=cfg, checkpoint=checkpoint,
+        metric=CONVERGENCE_METRIC, threshold=threshold,
     )
     _print_table("B", "dz_divisor", res_B)
 
-    # ── Phase C: dy_divisor (controls dy = width_narrow / divisor) ───────
-    res_C, best_dy_div = _run_phase(
-        phase="C", param="dy_divisor", values=PHASE_C_VALUES,
-        fixed_cells=best_cells, fixed_dy_div=DEFAULT_DY_DIV,
-        fixed_dz_div=best_dz_div,
-        cfg=cfg, checkpoint=checkpoint,
-    )
-    _print_table("C", "dy_divisor", res_C)
-
     # ── Final recommendation ──────────────────────────────────────────────
     dx_rec = half_pitch / best_cells * 1e9
-    dy_rec = cfg.geometry.width_narrow_m / best_dy_div * 1e9
     dz_rec = cfg.geometry.core_height_m  / best_dz_div * 1e9
 
     print(f"\n{'=' * 62}")
@@ -421,7 +468,7 @@ def main():
     print(f"{'=' * 62}")
     print(f"  cells_per_half_period : {best_cells}  ->  dx = {dx_rec:.1f} nm")
     print(f"  dz_divisor            : {best_dz_div}  ->  dz = {dz_rec:.1f} nm")
-    print(f"  dy_divisor            : {best_dy_div}  ->  dy = {dy_rec:.1f} nm")
+    print(f"  dy_divisor            : {DEFAULT_DY_DIV}  ->  dy = {cfg.geometry.width_narrow_m / DEFAULT_DY_DIV * 1e9:.1f} nm  (not swept — already well-resolved)")
     print(f"\n  (Current defaults: dx=50 nm, dz=50 nm, dy=50 nm)")
     print(f"  Results saved to: {CONV_DIR}")
     print(f"{'=' * 62}\n")

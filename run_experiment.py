@@ -21,7 +21,7 @@ from run_sweep import run_sweep
 # Example 1: Single device run
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def example_single_run():
+def example_single_run(base=None):
     """Run a single experiment card — the simplest workflow."""
     card = ExperimentCard(
         n_periods_each_side=50,
@@ -30,14 +30,14 @@ def example_single_run():
         tanh_steepness=2.5,
         label="Sample A",
     )
-    return run_card(card)
+    return run_card(card, base=base)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Example 2: Compare multiple devices
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def example_compare_devices():
+def example_compare_devices(base=None):
     """Run several cards back-to-back for comparison."""
     cards = [
         ExperimentCard(
@@ -57,21 +57,21 @@ def example_compare_devices():
             label="Dev3 — more periods, longer cavity",
         ),
     ]
-    return run_cards(cards)
+    return run_cards(cards, base=base)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Example 3: Sweep one card parameter
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def example_sweep():
+def example_sweep(base=None):
     """Sweep n_periods_each_side while holding other card values fixed."""
     card = ExperimentCard(
         center_mod_depth_nm=15,
         corrugation_depth_nm=200,
         label="Period sweep",
     )
-    cfg = card.to_sweep_config("n_periods_each_side", [30, 40, 50, 60])
+    cfg = card.to_sweep_config("n_periods_each_side", [30, 40, 50, 60], base=base)
     run_sweep(cfg)
 
 
@@ -80,7 +80,12 @@ def example_sweep():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    # example_single_run()
-    # example_compare_devices()
-    # example_sweep()
+    # Simulation mode: "accurate" (dx≈35nm, cells=7) or "optimization" (dx=50nm, cells=5)
+    # Pass as base config to example functions so all cards inherit this setting.
+    base_cfg = SimulationConfig()
+    base_cfg.mesh.simulation_mode = "optimization"
+
+    # example_single_run(base=base_cfg)
+    # example_compare_devices(base=base_cfg)
+    # example_sweep(base=base_cfg)
     pass

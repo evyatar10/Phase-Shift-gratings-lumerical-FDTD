@@ -106,6 +106,9 @@ if __name__ == "__main__":
     # Override any parameters below before running:
     cfg = SimulationConfig()
 
+    # Simulation mode: "accurate" (dx≈35nm, cells=7) or "optimization" (dx=50nm, cells=5)
+    cfg.mesh.simulation_mode = "accurate"
+
     # Example overrides (uncomment to use):
     # cfg.grating.n_periods_each_side = 120
     # cfg.apodization.enabled = False
