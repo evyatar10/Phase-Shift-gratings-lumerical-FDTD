@@ -110,7 +110,8 @@ class _ConvergenceBraggFDTD(PiShiftBraggFDTD):
 
     def _add_aligned_mesh_override(self, cells_per_half_period=5):
         """
-        Single-box mesh override with tunable dy/dz divisors and cells_per_half_period.
+        3-box mesh override (left periodic, cavity, right periodic)
+        with tunable dy/dz divisors and cells_per_half_period.
         """
         fdtd = self.fdtd
         half_pitch = 0.5 * self.pitch
@@ -119,41 +120,48 @@ class _ConvergenceBraggFDTD(PiShiftBraggFDTD):
         dy = self.width_narrow / self._dy_div
         dz = self.core_height / self._dz_div
 
-        # Grating region boundaries
+        # Cavity and grating boundaries
         x_grating_start = -self.x_grating_end
-        x_grating_end = self.x_grating_end
-        grating_span = x_grating_end - x_grating_start
+        x_grating_end   =  self.x_grating_end
+        x_cav_left  = -self.cavity_length / 2.0
+        x_cav_right =  self.cavity_length / 2.0
 
-        # Adjust dx if span doesn't divide evenly
-        n_cells_total = round(grating_span / dx_grating)
-        dx_actual = grating_span / float(n_cells_total)
-        if abs(dx_actual - dx_grating) / dx_grating > 0.05:
-            print(f"  WARNING: dx adjusted from {dx_grating*1e9:.1f}nm to "
-                  f"{dx_actual*1e9:.1f}nm to fit grating span")
-        dx_grating = dx_actual
+        # Cavity dx: snap to nearest integer cells
+        n_cav = max(1, round(self.cavity_length / dx_grating))
+        dx_cav = self.cavity_length / float(n_cav)
+        if abs(dx_cav - dx_grating) / dx_grating > 0.05:
+            print(f"  WARNING: cavity dx={dx_cav*1e9:.1f}nm deviates >5% from "
+                  f"dx_grating={dx_grating*1e9:.1f}nm")
 
         # Y/Z extent: waveguide + 1 evanescent decay length
         _dn_sq = max(self.n_eff_guess**2 - self.n_clad_const**2, 0.01)
         _decay_len = self.lambda_B / (2.0 * math.pi * math.sqrt(_dn_sq))
-        y_span_override = self.width_wide + 2.0 * _decay_len
+        y_span_override = self.width_wide  + 2.0 * _decay_len
         z_span_override = self.core_height + 2.0 * _decay_len
 
-        # Single mesh override covering entire grating
-        x_center = (x_grating_start + x_grating_end) / 2.0
-        fdtd.addmesh()
-        fdtd.set("name", "mesh_grating")
-        fdtd.set("x", x_center)
-        fdtd.set("x span", grating_span)
-        fdtd.set("y", 0.0)
-        fdtd.set("y span", y_span_override)
-        fdtd.set("z", 0.0)
-        fdtd.set("z span", z_span_override)
-        fdtd.set("override x mesh", 1)
-        fdtd.set("override y mesh", 1)
-        fdtd.set("override z mesh", 1)
-        fdtd.set("dx", dx_grating)
-        fdtd.set("dy", dy)
-        fdtd.set("dz", dz)
+        def add_mesh_box(name, x_left, x_right, dx_val):
+            span = x_right - x_left
+            fdtd.addmesh()
+            fdtd.set("name", name)
+            fdtd.set("x", x_left + span / 2.0)
+            fdtd.set("x span", span)
+            fdtd.set("y", 0.0)
+            fdtd.set("y span", y_span_override)
+            fdtd.set("z", 0.0)
+            fdtd.set("z span", z_span_override)
+            fdtd.set("override x mesh", 1)
+            fdtd.set("override y mesh", 1)
+            fdtd.set("override z mesh", 1)
+            fdtd.set("dx", dx_val)
+            fdtd.set("dy", dy)
+            fdtd.set("dz", dz)
+
+        # Left periodic: exact dx_grating (span = n_periods*pitch, always divisible)
+        add_mesh_box("mesh_left_periodic", x_grating_start, x_cav_left, dx_grating)
+        # Cavity: snap_dx to fit cavity_length exactly
+        add_mesh_box("mesh_cavity", x_cav_left, x_cav_right, dx_cav)
+        # Right periodic: exact dx_grating
+        add_mesh_box("mesh_right_periodic", x_cav_right, x_grating_end, dx_grating)
 
 
 # ═════════════════════════════════════════════════════════════════════════════

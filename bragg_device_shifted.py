@@ -49,19 +49,21 @@ class PiShiftBraggFDTDWithShift(PiShiftBraggFDTD):
 
     def _add_aligned_mesh_override(self, cells_per_half_period=5):
         """
-        Aligned mesh override for the shifted geometry (6-block layout).
+        Aligned mesh override for the shifted geometry (7-block layout).
 
-        When delta == 0, delegates to the parent implementation (1 block).
-        When delta > 0, uses 6 override boxes:
-          1. Full grating periodic  (x_grating_start → x_grating_end)  dx_grating
-          2. Left shifted narrow    (L_narrow_1: hp - delta)            snap_dx
-          3. Left shifted wide      (L_wide_1:   hp)                    snap_dx
-          4. Central                (cavity + R_narrow_1: cav + hp)     snap_dx
-          5. Right shifted wide     (R_wide_1:   hp)                    snap_dx
-          6. Right shifted narrow   (R_narrow_2: hp - delta)            snap_dx
+        When delta == 0, delegates to the parent implementation (3 blocks).
+        When delta > 0, uses 7 override boxes:
+          1. Left periodic   (x_grating_start → L_narrow_1 start)  dx_grating (exact)
+          2. Right periodic  (R_narrow_2 end  → x_grating_end)     dx_grating (exact)
+          3. L_narrow_1      (hp - delta)                           snap_dx
+          4. L_wide_1        (hp)                                   snap_dx
+          5. Central         (cavity + R_narrow_1)                  snap_dx
+          6. R_wide_1        (hp)                                   snap_dx
+          7. R_narrow_2      (hp - delta)                           snap_dx
 
-        Block 1 is the background periodic mesh. Blocks 2-6 overlap it with
-        finer dx (via ceil), so they win in the overlap regions.
+        Blocks 1 & 2 cover the purely periodic sections with exact dx_grating.
+        Blocks 3-7 cover the non-periodic region with snap_dx, overlapping
+        blocks 1 & 2 at the boundaries (Lumerical uses the finer dx).
         """
         delta = self.innermost_tooth_shift_m
         if delta == 0.0:
@@ -75,19 +77,6 @@ class PiShiftBraggFDTDWithShift(PiShiftBraggFDTD):
         dx_grating = half_pitch / float(n_cells_half)
         dy = self.width_narrow / 13.0
         dz = self.core_height / 7.0
-
-        # Grating region boundaries
-        x_grating_start = -self.x_grating_end
-        x_grating_end = self.x_grating_end
-        grating_span = x_grating_end - x_grating_start
-
-        # Adjust dx if span doesn't divide evenly
-        n_cells_total = round(grating_span / dx_grating)
-        dx_actual = grating_span / float(n_cells_total)
-        if abs(dx_actual - dx_grating) / dx_grating > 0.05:
-            print(f"  WARNING: dx adjusted from {dx_grating*1e9:.1f}nm to "
-                  f"{dx_actual*1e9:.1f}nm to fit grating span")
-        dx_grating = dx_actual
 
         # Y/Z extent: waveguide + 1 evanescent decay length
         _dn_sq = max(self.n_eff_guess**2 - self.n_clad_const**2, 0.01)
@@ -118,76 +107,73 @@ class PiShiftBraggFDTDWithShift(PiShiftBraggFDTD):
             fdtd.set("dy", dy)
             fdtd.set("dz", dz)
 
-        # Block 1: Full grating region with dx_grating (background)
-        x_center = (x_grating_start + x_grating_end) / 2.0
-        fdtd.addmesh()
-        fdtd.set("name", "mesh_grating_periodic")
-        fdtd.set("x", x_center)
-        fdtd.set("x span", grating_span)
-        fdtd.set("y", 0.0)
-        fdtd.set("y span", y_span_override)
-        fdtd.set("z", 0.0)
-        fdtd.set("z span", z_span_override)
-        fdtd.set("override x mesh", 1)
-        fdtd.set("override y mesh", 1)
-        fdtd.set("override z mesh", 1)
-        fdtd.set("dx", dx_grating)
-        fdtd.set("dy", dy)
-        fdtd.set("dz", dz)
-
         # --- Tooth-edge positions (matching _add_bragg_core geometry) ---
+        x_grating_start = -self.x_grating_end
+        x_grating_end   =  self.x_grating_end
         actual_cavity_length = self.cavity_length + (2.0 * delta if self.lengthen_cavity else 0.0)
         shifted_span = half_pitch - delta
 
-        # Left side positions
+        # Left side
         x_L_narrow_1_start = x_grating_start + (self.n_periods_each_side - 1) * pitch
-        x_L_wide_1_start = x_L_narrow_1_start + shifted_span
-        x_L_wide_1_end = x_L_wide_1_start + half_pitch
+        x_L_wide_1_start   = x_L_narrow_1_start + shifted_span
+        x_L_wide_1_end     = x_L_wide_1_start + half_pitch
 
         # Central: cavity + R_narrow_1
-        x_cav_start = x_L_wide_1_end
-        central_span = actual_cavity_length + half_pitch
-        x_central_end = x_cav_start + central_span
+        x_cav_start    = x_L_wide_1_end
+        central_span   = actual_cavity_length + half_pitch
+        x_central_end  = x_cav_start + central_span
 
-        # Right side positions
-        x_R_wide_1_start = x_central_end
-        x_R_wide_1_end = x_R_wide_1_start + half_pitch
+        # Right side
+        x_R_wide_1_start  = x_central_end
+        x_R_wide_1_end    = x_R_wide_1_start + half_pitch
         x_R_narrow_2_start = x_R_wide_1_end
-        x_R_narrow_2_end = x_R_narrow_2_start + shifted_span
+        x_R_narrow_2_end   = x_R_narrow_2_start + shifted_span
 
-        # Compute snap_dx for each section
+        # Periodic spans = (n_periods - 1) * pitch → exact multiples of dx_grating
+        n_left_per  = round((x_L_narrow_1_start - x_grating_start) / dx_grating)
+        n_right_per = round((x_grating_end - x_R_narrow_2_end) / dx_grating)
+
+        # Snap dx for non-periodic sections
         dx_shifted_narrow, n_shifted_narrow = snap_dx_ceil(shifted_span)
-        dx_L_wide, n_L_wide = snap_dx_ceil(half_pitch)
-        dx_central, n_central = snap_dx_ceil(central_span)
-        dx_R_wide, n_R_wide = snap_dx_ceil(half_pitch)
+        dx_L_wide,   n_L_wide   = snap_dx_ceil(half_pitch)
+        dx_central,  n_central  = snap_dx_ceil(central_span)
+        dx_R_wide,   n_R_wide   = snap_dx_ceil(half_pitch)
 
-        # Block 2: Left shifted narrow (L_narrow_1)
+        # Block 1: Left periodic (exact dx_grating)
+        add_mesh_box("mesh_left_periodic", x_grating_start, x_L_narrow_1_start, dx_grating)
+
+        # Block 2: Right periodic (exact dx_grating)
+        add_mesh_box("mesh_right_periodic", x_R_narrow_2_end, x_grating_end, dx_grating)
+
+        # Block 3: L_narrow_1
         add_mesh_box("mesh_L_narrow_1", x_L_narrow_1_start, x_L_wide_1_start, dx_shifted_narrow)
 
-        # Block 3: Left shifted wide (L_wide_1)
+        # Block 4: L_wide_1
         add_mesh_box("mesh_L_wide_1", x_L_wide_1_start, x_L_wide_1_end, dx_L_wide)
 
-        # Block 4: Central (cavity + R_narrow_1)
+        # Block 5: Central (cavity + R_narrow_1)
         add_mesh_box("mesh_central", x_cav_start, x_central_end, dx_central)
 
-        # Block 5: Right shifted wide (R_wide_1)
+        # Block 6: R_wide_1
         add_mesh_box("mesh_R_wide_1", x_R_wide_1_start, x_R_wide_1_end, dx_R_wide)
 
-        # Block 6: Right shifted narrow (R_narrow_2)
+        # Block 7: R_narrow_2
         add_mesh_box("mesh_R_narrow_2", x_R_narrow_2_start, x_R_narrow_2_end, dx_shifted_narrow)
 
-        print(f"Mesh (shifted, 6-block): dx_grating={dx_grating*1e9:.1f}nm, delta={delta*1e9:.1f}nm")
-        print(f"  1 Periodic:       [{x_grating_start*1e6:.4f}, {x_grating_end*1e6:.4f}] um  "
-              f"dx={dx_grating*1e9:.1f}nm ({n_cells_total} cells)")
-        print(f"  2 L_narrow_1:     [{x_L_narrow_1_start*1e6:.4f}, {x_L_wide_1_start*1e6:.4f}] um  "
+        print(f"Mesh (shifted, 7-block): dx_grating={dx_grating*1e9:.1f}nm, delta={delta*1e9:.1f}nm")
+        print(f"  1 Left periodic:  [{x_grating_start*1e6:.4f}, {x_L_narrow_1_start*1e6:.4f}] um  "
+              f"dx={dx_grating*1e9:.1f}nm ({n_left_per} cells)")
+        print(f"  2 Right periodic: [{x_R_narrow_2_end*1e6:.4f}, {x_grating_end*1e6:.4f}] um  "
+              f"dx={dx_grating*1e9:.1f}nm ({n_right_per} cells)")
+        print(f"  3 L_narrow_1:     [{x_L_narrow_1_start*1e6:.4f}, {x_L_wide_1_start*1e6:.4f}] um  "
               f"dx={dx_shifted_narrow*1e9:.1f}nm ({n_shifted_narrow} cells)")
-        print(f"  3 L_wide_1:       [{x_L_wide_1_start*1e6:.4f}, {x_L_wide_1_end*1e6:.4f}] um  "
+        print(f"  4 L_wide_1:       [{x_L_wide_1_start*1e6:.4f}, {x_L_wide_1_end*1e6:.4f}] um  "
               f"dx={dx_L_wide*1e9:.1f}nm ({n_L_wide} cells)")
-        print(f"  4 Central:        [{x_cav_start*1e6:.4f}, {x_central_end*1e6:.4f}] um  "
+        print(f"  5 Central:        [{x_cav_start*1e6:.4f}, {x_central_end*1e6:.4f}] um  "
               f"dx={dx_central*1e9:.1f}nm ({n_central} cells)")
-        print(f"  5 R_wide_1:       [{x_R_wide_1_start*1e6:.4f}, {x_R_wide_1_end*1e6:.4f}] um  "
+        print(f"  6 R_wide_1:       [{x_R_wide_1_start*1e6:.4f}, {x_R_wide_1_end*1e6:.4f}] um  "
               f"dx={dx_R_wide*1e9:.1f}nm ({n_R_wide} cells)")
-        print(f"  6 R_narrow_2:     [{x_R_narrow_2_start*1e6:.4f}, {x_R_narrow_2_end*1e6:.4f}] um  "
+        print(f"  7 R_narrow_2:     [{x_R_narrow_2_start*1e6:.4f}, {x_R_narrow_2_end*1e6:.4f}] um  "
               f"dx={dx_shifted_narrow*1e9:.1f}nm ({n_shifted_narrow} cells)")
         print(f"  Y/Z override: {y_span_override*1e6:.2f} x {z_span_override*1e6:.2f} um")
 
