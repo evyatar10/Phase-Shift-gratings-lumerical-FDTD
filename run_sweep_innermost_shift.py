@@ -22,7 +22,7 @@ from bragg_device_shifted import PiShiftBraggFDTDWithShift
 from sim_helpers import apply_monitor_overrides, generate_file_tag
 from simulation_config import SimulationConfig
 
-SHIFT_VALUES_M = [80e-9, 0, 70e-9, 105e-9, 140e-9, 175e-9] 
+SHIFT_VALUES_M = [100e-9, 110e-9, 0, 105e-9] 
 
 def run_single_sim_with_shift(cfg: SimulationConfig, shift_m: float, lengthen_cavity: bool = True) -> dict:
     """Build, run, and analyze one simulation with the given innermost tooth shift."""
@@ -119,8 +119,11 @@ def plot_sweep_results(all_results: list) -> None:
 if __name__ == "__main__":
     cfg = SimulationConfig()
 
+    cfg.grating.n_periods_each_side = 80
+
     # Simulation mode: "accurate" (dx≈35nm, cells=7) or "optimization" (dx=50nm, cells=5)
     cfg.mesh.simulation_mode = "optimization"
+    cfg.spectral.scan_width_nm = 10.0
 
     # Optional overrides (uncomment to use):
     # cfg.spectral.center_wavelength_m = 1.5625e-6

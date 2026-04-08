@@ -41,6 +41,7 @@ class PiShiftBraggFDTD:
                  tanh_steepness=2.0,
                  use_cavity_mesh_override=False,
                  cells_per_half_period=5,
+                 simulation_mode="accurate",
                  use_symmetry=True,
                  use_z_symmetry=True,
                  use_constant_materials=False,
@@ -98,6 +99,7 @@ class PiShiftBraggFDTD:
 
         self.use_cavity_mesh_override = use_cavity_mesh_override
         self.cells_per_half_period = int(cells_per_half_period)
+        self.simulation_mode = simulation_mode
 
         # --- NEW STATE VARS ---
         self.record_2d_fields_top_and_cross = record_2d_fields_top_and_cross
@@ -302,11 +304,12 @@ class PiShiftBraggFDTD:
             print(f"  WARNING: cavity dx={dx_cav*1e9:.1f}nm deviates >5% from "
                   f"dx_grating={dx_grating*1e9:.1f}nm")
 
-        # Y/Z extent: waveguide + 1 evanescent decay length
+        # Y/Z extent: waveguide + evanescent margin (1 tail for optimization, 2 for accurate)
         _dn_sq = max(self.n_eff_guess**2 - self.n_clad_const**2, 0.01)
         _decay_len = self.lambda_B / (2.0 * math.pi * math.sqrt(_dn_sq))
-        y_span_override = self.width_wide  + 2.0 * _decay_len
-        z_span_override = self.core_height + 2.0 * _decay_len
+        _n_tails = 2.0 if self.simulation_mode == "accurate" else 1.0
+        y_span_override = self.width_wide  + 2.0 * _n_tails * _decay_len
+        z_span_override = self.core_height + 2.0 * _n_tails * _decay_len
 
         def add_mesh_box(name, x_left, x_right, dx_val):
             span = x_right - x_left

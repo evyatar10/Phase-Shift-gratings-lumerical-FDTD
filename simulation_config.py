@@ -49,7 +49,7 @@ class GeometryConfig:
 class GratingConfig:
     """Bragg grating periodicity and cavity parameters."""
     pitch_m: float = 500e-9                     # Grating period
-    n_periods_each_side: int = 60              # Number of periods on each side of the pi-shift cavity
+    n_periods_each_side: int = 80              # Number of periods on each side of the pi-shift cavity
     override_cavity_length_nm: Optional[float] = False  # None or False = default (pitch/2)
 
 
@@ -352,6 +352,7 @@ class SimulationConfig:
             tanh_steepness=ap.tanh_steepness,
             use_cavity_mesh_override=me.use_cavity_mesh_override,
             cells_per_half_period=me.cells_per_half_period,
+            simulation_mode=me.simulation_mode,
             use_symmetry=sy.use_y_symmetry,
             use_z_symmetry=sy.use_z_symmetry,
             use_constant_materials=ma.use_constant_materials,
@@ -402,6 +403,7 @@ class SimulationConfig:
             n_eff_guess=ma.n_eff_guess,
             n_wl_points=sp.n_wl_points,
             cells_per_half_period=self.mesh.cells_per_half_period,
+            simulation_mode=self.mesh.simulation_mode,
             use_symmetry=sy.use_y_symmetry,
             use_z_symmetry=sy.use_z_symmetry,
             use_constant_materials=ma.use_constant_materials,

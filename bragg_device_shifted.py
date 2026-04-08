@@ -78,11 +78,12 @@ class PiShiftBraggFDTDWithShift(PiShiftBraggFDTD):
         dy = self.width_narrow / 13.0
         dz = self.core_height / 7.0
 
-        # Y/Z extent: waveguide + 1 evanescent decay length
+        # Y/Z extent: waveguide + evanescent margin (1 tail for optimization, 2 for accurate)
         _dn_sq = max(self.n_eff_guess**2 - self.n_clad_const**2, 0.01)
         _decay_len = self.lambda_B / (2.0 * math.pi * math.sqrt(_dn_sq))
-        y_span_override = self.width_wide + 2.0 * _decay_len
-        z_span_override = self.core_height + 2.0 * _decay_len
+        _n_tails = 2.0 if self.simulation_mode == "accurate" else 1.0
+        y_span_override = self.width_wide  + 2.0 * _n_tails * _decay_len
+        z_span_override = self.core_height + 2.0 * _n_tails * _decay_len
 
         # --- Helper: snap_dx with ceil to ensure dx <= dx_grating ---
         def snap_dx_ceil(span):
