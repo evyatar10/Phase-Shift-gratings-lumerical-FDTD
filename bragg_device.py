@@ -287,23 +287,6 @@ class PiShiftBraggFDTD:
         dy = self.width_narrow / 13.0
         dz = self.core_height / 7.0
 
-        # Cavity and grating boundaries
-        # Periodic spans = n_periods * pitch = 2*n_periods*half_pitch
-        # → always exactly divisible by dx_grating, regardless of cavity_length
-        x_grating_start = -self.x_grating_end
-        x_grating_end   =  self.x_grating_end
-        x_cav_left  = -self.cavity_length / 2.0
-        x_cav_right =  self.cavity_length / 2.0
-
-        periodic_span = self.n_periods_each_side * self.pitch  # exact multiple of dx_grating
-
-        # Cavity dx: snap to nearest integer cells (may differ from dx_grating if cavity != half_pitch)
-        n_cav = max(1, round(self.cavity_length / dx_grating))
-        dx_cav = self.cavity_length / float(n_cav)
-        if abs(dx_cav - dx_grating) / dx_grating > 0.05:
-            print(f"  WARNING: cavity dx={dx_cav*1e9:.1f}nm deviates >5% from "
-                  f"dx_grating={dx_grating*1e9:.1f}nm")
-
         # Y/Z extent: waveguide + evanescent margin (1 tail for optimization, 2 for accurate)
         _dn_sq = max(self.n_eff_guess**2 - self.n_clad_const**2, 0.01)
         _decay_len = self.lambda_B / (2.0 * math.pi * math.sqrt(_dn_sq))
@@ -311,45 +294,26 @@ class PiShiftBraggFDTD:
         y_span_override = self.width_wide  + 2.0 * _n_tails * _decay_len
         z_span_override = self.core_height + 2.0 * _n_tails * _decay_len
 
-        def add_mesh_box(name, x_left, x_right, dx_val):
-            span = x_right - x_left
-            fdtd.addmesh()
-            fdtd.set("name", name)
-            fdtd.set("x", x_left + span / 2.0)
-            fdtd.set("x span", span)
-            fdtd.set("y", 0.0)
-            fdtd.set("y span", y_span_override)
-            fdtd.set("z", 0.0)
-            fdtd.set("z span", z_span_override)
-            fdtd.set("override x mesh", 1)
-            fdtd.set("override y mesh", 1)
-            fdtd.set("override z mesh", 1)
-            fdtd.set("dx", dx_val)
-            fdtd.set("dy", dy)
-            fdtd.set("dz", dz)
+        x_span = 2.0 * self.x_grating_end
 
-        # Block 1: Left periodic (x_grating_start → x_cav_left)
-        # span = n_periods * pitch → exact multiple of dx_grating
-        add_mesh_box("mesh_left_periodic", x_grating_start, x_cav_left, dx_grating)
+        fdtd.addmesh()
+        fdtd.set("name", "mesh_grating")
+        fdtd.set("x", 0.0)
+        fdtd.set("x span", x_span)
+        fdtd.set("y", 0.0)
+        fdtd.set("y span", y_span_override)
+        fdtd.set("z", 0.0)
+        fdtd.set("z span", z_span_override)
+        fdtd.set("override x mesh", 1)
+        fdtd.set("override y mesh", 1)
+        fdtd.set("override z mesh", 1)
+        fdtd.set("dx", dx_grating)
+        fdtd.set("dy", dy)
+        fdtd.set("dz", dz)
 
-        # Block 2: Cavity (x_cav_left → x_cav_right)
-        # dx snapped to fit cavity_length exactly
-        add_mesh_box("mesh_cavity", x_cav_left, x_cav_right, dx_cav)
-
-        # Block 3: Right periodic (x_cav_right → x_grating_end)
-        # span = n_periods * pitch → exact multiple of dx_grating
-        add_mesh_box("mesh_right_periodic", x_cav_right, x_grating_end, dx_grating)
-
-        n_per = round(periodic_span / dx_grating)
-        print(f"Mesh: 3 boxes, dx={dx_grating*1e9:.1f}nm, dx_cav={dx_cav*1e9:.1f}nm, "
-              f"cells/half_period={n_cells_half}")
-        print(f"  Left periodic:  [{x_grating_start*1e6:.4f}, {x_cav_left*1e6:.4f}] um "
-              f"({n_per} cells)")
-        print(f"  Cavity:         [{x_cav_left*1e6:.4f}, {x_cav_right*1e6:.4f}] um "
-              f"({n_cav} cells, dx={dx_cav*1e9:.1f}nm)")
-        print(f"  Right periodic: [{x_cav_right*1e6:.4f}, {x_grating_end*1e6:.4f}] um "
-              f"({n_per} cells)")
-        print(f"  Y/Z override: {y_span_override*1e6:.2f} x {z_span_override*1e6:.2f} um")
+        print(f"Mesh (1-block): dx={dx_grating*1e9:.1f}nm, dy={dy*1e9:.1f}nm, "
+              f"dz={dz*1e9:.1f}nm, cells/half_period={n_cells_half}")
+        print(f"  X span: {x_span*1e6:.4f} um, Y/Z: {y_span_override*1e6:.2f} x {z_span_override*1e6:.2f} um")
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
