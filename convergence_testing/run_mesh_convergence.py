@@ -108,55 +108,52 @@ class _ConvergenceBraggFDTD(PiShiftBraggFDTD):
         self._dz_div = float(dz_divisor)
         super().__init__(*args, **kwargs)
 
-    def _add_aligned_mesh_override(self, cells_per_half_period=5, max_cavity_dx=40e-9):
+    def _add_aligned_mesh_override(self, cells_per_half_period=5):
         """
-        Exact copy of the parent method with the two hardcoded divisors (13, 7)
-        replaced by self._dy_div and self._dz_div, and cells_per_half_period
-        replaced by self._cells.
+        Single-box mesh override with tunable dy/dz divisors and cells_per_half_period.
         """
         fdtd = self.fdtd
-        half_pitch       = 0.5 * self.pitch
-        n_cells_half     = max(1, self._cells)
-        dx_grating       = half_pitch / float(n_cells_half)
-        dy_global        = self.width_narrow / self._dy_div
-        dz_global        = self.core_height  / self._dz_div
-        max_device_width = max(self.width_port, self.width_wide, self.width_narrow)
-        y_span_override  = max_device_width * 1.2
-        z_span_override  = self.core_height
-        x_cav_right      = self.cavity_length / 2.0
-        x_cav_left       = -self.cavity_length / 2.0
-        x_sim_left       = -self.sim_x_span / 2.0 - 1e-6
-        x_sim_right      =  self.sim_x_span / 2.0 + 1e-6
+        half_pitch = 0.5 * self.pitch
+        n_cells_half = max(1, self._cells)
+        dx_grating = half_pitch / float(n_cells_half)
+        dy = self.width_narrow / self._dy_div
+        dz = self.core_height / self._dz_div
 
-        def add_mesh_box(name, x, x_span, dx_val):
-            fdtd.addmesh()
-            fdtd.set("name",            name)
-            fdtd.set("x",               x)
-            fdtd.set("x span",          x_span)
-            fdtd.set("y",               0.0)
-            fdtd.set("y span",          y_span_override)
-            fdtd.set("z",               0.0)
-            fdtd.set("z span",          z_span_override)
-            fdtd.set("override x mesh", 1)
-            fdtd.set("override y mesh", 1)
-            fdtd.set("override z mesh", 1)
-            fdtd.set("dx",              dx_val)
-            fdtd.set("dy",              dy_global)
-            fdtd.set("dz",              dz_global)
+        # Grating region boundaries
+        x_grating_start = -self.x_grating_end
+        x_grating_end = self.x_grating_end
+        grating_span = x_grating_end - x_grating_start
 
-        len_left = x_cav_left - x_sim_left
-        add_mesh_box("mesh_left_arm",
-                     x_sim_left + len_left / 2.0, len_left, dx_grating)
+        # Adjust dx if span doesn't divide evenly
+        n_cells_total = round(grating_span / dx_grating)
+        dx_actual = grating_span / float(n_cells_total)
+        if abs(dx_actual - dx_grating) / dx_grating > 0.05:
+            print(f"  WARNING: dx adjusted from {dx_grating*1e9:.1f}nm to "
+                  f"{dx_actual*1e9:.1f}nm to fit grating span")
+        dx_grating = dx_actual
 
-        len_right = x_sim_right - x_cav_right
-        add_mesh_box("mesh_right_arm",
-                     x_cav_right + len_right / 2.0, len_right, dx_grating)
+        # Y/Z extent: waveguide + 1 evanescent decay length
+        _dn_sq = max(self.n_eff_guess**2 - self.n_clad_const**2, 0.01)
+        _decay_len = self.lambda_B / (2.0 * math.pi * math.sqrt(_dn_sq))
+        y_span_override = self.width_wide + 2.0 * _decay_len
+        z_span_override = self.core_height + 2.0 * _decay_len
 
-        if self.use_cavity_mesh_override:
-            target_dx   = min(dx_grating, max_cavity_dx)
-            n_cells_cav = max(1, math.ceil(self.cavity_length / target_dx))
-            dx_cav      = self.cavity_length / float(n_cells_cav)
-            add_mesh_box("mesh_cavity", 0.0, self.cavity_length, dx_cav)
+        # Single mesh override covering entire grating
+        x_center = (x_grating_start + x_grating_end) / 2.0
+        fdtd.addmesh()
+        fdtd.set("name", "mesh_grating")
+        fdtd.set("x", x_center)
+        fdtd.set("x span", grating_span)
+        fdtd.set("y", 0.0)
+        fdtd.set("y span", y_span_override)
+        fdtd.set("z", 0.0)
+        fdtd.set("z span", z_span_override)
+        fdtd.set("override x mesh", 1)
+        fdtd.set("override y mesh", 1)
+        fdtd.set("override z mesh", 1)
+        fdtd.set("dx", dx_grating)
+        fdtd.set("dy", dy)
+        fdtd.set("dz", dz)
 
 
 # ═════════════════════════════════════════════════════════════════════════════

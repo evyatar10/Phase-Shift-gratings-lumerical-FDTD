@@ -50,7 +50,7 @@ class GratingConfig:
     """Bragg grating periodicity and cavity parameters."""
     pitch_m: float = 500e-9                     # Grating period
     n_periods_each_side: int = 60              # Number of periods on each side of the pi-shift cavity
-    override_cavity_length_nm: Optional[float] = None  # None or False = default (pitch/2)
+    override_cavity_length_nm: Optional[float] = False  # None or False = default (pitch/2)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
