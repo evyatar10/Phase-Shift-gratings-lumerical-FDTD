@@ -121,8 +121,10 @@ class PiShiftBraggFDTD:
 
         if override_cavity_length_nm:
             self.cavity_length = override_cavity_length_nm * 1e-9
+            self.cavity_overridden = True
         else:
             self.cavity_length = pitch / 2.0
+            self.cavity_overridden = False
 
         self.x_grating_end = (self.n_periods_each_side * self.pitch) + (self.cavity_length / 2.0)
         self.dist_grating_to_port = n_periods_dist_to_port * self.pitch
@@ -310,16 +312,26 @@ class PiShiftBraggFDTD:
             fdtd.set("dy", dy_global)
             fdtd.set("dz", dz_global)
 
-        len_left = x_cav_left - x_sim_left
-        add_mesh_box("mesh_left_arm", x_sim_left + len_left / 2.0, len_left, dx_grating)
+        full_span = x_sim_right - x_sim_left
+        full_center = x_sim_left + full_span / 2.0
 
-        len_right = x_sim_right - x_cav_right
-        add_mesh_box("mesh_right_arm", x_cav_right + len_right / 2.0, len_right, dx_grating)
+        if self.cavity_overridden:
+            # Left: sim_left → x_cav_left
+            len_left = x_cav_left - x_sim_left
+            add_mesh_box("mesh_left", x_sim_left + len_left / 2.0, len_left, dx_grating)
 
-        if self.use_cavity_mesh_override:
-            n_cells_cav = max(1, math.ceil(self.cavity_length / dx_grating))
-            dx_cav_snapped = self.cavity_length / float(n_cells_cav)
-            add_mesh_box("mesh_cavity", 0.0, self.cavity_length, dx_cav_snapped)
+            # Center: x_cav_left → end of R_narrow_1 (cavity + R_narrow_1 span)
+            x_center_end = x_cav_right + half_pitch
+            center_span = x_center_end - x_cav_left
+            n_center = max(1, math.ceil(center_span / dx_grating))
+            dx_center = center_span / float(n_center)
+            add_mesh_box("mesh_center", x_cav_left + center_span / 2.0, center_span, dx_center)
+
+            # Right: end of R_narrow_1 → sim_right
+            len_right = x_sim_right - x_center_end
+            add_mesh_box("mesh_right", x_center_end + len_right / 2.0, len_right, dx_grating)
+        else:
+            add_mesh_box("mesh_override", full_center, full_span, dx_grating)
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
