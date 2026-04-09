@@ -86,7 +86,7 @@ class ApodizationConfig:
 @dataclass
 class SpectralConfig:
     """Wavelength scan range and frequency resolution."""
-    center_wavelength_m: float = 1.5625e-6      # Center of the wavelength scan
+    center_wavelength_m: float = 1.5601e-6      # Center of the wavelength scan
     # pervious was 16.0 nm, at 1.5625e-6  
     scan_width_nm: float = 200.0                 # Total scan bandwidth (nm)
     n_wl_points: int = 3001                     # Number of wavelength points (S-parameters)
