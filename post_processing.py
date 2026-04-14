@@ -325,8 +325,9 @@ def assemble_results(
         'S11_complex':   s_params.S11,
         'S21_complex':   s_params.S21,
         # Resonance
-        'resonance_wavelength_nm': resonance.wavelength_m * 1e9,
-        'spectral_fwhm_nm':        resonance.spectral_fwhm_m * 1e9,
+        'resonance_wavelength_nm':  resonance.wavelength_m * 1e9,
+        'resonance_transmission':   resonance.transmission,
+        'spectral_fwhm_nm':         resonance.spectral_fwhm_m * 1e9,
         # Device geometry
         'L_device':               2.0 * sim.x_grating_end,
         'pitch_m':                sim.pitch,
@@ -365,6 +366,7 @@ def assemble_results(
 
 def save_results(results: dict, results_path: str) -> None:
     """Save the assembled results dict to a MATLAB .mat file."""
+    os.makedirs(os.path.dirname(results_path), exist_ok=True)
     sio.savemat(results_path, results)
     print(f"Results saved to: {results_path}")
 

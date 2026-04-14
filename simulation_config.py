@@ -50,7 +50,7 @@ class GratingConfig:
     """Bragg grating periodicity and cavity parameters."""
     pitch_m: float = 500e-9                     # Grating period
     n_periods_each_side: int = 80              # Number of periods on each side of the pi-shift cavity
-    override_cavity_length_nm: Optional[float] = 182  # None or False = default (pitch/2)
+    override_cavity_length_nm: Optional[float] = False  # None or False = default (pitch/2)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -167,7 +167,7 @@ class MonitorConfig:
 @dataclass
 class FarFieldConfig:
     """Far-field radiation monitor settings."""
-    enabled: bool = False                        # Enable side and top far-field monitors
+    enabled: bool = True                        # Enable side and top far-field monitors
     farfield_x_span_m: float = 30e-6            # X extent of far-field monitors
     farfield_dist_wls: float = 0.8              # Monitor distance from PML edge (in wavelengths)
     ff_resolution: int = 201                    # Far-field ux/uy grid resolution

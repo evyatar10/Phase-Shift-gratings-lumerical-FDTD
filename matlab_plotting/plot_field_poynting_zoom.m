@@ -11,7 +11,47 @@ addpath(fileparts(fileparts(mfilename('fullpath'))));
 clear; clc;
 %close all;
 %% --- Configuration ---
-result_filepath = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\leaky_modes_v2\results\result_80_periods_CONST_ff_shift_105nm.mat";
+prefs_file = fullfile(fileparts(mfilename('fullpath')), 'plot_prefs.mat');
+result_filepath = '';
+if exist(prefs_file, 'file')
+    p = load(prefs_file);
+    if isfield(p, 'field_last_filepath') && exist(p.field_last_filepath, 'file')
+        [~, fname, fext] = fileparts(p.field_last_filepath);
+        answer = questdlg( ...
+            ['Use last file?' newline fname fext], ...
+            'Select File', 'Yes', 'Browse...', 'Yes');
+        if strcmp(answer, 'Yes')
+            result_filepath = p.field_last_filepath;
+        end
+    end
+end
+
+if isempty(result_filepath)
+    start_path = '*.mat';
+    if exist(prefs_file, 'file')
+        p = load(prefs_file);
+        if isfield(p, 'field_last_filepath')
+            last_dir = fileparts(p.field_last_filepath);
+            if isfolder(last_dir)
+                start_path = fullfile(last_dir, '*.mat');
+            end
+        end
+    end
+    [file, folder] = uigetfile(start_path, 'Select result .mat file');
+    if isequal(file, 0)
+        disp('No file selected.');
+        return;
+    end
+    result_filepath = fullfile(folder, file);
+end
+
+% Save last filepath
+field_last_filepath = result_filepath;
+if exist(prefs_file, 'file')
+    save(prefs_file, 'field_last_filepath', '-append');
+else
+    save(prefs_file, 'field_last_filepath');
+end
 
 % Crop bounds [um]
 crop_val = 12;
@@ -78,6 +118,13 @@ center_mod_depth_nm   = 4.0;    % corrugation depth at grating center [nm]
 apod_method           = 'linear'; % 'linear' or 'tanh' — must match simulation
 tanh_steepness        = 2.0;      % only used when apod_method = 'tanh'
 
+% --- Tooth shift parameters (mirrors bragg_device_shifted.py) ---
+% When non-zero, the innermost grating tooth on each side is shifted away
+% from the cavity.  See bragg_device_shifted.py for the full description.
+% Leave tooth_shift_override = [] for auto-detection from filename/data.
+tooth_shift_override   = [];    % [m] e.g. 100e-9  (0 = no shift)
+lengthen_cavity        = true;  % true = cavity grows by 2*shift (default)
+
 % --- Auto-detection overrides ---
 % Parameters are resolved automatically (data file → filename parsing → L_device inference).
 % Set a value here to override any auto-detected result; leave [] for auto.
@@ -97,9 +144,9 @@ fprintf('Resonance wavelength: %.3f nm\n', wl_res*1e9);
 
 %% --- 2. Resolve Geometry Parameters ---
 % Priority: manual override > data file fields > filename parsing > L_device inference
-[n_periods_r, n_apod_r, cavity_length_r] = resolve_geometry_params( ...
+[n_periods_r, n_apod_r, cavity_length_r, tooth_shift_r] = resolve_geometry_params( ...
     result_filepath, data, pitch, n_periods_override, n_apod_override, ...
-    cavity_length_override);
+    cavity_length_override, tooth_shift_override);
 
 if n_apod_r > 0
     geom_str = sprintf('N=%d periods, %d apodized', n_periods_r, n_apod_r);
@@ -158,12 +205,11 @@ if isfield(data, 'field_xz_side')
     end
 
     xl = xlim; yl = ylim;
-    [xp, wp] = make_grating_profile(pitch, width_narrow, width_wide, ...
-        n_periods_r, cavity_length_r, core_height, ...
-        n_apod_r, center_mod_depth_nm*1e-9, geom_mode, apod_method, tanh_steepness);
-    plot(xp*1e6,  wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
-    plot(xp*1e6, -wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
-    draw_cavity_hatch(0, 0, cavity_length_r*1e6, core_height*1e6, geom_color, geom_lw, 0.15);
+    wg_hh = core_height / 2 * 1e6;
+    plot(xl, [ wg_hh  wg_hh], '-', 'Color', geom_color, 'LineWidth', geom_lw);
+    plot(xl, [-wg_hh -wg_hh], '-', 'Color', geom_color, 'LineWidth', geom_lw);
+    eff_cav_len_xz = cavity_length_r + ternary(tooth_shift_r > 0 && lengthen_cavity, 2*tooth_shift_r, 0);
+    draw_cavity_hatch(0, 0, eff_cav_len_xz*1e6, core_height*1e6, geom_color, geom_lw, 0.15);
     xlim(xl); ylim(yl);
     hold off;
 else
@@ -278,11 +324,19 @@ if isfield(data, 'field_xy')
         end
     end
 
-    wg_hw = avg_corrugation_width / 2 * 1e6;
-    xl = xlim;
-    plot(xl, [ wg_hw  wg_hw], '-', 'Color', geom_color, 'LineWidth', geom_lw);
-    plot(xl, [-wg_hw -wg_hw], '-', 'Color', geom_color, 'LineWidth', geom_lw);
-    draw_cavity_hatch(0, 0, cavity_length_r*1e6, avg_corrugation_width*1e6, geom_color, geom_lw, 0.15);
+    xl = xlim; yl = ylim;
+    [xp, wp] = make_grating_profile(pitch, width_narrow, width_wide, ...
+        n_periods_r, cavity_length_r, core_height, ...
+        n_apod_r, center_mod_depth_nm*1e-9, geom_mode, apod_method, tanh_steepness, ...
+        'xy', tooth_shift_r, lengthen_cavity);
+    plot(xp*1e6,  wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
+    plot(xp*1e6, -wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
+    % Cavity width matches W_narrow[1] (same as make_grating_profile cavity segment)
+    [~, i0] = min(abs(xp));
+    cav_full_width = 2 * wp(i0);
+    eff_cav_len = cavity_length_r + ternary(tooth_shift_r > 0 && lengthen_cavity, 2*tooth_shift_r, 0);
+    draw_cavity_hatch(0, 0, eff_cav_len*1e6, cav_full_width*1e6, geom_color, geom_lw, 0.15);
+    xlim(xl); ylim(yl);
     hold off;
 else
     fprintf('XY top view data not available.\n');
@@ -293,28 +347,31 @@ fprintf('\nDone.\n');
 
 %% === Local Functions ===
 
-function [n_per, n_apod, cav_len] = resolve_geometry_params( ...
-        fpath, data, pitch, n_per_manual, n_apod_manual, cav_len_manual)
+function [n_per, n_apod, cav_len, t_shift] = resolve_geometry_params( ...
+        fpath, data, pitch, n_per_manual, n_apod_manual, cav_len_manual, ...
+        t_shift_manual)
 % Resolve grating geometry parameters from multiple sources (highest→lowest priority):
 %   1. Manual override arguments
 %   2. Data file fields (future-proof: data.n_periods, data.n_apod_periods, data.cavity_length_m)
-%   3. Filename parsing  (e.g. "80_periods_10_apod_tanh_L_cav_250_CONST_ff")
+%   3. Filename parsing  (e.g. "80_periods_10_apod_tanh_L_cav_250_CONST_shift_100.0nm")
 %   4. L_device inference  (data.L_device = 2*(n_periods*pitch + cav_len/2))
 %   5. Hard error if n_periods still unknown
 
     n_per   = n_per_manual;
     n_apod  = n_apod_manual;
     cav_len = cav_len_manual;
+    t_shift = t_shift_manual;
 
     % --- Data file fields (stored by future versions of post_processing.py) ---
     if isempty(n_per)   && isfield(data, 'n_periods');            n_per   = double(data.n_periods);            end
     if isempty(n_per)   && isfield(data, 'n_periods_each_side'); n_per   = double(data.n_periods_each_side);  end
     if isempty(n_apod)  && isfield(data, 'n_apod_periods');      n_apod  = double(data.n_apod_periods);       end
     if isempty(cav_len) && isfield(data, 'cavity_length_m'); cav_len = double(data.cavity_length_m); end
+    if isempty(t_shift) && isfield(data, 'innermost_tooth_shift_nm'); t_shift = double(data.innermost_tooth_shift_nm) * 1e-9; end
 
     % --- Filename parsing ---
     % Filename convention from sim_helpers.generate_file_tag():
-    %   {N}_periods[_{Napod}_apod[_tanh]][_L_cav_{len_nm}][_CONST][_ff]
+    %   {N}_periods[_{Napod}_apod[_tanh]][_L_cav_{len_nm}][_CONST][_shift_{nm}nm]
     [~, fname] = fileparts(fpath);
 
     if isempty(n_per)
@@ -328,6 +385,10 @@ function [n_per, n_apod, cav_len] = resolve_geometry_params( ...
     if isempty(cav_len)
         tok = regexp(fname, 'L_cav_(\d+)', 'tokens', 'once');
         if ~isempty(tok); cav_len = str2double(tok{1}) * 1e-9; end
+    end
+    if isempty(t_shift)
+        tok = regexp(fname, '_shift_([\d.]+)nm', 'tokens', 'once');
+        if ~isempty(tok); t_shift = str2double(tok{1}) * 1e-9; end
     end
     if ~isempty(regexp(fname, '_tanh', 'once'))
         fprintf('  Filename suggests tanh apodization — set apod_method=''tanh'' if drawing apodized.\n');
@@ -347,13 +408,14 @@ function [n_per, n_apod, cav_len] = resolve_geometry_params( ...
     % --- Defaults ---
     if isempty(cav_len); cav_len = pitch / 2; end
     if isempty(n_apod);  n_apod  = 0;         end
+    if isempty(t_shift); t_shift = 0;         end
     if isempty(n_per)
         error(['Could not determine n_periods from data file or filename.\n' ...
                'Set n_periods_override manually in the Configuration section.']);
     end
 
-    fprintf('Geometry: n_periods=%d, n_apod=%d, cavity_length=%.0f nm\n', ...
-        n_per, n_apod, cav_len * 1e9);
+    fprintf('Geometry: n_periods=%d, n_apod=%d, cavity_length=%.0f nm, tooth_shift=%.1f nm\n', ...
+        n_per, n_apod, cav_len * 1e9, t_shift * 1e9);
 end
 
 
@@ -365,31 +427,30 @@ end
 
 function [x_vec, w_half_vec] = make_grating_profile(pitch, w_narrow, w_wide, ...
         n_periods, cav_length, core_height, n_apod, center_mod_depth, geom_mode, ...
-        apod_method, tanh_steepness)
-% Build a step-function XZ boundary profile for the grating corrugation.
+        apod_method, tanh_steepness, view_plane, tooth_shift, lengthen_cav)
+% Build a step-function boundary profile for the grating corrugation.
 %
-% The XZ plane at Y=0 cuts through the waveguide slab. The physical Z boundary
-% is always core_height/2 (the real slab edge). To represent the Y-corrugation
-% schematically in this view:
-%   - Narrow sub-periods : drawn at  ±core_height/2  (real slab edge)
-%   - Wide  sub-periods  : drawn at  ±(core_height/2 + delta(d))
-%     where delta(d) = mod_depth(d)/2 is the Y-modulation half-depth.
+% view_plane (optional, default 'xy'):
+%   'xy' — returns actual Y half-widths for the top-view overlay.
+%   'xz' — returns Z half-heights for the side-view (schematic overlay).
 %
-% For 'uniform' mode : mod_depth = w_wide - w_narrow  (same every period)
-% For 'apodized' mode: mod_depth(d) ramps from center_mod_depth (d=1, near defect)
-%   to (w_wide - w_narrow) (d > n_apod, toward edges), exactly mirroring the
-%   logic in bragg_device.py::get_mod_depth(d).
+% tooth_shift (optional, default 0): innermost tooth shift [m].
+%   Mirrors bragg_device_shifted.py — see that file for the full description.
+% lengthen_cav (optional, default true): when true, cavity grows by 2*shift.
+
+    if nargin < 12 || isempty(view_plane),   view_plane   = 'xy'; end
+    if nargin < 13 || isempty(tooth_shift),  tooth_shift  = 0;    end
+    if nargin < 14 || isempty(lengthen_cav), lengthen_cav = true;  end
 
     half_pitch      = pitch / 2;
-    h_base          = core_height / 2;         % physical slab Z half-height [m]
-    full_depth_edge = w_wide - w_narrow;       % full modulation depth at grating edges [m]
+    avg_width       = (w_narrow + w_wide) / 2;
+    full_depth_edge = w_wide - w_narrow;
 
-    % --- Per-period modulation half-depths ---
-    hw_wide = zeros(1, n_periods);
+    % --- Per-period half-extents (narrow & wide) ---
+    hw_narrow_arr = zeros(1, n_periods);
+    hw_wide_arr   = zeros(1, n_periods);
     for d = 1:n_periods
         if strcmp(geom_mode, 'apodized') && n_apod > 0 && d <= n_apod
-            % Ramp from center_mod_depth (d=1) toward full_depth_edge (d=n_apod).
-            % denom = n_apod (standard case: n_apod < n_periods).
             frac = (d - 1) / n_apod;
             if strcmp(apod_method, 'tanh')
                 frac = tanh(tanh_steepness * 2 * frac) / tanh(2 * tanh_steepness);
@@ -398,28 +459,68 @@ function [x_vec, w_half_vec] = make_grating_profile(pitch, w_narrow, w_wide, ...
         else
             mod_depth = full_depth_edge;
         end
-        hw_wide(d) = h_base + mod_depth / 2;
+
+        if strcmp(view_plane, 'xy')
+            hw_narrow_arr(d) = (avg_width - mod_depth / 2) / 2;
+            hw_wide_arr(d)   = (avg_width + mod_depth / 2) / 2;
+        else  % 'xz'
+            hw_narrow_arr(d) = core_height / 2;
+            hw_wide_arr(d)   = core_height / 2 + mod_depth / 2;
+        end
     end
 
+    % Cavity segment half-extent (matches bragg_device.py: cavity uses W_narrow[1])
+    if strcmp(view_plane, 'xy')
+        hw_cavity = hw_narrow_arr(1);
+    else
+        hw_cavity = core_height / 2;
+    end
+
+    % Effective cavity length (may be enlarged by tooth shift)
+    cav_extra = 0;
+    if tooth_shift > 0 && lengthen_cav
+        cav_extra = 2 * tooth_shift;
+    end
+    eff_cav_length = cav_length + cav_extra;
+
     % --- Build ordered segment list ---
-    % Left arm : d = n_periods → 1  (outer to inner, mirrors Python _add_bragg_core)
-    % Cavity   : single narrow segment
+    % Mirrors bragg_device_shifted.py segment ordering.
+    % Left arm : d = n_periods → 1  (outer to inner)
+    % Cavity   : single segment
     % Right arm: d = 1 → n_periods  (inner to outer)
     n_segs = 4 * n_periods + 1;
     seg_xl = zeros(1, n_segs);
     seg_xr = zeros(1, n_segs);
     seg_hw = zeros(1, n_segs);
     k = 0;
-    x = -(n_periods * pitch + cav_length / 2);   % x_grating_start
+    x = -(n_periods * pitch + eff_cav_length / 2);
 
-    for d = n_periods:-1:1
-        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=h_base;      x=x+half_pitch;
-        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide(d);  x=x+half_pitch;
+    % Left arm: outer periods d = n_periods down to d = 2
+    for d = n_periods:-1:2
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_narrow_arr(d); x=x+half_pitch;
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide_arr(d);   x=x+half_pitch;
     end
-    k=k+1; seg_xl(k)=x; seg_xr(k)=x+cav_length; seg_hw(k)=h_base; x=x+cav_length;
-    for d = 1:n_periods
-        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=h_base;      x=x+half_pitch;
-        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide(d);  x=x+half_pitch;
+    % Left innermost period (d = 1): L_narrow_1 shortened by tooth_shift
+    L_narrow_1_len = half_pitch - tooth_shift;
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+L_narrow_1_len; seg_hw(k)=hw_narrow_arr(1); x=x+L_narrow_1_len;
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch;     seg_hw(k)=hw_wide_arr(1);   x=x+half_pitch;
+
+    % Cavity
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+eff_cav_length; seg_hw(k)=hw_cavity; x=x+eff_cav_length;
+
+    % Right innermost period (d = 1): unchanged
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_narrow_arr(1); x=x+half_pitch;
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide_arr(1);   x=x+half_pitch;
+    % Right second period (d = 2): R_narrow_2 shortened by tooth_shift
+    if n_periods >= 2
+        R_narrow_2_len = half_pitch - tooth_shift;
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+R_narrow_2_len; seg_hw(k)=hw_narrow_arr(2); x=x+R_narrow_2_len;
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch;     seg_hw(k)=hw_wide_arr(2);   x=x+half_pitch;
+    end
+    % Right arm: outer periods d = 3 up to d = n_periods
+    for d = 3:n_periods
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_narrow_arr(d); x=x+half_pitch;
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide_arr(d);   x=x+half_pitch;
     end
 
     % --- Convert to step-function polyline ---

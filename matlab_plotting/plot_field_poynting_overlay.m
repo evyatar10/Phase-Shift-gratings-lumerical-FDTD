@@ -102,12 +102,15 @@ if isfield(data, 'field_xy')
         draw_field_with_poynting(ax, x*1e6, y*1e6, Px, Py, I_dB, opts);
     end
 
-    % Geometry: waveguide width boundaries
+    % Geometry: corrugated waveguide width boundaries (XY = top view)
     if show_geometry
-        wg_hw = avg_corrugation_width / 2 * 1e6;
-        xl = xlim(ax);
-        plot(ax, xl, [ wg_hw  wg_hw], '-', 'Color', geom_color, 'LineWidth', geom_lw);
-        plot(ax, xl, [-wg_hw -wg_hw], '-', 'Color', geom_color, 'LineWidth', geom_lw);
+        xl = xlim(ax); yl = ylim(ax);
+        [xp, wp] = make_grating_profile(pitch, width_narrow, width_wide, ...
+            n_periods_r, cavity_length_r, core_height, ...
+            n_apod_r, center_mod_depth_nm*1e-9, geom_mode, apod_method, tanh_steepness, 'xy');
+        plot(ax, xp*1e6,  wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
+        plot(ax, xp*1e6, -wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
+        xlim(ax, xl); ylim(ax, yl);
     end
     hold(ax, 'off');
 end
@@ -197,11 +200,9 @@ if isfield(data, 'field_xz_side')
 
     if show_geometry
         xl = xlim(ax); yl = ylim(ax);
-        [xp, wp] = make_grating_profile(pitch, width_narrow, width_wide, ...
-            n_periods_r, cavity_length_r, core_height, ...
-            n_apod_r, center_mod_depth_nm*1e-9, geom_mode, apod_method, tanh_steepness);
-        plot(ax, xp*1e6,  wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
-        plot(ax, xp*1e6, -wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
+        wg_hh = core_height / 2 * 1e6;
+        plot(ax, xl, [ wg_hh  wg_hh], '-', 'Color', geom_color, 'LineWidth', geom_lw);
+        plot(ax, xl, [-wg_hh -wg_hh], '-', 'Color', geom_color, 'LineWidth', geom_lw);
         plot(ax, [0 0], yl, ':', 'Color', geom_color, 'LineWidth', 1.0);   % defect marker
         xlim(ax, xl); ylim(ax, yl);
     end
@@ -266,13 +267,17 @@ end
 
 function [x_vec, w_half_vec] = make_grating_profile(pitch, w_narrow, w_wide, ...
         n_periods, cav_length, core_height, n_apod, center_mod_depth, geom_mode, ...
-        apod_method, tanh_steepness)
-% Step-function XZ boundary profile for a Bragg grating with phase-shift defect.
+        apod_method, tanh_steepness, view_plane, tooth_shift, lengthen_cav)
+% Step-function boundary profile for a Bragg grating with phase-shift defect.
 % See plot_field_poynting_zoom.m for full documentation.
+    if nargin < 12 || isempty(view_plane),   view_plane   = 'xy'; end
+    if nargin < 13 || isempty(tooth_shift),  tooth_shift  = 0;    end
+    if nargin < 14 || isempty(lengthen_cav), lengthen_cav = true;  end
     half_pitch      = pitch / 2;
-    h_base          = core_height / 2;
+    avg_width       = (w_narrow + w_wide) / 2;
     full_depth_edge = w_wide - w_narrow;
-    hw_wide = zeros(1, n_periods);
+    hw_narrow_arr = zeros(1, n_periods);
+    hw_wide_arr   = zeros(1, n_periods);
     for d = 1:n_periods
         if strcmp(geom_mode, 'apodized') && n_apod > 0 && d <= n_apod
             frac = (d - 1) / n_apod;
@@ -283,20 +288,44 @@ function [x_vec, w_half_vec] = make_grating_profile(pitch, w_narrow, w_wide, ...
         else
             mod_depth = full_depth_edge;
         end
-        hw_wide(d) = h_base + mod_depth / 2;
+        if strcmp(view_plane, 'xy')
+            hw_narrow_arr(d) = (avg_width - mod_depth / 2) / 2;
+            hw_wide_arr(d)   = (avg_width + mod_depth / 2) / 2;
+        else
+            hw_narrow_arr(d) = core_height / 2;
+            hw_wide_arr(d)   = core_height / 2 + mod_depth / 2;
+        end
     end
+    if strcmp(view_plane, 'xy')
+        hw_cavity = hw_narrow_arr(1);
+    else
+        hw_cavity = core_height / 2;
+    end
+    cav_extra = 0;
+    if tooth_shift > 0 && lengthen_cav; cav_extra = 2 * tooth_shift; end
+    eff_cav_length = cav_length + cav_extra;
     n_segs = 4 * n_periods + 1;
     seg_xl = zeros(1, n_segs); seg_xr = zeros(1, n_segs); seg_hw = zeros(1, n_segs);
     k = 0;
-    x = -(n_periods * pitch + cav_length / 2);
-    for d = n_periods:-1:1
-        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=h_base;     x=x+half_pitch;
-        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide(d); x=x+half_pitch;
+    x = -(n_periods * pitch + eff_cav_length / 2);
+    for d = n_periods:-1:2
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_narrow_arr(d); x=x+half_pitch;
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide_arr(d);   x=x+half_pitch;
     end
-    k=k+1; seg_xl(k)=x; seg_xr(k)=x+cav_length; seg_hw(k)=h_base; x=x+cav_length;
-    for d = 1:n_periods
-        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=h_base;     x=x+half_pitch;
-        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide(d); x=x+half_pitch;
+    L_narrow_1_len = half_pitch - tooth_shift;
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+L_narrow_1_len; seg_hw(k)=hw_narrow_arr(1); x=x+L_narrow_1_len;
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch;     seg_hw(k)=hw_wide_arr(1);   x=x+half_pitch;
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+eff_cav_length;  seg_hw(k)=hw_cavity;        x=x+eff_cav_length;
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_narrow_arr(1); x=x+half_pitch;
+    k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide_arr(1);   x=x+half_pitch;
+    if n_periods >= 2
+        R_narrow_2_len = half_pitch - tooth_shift;
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+R_narrow_2_len; seg_hw(k)=hw_narrow_arr(2); x=x+R_narrow_2_len;
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch;     seg_hw(k)=hw_wide_arr(2);   x=x+half_pitch;
+    end
+    for d = 3:n_periods
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_narrow_arr(d); x=x+half_pitch;
+        k=k+1; seg_xl(k)=x; seg_xr(k)=x+half_pitch; seg_hw(k)=hw_wide_arr(d);   x=x+half_pitch;
     end
     x_vec      = seg_xl(1);
     w_half_vec = seg_hw(1);
