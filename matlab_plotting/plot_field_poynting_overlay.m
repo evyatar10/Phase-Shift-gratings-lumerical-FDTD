@@ -90,8 +90,8 @@ if isfield(data, 'field_xy')
     max_dB = max(I_dB(:));
     clim(ax, [max_dB - opts.dB_range, max_dB]);
     cb = colorbar(ax); ylabel(cb, '|E|^2  [dB]');
-    xlabel(ax, 'X [\mum]'); ylabel(ax, 'Y [\mum]');
-    title(ax, sprintf('XY (Top View)  \\lambda = %.3f nm', wl_plot*1e9));
+    xlabel(ax, 'X [\mum]', 'FontSize', 12); ylabel(ax, 'Y [\mum]', 'FontSize', 12);
+    title(ax, sprintf('XY (Top View)  \\lambda = %.3f nm', wl_plot*1e9), 'FontSize', 13);
     hold(ax, 'on');
 
     % Poynting overlay
@@ -139,8 +139,8 @@ if isfield(data, 'field_yz_cross')
     max_dB = max(I_dB(:));
     clim(ax, [max_dB - opts.dB_range, max_dB]);
     cb = colorbar(ax); ylabel(cb, '|E|^2  [dB]');
-    xlabel(ax, 'Y [\mum]'); ylabel(ax, 'Z [\mum]');
-    title(ax, sprintf('YZ (Cross Section)  \\lambda = %.3f nm', wl_plot*1e9));
+    xlabel(ax, 'Y [\mum]', 'FontSize', 12); ylabel(ax, 'Z [\mum]', 'FontSize', 12);
+    title(ax, sprintf('YZ (Cross Section)  \\lambda = %.3f nm', wl_plot*1e9), 'FontSize', 13);
     hold(ax, 'on');
 
     if isfield(d, 'P_res') && ~isempty(d.P_res)
@@ -187,8 +187,8 @@ if isfield(data, 'field_xz_side')
     max_dB = max(I_dB(:));
     clim(ax, [max_dB - opts.dB_range, max_dB]);
     cb = colorbar(ax); ylabel(cb, '|E|^2  [dB]');
-    xlabel(ax, 'X [\mum]'); ylabel(ax, 'Z [\mum]');
-    title(ax, sprintf('XZ (Side View)  \\lambda = %.3f nm', wl_plot*1e9));
+    xlabel(ax, 'X [\mum]', 'FontSize', 12); ylabel(ax, 'Z [\mum]', 'FontSize', 12);
+    title(ax, sprintf('XZ (Side View)  \\lambda = %.3f nm', wl_plot*1e9), 'FontSize', 13);
     hold(ax, 'on');
 
     if isfield(d, 'P_res') && ~isempty(d.P_res)

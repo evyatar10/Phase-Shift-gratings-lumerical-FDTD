@@ -16,12 +16,12 @@
 ├── config.py                    # Machine-specific paths (edit this)
 ├── run_simulation.py            # Core simulation pipeline
 ├── run_sweep.py                 # Parameter sweep (thin wrapper)
-├── run_sweep_innermost_shift.py # Innermost tooth shift sweep
 ├── run_experiment.py            # Experiment card runner (examples)
 ├── run_simple_bragg.py          # Simple uniform grating (no cavity)
 ├── experiment_card.py           # ExperimentCard dataclass + run_card/run_cards
 ├── bragg_device.py              # PiShiftBraggFDTD device builder
 ├── bragg_device_shifted.py      # PiShiftBraggFDTDWithShift (innermost tooth shift)
+├── bragg_device_inner_size.py   # PiShiftBraggFDTDWithInnerSize (independent innermost tooth depth)
 ├── analysis.py                  # Phase correction & S-parameter processing
 ├── post_processing.py           # Full post-simulation analysis pipeline
 ├── sim_helpers.py               # Shared helper functions
@@ -34,7 +34,19 @@
 ├── experiment_examples/
 │   └── p8RC1_tanh.py            # Example experiment card (tanh apodization)
 ├── convergence_testing/
-│   └── run_convergence.py       # Far-field convergence test
+│   ├── run_convergence.py       # Far-field convergence test
+│   └── run_mesh_convergence.py  # Coordinate-descent mesh convergence test
+├── ToothShift/
+│   ├── run_sweep_innermost_shift.py  # Innermost tooth shift sweep
+│   ├── run_sweep_inner_tooth_size.py # 2D sweep: inner tooth size × shift
+│   └── optimize_innermost_shift.py   # Brent's method optimizer for shift
+├── hpc/
+│   ├── deploy.sh                # Upload project to Zeus and submit PBS job
+│   ├── scripts/
+│   │   └── server_run.py        # Server-side pipeline wrapper (patches config paths)
+│   └── jobs/
+│       ├── run_python_job.sh    # PBS job script for Python pipeline
+│       └── run_fsp_job.sh       # PBS job script for .fsp file
 ├── matlab_plotting/
 │   ├── plot_fdtd.m              # T/R/Loss/Phase spectra
 │   ├── plot_farfield.m          # Near-field + far-field visualization
@@ -42,7 +54,10 @@
 │   ├── plot_field_poynting.m    # Field + Poynting vector plots
 │   ├── plot_field_poynting_overlay.m  # Overlaid field/Poynting visualization
 │   ├── plot_field_poynting_zoom.m     # Zoomed field/Poynting view
-│   ├── plot_resonance_vs_shift.m      # Resonance wavelength vs innermost tooth shift
+│   ├── plot_mode_profile.m            # Mode profile (|E|² envelope + FWHM) comparison
+│   ├── plot_mode_profile_xz.m         # Mode profile from XZ side-view monitor
+│   ├── plot_transmission_compare.m    # Transmission spectra multi-file comparison
+│   ├── plot_resonance_vs_param.m      # Resonance / peak T vs shift or inner tooth size
 │   └── save_figures_interactive.m     # Interactive figure export helper
 └── matlab_analysis/
     ├── analyze_farfield_radiation.m   # 3D spherical radiation patterns
@@ -76,10 +91,20 @@
 
 5. **Run an innermost tooth shift sweep:**
    ```bash
-   python run_sweep_innermost_shift.py
+   python ToothShift/run_sweep_innermost_shift.py
    ```
 
-6. **Run with an experiment card:**
+6. **Run a 2D inner tooth size × shift sweep:**
+   ```bash
+   python ToothShift/run_sweep_inner_tooth_size.py
+   ```
+
+7. **Optimize the innermost tooth shift automatically:**
+   ```bash
+   python ToothShift/optimize_innermost_shift.py
+   ```
+
+8. **Run with an experiment card:**
    ```bash
    python run_experiment.py
    ```
@@ -174,7 +199,35 @@ from bragg_device_shifted import PiShiftBraggFDTDWithShift
 sim = PiShiftBraggFDTDWithShift(**kwargs, innermost_tooth_shift_m=105e-9)
 ```
 
-`run_sweep_innermost_shift.py` sweeps over a list of shift values, saves a `.mat` result per shift, and plots all transmission spectra on one figure. The MATLAB script `matlab_plotting/plot_resonance_vs_shift.m` can then visualize the resonance wavelength as a function of shift.
+The `ToothShift/` directory contains three scripts for exploring this design parameter:
+
+- **`run_sweep_innermost_shift.py`** — sweeps a list of shift values, saves a `.mat` result per shift, and plots all transmission spectra on one figure.
+- **`run_sweep_inner_tooth_size.py`** — runs a 2D sweep: for each shift value in `TOOTH_SHIFT_VALUES_NM`, iterates over all corrugation depth values in `INNER_SIZE_VALUES_NM`.
+- **`optimize_innermost_shift.py`** — finds the shift that maximizes resonance transmission using Brent's method (bounded golden-section + parabolic interpolation) within a configurable budget of FDTD evaluations.
+
+The MATLAB script `matlab_plotting/plot_resonance_vs_param.m` can visualize both resonance wavelength and peak transmission vs. shift or inner tooth size from the saved `.mat` files.
+
+## Innermost Tooth Size
+
+`bragg_device_inner_size.py` provides `PiShiftBraggFDTDWithInnerSize`, a subclass of `PiShiftBraggFDTDWithShift` that additionally controls the corrugation depth of the innermost grating tooth independently from the rest of the grating.
+
+```python
+from bragg_device_inner_size import PiShiftBraggFDTDWithInnerSize
+
+# Flat innermost tooth (no corrugation)
+sim = PiShiftBraggFDTDWithInnerSize(**kwargs, innermost_corrugation_depth_m=0.0)
+
+# Custom corrugation depth + optional shift
+sim = PiShiftBraggFDTDWithInnerSize(
+    **kwargs,
+    innermost_tooth_shift_m=105e-9,
+    innermost_corrugation_depth_m=120e-9,
+)
+```
+
+- `innermost_corrugation_depth_m=None` (default) — no change, same as all other periods
+- `innermost_corrugation_depth_m=0` — flat innermost tooth
+- Can be combined freely with `innermost_tooth_shift_m`
 
 ## Experiment Cards
 
@@ -303,7 +356,10 @@ Each stage is a standalone function and can be called independently (e.g., to re
 - **plot_field_poynting.m** — Field intensity and Poynting vector visualization
 - **plot_field_poynting_overlay.m** — Overlaid field and Poynting vector plots
 - **plot_field_poynting_zoom.m** — Zoomed-in field/Poynting view
-- **plot_resonance_vs_shift.m** — Resonance wavelength vs innermost tooth shift
+- **plot_mode_profile.m** — Side-by-side comparison of |E|² envelope + FWHM across simulations
+- **plot_mode_profile_xz.m** — Mode profile from the XZ side-view 2D monitor (integrates |E|² over z)
+- **plot_transmission_compare.m** — Overlay transmission spectra from multiple .mat result files
+- **plot_resonance_vs_param.m** — Resonance wavelength and/or peak transmission vs. shift or inner tooth size (auto-detected from filename)
 - **save_figures_interactive.m** — Interactive helper for exporting figures
 
 ### Analysis (`matlab_analysis/`)
@@ -316,6 +372,60 @@ Each stage is a standalone function and can be called independently (e.g., to re
 - **calculate_profile.m** — 3D field profile FWHM analysis
 - **overlap_analysis_many.m** — Batch overlap integral computation between devices
 - **overlap_analysis_bg.m** — Overlap integral utility function
+
+## Convergence Testing
+
+`convergence_testing/` contains two convergence scripts:
+
+- **`run_convergence.py`** — Far-field monitor distance convergence test.
+- **`run_mesh_convergence.py`** — Coordinate-descent mesh convergence. Tests two mesh parameters sequentially:
+  - **Phase A** — `cells_per_half_period` (controls dx)
+  - **Phase B** — `dz_divisor` (controls dz = core_height / divisor)
+
+  The convergence metric is configurable (`"Q"` for Q-factor or `"lambda"` for resonance wavelength). Early stopping activates when the metric changes by less than the threshold for two consecutive mesh values, and checkpoints are written to a JSON file after every run.
+
+## HPC Deployment (Zeus / Technion Cluster)
+
+The `hpc/` directory contains scripts for running simulations on the Zeus PBS cluster at Technion.
+
+### Workflow
+
+1. **Upload and submit:**
+   ```bash
+   bash hpc/deploy.sh
+   ```
+   This syncs all Python source files and neff data to Zeus via `rsync`, then submits a PBS job with `qsub`.
+
+2. **Upload only (no job submission):**
+   ```bash
+   bash hpc/deploy.sh --upload-only
+   ```
+
+3. **Download results after the job finishes:**
+   ```bash
+   bash hpc/deploy.sh --results
+   ```
+   Results are saved locally to `./results_from_server/`.
+
+### Configuration
+
+Edit the top of `hpc/deploy.sh` to set:
+
+| Variable | Description |
+|----------|-------------|
+| `ZEUS_USER` | Your Zeus username |
+| `ZEUS_HOST` | Zeus hostname (default: `zeus.technion.ac.il`) |
+| `REMOTE_BASE` | Remote working directory |
+| `LOCAL_NEFF` | Local path to neff `.mat` data file |
+
+### Files
+
+| File | Description |
+|------|-------------|
+| `hpc/deploy.sh` | Main deploy/submit/download script |
+| `hpc/scripts/server_run.py` | Server-side pipeline wrapper; patches `config.py` paths for Zeus at runtime |
+| `hpc/jobs/run_python_job.sh` | PBS job script that runs the Python pipeline |
+| `hpc/jobs/run_fsp_job.sh` | PBS job script for running a standalone `.fsp` file |
 
 ## Output Format
 

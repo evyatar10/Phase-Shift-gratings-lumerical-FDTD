@@ -212,9 +212,9 @@ end
 figure('Position', [100 100 1400 620]);
 
 if is_top
-    view_name = 'Top View';
+    view_name = 'Top Near-Field and Far-Field Views';
 else
-    view_name = 'Side View';
+    view_name = 'Side Near-Field and Far-Field Views';
 end
 title_str = sprintf('%s  |  \\lambda = %.2f nm  |  %s', view_name, lam*1e9, SIM_DESC);
 sgtitle(title_str, 'FontWeight','bold', 'FontSize',16, 'Interpreter','tex');
@@ -231,8 +231,8 @@ if ~isempty(nf_struct)
         colormap(ax_nf, jet);                          % same colormap as far-field
         set(ax_nf, 'YDir','normal');
         axis(ax_nf, 'tight');
-        xlabel(ax_nf, h_lbl);
-        ylabel(ax_nf, v_lbl);
+        xlabel(ax_nf, h_lbl, 'FontSize', 12);
+        ylabel(ax_nf, v_lbl, 'FontSize', 12);
         cb_nf = colorbar(ax_nf);
         cb_nf.Label.String = '|E|^2  [V^2/m^2]';
         nf_ok = true;
@@ -261,23 +261,22 @@ if ~isempty(nf_struct)
                 geom_mode_eff, apod_method_eff, t_shift_r*1e9);
             eff_cav = cav_len_r + ternary(t_shift_r > 0 && geom.lengthen_cavity, 2*t_shift_r, 0);
             if is_top
-                % Top view: full corrugated grating outline
+                % Top view: X horizontal, Y vertical — same orientation as zoom plot
                 [xp, wp] = make_grating_profile(geom.pitch, geom.width_narrow, geom.width_wide, ...
                     n_per_r, cav_len_r, geom.core_height, n_apod_r, geom.center_mod_depth, ...
                     geom_mode_eff, apod_method_eff, geom.tanh_steepness, 'xy', ...
                     t_shift_r, geom.lengthen_cavity);
-                % Axes transposed vs zoom plot: horizontal = wp (Y), vertical = xp (X)
-                plot(ax_nf,  wp*1e6, xp*1e6, '-', 'Color', geom.color, 'LineWidth', geom.lw);
-                plot(ax_nf, -wp*1e6, xp*1e6, '-', 'Color', geom.color, 'LineWidth', geom.lw);
+                plot(ax_nf, xp*1e6,  wp*1e6, '-', 'Color', geom.color, 'LineWidth', geom.lw);
+                plot(ax_nf, xp*1e6, -wp*1e6, '-', 'Color', geom.color, 'LineWidth', geom.lw);
                 [~, i0] = min(abs(xp));
                 cav_full_w = 2 * wp(i0);
-                draw_cavity_hatch(0, 0, cav_full_w*1e6, eff_cav*1e6, geom.color, geom.lw, 0.15);
+                draw_cavity_hatch(0, 0, eff_cav*1e6, cav_full_w*1e6, geom.color, geom.lw, 0.15);
             else
-                % Side view: slab only — two straight lines at z = ±core_height/2
+                % Side view: X horizontal, Z vertical — slab lines are horizontal
                 wg_hh = geom.core_height / 2 * 1e6;
-                plot(ax_nf, [ wg_hh  wg_hh], yl_nf, '-', 'Color', geom.color, 'LineWidth', geom.lw);
-                plot(ax_nf, [-wg_hh -wg_hh], yl_nf, '-', 'Color', geom.color, 'LineWidth', geom.lw);
-                draw_cavity_hatch(0, 0, geom.core_height*1e6, eff_cav*1e6, geom.color, geom.lw, 0.15);
+                plot(ax_nf, xl_nf, [ wg_hh  wg_hh], '-', 'Color', geom.color, 'LineWidth', geom.lw);
+                plot(ax_nf, xl_nf, [-wg_hh -wg_hh], '-', 'Color', geom.color, 'LineWidth', geom.lw);
+                draw_cavity_hatch(0, 0, eff_cav*1e6, geom.core_height*1e6, geom.color, geom.lw, 0.15);
             end
             xlim(ax_nf, xl_nf); ylim(ax_nf, yl_nf);
             hold(ax_nf, 'off');
@@ -299,9 +298,9 @@ else
     crop_str = '';
 end
 if is_top
-    title(ax_nf, ['Near Field  — Top View (XY plane, |E|^2)' crop_str], 'FontSize', 11);
+    title(ax_nf, ['Top Near-Field Monitor  (XY plane, |E|^2)' crop_str], 'FontSize', 13);
 else
-    title(ax_nf, ['Near Field  — Side View (XZ plane, |E|^2)' crop_str], 'FontSize', 11);
+    title(ax_nf, ['Side Near-Field Monitor  (XZ plane, |E|^2)' crop_str], 'FontSize', 13);
 end
 
 % ══ RIGHT: Far field XY map ═══════════════════════════════════════════════
@@ -310,13 +309,13 @@ end
 ax_ff = subplot(1,2,2);
 hold(ax_ff, 'on');
 
-imagesc(ax_ff, uy, ux, E2_ff);
+imagesc(ax_ff, ux, uy, E2_ff.');
 if is_top
-    xlabel(ax_ff, 'u_y  (Y-direction)', 'FontSize', 11);
-    ylabel(ax_ff, 'u_x  (X-direction)', 'FontSize', 11);
+    xlabel(ax_ff, 'u_x  (X-direction)', 'FontSize', 13);
+    ylabel(ax_ff, 'u_y  (Y-direction)', 'FontSize', 13);
 else
-    xlabel(ax_ff, 'u_z  (Z-direction)', 'FontSize', 11);
-    ylabel(ax_ff, 'u_x  (X-direction)', 'FontSize', 11);
+    xlabel(ax_ff, 'u_x  (X-direction)', 'FontSize', 13);
+    ylabel(ax_ff, 'u_z  (Z-direction)', 'FontSize', 13);
 end
 
 colormap(ax_ff, jet);
@@ -324,7 +323,7 @@ colormap(ax_ff, jet);
 axis(ax_ff, 'equal');
 xlim(ax_ff, [-1.05, 1.05]); ylim(ax_ff, [-1.05, 1.05]);
 set(ax_ff, 'YDir','normal');
-title(ax_ff, sprintf('Far Field  (XY map, %s)', scale_str), 'FontSize', 11);
+title(ax_ff, sprintf('Far Field  (XY map, %s)', scale_str), 'FontSize', 13);
 
 % Hemisphere circle
 phi_c = linspace(0, 2*pi, 720);
@@ -334,17 +333,17 @@ plot(ax_ff, cos(phi_c), sin(phi_c), 'k-', 'LineWidth', 0.8);
 if PLOT_X_CONES
     color_fwhm = [0.90 0.45 0.00];   % darker orange
     color_crit = [1.00 0.45 0.75];   % pink
-    draw_x_cone(ax_ff, peak_ux_val, fwhm_uy,           true, color_fwhm, '');
-    draw_x_cone(ax_ff, peak_ux_val, CUSTOM_ANGLE_DEG*2, true, color_crit, '');
+    draw_x_cone(ax_ff, peak_ux_val, fwhm_uy,           false, color_fwhm, '');
+    draw_x_cone(ax_ff, peak_ux_val, CUSTOM_ANGLE_DEG*2, false, color_crit, '');
 
     % ── Cone labels ON the FF plot — right of centre, lower area
-    uy_lbl  = 0.16;    % slightly right of centre
+    ux_lbl  = 0.16;    % slightly right of centre (H axis is now ux)
     if ~isnan(fwhm_uy)
-        text(ax_ff, uy_lbl, 0.05, sprintf('FWHM half-angle: %.1f°', fwhm_uy/2), ...
+        text(ax_ff, ux_lbl, 0.05, sprintf('FWHM half-angle: %.1f°', fwhm_uy/2), ...
             'Color', color_fwhm, 'FontWeight','bold', 'FontSize', 9, ...
             'HorizontalAlignment','left');
     end
-    text(ax_ff, uy_lbl, -0.10, sprintf('Analytic critical angle: %.1f°', CUSTOM_ANGLE_DEG), ...
+    text(ax_ff, ux_lbl, -0.10, sprintf('Analytic critical angle: %.1f°', CUSTOM_ANGLE_DEG), ...
         'Color', color_crit, 'FontWeight','bold', 'FontSize', 9, ...
         'HorizontalAlignment','left');
 end
@@ -398,30 +397,26 @@ y_ax = real(squeeze(nf.y));
 z_ax = real(squeeze(nf.z));
 
 if is_top
-    % top_monitor: Z-normal surface  → spatial dims are X × Y
-    % E2_3d should be (Nx, Ny) after squeeze (Z is singleton)
-    E2_nf  = squeeze(E2_3d);            % ensure 2D: (Nx, Ny)
-    % imagesc(h_axis, v_axis, data) plots columns=h, rows=v
-    % We want h = y (transverse), v = x (along grating)
-    h_axis = y_ax(:);  v_axis = x_ax(:);
-    h_lbl  = 'y  [µm]';
-    v_lbl  = 'x  (along grating)  [µm]';
-    % E2_nf is (Nx × Ny): imagesc(y, x, E2_nf) → rows=x, cols=y ✓
+    % top_monitor: Z-normal surface → spatial dims are X × Y
+    % Convention: H = x (along grating), V = y (transverse)
+    E2_nf  = squeeze(E2_3d).';          % (Nx,Ny) → (Ny,Nx): rows=y, cols=x
+    h_axis = x_ax(:);  v_axis = y_ax(:);
+    h_lbl  = 'x  (along grating)  [µm]';
+    v_lbl  = 'y  [µm]';
 else
     % side_monitor: Y-normal surface → spatial dims are X × Z
-    % User wants: H = z (horizontal), V = x (vertical)
-    % imagesc(z, x, E2_nf): rows=x, cols=z → data must be (Nx, Nz) ✓
-    E2_nf  = squeeze(E2_3d);            % (Nx, Nz)
-    h_axis = z_ax(:);  v_axis = x_ax(:);
-    h_lbl  = 'z  (vertical)  [µm]';
-    v_lbl  = 'x  (along grating)  [µm]';
+    % Convention: H = x (along grating), V = z (vertical)
+    E2_nf  = squeeze(E2_3d).';          % (Nx,Nz) → (Nz,Nx): rows=z, cols=x
+    h_axis = x_ax(:);  v_axis = z_ax(:);
+    h_lbl  = 'x  (along grating)  [µm]';
+    v_lbl  = 'z  (vertical)  [µm]';
 end
 
-% Crop X (v_axis) if requested
+% Crop X (h_axis) if requested
 if ~isempty(crop_x_um)
-    mask   = abs(v_axis) <= crop_x_um * 1e-6;
-    v_axis = v_axis(mask);
-    E2_nf  = E2_nf(mask, :);
+    mask   = abs(h_axis) <= crop_x_um * 1e-6;
+    h_axis = h_axis(mask);
+    E2_nf  = E2_nf(:, mask);
 end
 end
 

@@ -53,6 +53,12 @@ n_periods_override     = [];
 n_apod_override        = [];
 cavity_length_override = [];  % [m]; default: pitch/2
 
+% --- Monitor location overlay ---
+top_monitor_z_um   = [];   % [µm] z-position of top near-field monitor; [] = auto-detect
+side_monitor_y_um  = [];   % [µm] y-position of side near-field monitor; [] = auto-detect
+top_monitor_x_um   = [];   % [xmin xmax µm] x-extent of top monitor; [] = auto-detect
+side_monitor_x_um  = [];   % [xmin xmax µm] x-extent of side monitor; [] = auto-detect
+
 %% --- 1. Load Data ---
 fprintf('Loading data...\n');
 if ~exist(result_filepath, 'file')
@@ -62,6 +68,24 @@ data = load(result_filepath);
 
 wl_res = double(data.resonance_wavelength_nm) * 1e-9;
 fprintf('Resonance wavelength: %.3f nm\n', wl_res*1e9);
+
+% Auto-detect monitor positions and extents from data
+if isempty(top_monitor_z_um) && isfield(data, 'nearfield_top') && isfield(data.nearfield_top, 'z')
+    top_monitor_z_um = mean(real(double(data.nearfield_top.z(:)))) * 1e6;
+    fprintf('Auto-detected top monitor z = %.2f µm\n', top_monitor_z_um);
+end
+if isempty(top_monitor_x_um) && isfield(data, 'nearfield_top') && isfield(data.nearfield_top, 'x')
+    x_arr = real(double(data.nearfield_top.x(:)));
+    top_monitor_x_um = [min(x_arr) max(x_arr)] * 1e6;
+end
+if isempty(side_monitor_y_um) && isfield(data, 'nearfield_side') && isfield(data.nearfield_side, 'y')
+    side_monitor_y_um = mean(real(double(data.nearfield_side.y(:)))) * 1e6;
+    fprintf('Auto-detected side monitor y = %.2f µm\n', side_monitor_y_um);
+end
+if isempty(side_monitor_x_um) && isfield(data, 'nearfield_side') && isfield(data.nearfield_side, 'x')
+    x_arr = real(double(data.nearfield_side.x(:)));
+    side_monitor_x_um = [min(x_arr) max(x_arr)] * 1e6;
+end
 
 %% --- 1b. Resolve Geometry Parameters ---
 [n_periods_r, n_apod_r, cavity_length_r] = resolve_geometry_params( ...
@@ -153,9 +177,9 @@ clim([max_dB - dB_limit, max_dB]);
 
 cb = colorbar;
 ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
-xlabel('Position X [\mum]');
-ylabel('Position Y [\mum]');
-title(sprintf('XY View: Field Profile + Poynting at \\lambda = %.3f nm', wl_3d_actual*1e9));
+xlabel('Position X [\mum]', 'FontSize', 12);
+ylabel('Position Y [\mum]', 'FontSize', 12);
+title(sprintf('XY View: Field Profile + Poynting at \\lambda = %.3f nm', wl_3d_actual*1e9), 'FontSize', 13);
 
 hold on;
 if show_poynting && has_poynting_xy
@@ -174,6 +198,24 @@ if show_geometry
     plot(xp*1e6,  wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
     plot(xp*1e6, -wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
     xlim(xl); ylim(yl);
+end
+
+% Side near-field monitor line
+if ~isempty(side_monitor_y_um)
+    yl_cur = ylim;
+    if ~isempty(side_monitor_x_um)
+        x_lo = side_monitor_x_um(1); x_hi = side_monitor_x_um(2);
+    else
+        xl_m = xlim; x_lo = xl_m(1); x_hi = xl_m(2);
+    end
+    x_cen = (x_lo + x_hi) / 2;
+    plot([x_lo, x_hi], [side_monitor_y_um, side_monitor_y_um], '--', 'Color', [1 1 1], 'LineWidth', 2.0);
+    if side_monitor_y_um >= yl_cur(1) && side_monitor_y_um <= yl_cur(2)
+        text(x_cen, side_monitor_y_um + 0.015*(yl_cur(2)-yl_cur(1)), ...
+             sprintf('Side Near-Field Monitor Position  (y = %.2f µm)', side_monitor_y_um), 'Color', [1 1 1], ...
+             'FontSize', 13, 'FontWeight', 'bold', ...
+             'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
+    end
 end
 hold off;
 
@@ -195,9 +237,9 @@ clim([max_dB_yz - dB_limit, max_dB_yz]);
 
 cb = colorbar;
 ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
-xlabel('Position Y [\mum]');
-ylabel('Position Z [\mum]');
-title(sprintf('YZ View: Field Profile + Poynting at \\lambda = %.3f nm', wl_3d_actual*1e9));
+xlabel('Position Y [\mum]', 'FontSize', 12);
+ylabel('Position Z [\mum]', 'FontSize', 12);
+title(sprintf('YZ View: Field Profile + Poynting at \\lambda = %.3f nm', wl_3d_actual*1e9), 'FontSize', 13);
 
 hold on;
 if show_poynting && has_poynting_yz
@@ -239,9 +281,9 @@ if has_xz
 
     cb = colorbar;
     ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
-    xlabel('Position X [\mum]');
-    ylabel('Position Z [\mum]');
-    title(sprintf('XZ View: Field Profile + Poynting at \\lambda = %.3f nm', wl_3d_actual*1e9));
+    xlabel('Position X [\mum]', 'FontSize', 12);
+    ylabel('Position Z [\mum]', 'FontSize', 12);
+    title(sprintf('XZ View: Field Profile + Poynting at \\lambda = %.3f nm', wl_3d_actual*1e9), 'FontSize', 13);
 
     hold on;
     if show_poynting && has_poynting_xz
@@ -259,6 +301,24 @@ if has_xz
         plot(xl, [-wg_hh -wg_hh], '-', 'Color', geom_color, 'LineWidth', geom_lw);
         plot([0 0], yl, ':', 'Color', geom_color, 'LineWidth', 1.0);   % defect / phase-shift marker
         xlim(xl); ylim(yl);
+    end
+
+    % Top near-field monitor line
+    if ~isempty(top_monitor_z_um)
+        yl_cur = ylim;
+        if ~isempty(top_monitor_x_um)
+            x_lo = top_monitor_x_um(1); x_hi = top_monitor_x_um(2);
+        else
+            xl_m = xlim; x_lo = xl_m(1); x_hi = xl_m(2);
+        end
+        x_cen = (x_lo + x_hi) / 2;
+        plot([x_lo, x_hi], [top_monitor_z_um, top_monitor_z_um], '--', 'Color', [1 1 1], 'LineWidth', 2.0);
+        if top_monitor_z_um >= yl_cur(1) && top_monitor_z_um <= yl_cur(2)
+            text(x_cen, top_monitor_z_um + 0.015*(yl_cur(2)-yl_cur(1)), ...
+                 sprintf('Top Near-Field Monitor Position  (z = %.2f µm)', top_monitor_z_um), 'Color', [1 1 1], ...
+                 'FontSize', 13, 'FontWeight', 'bold', ...
+                 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
+        end
     end
     hold off;
 else
