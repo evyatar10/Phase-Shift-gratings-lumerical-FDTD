@@ -15,7 +15,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from simulation_config import SimulationConfig
-from sim_helpers import suggest_cavity_length
+from sim_helpers import suggest_cavity_detuning
 from python_tools.calc_neff_vs_wl import NeffSweeper
 
 import config as cfg_paths
@@ -72,21 +72,21 @@ def main():
     sweeper_avg.close()
     print(f"      n_eff(avg)    = {n_avg:.5f}")
 
-    # ── Step 3: Recommended L_cav ───────────────────────────────────────────
+    # ── Step 3: Recommended cavity detuning ─────────────────────────────────
     print("\n" + "=" * 60)
-    print("Recommended cavity lengths (override_cavity_length_nm):")
+    print("Recommended cavity_detuning_nm (shortening from pitch/2):")
     print("-" * 60)
     for option in ("narrow", "avg", "avg_ext"):
-        L = suggest_cavity_length(pitch, option, n_narrow, n_avg)
-        print(f"  cavity_width_option = {option!r:10s}  →  {L * 1e9:.2f} nm")
+        det = suggest_cavity_detuning(pitch, option, n_narrow, n_avg) * 1e9
+        print(f"  cavity_width_option = {option!r:10s}  →  detuning = {det:.2f} nm")
     print("=" * 60)
 
     print("\nTo apply, set in your run script:")
     print("  cfg.grating.cavity_width_option = 'avg'   # or 'avg_ext'")
-    L_avg = suggest_cavity_length(pitch, "avg", n_narrow, n_avg)
-    L_avg_ext = suggest_cavity_length(pitch, "avg_ext", n_narrow, n_avg)
-    print(f"  cfg.grating.override_cavity_length_nm = {L_avg * 1e9:.2f}  # avg")
-    print(f"  # or {L_avg_ext * 1e9:.2f}  # avg_ext")
+    det_avg     = suggest_cavity_detuning(pitch, "avg",     n_narrow, n_avg) * 1e9
+    det_avg_ext = suggest_cavity_detuning(pitch, "avg_ext", n_narrow, n_avg) * 1e9
+    print(f"  cfg.grating.cavity_detuning_nm = {det_avg:.2f}  # avg")
+    print(f"  # or {det_avg_ext:.2f}  # avg_ext")
 
 
 if __name__ == "__main__":

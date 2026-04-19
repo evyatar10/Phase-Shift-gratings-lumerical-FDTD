@@ -209,6 +209,11 @@ def extract_and_process_field_profile(sim, target_wl):
 
 # ── Cavity-length phase matching ─────────────────────────────────────────────
 
+def suggest_cavity_detuning(pitch, cavity_width_option, n_eff_narrow, n_eff_avg):
+    """Cavity shortening [m] from pitch/2 reference for phase-matched resonance."""
+    return pitch / 2.0 - suggest_cavity_length(pitch, cavity_width_option, n_eff_narrow, n_eff_avg)
+
+
 def suggest_cavity_length(pitch, cavity_width_option, n_eff_narrow, n_eff_avg):
     """
     Phase-matched cavity length for each cavity_width_option.
@@ -265,8 +270,10 @@ def generate_file_tag(sim):
     use_apod = bool(sim.use_apodization) and (Napod is not None) and (Napod > 0)
 
     cav_tag = ""
-    if hasattr(sim, 'cavity_length') and sim.cavity_length != sim.pitch / 2.0:
-        cav_tag = f"_L_cav_{int(sim.cavity_length * 1e9)}"
+    if hasattr(sim, 'cavity_length'):
+        detuning_nm = (sim.pitch / 2.0 - sim.cavity_length) * 1e9
+        if abs(detuning_nm) > 0.01:
+            cav_tag = f"_det_{detuning_nm:.2f}nm"
 
     mat_tag = "_CONST" if sim.use_constant_materials else ""
     _cwo = getattr(sim, 'cavity_width_option', 'narrow')

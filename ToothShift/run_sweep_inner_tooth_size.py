@@ -44,10 +44,10 @@ INNER_SIZE_VALUES_NM =  [100,125,150,200]
 # Tooth shift values (nm) for which the full size sweep is repeated.
 TOOTH_SHIFT_VALUES_NM = [90, 130]
 
-# Phase-matched cavity length for cavity_width_option="avg" at λ=1560.1 nm,
+# Cavity shortening from pitch/2 reference for cavity_width_option="avg" at λ=1560.1 nm,
 # computed by python_tools/recommend_cavity_length.py (n_narrow/n_avg from FDE).
-# Set to None to use the default pitch/2 (250 nm).
-PHASE_MATCHED_CAVITY_LENGTH_NM = 244.24
+# Set to None to use the default pitch/2 with no correction.
+PHASE_MATCHED_CAVITY_DETUNING_NM = 5.76   # = pitch/2 − 244.24 nm
 
 # ── Core simulation function ───────────────────────────────────────────────────
 
@@ -199,8 +199,8 @@ if __name__ == "__main__":
     cfg.mesh.simulation_mode = "optimization"
     cfg.spectral.scan_width_nm = 16.0
 
-    if PHASE_MATCHED_CAVITY_LENGTH_NM is not None:
-        cfg.grating.override_cavity_length_nm = PHASE_MATCHED_CAVITY_LENGTH_NM
+    if PHASE_MATCHED_CAVITY_DETUNING_NM is not None:
+        cfg.grating.cavity_detuning_nm = PHASE_MATCHED_CAVITY_DETUNING_NM
 
     SHOW_PLOTS = False
 
