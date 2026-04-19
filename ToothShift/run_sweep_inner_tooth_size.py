@@ -47,7 +47,7 @@ TOOTH_SHIFT_VALUES_NM = [90, 130]
 # Cavity shortening from pitch/2 reference for cavity_width_option="avg" at λ=1560.1 nm,
 # computed by python_tools/recommend_cavity_length.py (n_narrow/n_avg from FDE).
 # Set to None to use the default pitch/2 with no correction.
-PHASE_MATCHED_CAVITY_DETUNING_NM = 5.76   # = pitch/2 − 244.24 nm
+PHASE_MATCHED_CAVITY_NEG_DETUNING_NM = 5.76   # = pitch/2 − 244.24 nm
 
 # ── Core simulation function ───────────────────────────────────────────────────
 
@@ -199,8 +199,8 @@ if __name__ == "__main__":
     cfg.mesh.simulation_mode = "optimization"
     cfg.spectral.scan_width_nm = 16.0
 
-    if PHASE_MATCHED_CAVITY_DETUNING_NM is not None:
-        cfg.grating.cavity_detuning_nm = PHASE_MATCHED_CAVITY_DETUNING_NM
+    if PHASE_MATCHED_CAVITY_NEG_DETUNING_NM is not None:
+        cfg.grating.cavity_neg_detuning_nm = PHASE_MATCHED_CAVITY_NEG_DETUNING_NM
 
     SHOW_PLOTS = False
 

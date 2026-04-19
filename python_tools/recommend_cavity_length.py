@@ -15,10 +15,31 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from simulation_config import SimulationConfig
-from sim_helpers import suggest_cavity_detuning
 from python_tools.calc_neff_vs_wl import NeffSweeper
-
 import config as cfg_paths
+
+
+def suggest_cavity_neg_detuning(pitch, cavity_width_option, n_eff_narrow, n_eff_avg):
+    """
+    Phase-matched cavity detuning (shortening from pitch/2) for each cavity_width_option.
+
+    Keeps the optical phase of {cavity + R_narrow_1} equal to the narrow baseline
+    (n_narrow * pitch), so the π-shift resonance stays at the Bragg center wavelength.
+
+    Derivation:
+        narrow : n_narrow*(pitch/2) + n_narrow*(pitch/2)  → detuning = 0
+        avg    : n_avg*L_cav        + n_narrow*(pitch/2)  → L_cav = (n_narrow/n_avg)*pitch/2
+                                                             detuning = pitch/2 * (1 - n_narrow/n_avg)
+
+    Returns detuning in meters (positive = shortening). Use as cfg.grating.cavity_detuning_nm
+    after multiplying by 1e9.
+    """
+    half = pitch / 2.0
+    if cavity_width_option == "narrow":
+        return 0.0
+    if cavity_width_option == "avg":
+        return half * (1.0 - n_eff_narrow / n_eff_avg)
+    raise ValueError(f"Unknown cavity_width_option: {cavity_width_option!r}")
 
 
 def get_neff_at_wavelength(sweeper: NeffSweeper, target_wl: float) -> float:
@@ -76,17 +97,15 @@ def main():
     print("\n" + "=" * 60)
     print("Recommended cavity_detuning_nm (shortening from pitch/2):")
     print("-" * 60)
-    for option in ("narrow", "avg", "avg_ext"):
-        det = suggest_cavity_detuning(pitch, option, n_narrow, n_avg) * 1e9
+    for option in ("narrow", "avg"):
+        det = suggest_cavity_neg_detuning(pitch, option, n_narrow, n_avg) * 1e9
         print(f"  cavity_width_option = {option!r:10s}  →  detuning = {det:.2f} nm")
     print("=" * 60)
 
+    det_avg = suggest_cavity_neg_detuning(pitch, "avg", n_narrow, n_avg) * 1e9
     print("\nTo apply, set in your run script:")
-    print("  cfg.grating.cavity_width_option = 'avg'   # or 'avg_ext'")
-    det_avg     = suggest_cavity_detuning(pitch, "avg",     n_narrow, n_avg) * 1e9
-    det_avg_ext = suggest_cavity_detuning(pitch, "avg_ext", n_narrow, n_avg) * 1e9
-    print(f"  cfg.grating.cavity_detuning_nm = {det_avg:.2f}  # avg")
-    print(f"  # or {det_avg_ext:.2f}  # avg_ext")
+    print("  cfg.grating.cavity_width_option = 'avg'")
+    print(f"  cfg.grating.cavity_neg_detuning_nm = {det_avg:.2f}")
 
 
 if __name__ == "__main__":

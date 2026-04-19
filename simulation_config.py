@@ -50,7 +50,7 @@ class GratingConfig:
     """Bragg grating periodicity and cavity parameters."""
     pitch_m: float = 500e-9                     # Grating period
     n_periods_each_side: int = 80              # Number of periods on each side of the pi-shift cavity
-    cavity_detuning_nm: float = 0.0              # shortening from pitch/2 reference; 0 = no correction
+    cavity_neg_detuning_nm: float = 0.0          # shortening from pitch/2 reference; 0 = no correction
     cavity_width_option: str = "avg"          # "narrow", "avg", or "avg_ext" (avg + extends into R_narrow_1)
 
 
@@ -327,7 +327,7 @@ class SimulationConfig:
 
         # Convert detuning to the absolute override bragg_device expects
         pitch_half_nm = gr.pitch_m * 0.5e9
-        cavity_override = (pitch_half_nm - gr.cavity_detuning_nm) if gr.cavity_detuning_nm != 0.0 else False
+        cavity_override = (pitch_half_nm - gr.cavity_neg_detuning_nm) if gr.cavity_neg_detuning_nm != 0.0 else False
 
         return dict(
             pitch=gr.pitch_m,

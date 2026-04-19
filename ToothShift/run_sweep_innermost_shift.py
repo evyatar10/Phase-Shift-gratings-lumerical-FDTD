@@ -32,7 +32,7 @@ SHIFT_VALUES_M = np.array([100]) * 1e-9  # nm
 # Cavity shortening from pitch/2 reference for cavity_width_option="avg" at λ=1560.1 nm,
 # computed by python_tools/recommend_cavity_length.py (n_narrow/n_avg from FDE).
 # Set to None to use the default pitch/2 with no correction.
-PHASE_MATCHED_CAVITY_DETUNING_NM = 5.76   # = pitch/2 − 244.24 nm
+PHASE_MATCHED_CAVITY_NEG_DETUNING_NM = 5.76   # = pitch/2 − 244.24 nm
 
 def run_single_sim_with_shift(cfg: SimulationConfig, shift_m: float, lengthen_cavity: bool = True) -> dict:
     """Build, run, and analyze one simulation with the given innermost tooth shift."""
@@ -137,8 +137,8 @@ if __name__ == "__main__":
     cfg.mesh.simulation_mode = "optimization"
     cfg.spectral.scan_width_nm = 20.0
 
-    if PHASE_MATCHED_CAVITY_DETUNING_NM is not None:
-        cfg.grating.cavity_detuning_nm = PHASE_MATCHED_CAVITY_DETUNING_NM
+    if PHASE_MATCHED_CAVITY_NEG_DETUNING_NM is not None:
+        cfg.grating.cavity_neg_detuning_nm = PHASE_MATCHED_CAVITY_NEG_DETUNING_NM
 
     # Optional overrides (uncomment to use):
     # cfg.spectral.center_wavelength_m = 1.5625e-6

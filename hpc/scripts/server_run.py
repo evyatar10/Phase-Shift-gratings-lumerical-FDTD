@@ -23,8 +23,9 @@ config.NEFF_DATA_PATH = '/home/evyatarrubin/bragg_sim/data/FDE_sweep_results.mat
 
 # Locate lumapi.py — check both known Lumerical installation paths
 _api_candidates = [
-    '/usr/local/lumerical/api/python/lumapi.py',
     '/usr/local/lumerical-2021R2.5/api/python/lumapi.py',
+    '/usr/local/lumerical-2021R1/api/python/lumapi.py',
+    '/usr/local/lumerical/api/python/lumapi.py',
 ]
 for _path in _api_candidates:
     if os.path.exists(_path):
@@ -55,7 +56,7 @@ from simulation_config import SimulationConfig
 
 # ── 4. Configure ─────────────────────────────────────────────────────────────
 cfg = SimulationConfig()
-cfg.mesh.simulation_mode = "accurate"   # or "optimization"
+cfg.mesh.simulation_mode = "optimization"   # or "optimization"
 
 # Override any parameter here without touching the original files:
 # cfg.grating.n_periods_each_side = 120

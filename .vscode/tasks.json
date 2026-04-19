@@ -1,0 +1,95 @@
+{
+    "version": "2.0.0",
+    "options": {
+        "shell": {
+            "executable": "C:\\Program Files\\Git\\bin\\bash.exe",
+            "args": ["-l", "-c"]
+        }
+    },
+    "tasks": [
+        {
+            "label": "HPC: Deploy (choose option)",
+            "type": "shell",
+            "command": "bash hpc/deploy.sh",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "HPC: Deploy Option 1 - local .fsp → engine on Zeus (RECOMMENDED)",
+            "type": "shell",
+            "command": "bash hpc/deploy.sh --option1",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "HPC: Deploy Option 2 - full Python pipeline on Zeus",
+            "type": "shell",
+            "command": "bash hpc/deploy.sh --option2",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "HPC: Upload Only (no submit)",
+            "type": "shell",
+            "command": "bash hpc/deploy.sh --upload-only",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "HPC: Download Results",
+            "type": "shell",
+            "command": "bash hpc/deploy.sh --results",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "HPC: SSH into Zeus",
+            "type": "shell",
+            "command": "ssh zeus",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "HPC: Watch Job Status (no deploy)",
+            "type": "shell",
+            "command": "bash hpc/deploy.sh --watch-only",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
