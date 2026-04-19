@@ -207,6 +207,50 @@ def extract_and_process_field_profile(sim, target_wl):
     return f_x, I_x_1D, I_x_envelope, fwhm_val, f_lam[idx_mon]
 
 
+# ── Cavity-length phase matching ─────────────────────────────────────────────
+
+def suggest_cavity_length(pitch, cavity_width_option, n_eff_narrow, n_eff_avg):
+    """
+    Phase-matched cavity length for each cavity_width_option.
+
+    Goal: keep the optical phase accumulated across {cavity + R_narrow_1}
+    equal to the "narrow" baseline (n_narrow * pitch), so the π-shift
+    resonance stays at the Bragg center wavelength when the cavity
+    material profile is changed.
+
+    Derivation (phase of the cavity + immediately-adjacent narrow section):
+        narrow   : n_narrow * (pitch/2)         + n_narrow * (pitch/2)
+        avg      : n_avg    * L_cav             + n_narrow * (pitch/2)
+        avg_ext  : n_avg    * L_cav             + n_avg    * (pitch/2)
+
+    Set equal to the narrow baseline (n_narrow * pitch) and solve for L_cav.
+
+    Parameters
+    ----------
+    pitch : float
+        Grating pitch in meters.
+    cavity_width_option : str
+        "narrow", "avg", or "avg_ext".
+    n_eff_narrow : float
+        Mode effective index for width = width_narrow (e.g. 650 nm waveguide).
+    n_eff_avg : float
+        Mode effective index for width = avg_width (e.g. 800 nm waveguide).
+
+    Returns
+    -------
+    float
+        Suggested cavity length in meters. Equals pitch/2 for "narrow".
+    """
+    half = pitch / 2.0
+    if cavity_width_option == "narrow":
+        return half
+    if cavity_width_option == "avg":
+        return (n_eff_narrow / n_eff_avg) * half
+    if cavity_width_option == "avg_ext":
+        return half * (2.0 * n_eff_narrow / n_eff_avg - 1.0)
+    raise ValueError(f"Unknown cavity_width_option: {cavity_width_option!r}")
+
+
 # ── File naming ───────────────────────────────────────────────────────────────
 
 def generate_file_tag(sim):
@@ -225,12 +269,14 @@ def generate_file_tag(sim):
         cav_tag = f"_L_cav_{int(sim.cavity_length * 1e9)}"
 
     mat_tag = "_CONST" if sim.use_constant_materials else ""
+    _cwo = getattr(sim, 'cavity_width_option', 'narrow')
+    wgd_tag = "_avg_ext_wgd" if _cwo == "avg_ext" else "_avg_wgd" if _cwo == "avg" else ""
 
     if use_apod:
         tanh_tag = "_tanh" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""
-        return f"{N}_periods_{Napod}_apod{tanh_tag}{cav_tag}{mat_tag}"
+        return f"{N}_periods_{Napod}_apod{tanh_tag}{cav_tag}{mat_tag}{wgd_tag}"
     else:
-        return f"{N}_periods{cav_tag}{mat_tag}"
+        return f"{N}_periods{cav_tag}{mat_tag}{wgd_tag}"
 
 
 def apply_monitor_overrides(sim, cfg):

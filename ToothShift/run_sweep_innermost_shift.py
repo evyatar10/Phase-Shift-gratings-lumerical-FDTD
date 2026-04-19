@@ -17,6 +17,7 @@ import copy
 import gc
 import time
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 import config
@@ -25,9 +26,13 @@ from bragg_device_shifted import PiShiftBraggFDTDWithShift
 from sim_helpers import apply_monitor_overrides, generate_file_tag
 from simulation_config import SimulationConfig
 
-# SHIFT_VALUES_M = np.arange(112, 145.1, (145 - 112) / 20) * 1e-9  # 112 to 145 nm, 20 jumps (21 points, step=1.65 nm)
-SHIFT_VALUES_M = [100e-9]
+#SHIFT_VALUES_M = np.array([0, 60, 90, 110, 130, 150, 170]) * 1e-9  # nm
+SHIFT_VALUES_M = np.array([100]) * 1e-9  # nm
 
+# Phase-matched cavity length for cavity_width_option="avg" at λ=1560.1 nm,
+# computed by python_tools/recommend_cavity_length.py (n_narrow/n_avg from FDE).
+# Set to None to use the default pitch/2 (250 nm).
+PHASE_MATCHED_CAVITY_LENGTH_NM = 244.24
 
 def run_single_sim_with_shift(cfg: SimulationConfig, shift_m: float, lengthen_cavity: bool = True) -> dict:
     """Build, run, and analyze one simulation with the given innermost tooth shift."""
@@ -130,7 +135,10 @@ if __name__ == "__main__":
 
     # Simulation mode: "accurate" (dx≈35nm, cells=7) or "optimization" (dx=50nm, cells=5)
     cfg.mesh.simulation_mode = "optimization"
-    cfg.spectral.scan_width_nm = 50.0
+    cfg.spectral.scan_width_nm = 20.0
+
+    if PHASE_MATCHED_CAVITY_LENGTH_NM is not None:
+        cfg.grating.override_cavity_length_nm = PHASE_MATCHED_CAVITY_LENGTH_NM
 
     # Optional overrides (uncomment to use):
     # cfg.spectral.center_wavelength_m = 1.5625e-6

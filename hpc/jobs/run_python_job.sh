@@ -19,7 +19,7 @@
 
 ulimit -s unlimited
 
-WORK_DIR="/home/evyat/bragg_sim"
+WORK_DIR="/home/evyatarrubin/bragg_sim"
 
 echo "============================================================"
 echo "Job:     ${PBS_JOBID}"

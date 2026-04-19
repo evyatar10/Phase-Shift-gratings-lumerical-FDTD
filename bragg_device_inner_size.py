@@ -143,11 +143,13 @@ class PiShiftBraggFDTDWithInnerSize(PiShiftBraggFDTDWithShift):
 
         # Cavity: enlarged by 2*delta only when lengthen_cavity=True
         cavity_extra = 2 * delta if self.lengthen_cavity else 0.0
-        add_core_segment(x, x + self.cavity_length + cavity_extra, W_narrow[1], name_prefix="cavity")
+        W_cavity = avg_width if self.cavity_width_option in ("avg", "avg_ext") else W_narrow[1]
+        add_core_segment(x, x + self.cavity_length + cavity_extra, W_cavity, name_prefix="cavity")
         x += self.cavity_length + cavity_extra
 
         # Right innermost period (d=1): adjacent narrow stays at full half_pitch
-        add_core_segment(x, x + half_pitch, W_narrow[1], name_prefix="R_narrow_1")
+        w_rn1 = avg_width if self.cavity_width_option == "avg_ext" else W_narrow[1]
+        add_core_segment(x, x + half_pitch, w_rn1, name_prefix="R_narrow_1")
         x += half_pitch
         add_core_segment(x, x + half_pitch, W_wide[1], name_prefix="R_wide_1")
         x += half_pitch

@@ -39,10 +39,15 @@ from simulation_config import SimulationConfig
 
 # Innermost tooth corrugation depth values to sweep [nm].
 # 0 = flat (no corrugation); max conceptually = cfg.geometry.corrugation_depth_m.
-INNER_SIZE_VALUES_NM =  [80, 120]
+INNER_SIZE_VALUES_NM =  [100,125,150,200]
 
 # Tooth shift values (nm) for which the full size sweep is repeated.
-TOOTH_SHIFT_VALUES_NM = [100, 117]
+TOOTH_SHIFT_VALUES_NM = [90, 130]
+
+# Phase-matched cavity length for cavity_width_option="avg" at λ=1560.1 nm,
+# computed by python_tools/recommend_cavity_length.py (n_narrow/n_avg from FDE).
+# Set to None to use the default pitch/2 (250 nm).
+PHASE_MATCHED_CAVITY_LENGTH_NM = 244.24
 
 # ── Core simulation function ───────────────────────────────────────────────────
 
@@ -193,6 +198,9 @@ if __name__ == "__main__":
     cfg.grating.n_periods_each_side = 80
     cfg.mesh.simulation_mode = "optimization"
     cfg.spectral.scan_width_nm = 16.0
+
+    if PHASE_MATCHED_CAVITY_LENGTH_NM is not None:
+        cfg.grating.override_cavity_length_nm = PHASE_MATCHED_CAVITY_LENGTH_NM
 
     SHOW_PLOTS = False
 

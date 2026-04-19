@@ -22,7 +22,7 @@
 ulimit -s unlimited
 
 # ── CONFIGURE ────────────────────────────────────────────────────────────────
-FSP_DIR="/home/evyat/bragg_sim/results/layouts"
+FSP_DIR="/home/evyatarrubin/bragg_sim/results/layouts"
 
 # FSP_FILE can be set via -v when submitting, or hardcoded here as a fallback:
 FSP_FILE="${FSP_FILE:-layout_REPLACE_ME.fsp}"

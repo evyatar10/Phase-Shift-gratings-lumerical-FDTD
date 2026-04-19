@@ -60,7 +60,8 @@ class PiShiftBraggFDTD:
                  record_farfield=False,
                  farfield_x_span_m=20e-6,
                  farfield_y_dist_m=None,
-                 farfield_z_dist_m=None):
+                 farfield_z_dist_m=None,
+                 cavity_width_option="narrow"):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -118,6 +119,8 @@ class PiShiftBraggFDTD:
         self.farfield_z_dist_m = farfield_z_dist_m
 
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
+
+        self.cavity_width_option = cavity_width_option
 
         if override_cavity_length_nm:
             self.cavity_length = override_cavity_length_nm * 1e-9
@@ -390,11 +393,13 @@ class PiShiftBraggFDTD:
             add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"L_wide_{d}")
             x += half_pitch
 
-        add_core_segment(x, x + self.cavity_length, W_narrow[1], name_prefix="cavity")
+        W_cavity = avg_width if self.cavity_width_option in ("avg", "avg_ext") else W_narrow[1]
+        add_core_segment(x, x + self.cavity_length, W_cavity, name_prefix="cavity")
         x += self.cavity_length
 
         for d in range(1, n_total + 1):
-            add_core_segment(x, x + half_pitch, W_narrow[d], name_prefix=f"R_narrow_{d}")
+            w_rn = avg_width if (d == 1 and self.cavity_width_option == "avg_ext") else W_narrow[d]
+            add_core_segment(x, x + half_pitch, w_rn, name_prefix=f"R_narrow_{d}")
             x += half_pitch
             add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"R_wide_{d}")
             x += half_pitch

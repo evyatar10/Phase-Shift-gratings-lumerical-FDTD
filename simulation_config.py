@@ -51,6 +51,7 @@ class GratingConfig:
     pitch_m: float = 500e-9                     # Grating period
     n_periods_each_side: int = 80              # Number of periods on each side of the pi-shift cavity
     override_cavity_length_nm: Optional[float] = False  # None or False = default (pitch/2)
+    cavity_width_option: str = "avg"          # "narrow", "avg", or "avg_ext" (avg + extends into R_narrow_1)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -86,9 +87,9 @@ class ApodizationConfig:
 @dataclass
 class SpectralConfig:
     """Wavelength scan range and frequency resolution."""
-    center_wavelength_m: float = 1.5601e-6      # Center of the wavelength scan
+    center_wavelength_m: float =  1.5601e-6      # Center of the wavelength scan
     # pervious was 16.0 nm, at 1.5625e-6  
-    scan_width_nm: float = 200.0                 # Total scan bandwidth (nm)
+    scan_width_nm: float = 20.0                 # Total scan bandwidth (nm)
     n_wl_points: int = 3001                     # Number of wavelength points (S-parameters)
     n_2d_monitor_points: int = 51               # Frequency points for 2D/3D monitors
 
@@ -167,7 +168,7 @@ class MonitorConfig:
 @dataclass
 class FarFieldConfig:
     """Far-field radiation monitor settings."""
-    enabled: bool = True                        # Enable side and top far-field monitors
+    enabled: bool = False                        # Enable side and top far-field monitors
     farfield_x_span_m: float = 30e-6            # X extent of far-field monitors
     farfield_dist_wls: float = 0.8              # Monitor distance from PML edge (in wavelengths)
     ff_resolution: int = 201                    # Far-field ux/uy grid resolution
@@ -339,6 +340,7 @@ class SimulationConfig:
             core_height=g.core_height_m,
             substrate_thickness=g.substrate_thickness_m,
             override_cavity_length_nm=cavity_override,
+            cavity_width_option=gr.cavity_width_option,
             y_span=self.y_span,
             z_span=self.z_span,
             material_db_path=config.MATERIAL_DB_PATH,

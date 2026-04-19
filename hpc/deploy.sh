@@ -9,7 +9,7 @@
 #   bash hpc/deploy.sh --results        # download results after job completes
 
 # ── CONFIGURE ────────────────────────────────────────────────────────────────
-ZEUS_USER="evyat"
+ZEUS_USER="evyatarrubin"
 ZEUS_HOST="zeus.technion.ac.il"          # update if hostname differs
 REMOTE_BASE="/home/${ZEUS_USER}/bragg_sim"
 
