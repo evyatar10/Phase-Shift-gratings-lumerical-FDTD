@@ -3,12 +3,12 @@ import os
 import importlib.util
 import math
 import analysis
+import config as _cfg
 
 # Try to import lumapi normally
 try:
     import lumapi
 except ImportError:
-    import config as _cfg
     spec = importlib.util.spec_from_file_location("lumapi", _cfg.LUMAPI_PATH)
     lumapi = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(lumapi)
@@ -294,7 +294,8 @@ class PiShiftBraggFDTD:
             fdtd.set("force symmetric z mesh", 1)
 
         fdtd.set("dimension", "3D")
-        fdtd.setdevice("GPU" if _cfg.USE_GPU else "CPU")
+        if _cfg.USE_GPU:
+            fdtd.setdevice("GPU")
         fdtd.set("background material", self.clad_material)
         fdtd.set("simulation time", 1000e-12)
         fdtd.set("auto shutoff min", 1e-6)
