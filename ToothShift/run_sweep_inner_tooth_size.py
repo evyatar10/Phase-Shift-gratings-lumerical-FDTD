@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 
 import config
 import post_processing
-from bragg_device_inner_size import PiShiftBraggFDTDWithInnerSize
+from bragg_device import PiShiftBraggFDTD
 from sim_helpers import apply_monitor_overrides, generate_file_tag
 from simulation_config import SimulationConfig
 
@@ -62,19 +62,22 @@ def run_single_sim_with_inner_size(
     kwargs = cfg.to_device_kwargs()
     kwargs['innermost_tooth_shift_m'] = shift_m
     kwargs['lengthen_cavity'] = lengthen_cavity
-    kwargs['innermost_corrugation_depth_m'] = inner_size_nm * 1e-9
+    # Innermost-tooth corrugation depth: equivalent to 1-period apodization.
+    kwargs['use_apodization'] = True
+    kwargs['n_apod_periods_each_side'] = 1
+    kwargs['center_mod_depth_nm'] = float(inner_size_nm)
 
-    sim = PiShiftBraggFDTDWithInnerSize(**kwargs)
+    sim = PiShiftBraggFDTD(**kwargs)
 
     shift_nm = round(shift_m * 1e9, 1)
     base_tag = generate_file_tag(sim)
     if cfg.farfield.enabled:
         base_tag += "_ff"
-    tag = f"{base_tag}_shift_{shift_nm}nm_innersize_{inner_size_nm:.0f}nm"
+    tag = f"{base_tag}_S{shift_nm:.0f}_I{inner_size_nm:.0f}"
     if not lengthen_cavity:
-        tag += "_fixed_cav"
+        tag += "_fc"
 
-    shift_subfolder = f"shift_{shift_nm:.0f}nm"
+    shift_subfolder = f"S{shift_nm:.0f}"
     layouts_dir = os.path.join(config.LAYOUTS_DIR, shift_subfolder)
     results_dir = os.path.join(config.RESULTS_DIR,  shift_subfolder)
     os.makedirs(layouts_dir, exist_ok=True)

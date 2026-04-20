@@ -211,10 +211,10 @@ def extract_and_process_field_profile(sim, target_wl):
 
 def generate_file_tag(sim):
     """
-    Generate a descriptive file tag from simulation parameters.
+    Generate a compact file tag from simulation parameters.
 
-    Returns a string like: "100_periods_10_apod" (linear, constant materials)
-                        or "100_periods_10_apod_tanh_disp" (tanh, dispersive materials)
+    Format: N{periods}[_A{apod}][_th][_D{detuning}][_avg|_avgx][_d]
+    See FILE_NAMING.md for the full abbreviation reference.
     """
     N = sim.n_periods_each_side
     Napod = sim.n_apod_periods_each_side
@@ -224,17 +224,17 @@ def generate_file_tag(sim):
     if hasattr(sim, 'cavity_length'):
         detuning_nm = (sim.pitch / 2.0 - sim.cavity_length) * 1e9
         if abs(detuning_nm) > 0.01:
-            cav_tag = f"_neg_det_{detuning_nm:.2f}nm"
+            cav_tag = f"_D{detuning_nm:.2f}"
 
-    mat_tag = "" if sim.use_constant_materials else "_disp"
+    mat_tag = "" if sim.use_constant_materials else "_d"
     _cwo = getattr(sim, 'cavity_width_option', 'narrow')
-    wgd_tag = "_avg_ext_wgd" if _cwo == "avg_ext" else "_avg_wgd" if _cwo == "avg" else ""
+    wgd_tag = "_avgx" if _cwo == "avg_ext" else "_avg" if _cwo == "avg" else ""
 
     if use_apod:
-        tanh_tag = "_tanh" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""
-        return f"{N}_periods_{Napod}_apod{tanh_tag}{cav_tag}{mat_tag}{wgd_tag}"
+        tanh_tag = "_th" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""
+        return f"N{N}_A{Napod}{tanh_tag}{cav_tag}{mat_tag}{wgd_tag}"
     else:
-        return f"{N}_periods{cav_tag}{mat_tag}{wgd_tag}"
+        return f"N{N}{cav_tag}{mat_tag}{wgd_tag}"
 
 
 def apply_monitor_overrides(sim, cfg):

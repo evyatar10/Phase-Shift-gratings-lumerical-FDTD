@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 import config
 import post_processing
-from bragg_device_shifted import PiShiftBraggFDTDWithShift
+from bragg_device import PiShiftBraggFDTD
 from sim_helpers import apply_monitor_overrides, generate_file_tag
 from simulation_config import SimulationConfig
 
@@ -39,7 +39,7 @@ def run_single_sim_with_shift(cfg: SimulationConfig, shift_m: float, lengthen_ca
     kwargs = cfg.to_device_kwargs()
     kwargs['innermost_tooth_shift_m'] = shift_m
     kwargs['lengthen_cavity'] = lengthen_cavity
-    sim = PiShiftBraggFDTDWithShift(**kwargs)
+    sim = PiShiftBraggFDTD(**kwargs)
 
     # Build file tag — append FF, shift, and cavity-mode suffixes as needed
     base_tag = generate_file_tag(sim)
@@ -47,11 +47,11 @@ def run_single_sim_with_shift(cfg: SimulationConfig, shift_m: float, lengthen_ca
         base_tag += "_ff"
     if shift_m > 0.0:
         shift_nm = round(shift_m * 1e9, 1)
-        tag = f"{base_tag}_shift_{shift_nm}nm"
+        tag = f"{base_tag}_S{shift_nm:.0f}"
     else:
         tag = base_tag
     if shift_m > 0.0 and not lengthen_cavity:
-        tag += "_fixed_cav"
+        tag += "_fc"
 
     layout_path  = os.path.join(config.LAYOUTS_DIR, f"layout_{tag}.fsp")
     results_path = os.path.join(config.RESULTS_DIR,  f"result_{tag}.mat")
