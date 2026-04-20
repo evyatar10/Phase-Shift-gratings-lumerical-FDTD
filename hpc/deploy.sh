@@ -160,7 +160,7 @@ echo ""
 echo "=== Uploading project files ==="
 # Core files required to run simulations on Zeus
 for f in config.py simulation_config.py sim_helpers.py \
-          bragg_device.py bragg_device_shifted.py bragg_device_inner_size.py \
+          bragg_device.py \
           run_simulation.py post_processing.py; do
     if [[ -f "${LOCAL_PROJECT}/${f}" ]]; then
         scp "${LOCAL_PROJECT}/${f}" "${SSH}:${REMOTE_BASE}/project/"

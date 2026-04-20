@@ -61,7 +61,9 @@ class PiShiftBraggFDTD:
                  farfield_x_span_m=20e-6,
                  farfield_y_dist_m=None,
                  farfield_z_dist_m=None,
-                 cavity_width_option="narrow"):
+                 cavity_width_option="narrow",
+                 innermost_tooth_shift_m=0.0,
+                 lengthen_cavity=True):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -128,6 +130,21 @@ class PiShiftBraggFDTD:
         else:
             self.cavity_length = pitch / 2.0
             self.cavity_overridden = False
+
+        self.innermost_tooth_shift_m = float(innermost_tooth_shift_m)
+        self.lengthen_cavity = bool(lengthen_cavity)
+        half_pitch_val = pitch / 2.0
+        if not (0.0 <= self.innermost_tooth_shift_m < half_pitch_val):
+            raise ValueError(
+                f"innermost_tooth_shift_m must be in [0, half_pitch). "
+                f"Got {self.innermost_tooth_shift_m * 1e9:.1f} nm, "
+                f"half_pitch={half_pitch_val * 1e9:.1f} nm."
+            )
+        if self.innermost_tooth_shift_m > 0.0 and n_periods_each_side < 2:
+            raise ValueError(
+                f"innermost_tooth_shift_m > 0 requires n_periods_each_side >= 2. "
+                f"Got n_periods_each_side={n_periods_each_side}."
+            )
 
         self.x_grating_end = (self.n_periods_each_side * self.pitch) + (self.cavity_length / 2.0)
         self.dist_grating_to_port = n_periods_dist_to_port * self.pitch
@@ -378,27 +395,52 @@ class PiShiftBraggFDTD:
         W_narrow, W_wide = {}, {}
         for d in range(1, n_total + 1):
             mod_depth = get_mod_depth(d)
-            delta = mod_depth / 2.0
-            W_narrow[d] = avg_width - delta
-            W_wide[d] = avg_width + delta
+            delta_w = mod_depth / 2.0
+            W_narrow[d] = avg_width - delta_w
+            W_wide[d] = avg_width + delta_w
+
+        shift = self.innermost_tooth_shift_m
+        cavity_extra = 2.0 * shift if self.lengthen_cavity else 0.0
 
         x_grating_start = -self.x_grating_end
         x = x_grating_start
         add_core_segment(-self.x_sim_boundary - 1e-6, x_grating_start, self.width_port, name_prefix="wg_left_inf")
 
-        for d in range(n_total, 0, -1):
+        # Left grating: d = n_total ... 2 (always full half_pitch)
+        for d in range(n_total, 1, -1):
             add_core_segment(x, x + half_pitch, W_narrow[d], name_prefix=f"L_narrow_{d}")
             x += half_pitch
             add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"L_wide_{d}")
             x += half_pitch
 
-        W_cavity = avg_width if self.cavity_width_option in ("avg", "avg_ext") else W_narrow[1]
-        add_core_segment(x, x + self.cavity_length, W_cavity, name_prefix="cavity")
-        x += self.cavity_length
+        # Left innermost period (d = 1): narrow gap shortened by shift (zero when shift=0)
+        add_core_segment(x, x + half_pitch - shift, W_narrow[1], name_prefix="L_narrow_1")
+        x += half_pitch - shift
+        add_core_segment(x, x + half_pitch, W_wide[1], name_prefix="L_wide_1")
+        x += half_pitch
 
-        for d in range(1, n_total + 1):
-            w_rn = avg_width if (d == 1 and self.cavity_width_option == "avg_ext") else W_narrow[d]
-            add_core_segment(x, x + half_pitch, w_rn, name_prefix=f"R_narrow_{d}")
+        # Cavity (lengthened by 2*shift when lengthen_cavity=True; unchanged when shift=0)
+        W_cavity = avg_width if self.cavity_width_option in ("avg", "avg_ext") else W_narrow[1]
+        add_core_segment(x, x + self.cavity_length + cavity_extra, W_cavity, name_prefix="cavity")
+        x += self.cavity_length + cavity_extra
+
+        # Right innermost period (d = 1): both segments at full half_pitch
+        w_rn1 = avg_width if self.cavity_width_option == "avg_ext" else W_narrow[1]
+        add_core_segment(x, x + half_pitch, w_rn1, name_prefix="R_narrow_1")
+        x += half_pitch
+        add_core_segment(x, x + half_pitch, W_wide[1], name_prefix="R_wide_1")
+        x += half_pitch
+
+        # Right d = 2: narrow gap shortened by shift (only when it exists)
+        if n_total >= 2:
+            add_core_segment(x, x + half_pitch - shift, W_narrow[2], name_prefix="R_narrow_2")
+            x += half_pitch - shift
+            add_core_segment(x, x + half_pitch, W_wide[2], name_prefix="R_wide_2")
+            x += half_pitch
+
+        # Right grating: d = 3 ... n_total (always full half_pitch)
+        for d in range(3, n_total + 1):
+            add_core_segment(x, x + half_pitch, W_narrow[d], name_prefix=f"R_narrow_{d}")
             x += half_pitch
             add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"R_wide_{d}")
             x += half_pitch

@@ -118,9 +118,9 @@ center_mod_depth_nm   = 4.0;    % corrugation depth at grating center [nm]
 apod_method           = 'linear'; % 'linear' or 'tanh' — must match simulation
 tanh_steepness        = 2.0;      % only used when apod_method = 'tanh'
 
-% --- Tooth shift parameters (mirrors bragg_device_shifted.py) ---
+% --- Tooth shift parameters (mirrors bragg_device.py) ---
 % When non-zero, the innermost grating tooth on each side is shifted away
-% from the cavity.  See bragg_device_shifted.py for the full description.
+% from the cavity.  See bragg_device.py for the full description.
 % Leave tooth_shift_override = [] for auto-detection from filename/data.
 tooth_shift_override   = [];    % [m] e.g. 100e-9  (0 = no shift)
 lengthen_cavity        = true;  % true = cavity grows by 2*shift (default)
@@ -495,7 +495,7 @@ function [x_vec, w_half_vec] = make_grating_profile(pitch, w_narrow, w_wide, ...
 %   'xz' — returns Z half-heights for the side-view (schematic overlay).
 %
 % tooth_shift (optional, default 0): innermost tooth shift [m].
-%   Mirrors bragg_device_shifted.py — see that file for the full description.
+%   Mirrors bragg_device.py — see that file for the full description.
 % lengthen_cav (optional, default true): when true, cavity grows by 2*shift.
 
     if nargin < 12 || isempty(view_plane),   view_plane   = 'xy'; end
@@ -544,7 +544,7 @@ function [x_vec, w_half_vec] = make_grating_profile(pitch, w_narrow, w_wide, ...
     eff_cav_length = cav_length + cav_extra;
 
     % --- Build ordered segment list ---
-    % Mirrors bragg_device_shifted.py segment ordering.
+    % Mirrors bragg_device.py segment ordering.
     % Left arm : d = n_periods → 1  (outer to inner)
     % Cavity   : single segment
     % Right arm: d = 1 → n_periods  (inner to outer)

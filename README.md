@@ -19,9 +19,7 @@
 ├── run_experiment.py            # Experiment card runner (examples)
 ├── run_simple_bragg.py          # Simple uniform grating (no cavity)
 ├── experiment_card.py           # ExperimentCard dataclass + run_card/run_cards
-├── bragg_device.py              # PiShiftBraggFDTD device builder
-├── bragg_device_shifted.py      # PiShiftBraggFDTDWithShift (innermost tooth shift)
-├── bragg_device_inner_size.py   # PiShiftBraggFDTDWithInnerSize (independent innermost tooth depth)
+├── bragg_device.py              # PiShiftBraggFDTD device builder (incl. innermost-tooth shift)
 ├── analysis.py                  # Phase correction & S-parameter processing
 ├── post_processing.py           # Full post-simulation analysis pipeline
 ├── sim_helpers.py               # Shared helper functions
@@ -183,20 +181,20 @@ The transition occurs over `n_apod_periods_each_side` periods on each side.
 
 ## Innermost Tooth Shift
 
-`bragg_device_shifted.py` provides `PiShiftBraggFDTDWithShift`, a subclass of `PiShiftBraggFDTD` that shifts the innermost grating tooth on each side of the cavity by a distance `delta`:
+`PiShiftBraggFDTD` accepts an `innermost_tooth_shift_m` parameter that shifts the innermost grating tooth on each side of the cavity by a distance `delta`:
 
 ```
 Before: ...[L_narrow_1: hp][L_wide_1: hp][cavity][R_narrow_1: hp][R_wide_1: hp]...
 After:  ...[L_narrow_1: hp-δ][L_wide_1: hp][cavity+2δ][R_narrow_1: hp][R_wide_1: hp-δ]...
 ```
 
-The cavity grows by `2*delta`; the innermost narrow half-periods shrink by `delta`. Total device length is preserved.
+With `lengthen_cavity=True` (default), the cavity grows by `2*delta` so total device length is preserved; the innermost narrow half-periods shrink by `delta`. With `lengthen_cavity=False` the cavity is fixed and total length shrinks by `2*delta`.
 
 **Usage:**
 ```python
-from bragg_device_shifted import PiShiftBraggFDTDWithShift
+from bragg_device import PiShiftBraggFDTD
 
-sim = PiShiftBraggFDTDWithShift(**kwargs, innermost_tooth_shift_m=105e-9)
+sim = PiShiftBraggFDTD(**kwargs, innermost_tooth_shift_m=105e-9)
 ```
 
 The `ToothShift/` directory contains three scripts for exploring this design parameter:
@@ -209,25 +207,20 @@ The MATLAB script `matlab_plotting/plot_resonance_vs_param.m` can visualize both
 
 ## Innermost Tooth Size
 
-`bragg_device_inner_size.py` provides `PiShiftBraggFDTDWithInnerSize`, a subclass of `PiShiftBraggFDTDWithShift` that additionally controls the corrugation depth of the innermost grating tooth independently from the rest of the grating.
+Setting an independent corrugation depth for the innermost tooth is equivalent to 1-period apodization — use the existing apodization parameters:
 
 ```python
-from bragg_device_inner_size import PiShiftBraggFDTDWithInnerSize
-
-# Flat innermost tooth (no corrugation)
-sim = PiShiftBraggFDTDWithInnerSize(**kwargs, innermost_corrugation_depth_m=0.0)
-
-# Custom corrugation depth + optional shift
-sim = PiShiftBraggFDTDWithInnerSize(
+# Custom innermost-tooth depth (e.g. 120 nm) + optional shift
+sim = PiShiftBraggFDTD(
     **kwargs,
     innermost_tooth_shift_m=105e-9,
-    innermost_corrugation_depth_m=120e-9,
+    use_apodization=True,
+    n_apod_periods_each_side=1,
+    center_mod_depth_nm=120.0,
 )
 ```
 
-- `innermost_corrugation_depth_m=None` (default) — no change, same as all other periods
-- `innermost_corrugation_depth_m=0` — flat innermost tooth
-- Can be combined freely with `innermost_tooth_shift_m`
+With `n_apod_periods_each_side=1`, `get_mod_depth(d)` returns `center_mod_depth` for `d=1` and the standard edge depth for all other periods — byte-identical to a direct override of the innermost widths.
 
 ## Experiment Cards
 
