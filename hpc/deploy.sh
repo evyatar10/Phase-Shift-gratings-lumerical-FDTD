@@ -28,6 +28,7 @@ DOWNLOAD_RESULTS=false
 WATCH=false
 WATCH_ONLY=false
 OPTION=""
+RUN_SCRIPT=""
 
 for arg in "$@"; do
     case "$arg" in
@@ -37,6 +38,8 @@ for arg in "$@"; do
         --results)      DOWNLOAD_RESULTS=true ;;
         --watch)        WATCH=true ;;
         --watch-only)   WATCH_ONLY=true ;;
+        --run)          shift; RUN_SCRIPT="$1" ;;
+        --run=*)        RUN_SCRIPT="${arg#--run=}" ;;
     esac
 done
 
@@ -56,6 +59,24 @@ if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == 
         echo "Invalid option. Exiting."
         exit 1
     fi
+fi
+
+# ── Prompt for script if option 2 and not specified ──────────────────────────
+if [[ "${OPTION}" == "2" && -z "${RUN_SCRIPT}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    echo ""
+    echo "============================================================"
+    echo "  Choose which script to run on Zeus:"
+    echo "  1) single_sim          — run_simulation.py (one simulation)"
+    echo "  2) sweep_shift         — ToothShift/run_sweep_innermost_shift.py"
+    echo "  3) sweep_inner_size    — ToothShift/run_sweep_inner_tooth_size.py"
+    echo "============================================================"
+    read -rp "Enter 1, 2, or 3: " _script_choice
+    case "${_script_choice}" in
+        1) RUN_SCRIPT="single_sim" ;;
+        2) RUN_SCRIPT="sweep_shift" ;;
+        3) RUN_SCRIPT="sweep_inner_size" ;;
+        *) echo "Invalid choice. Exiting."; exit 1 ;;
+    esac
 fi
 
 SSH="${ZEUS_USER}@${ZEUS_HOST}"
@@ -137,15 +158,16 @@ ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/{project,data,results,jobs,scripts}"
 
 echo ""
 echo "=== Uploading project files ==="
-# Upload root-level .py files
-scp "${LOCAL_PROJECT}"/*.py "${SSH}:${REMOTE_BASE}/project/"
-# Upload subdirectories (excluding hpc, __pycache__, results_from_server)
-for dir in ToothShift convergence_testing experiment_examples legacy matlab_analysis matlab_plotting python_tools; do
-    if [[ -d "${LOCAL_PROJECT}/${dir}" ]]; then
-        echo "  uploading ${dir}/"
-        scp -r "${LOCAL_PROJECT}/${dir}" "${SSH}:${REMOTE_BASE}/project/"
+# Core files required to run simulations on Zeus
+for f in config.py simulation_config.py sim_helpers.py \
+          bragg_device.py bragg_device_shifted.py bragg_device_inner_size.py \
+          run_simulation.py post_processing.py; do
+    if [[ -f "${LOCAL_PROJECT}/${f}" ]]; then
+        scp "${LOCAL_PROJECT}/${f}" "${SSH}:${REMOTE_BASE}/project/"
     fi
 done
+echo "  uploading ToothShift/"
+scp -r "${LOCAL_PROJECT}/ToothShift" "${SSH}:${REMOTE_BASE}/project/"
 
 echo ""
 echo "=== Uploading neff data ==="
@@ -204,7 +226,7 @@ if [[ "${OPTION}" == "1" ]]; then
     fi
 else
     # ── Option 2: full Python pipeline on Zeus ────────────────────────────────
-    JOB_ID=$(ssh "${SSH}" "cd ${REMOTE_BASE} && qsub jobs/run_python_job.sh")
+    JOB_ID=$(ssh "${SSH}" "cd ${REMOTE_BASE} && qsub -v RUN_SCRIPT=${RUN_SCRIPT} jobs/run_python_job.sh")
     if [[ $? -ne 0 ]]; then
         echo "ERROR: qsub failed. Check that you're connected to Zeus and PBS is available."
         exit 1

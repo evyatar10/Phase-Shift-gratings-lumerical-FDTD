@@ -64,21 +64,36 @@ _lumapi.ENVIRONPATH = _WRAPPER_DIR + ':' + _lumapi.ENVIRONPATH
 print(f"[server_run] lumapi wrapper dir: {_WRAPPER_DIR}")
 
 # ── 3. Import simulation modules (will use the patched config) ────────────────
-from run_simulation import run_single_sim
 from simulation_config import SimulationConfig
 
 # ── 4. Configure ─────────────────────────────────────────────────────────────
 cfg = SimulationConfig()
-cfg.mesh.simulation_mode = "optimization"   # or "optimization"
+cfg.mesh.simulation_mode = "optimization"
 
 # Override any parameter here without touching the original files:
 # cfg.grating.n_periods_each_side = 120
 # cfg.apodization.enabled = True
 # cfg.farfield.enabled = True
 
-# ── 5. Run — with fallback notification on failure ───────────────────────────
+# ── 5. Dispatch to selected script ───────────────────────────────────────────
+_SCRIPTS = {
+    "single_sim":       ("run_simulation",                          "run_single_sim"),
+    "sweep_shift":      ("ToothShift.run_sweep_innermost_shift",    "run_sweep_innermost_shift"),
+    "sweep_inner_size": ("ToothShift.run_sweep_inner_tooth_size",   "run_sweep_inner_tooth_size"),
+}
+_run_script = os.environ.get("RUN_SCRIPT", "single_sim")
+if _run_script not in _SCRIPTS:
+    print(f"ERROR: Unknown RUN_SCRIPT='{_run_script}'. Valid options: {list(_SCRIPTS)}")
+    sys.exit(1)
+_module_name, _func_name = _SCRIPTS[_run_script]
+import importlib
+_module = importlib.import_module(_module_name)
+_run_func = getattr(_module, _func_name)
+print(f"[server_run] Running: {_run_script} ({_module_name}.{_func_name})")
+
+# ── 6. Run — with fallback notification on failure ───────────────────────────
 try:
-    run_single_sim(cfg)
+    _run_func(cfg)
     print("\n[server_run] Pipeline completed successfully.")
 
 except Exception as e:
