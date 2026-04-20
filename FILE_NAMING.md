@@ -10,7 +10,7 @@ to keep paths short enough for Lumerical's internal path-length limit.
 | `N80` | `80_periods` | Number of grating periods each side of cavity |
 | `A1` | `1_apod` | Number of apodization periods each side |
 | `_th` | `_tanh` | Tanh apodization profile (omitted = linear) |
-| `_D5.76` | `_neg_det_5.76nm` | Negative cavity detuning from pitch/2 (nm) |
+| `_D5p76` | `_neg_det_5.76nm` | Negative cavity detuning from pitch/2 (nm); `.` → `p` |
 | `_avg` | `_avg_wgd` | Cavity width = average of narrow + wide waveguide |
 | `_avgx` | `_avg_ext_wgd` | Cavity width = average including extended region |
 | `_d` | `_disp` | Dispersive material model (omitted = constant index) |
@@ -23,7 +23,7 @@ to keep paths short enough for Lumerical's internal path-length limit.
 
 ```
 Old: layout_80_periods_1_apod_neg_det_5.76nm_avg_wgd_shift_90.0nm_innersize_100nm.fsp
-New: layout_N80_A1_D5.76_avg_S90_I100.fsp
+New: layout_N80_A1_D5p76_avg_S90_I100.fsp
 ```
 
 ## Directory structure
@@ -33,10 +33,10 @@ Sweep subfolders follow the same convention:
 ```
 layouts/
   S90/              ← formerly shift_90nm/
-    layout_N80_A1_D5.76_avg_S90_I100.fsp
+    layout_N80_A1_D5p76_avg_S90_I100.fsp
 results/
   S90/
-    result_N80_A1_D5.76_avg_S90_I100.mat
+    result_N80_A1_D5p76_avg_S90_I100.mat
 ```
 
 ## Where abbreviations are generated

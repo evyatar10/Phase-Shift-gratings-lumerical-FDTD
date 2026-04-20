@@ -224,7 +224,7 @@ def generate_file_tag(sim):
     if hasattr(sim, 'cavity_length'):
         detuning_nm = (sim.pitch / 2.0 - sim.cavity_length) * 1e9
         if abs(detuning_nm) > 0.01:
-            cav_tag = f"_D{detuning_nm:.2f}"
+            cav_tag = f"_D{detuning_nm:.2f}".replace(".", "p")
 
     mat_tag = "" if sim.use_constant_materials else "_d"
     _cwo = getattr(sim, 'cavity_width_option', 'narrow')
