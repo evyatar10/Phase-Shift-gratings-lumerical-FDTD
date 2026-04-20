@@ -3,6 +3,7 @@
 % and plots resonance wavelength and/or peak transmission vs. that parameter.
 %
 % Supported sweep parameters (auto-detected via dialog):
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 %   Shift : filename contains  _shift_<value>nm
 %   Size  : filename contains  _innersize_<value>nm
 

@@ -63,16 +63,25 @@ if [[ -x "${XVFB_BIN}" ]]; then
             -screen 0 1024x768x24 &>${XVFB_LOG}
     " &
     XVFB_NS_PID=$!
-    sleep 4
     export DISPLAY=:${DISPLAY_NUM}
     echo "Xvfb namespace PID: ${XVFB_NS_PID}  DISPLAY=${DISPLAY}"
-    # Verify the X11 socket actually exists
-    if [[ -S "/tmp/.X11-unix/X${DISPLAY_NUM}" ]]; then
-        echo "Xvfb socket confirmed: /tmp/.X11-unix/X${DISPLAY_NUM}"
-    else
-        echo "WARNING: Xvfb socket /tmp/.X11-unix/X${DISPLAY_NUM} NOT FOUND"
+    # Poll for the X11 socket instead of a fixed sleep — avoids race condition
+    # on busy nodes where Xvfb takes longer than 4 seconds to start.
+    XVFB_READY=0
+    for _i in $(seq 1 10); do
+        if [[ -S "/tmp/.X11-unix/X${DISPLAY_NUM}" ]]; then
+            echo "Xvfb socket confirmed after ${_i}s: /tmp/.X11-unix/X${DISPLAY_NUM}"
+            XVFB_READY=1
+            break
+        fi
+        sleep 1
+    done
+    if [[ "${XVFB_READY}" -eq 0 ]]; then
+        echo "ERROR: Xvfb socket /tmp/.X11-unix/X${DISPLAY_NUM} NOT FOUND after 10s"
         echo "Xvfb log follows:"
         cat "${XVFB_LOG}" 2>/dev/null || echo "(log empty or missing)"
+        kill "${XVFB_NS_PID}" 2>/dev/null
+        exit 1
     fi
 else
     echo "WARNING: ~/xvfb_extracted/usr/bin/Xvfb not found."

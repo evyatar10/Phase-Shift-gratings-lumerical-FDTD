@@ -1,5 +1,6 @@
 function save_figures_interactive()
 % SAVE_FIGURES_INTERACTIVE  Interactively choose figures to save, names, formats, and folder.
+addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
 %   Use after running a script that creates figures. Prompts for:
 %   1) Which figures to save (multi-select list)
 %   2) Output folder

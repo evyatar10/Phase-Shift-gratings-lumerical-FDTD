@@ -1,7 +1,8 @@
 %% Plot T, R, Loss, Phase, and Phase Derivatives
 % This script loads .mat files containing complex S-parameters.
 % It calculates T and R from them, and plots Loss, Phase, and Phase Derivatives.
-addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
+addpath(fileparts(mfilename('fullpath')));              % Add matlab_plotting to path
+addpath(fileparts(fileparts(mfilename('fullpath'))));   % Add project root to path
 clear; clc;
 %close all;
 %% User settings
