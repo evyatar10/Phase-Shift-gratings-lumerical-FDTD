@@ -65,12 +65,61 @@ if [[ -x "${XVFB_BIN}" ]]; then
     XVFB_NS_PID=$!
     sleep 4
     export DISPLAY=:${DISPLAY_NUM}
-    echo "Xvfb started (namespace PID ${XVFB_NS_PID}, DISPLAY=${DISPLAY})"
-    echo "Xvfb log: ${XVFB_LOG}"
+    echo "Xvfb namespace PID: ${XVFB_NS_PID}  DISPLAY=${DISPLAY}"
+    # Verify the X11 socket actually exists
+    if [[ -S "/tmp/.X11-unix/X${DISPLAY_NUM}" ]]; then
+        echo "Xvfb socket confirmed: /tmp/.X11-unix/X${DISPLAY_NUM}"
+    else
+        echo "WARNING: Xvfb socket /tmp/.X11-unix/X${DISPLAY_NUM} NOT FOUND"
+        echo "Xvfb log follows:"
+        cat "${XVFB_LOG}" 2>/dev/null || echo "(log empty or missing)"
+    fi
 else
     echo "WARNING: ~/xvfb_extracted/usr/bin/Xvfb not found."
     echo "Run setup: see hpc/scripts/setup_xvfb.sh"
 fi
+
+# ── Compile ompt stub on the compute node ───────────────────────────────────
+# Compiling here (rather than relying on a pre-built binary) ensures the stub
+# works on whatever node PBS assigns.
+OMPT_MAP="/tmp/ompt_version_${PBS_JOBID}.map"
+echo 'VERSION { global: ompt_start_tool; };' > "${OMPT_MAP}"
+if gcc -shared -fPIC -Wl,--version-script="${OMPT_MAP}" \
+       -o "${HOME}/ompt_stub_v.so" "${WORK_DIR}/jobs/ompt_stub.c" 2>&1; then
+    echo "ompt stub compiled OK on $(hostname)"
+else
+    echo "ERROR: ompt stub compilation failed — LD_PRELOAD fix will not work"
+fi
+rm -f "${OMPT_MAP}"
+
+# ── Lumerical library environment ────────────────────────────────────────────
+# fdtd-solutions wrapper resets LD_LIBRARY_PATH, so provide the Lumerical
+# lib path via these variables so fdtd-solutions-app sees them.
+export FDTD_LD_LIBRARY_PATH=/usr/local/lumerical-2021R2.5/lib
+export LUMERICAL_LD_LIBRARY_PATH=/usr/local/lumerical-2021R2.5/lib
+export LUMERICAL_QT_PLUGIN_PATH=/usr/local/lumerical-2021R2.5/bin
+# Also keep it in the Python process's path for libinterop-api.so.1 (ctypes).
+export LD_LIBRARY_PATH=/usr/local/lumerical-2021R2.5/lib:${LD_LIBRARY_PATH}
+# LD_PRELOAD fix: libiomp5.so (Intel OpenMP bundled with Lumerical 2021R2.5)
+# was compiled for glibc 2.17 (RHEL 7). On RHEL 8 / Rocky 8 (glibc 2.28+)
+# its PLT entry for ompt_start_tool@@VERSION fails to self-resolve the weak
+# symbol, crashing with "undefined symbol: ompt_start_tool (fatal)" during
+# init. Preloading this stub provides a strong global definition before
+# libiomp5.so loads. Returning NULL disables OMPT (harmless for simulations).
+export LD_PRELOAD="${HOME}/ompt_stub_v.so${LD_PRELOAD:+:${LD_PRELOAD}}"
+
+# ── Pre-flight: verify stub preloads and Lumerical libs are reachable ────────
+echo "LD_PRELOAD=${LD_PRELOAD}"
+echo "FDTD_LD_LIBRARY_PATH=${FDTD_LD_LIBRARY_PATH}"
+python -c "
+import ctypes, sys
+try:
+    ctypes.CDLL('/usr/local/lumerical-2021R2.5/lib/libiomp5.so')
+    print('[preflight] libiomp5.so loaded OK')
+except OSError as e:
+    print(f'[preflight] libiomp5.so FAILED: {e}', file=sys.stderr)
+    sys.exit(1)
+" || { echo "Pre-flight failed — aborting"; exit 1; }
 
 # ── Run pipeline ─────────────────────────────────────────────────────────────
 python scripts/server_run.py

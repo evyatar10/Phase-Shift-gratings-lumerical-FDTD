@@ -50,6 +50,19 @@ print(f"  BASE_SAVE_DIR  = {config.BASE_SAVE_DIR}")
 print(f"  NEFF_DATA_PATH = {config.NEFF_DATA_PATH}")
 print("=" * 60)
 
+# ── 2b. Patch lumapi.ENVIRONPATH to use our fdtd-solutions wrapper ────────────
+#   libinterop-api uses Qt QProcess with setProcessEnvironment(), which builds
+#   a custom env that may not carry FDTD_LD_LIBRARY_PATH from the parent shell.
+#   Our wrapper (jobs/bin/fdtd-solutions) hardcodes the library paths so the
+#   fix works on every compute node regardless of QProcess env handling.
+_WRAPPER_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'jobs', 'bin')
+)
+sys.path.insert(0, os.path.dirname(config.LUMAPI_PATH))
+import lumapi as _lumapi
+_lumapi.ENVIRONPATH = _WRAPPER_DIR + ':' + _lumapi.ENVIRONPATH
+print(f"[server_run] lumapi wrapper dir: {_WRAPPER_DIR}")
+
 # ── 3. Import simulation modules (will use the patched config) ────────────────
 from run_simulation import run_single_sim
 from simulation_config import SimulationConfig

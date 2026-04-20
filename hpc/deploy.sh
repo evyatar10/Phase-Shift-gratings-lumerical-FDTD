@@ -160,8 +160,11 @@ fi
 echo ""
 echo "=== Uploading HPC scripts ==="
 scp "${LOCAL_PROJECT}/hpc/jobs/"*.sh    "${SSH}:${REMOTE_BASE}/jobs/"
+scp "${LOCAL_PROJECT}/hpc/jobs/"*.c     "${SSH}:${REMOTE_BASE}/jobs/" 2>/dev/null || true
 scp "${LOCAL_PROJECT}/hpc/scripts/"*.py "${SSH}:${REMOTE_BASE}/scripts/"
-ssh "${SSH}" "chmod +x ${REMOTE_BASE}/jobs/*.sh"
+ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/jobs/bin"
+scp "${LOCAL_PROJECT}/hpc/jobs/bin/fdtd-solutions" "${SSH}:${REMOTE_BASE}/jobs/bin/fdtd-solutions"
+ssh "${SSH}" "chmod +x ${REMOTE_BASE}/jobs/*.sh ${REMOTE_BASE}/jobs/bin/fdtd-solutions"
 
 echo ""
 echo "=== Upload complete ==="
