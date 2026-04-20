@@ -20,6 +20,7 @@ import config
 
 config.BASE_SAVE_DIR  = '/home/evyatarrubin/bragg_sim/results'
 config.NEFF_DATA_PATH = '/home/evyatarrubin/bragg_sim/data/FDE_sweep_results.mat'
+config.USE_GPU        = False
 
 # Locate lumapi.py — check both known Lumerical installation paths
 _api_candidates = [

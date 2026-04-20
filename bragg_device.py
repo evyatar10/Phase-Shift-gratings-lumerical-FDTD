@@ -294,6 +294,7 @@ class PiShiftBraggFDTD:
             fdtd.set("force symmetric z mesh", 1)
 
         fdtd.set("dimension", "3D")
+        fdtd.setdevice("GPU" if _cfg.USE_GPU else "CPU")
         fdtd.set("background material", self.clad_material)
         fdtd.set("simulation time", 1000e-12)
         fdtd.set("auto shutoff min", 1e-6)

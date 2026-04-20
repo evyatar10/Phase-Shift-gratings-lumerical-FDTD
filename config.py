@@ -1,5 +1,7 @@
 import os
 
+USE_GPU = True  # Set False on HPC/server (overridden by server_run.py)
+
 # Base paths
 BASE_SAVE_DIR = r"C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\cavity_width_comparison"
 NEFF_DATA_PATH = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_vs_wl_new\FDE_sweep_results.mat"

@@ -231,7 +231,7 @@ class SimpleBraggFDTD:
             fdtd.set("force symmetric z mesh", 1)
 
         fdtd.set("dimension", "3D")
-        fdtd.setdevice("GPU")
+        fdtd.setdevice("GPU" if config.USE_GPU else "CPU")
         fdtd.set("background material", self.clad_material)
         fdtd.set("simulation time", 100e-12)
         fdtd.set("auto shutoff min", 1e-6)
