@@ -45,9 +45,10 @@ fi
 
 APP="/usr/local/lumerical/bin/fdtd-engine-mpich2nem"
 MPI="/usr/local/lumerical/mpich2/nemesis/bin/mpiexec.hydra"
-NCPUS=80   # must match #PBS -l select=1:ncpus=XX above
+NSOCKETS=4    # physical sockets on a zeus node
+NTHREADS=20   # cores per socket; NSOCKETS × NTHREADS must equal ncpus above
 
-"${MPI}" -n "${NCPUS}" "${APP}" -t 1 "./${FSP_FILE}"
+"${MPI}" -n "${NSOCKETS}" "${APP}" -t "${NTHREADS}" "./${FSP_FILE}"
 EXIT_CODE=$?
 
 echo "============================================================"

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout *)",
+      "Bash(git show *)",
+      "Read(//tmp/**)",
+      "Bash(git restore *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\hpc\\scripts"
+    ]
+  }
+}

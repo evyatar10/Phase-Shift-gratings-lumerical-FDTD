@@ -29,6 +29,7 @@ WATCH=false
 WATCH_ONLY=false
 OPTION=""
 RUN_SCRIPT=""
+FSP_PRESET=""
 
 for arg in "$@"; do
     case "$arg" in
@@ -40,6 +41,7 @@ for arg in "$@"; do
         --watch-only)   WATCH_ONLY=true ;;
         --run)          shift; RUN_SCRIPT="$1" ;;
         --run=*)        RUN_SCRIPT="${arg#--run=}" ;;
+        --preset=*)     FSP_PRESET="${arg#--preset=}" ;;
     esac
 done
 
@@ -59,6 +61,24 @@ if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == 
         echo "Invalid option. Exiting."
         exit 1
     fi
+fi
+
+# ── Prompt for layout preset if option 1 and not specified ───────────────────
+if [[ "${OPTION}" == "1" && -z "${FSP_PRESET}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    echo ""
+    echo "============================================================"
+    echo "  Choose which layout to generate locally:"
+    echo "  1) single          — one file, no sweep"
+    echo "  2) sweep_shift     — innermost tooth shift sweep"
+    echo "  3) sweep_inner_size — shift × inner-size 2D sweep"
+    echo "============================================================"
+    read -rp "Enter 1, 2, or 3: " _preset_choice
+    case "${_preset_choice}" in
+        1) FSP_PRESET="single" ;;
+        2) FSP_PRESET="sweep_shift" ;;
+        3) FSP_PRESET="sweep_inner_size" ;;
+        *) echo "Invalid choice. Exiting."; exit 1 ;;
+    esac
 fi
 
 # ── Prompt for script if option 2 and not specified ──────────────────────────
@@ -204,7 +224,7 @@ if [[ "${OPTION}" == "1" ]]; then
     # ── Option 1: generate .fsp locally, upload it, run engine on Zeus ───────
     echo "Option 1: generating .fsp locally..."
     LOCAL_PYTHON=$(which python 2>/dev/null || which python3 2>/dev/null)
-    FSP_OUTPUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/hpc/scripts/local_save_fsp.py" 2>&1)
+    FSP_OUTPUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/hpc/scripts/local_save_fsp.py" --preset "${FSP_PRESET}" 2>&1)
     echo "${FSP_OUTPUT}"
 
     FSP_PATH=$(echo "${FSP_OUTPUT}" | grep "^FSP_SAVED:" | sed 's/FSP_SAVED://')
