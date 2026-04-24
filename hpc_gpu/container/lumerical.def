@@ -11,8 +11,9 @@
 # Convert to Enroot .sqsh for Athena's Pyxis (run on Athena login node):
 #   enroot import --output lumerical-2026R1.sqsh apptainer://$(pwd)/lumerical-2026R1.sif
 #
-# License is NOT baked in — pass at runtime via --container-env:
-#   --container-env=ANSYSLMD_LICENSE_FILE=1055@132.68.48.51
+# License defaults baked into %environment (11055@172.25.0.12 / 12325@172.25.0.12).
+# Override at runtime if the server address changes:
+#   --container-env=ANSYSLMD_LICENSE_FILE=11055@172.25.0.12
 
 Bootstrap: docker
 From: nvcr.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
@@ -22,6 +23,9 @@ From: nvcr.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
     # Destination is /opt/lumerical_src (NOT /tmp — tmpfs is too small for 3.7 GB).
     # Moved to final location in %post.
     /home/evyatar10/ansys_incS/v261/Lumerical /opt/lumerical_src
+    # ANSYS License Client — required for license checkout (ansyscl).
+    # Engine binary has /ansys_inc/v261/licensingclient hardcoded as lookup path.
+    /home/evyatar10/ansys_incS/v261/licensingclient /opt/licensingclient_src
 
 %post
     set -e
@@ -93,18 +97,37 @@ From: nvcr.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
     chmod +x /opt/lumerical/v261/bin/fdtd-solutions-app
     chmod +x /opt/lumerical/v261/bin/fdtd-solutions-batch
 
+    # ── Install ANSYS License Client at the hardcoded path the engine expects ────
+    # fdtd-engine-ompi-lcl looks for /ansys_inc/v261/licensingclient/linx64/ansyscl
+    mkdir -p /ansys_inc/v261
+    mv /opt/licensingclient_src /ansys_inc/v261/licensingclient
+    chmod -R a+rX /ansys_inc/v261/licensingclient
+    chmod +x /ansys_inc/v261/licensingclient/linx64/ansyscl \
+             /ansys_inc/v261/licensingclient/linx64/lmutil \
+             /ansys_inc/v261/licensingclient/linx64/ansysli_util 2>/dev/null || true
+
     # ── Verify engine binary is present ──────────────────────────────────────
     if [[ ! -x /opt/lumerical/v261/bin/fdtd-engine-ompi-lcl ]]; then
         echo "ERROR: fdtd-engine-ompi-lcl not found at /opt/lumerical/v261/bin/"
         exit 1
     fi
+    if [[ ! -f /ansys_inc/v261/licensingclient/linx64/ansyscl ]]; then
+        echo "ERROR: ansyscl not found at /ansys_inc/v261/licensingclient/linx64/ansyscl"
+        exit 1
+    fi
+    if [[ ! -f /ansys_inc/v261/licensingclient/linx64/lmutil ]]; then
+        echo "ERROR: lmutil not found at /ansys_inc/v261/licensingclient/linx64/lmutil"
+        exit 1
+    fi
 
 %environment
     export LUMERICAL_HOME=/opt/lumerical/v261
-    export PATH="${LUMERICAL_HOME}/bin:${PATH}"
+    export ANSYS_LIC_CLIENT=/ansys_inc/v261/licensingclient/linx64
+    export PATH="${LUMERICAL_HOME}/bin:${ANSYS_LIC_CLIENT}:${PATH}"
     export LD_LIBRARY_PATH="${LUMERICAL_HOME}/lib:${LUMERICAL_HOME}/lib/mesa:${LD_LIBRARY_PATH}"
     export LUMAPI_PYTHON="${LUMERICAL_HOME}/api/python"
-    export ANSYSLMD_LICENSE_FILE=1055@132.68.48.51
+    export ANSYSLMD_LICENSE_FILE=11055@172.25.0.12
+    export ANSYSLI_SERVERS=12325@172.25.0.12
     export QT_QPA_PLATFORM=offscreen
     export QT_OPENGL=software
 
@@ -124,10 +147,10 @@ From: nvcr.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
 
     Engine-only run (Option 1):
       srun --container-image=lumerical-2026R1.sqsh \
-           --container-env=ANSYSLMD_LICENSE_FILE=1055@132.68.48.51 \
+           --container-env=ANSYSLMD_LICENSE_FILE=11055@172.25.0.12 \
            fdtd-engine-ompi-lcl -t 16 -logall -use-gpu-resources my_sim.fsp
 
     Full Python / lumapi run (Option 2):
       srun --container-image=lumerical-2026R1.sqsh \
-           --container-env=ANSYSLMD_LICENSE_FILE=1055@132.68.48.51 \
+           --container-env=ANSYSLMD_LICENSE_FILE=11055@172.25.0.12 \
            xvfb-run -a python /work/hpc_gpu/scripts/athena_run.py

@@ -24,6 +24,7 @@
 #
 #SBATCH --job-name=lum_sweep_gpu
 #SBATCH --nodes=1
+#SBATCH --partition=work
 #SBATCH --gpus=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
@@ -73,9 +74,9 @@ echo "============================================================"
 
 srun \
     --container-image="${CONTAINER}" \
-    --container-mounts="${FSP_DIR}:/work/layouts,/home/evyatarrubin/stub_apip.so:/stub_apip.so" \
+    --container-mounts="${FSP_DIR}:/work/layouts" \
     --container-workdir=/work/layouts \
-    bash -c "export LANG=C && export LC_ALL=C && export ANSYSLMD_LICENSE_FILE='${LICENSE}' && export ANSYSLI_SERVERS='12325@172.25.0.12' && export LD_PRELOAD=/stub_apip.so && export OMPI_MCA_btl='^openib' && export OMPI_MCA_mtl='^ofi' && export UCX_TLS=tcp && echo 'ANSYSLMD_LICENSE_FILE='\$ANSYSLMD_LICENSE_FILE && echo 'ANSYSLI_SERVERS='\$ANSYSLI_SERVERS && ${ENGINE} -t ${NTHREADS} -logall -use-gpu-resources /work/layouts/${FSP_FILE}"
+    bash -c "export LANG=C && export LC_ALL=C && export ANSYSLMD_LICENSE_FILE='${LICENSE}' && export ANSYSLI_SERVERS='12325@172.25.0.12' && export ANSYS_APIP_DISABLE=1 && export OMPI_MCA_btl='^openib' && export OMPI_MCA_mtl='^ofi' && export UCX_TLS=tcp && echo 'ANSYSLMD_LICENSE_FILE='\$ANSYSLMD_LICENSE_FILE && echo 'ANSYSLI_SERVERS='\$ANSYSLI_SERVERS && ${ENGINE} -t ${NTHREADS} -logall -use-gpu-resources /work/layouts/${FSP_FILE}"
 
 EXIT_CODE=$?
 

@@ -7,7 +7,10 @@
       "Bash(git restore *)",
       "WebFetch(domain:optics.ansys.com)",
       "Read(//c/Users/evyat/AppData/Roaming/Lumerical/**)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Read",
+      "Edit",
+      "Bash"
     ],
     "additionalDirectories": [
       "c:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\hpc\\scripts"

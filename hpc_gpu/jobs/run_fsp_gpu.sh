@@ -17,6 +17,7 @@
 #
 #SBATCH --job-name=lum_fdtd_gpu
 #SBATCH --nodes=1
+#SBATCH --partition=work
 #SBATCH --gpus=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
@@ -28,6 +29,16 @@
 
 ulimit -s unlimited
 mkdir -p logs
+
+# Expose GPU devices inside the Pyxis/Enroot container.
+# SLURM sets CUDA_VISIBLE_DEVICES to the allocated GPU indices;
+# Pyxis uses NVIDIA_VISIBLE_DEVICES to decide which /dev/nvidia* to inject.
+export NVIDIA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-all}"
+
+# Host NVIDIA driver library path (driver 470 on Athena DGX nodes).
+# Mounted into the container below so libcuda.so is findable at runtime.
+NVIDIALIB_HOST="/usr/lib/x86_64-linux-gnu"
+NVIDIALIB_CTR="/usr/local/nv_host_libs"
 
 # ── CONFIGURE ─────────────────────────────────────────────────────────────────
 FSP_DIR="/home/evyatarrubin/bragg_sim_gpu/results/layouts"
@@ -80,10 +91,28 @@ fi
 
 srun \
     --container-image="${CONTAINER}" \
-    --container-mounts="${FSP_DIR}:/work/layouts" \
+    --container-mounts="${FSP_DIR}:/work/layouts,${NVIDIALIB_HOST}:${NVIDIALIB_CTR}" \
     --container-workdir=/work/layouts \
     --ntasks="${NUM_MPI_RANKS}" \
-    bash -c "export ANSYSLMD_LICENSE_FILE='${LICENSE}' && export ANSYS_APIP_DISABLE=1 && export OMPI_MCA_btl='^openib' && export OMPI_MCA_mtl='^ofi' && export UCX_TLS=tcp && ${ENGINE} -t ${NTHREADS} -logall -use-gpu-resources /work/layouts/${FSP_FILE}"
+    bash -c "
+export LANG=C
+export LC_ALL=C
+# Make host libcuda.so visible to the Lumerical engine (driver not in container image).
+export LD_LIBRARY_PATH=${NVIDIALIB_CTR}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}
+export ANSYSLMD_LICENSE_FILE='${LICENSE}'
+export ANSYSLI_SERVERS='12325@172.25.0.12'
+export ANSYS_APIP_DISABLE=1
+# IB/EFA/RDMA not needed for single-node, single-rank job.
+# Restricting to loopback+shared-memory avoids UCX IB fork crash on cleanup.
+export RDMAV_FORK_SAFE=1
+export FI_EFA_FORK_SAFE=1
+export FI_PROVIDER='^efa'
+export OMPI_MCA_btl=self,tcp
+export OMPI_MCA_mtl='^ofi'
+export UCX_TLS=self,sm,tcp
+export UCX_NET_DEVICES=lo
+
+${ENGINE} -t ${NTHREADS} -logall -use-gpu-resources /work/layouts/${FSP_FILE}"
 
 EXIT_CODE=$?
 

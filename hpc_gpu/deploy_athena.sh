@@ -239,7 +239,7 @@ if [[ "${OPTION}" == "1" ]]; then
         LOCAL_PYTHON=$(which python 2>/dev/null || which python3 2>/dev/null)
         FSP_OUTPUT=$("${LOCAL_PYTHON}" \
             "${LOCAL_PROJECT}/hpc/scripts/local_save_fsp.py" \
-            --preset "${FSP_PRESET}" 2>&1)
+            --preset "${FSP_PRESET}" --gpu 2>&1)
         echo "${FSP_OUTPUT}"
 
         FSP_PATH=$(echo "${FSP_OUTPUT}" | grep "^FSP_SAVED:" | sed 's/FSP_SAVED://')

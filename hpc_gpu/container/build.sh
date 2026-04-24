@@ -54,7 +54,7 @@ echo "Source check OK: fdtd-engine-ompi-lcl found."
 echo ""
 echo "=== Building Apptainer image (this takes ~5–15 minutes) ==="
 echo "    (copying 3.7 GB Lumerical tree into the container)"
-apptainer build "${SIF}" "${DEF}"
+apptainer build --force "${SIF}" "${DEF}"
 
 # ── 3. Smoke test ─────────────────────────────────────────────────────────────
 echo ""

@@ -17,6 +17,7 @@
 #
 #SBATCH --job-name=lum_pipeline_gpu
 #SBATCH --nodes=1
+#SBATCH --partition=work
 #SBATCH --gpus=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G

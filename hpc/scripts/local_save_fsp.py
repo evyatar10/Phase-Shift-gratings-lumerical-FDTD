@@ -59,6 +59,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--preset', default='single', choices=list(PRESETS),
                     help='Which layout configuration to generate')
 parser.add_argument('--output-path', default=None)
+parser.add_argument('--gpu', action='store_true',
+                    help='Embed GPU resource setting (setresource FDTD GPU=True) in the FSP. '
+                         'Use for Athena/GPU targets. Omit for Zeus/CPU targets.')
 args = parser.parse_args()
 
 p = PRESETS[args.preset]
@@ -121,6 +124,12 @@ for shift_m in shifts:
             n_points=iter_cfg.spectral.n_wl_points,
         )
         apply_monitor_overrides(sim, iter_cfg)
+        if args.gpu:
+            try:
+                sim.fdtd.setresource("FDTD", 1, "GPU", True)
+                print("  GPU resource enabled (setresource FDTD 1 GPU True)")
+            except Exception as _e:
+                print(f"  WARNING: setresource GPU failed: {_e}")
         sim.fdtd.save(layout_path)
         sim.close()
         print(f"FSP_SAVED:{layout_path}")
