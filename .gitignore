@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 *.h5
 results*/
+
+# Large binary/container files
+hpc_gpu/container/lumerical-2026R1.sif
+hpc_gpu/container/AnsysInstaller.sh

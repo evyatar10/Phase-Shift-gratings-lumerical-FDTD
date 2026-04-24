@@ -78,7 +78,8 @@ def run_single_sim(cfg: SimulationConfig) -> dict:
         if cfg.run.cleanup_lumerical_data:
             _cleanup_lumerical_temp_files(layout_path)
 
-        plt.close("all")  # discard figures — do not block on plt.show()
+        plt.show()        # display figures when running locally
+        plt.close("all")
         sim.close()       # free Lumerical session memory
 
     return results
@@ -107,7 +108,7 @@ if __name__ == "__main__":
     cfg = SimulationConfig()
 
     # Simulation mode: "accurate" (dx≈35nm, cells=7) or "optimization" (dx=50nm, cells=5)
-    cfg.mesh.simulation_mode = "accurate"
+    cfg.mesh.simulation_mode = "optimization"
 
     # Example overrides (uncomment to use):
     # cfg.grating.n_periods_each_side = 120
