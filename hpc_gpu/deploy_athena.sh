@@ -16,31 +16,22 @@
 #   bash hpc_gpu/deploy_athena.sh --watch-only
 #   bash hpc_gpu/deploy_athena.sh --results
 
-# ── CONFIGURE ─────────────────────────────────────────────────────────────────
-ATHENA_USER="evyatarrubin"
-ATHENA_HOST="dgx-master.technion.ac.il"
-
-# Separate remote root from Zeus to guarantee zero collision.
-# Zeus uses ~/bragg_sim — this uses ~/bragg_sim_gpu.
-REMOTE_BASE="/home/${ATHENA_USER}/bragg_sim_gpu"
+# ── CONFIGURE — edit hpc_gpu/athena.conf, not this file ──────────────────────
+CONF="$(cd "$(dirname "$0")" && pwd)/athena.conf"
+if [[ ! -f "${CONF}" ]]; then
+    echo "ERROR: athena.conf not found at ${CONF}"
+    exit 1
+fi
+source "${CONF}"
 
 LOCAL_PROJECT="$(cd "$(dirname "$0")/.." && pwd)"
-LOCAL_NEFF="C:/Users/evyat/Lumerical/pi_shifts_FDTD_results/neff_vs_wl_new/FDE_sweep_results.mat"
 LOCAL_RESULTS_DIR="${LOCAL_PROJECT}/results_from_athena"
-
-POLL_INTERVAL=60   # seconds between squeue checks
-
-# License — single source of truth. Job scripts read these via --export.
-# (Verified 2026-04-25: 11055@dgx-master and 1055@132.68.48.51 both reach the
-# same backend lmgrd; 11055@dgx-master is what the working FSP path uses.)
-ATHENA_LICENSE="11055@dgx-master"
-ATHENA_INTERCONNECT="12325@172.25.0.12"
+LOCAL_NEFF=$(python -c "import sys; sys.path.insert(0,'${LOCAL_PROJECT}'); import config; print(config.NEFF_DATA_PATH)")
 # ─────────────────────────────────────────────────────────────────────────────
 
 UPLOAD_ONLY=false
 DOWNLOAD_RESULTS=false
-WATCH=false
-WATCH_ONLY=false
+STATUS=false
 OPTION=""
 RUN_SCRIPT=""
 FSP_PRESET=""
@@ -52,8 +43,7 @@ for arg in "$@"; do
         --option2)      OPTION="2" ;;
         --upload-only)  UPLOAD_ONLY=true ;;
         --results)      DOWNLOAD_RESULTS=true ;;
-        --watch)        WATCH=true ;;
-        --watch-only)   WATCH_ONLY=true ;;
+        --status)       STATUS=true ;;
         --run=*)        RUN_SCRIPT="${arg#--run=}" ;;
         --preset=*)     FSP_PRESET="${arg#--preset=}" ;;
         --fsp=*)        FSP_EXPLICIT="${arg#--fsp=}" ;;
@@ -63,7 +53,7 @@ done
 SSH="${ATHENA_USER}@${ATHENA_HOST}"
 
 # ── Prompt for option if not specified ────────────────────────────────────────
-if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${WATCH_ONLY}" == "false" ]]; then
+if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${STATUS}" == "false" ]]; then
     echo ""
     echo "============================================================"
     echo "  Athena GPU — Choose run mode:"
@@ -125,57 +115,19 @@ download_results() {
     echo "Results saved to: ${LOCAL_RESULTS_DIR}"
 }
 
-# ── Helper: poll until SLURM job completes ────────────────────────────────────
-watch_job() {
-    local job_id="$1"
+# ── Helper: one-shot status check ─────────────────────────────────────────────
+check_status() {
     echo ""
-    echo "=== Watching SLURM job ${job_id} (checking every ${POLL_INTERVAL}s) ==="
-    echo "Press Ctrl+C to stop watching (job will keep running on Athena)."
+    echo "=== Jobs in queue (${ATHENA_USER}) ==="
+    ssh "${SSH}" "squeue -u ${ATHENA_USER} -o '%.10i %.12j %.8T %.10M %.6D %R' 2>/dev/null || echo '(no jobs in queue)'"
     echo ""
-
-    while true; do
-        STATUS=$(ssh "${SSH}" "squeue -j ${job_id} -h -o '%T' 2>/dev/null")
-        TIMESTAMP=$(date '+%H:%M:%S')
-
-        if [[ -z "${STATUS}" ]]; then
-            echo "[${TIMESTAMP}] Job ${job_id} no longer in queue — finished (or failed)."
-            break
-        fi
-
-        case "${STATUS}" in
-            RUNNING)    echo "[${TIMESTAMP}] Job ${job_id} is RUNNING..." ;;
-            PENDING)    echo "[${TIMESTAMP}] Job ${job_id} is PENDING (waiting for resources)..." ;;
-            COMPLETING) echo "[${TIMESTAMP}] Job ${job_id} is COMPLETING..." ;;
-            FAILED)
-                echo "[${TIMESTAMP}] Job ${job_id} FAILED."
-                break
-                ;;
-            *) echo "[${TIMESTAMP}] Job ${job_id} status: ${STATUS}" ;;
-        esac
-
-        sleep "${POLL_INTERVAL}"
-    done
-
-    echo ""
-    echo "=== Last 40 lines of job log ==="
-    ssh "${SSH}" "ls ${REMOTE_BASE}/jobs/logs/*${job_id}* 2>/dev/null | \
-        head -1 | xargs tail -40 2>/dev/null || echo '(log not found)'"
+    echo "=== Last 40 lines of most recent log ==="
+    ssh "${SSH}" "ls -t ${REMOTE_BASE}/jobs/logs/*.out 2>/dev/null | head -1 | xargs tail -40 2>/dev/null || echo '(no log found)'"
 }
 
-# ── --watch-only ───────────────────────────────────────────────────────────────
-if [[ "${WATCH_ONLY}" == "true" ]]; then
-    echo "=== Looking for last submitted job on Athena ==="
-    LAST_JOB=$(ssh "${SSH}" "squeue -u ${ATHENA_USER} -h -o '%i' 2>/dev/null | tail -1")
-    if [[ -z "${LAST_JOB}" ]]; then
-        echo "No running jobs found for ${ATHENA_USER}."
-        echo "Checking most recent log file..."
-        ssh "${SSH}" "ls -t ${REMOTE_BASE}/jobs/logs/*.out 2>/dev/null | \
-            head -1 | xargs tail -40 2>/dev/null || echo '(no log found)'"
-        exit 0
-    fi
-    echo "Found job: ${LAST_JOB}"
-    watch_job "${LAST_JOB}"
-    download_results
+# ── --status: one-shot check then exit ────────────────────────────────────────
+if [[ "${STATUS}" == "true" ]]; then
+    check_status
     exit 0
 fi
 
@@ -296,13 +248,15 @@ if [[ "${OPTION}" == "1" ]]; then
         JOB_ID=$(ssh "${SSH}" \
             "cd ${REMOTE_BASE} && sbatch \
                 --array=0-${ARRAY_END}%${K} \
-                --export=ALL,ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT} \
+                --gpus=${N_GPUS} --cpus-per-task=${N_CPUS} \
+                --export=ALL,ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_fsp_gpu_array.sh")
     else
         JOB_ID=$(ssh "${SSH}" \
             "cd ${REMOTE_BASE} && sbatch \
-                --export=ALL,FSP_FILE=\"${FSP_NAME}\",ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT} \
+                --gpus=${N_GPUS} --cpus-per-task=${N_CPUS} \
+                --export=ALL,FSP_FILE=\"${FSP_NAME}\",ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_fsp_gpu.sh")
     fi
@@ -311,7 +265,8 @@ else
     # ── Option 2: full Python pipeline ───────────────────────────────────────
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
-            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1} \
+            --gpus=${N_GPUS} --cpus-per-task=${N_CPUS} \
+            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},NTFY_TOPIC=${NTFY_TOPIC} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_gpu.sh")
 fi
@@ -330,18 +285,14 @@ echo ""
 echo "============================================================"
 echo "Job submitted: ${JOB_ID}"
 echo ""
-echo "Monitor on Athena:"
-echo "  ssh ${SSH}"
-echo "  squeue -u ${ATHENA_USER}              # queue status"
-echo "  squeue -j ${NUMERIC_JOB} -l           # detailed info"
-echo "  tail -f ${REMOTE_BASE}/jobs/logs/lum_*${NUMERIC_JOB}*.out  # live log"
+echo "You will receive an email at job start, finish, and failure."
+echo ""
+echo "Check status at any time:"
+echo "  bash hpc_gpu/deploy_athena.sh --status"
+echo ""
+echo "Live log on Athena:"
+echo "  ssh ${SSH} tail -f ${REMOTE_BASE}/jobs/logs/lum_*${NUMERIC_JOB}*.out"
 echo ""
 echo "Download results after job finishes:"
 echo "  bash hpc_gpu/deploy_athena.sh --results"
 echo "============================================================"
-
-# ── --watch: poll until done then auto-download ───────────────────────────────
-if [[ "${WATCH}" == "true" ]]; then
-    watch_job "${NUMERIC_JOB}"
-    download_results
-fi

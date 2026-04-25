@@ -60,6 +60,9 @@ echo "FSP dir:   ${FSP_DIR}"
 echo "FSP file:  ${FSP_FILE}"
 echo "Container: ${CONTAINER}"
 echo "============================================================"
+echo "--- nvidia-smi ---"
+nvidia-smi || echo "(nvidia-smi not available on this node)"
+echo "------------------"
 
 if [[ ! -f "${CONTAINER}" ]]; then
     echo "ERROR: container not found: ${CONTAINER}"
@@ -179,5 +182,16 @@ echo "============================================================"
 echo "Finished:  $(date)"
 echo "Exit code: ${EXIT_CODE}"
 echo "============================================================"
+
+if [[ -n "${NTFY_TOPIC}" ]]; then
+    _MINS=$(( SECONDS / 60 )); _SECS=$(( SECONDS % 60 ))
+    if [[ "${EXIT_CODE}" -eq 0 ]]; then
+        _MSG="✓ Job ${SLURM_JOB_ID} done — ${FSP_FILE} — ${_MINS}m${_SECS}s"
+    else
+        _MSG="✗ Job ${SLURM_JOB_ID} FAILED (exit ${EXIT_CODE}) — ${FSP_FILE}"
+    fi
+    curl -s -H "Title: Bragg FDTD" -d "${_MSG}" \
+        "https://ntfy.sh/${NTFY_TOPIC}" >/dev/null 2>&1 || true
+fi
 
 exit "${EXIT_CODE}"

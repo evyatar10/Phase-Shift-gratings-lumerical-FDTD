@@ -149,4 +149,15 @@ if [[ "${EXIT_CODE}" -ne 0 ]]; then
 fi
 echo "============================================================"
 
+if [[ -n "${NTFY_TOPIC}" ]]; then
+    _MINS=$(( SECONDS / 60 )); _SECS=$(( SECONDS % 60 ))
+    if [[ "${EXIT_CODE}" -eq 0 ]]; then
+        _MSG="✓ Job ${PBS_JOBID} done — ${RUN_SCRIPT} — ${_MINS}m${_SECS}s"
+    else
+        _MSG="✗ Job ${PBS_JOBID} FAILED (exit ${EXIT_CODE}) — ${RUN_SCRIPT}"
+    fi
+    curl -s -H "Title: Bragg FDTD" -d "${_MSG}" \
+        "https://ntfy.sh/${NTFY_TOPIC}" >/dev/null 2>&1 || true
+fi
+
 exit "${EXIT_CODE}"

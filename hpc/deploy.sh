@@ -11,22 +11,22 @@
 #   bash hpc/deploy.sh --watch-only
 #   bash hpc/deploy.sh --results
 
-# ── CONFIGURE ────────────────────────────────────────────────────────────────
-ZEUS_USER="evyatarrubin"
-ZEUS_HOST="zeus.technion.ac.il"
-REMOTE_BASE="/home/${ZEUS_USER}/bragg_sim"
+# ── CONFIGURE — edit hpc/zeus.conf, not this file ────────────────────────────
+CONF="$(cd "$(dirname "$0")" && pwd)/zeus.conf"
+if [[ ! -f "${CONF}" ]]; then
+    echo "ERROR: zeus.conf not found at ${CONF}"
+    exit 1
+fi
+source "${CONF}"
 
 LOCAL_PROJECT="$(cd "$(dirname "$0")/.." && pwd)"
-LOCAL_NEFF="C:/Users/evyat/Lumerical/pi_shifts_FDTD_results/neff_vs_wl_new/FDE_sweep_results.mat"
 LOCAL_RESULTS_DIR="${LOCAL_PROJECT}/results_from_server"
-
-POLL_INTERVAL=60   # seconds between qstat checks
+LOCAL_NEFF=$(python -c "import sys; sys.path.insert(0,'${LOCAL_PROJECT}'); import config; print(config.NEFF_DATA_PATH)")
 # ─────────────────────────────────────────────────────────────────────────────
 
 UPLOAD_ONLY=false
 DOWNLOAD_RESULTS=false
-WATCH=false
-WATCH_ONLY=false
+STATUS=false
 OPTION=""
 RUN_SCRIPT=""
 FSP_PRESET=""
@@ -37,8 +37,7 @@ for arg in "$@"; do
         --option2)      OPTION="2" ;;
         --upload-only)  UPLOAD_ONLY=true ;;
         --results)      DOWNLOAD_RESULTS=true ;;
-        --watch)        WATCH=true ;;
-        --watch-only)   WATCH_ONLY=true ;;
+        --status)       STATUS=true ;;
         --run)          shift; RUN_SCRIPT="$1" ;;
         --run=*)        RUN_SCRIPT="${arg#--run=}" ;;
         --preset=*)     FSP_PRESET="${arg#--preset=}" ;;
@@ -46,7 +45,7 @@ for arg in "$@"; do
 done
 
 # ── Prompt for option if not specified ───────────────────────────────────────
-if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${WATCH_ONLY}" == "false" ]]; then
+if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${STATUS}" == "false" ]]; then
     echo ""
     echo "============================================================"
     echo "  Choose run mode:"
@@ -110,53 +109,19 @@ download_results() {
     echo "Results saved to: ${LOCAL_RESULTS_DIR}"
 }
 
-# ── Helper: poll until job completes ─────────────────────────────────────────
-watch_job() {
-    local job_id="$1"
+# ── Helper: one-shot status check ────────────────────────────────────────────
+check_status() {
     echo ""
-    echo "=== Watching job ${job_id} (checking every ${POLL_INTERVAL}s) ==="
-    echo "Press Ctrl+C to stop watching (job will keep running on Zeus)."
+    echo "=== Jobs in queue (${ZEUS_USER}) ==="
+    ssh "${SSH}" "qstat -u ${ZEUS_USER} 2>/dev/null || echo '(no jobs in queue)'"
     echo ""
-
-    while true; do
-        STATUS=$(ssh "${SSH}" "qstat ${job_id} 2>/dev/null | tail -1 | awk '{print \$5}'")
-        TIMESTAMP=$(date '+%H:%M:%S')
-
-        if [[ -z "${STATUS}" ]]; then
-            echo "[${TIMESTAMP}] Job ${job_id} no longer in queue — finished (or failed)."
-            break
-        fi
-
-        case "${STATUS}" in
-            R) echo "[${TIMESTAMP}] Job ${job_id} is RUNNING..." ;;
-            Q) echo "[${TIMESTAMP}] Job ${job_id} is QUEUED (waiting for resources)..." ;;
-            H) echo "[${TIMESTAMP}] Job ${job_id} is HELD." ;;
-            E) echo "[${TIMESTAMP}] Job ${job_id} is EXITING..." ;;
-            *) echo "[${TIMESTAMP}] Job ${job_id} status: ${STATUS}" ;;
-        esac
-
-        sleep "${POLL_INTERVAL}"
-    done
-
-    # Print the last lines of the job output log
-    echo ""
-    echo "=== Last 30 lines of job log ==="
-    ssh "${SSH}" "tail -30 ${REMOTE_BASE}/jobs/bragg_pipeline.out 2>/dev/null || echo '(log not found)'"
+    echo "=== Last 40 lines of most recent log ==="
+    ssh "${SSH}" "ls -t ${REMOTE_BASE}/jobs/*.out 2>/dev/null | head -1 | xargs tail -40 2>/dev/null || echo '(no log found)'"
 }
 
-# ── --watch-only: find the most recent job by this user and watch it ──────────
-if [[ "${WATCH_ONLY}" == "true" ]]; then
-    echo "=== Looking for last submitted job on Zeus ==="
-    LAST_JOB=$(ssh "${SSH}" "qstat -u ${ZEUS_USER} 2>/dev/null | grep ${ZEUS_USER} | tail -1 | awk '{print \$1}'")
-    if [[ -z "${LAST_JOB}" ]]; then
-        echo "No running jobs found for ${ZEUS_USER}."
-        echo "Checking if a recent output log exists instead..."
-        ssh "${SSH}" "tail -30 ${REMOTE_BASE}/jobs/bragg_pipeline.out 2>/dev/null || echo '(no log found)'"
-        exit 0
-    fi
-    echo "Found job: ${LAST_JOB}"
-    watch_job "${LAST_JOB}"
-    download_results
+# ── --status: one-shot check then exit ───────────────────────────────────────
+if [[ "${STATUS}" == "true" ]]; then
+    check_status
     exit 0
 fi
 
@@ -239,14 +204,14 @@ if [[ "${OPTION}" == "1" ]]; then
     ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/results/layouts"
     scp "${FSP_PATH}" "${SSH}:${REMOTE_BASE}/results/layouts/${FSP_NAME}"
 
-    JOB_ID=$(ssh "${SSH}" "cd ${REMOTE_BASE} && qsub -v FSP_FILE=\"${FSP_NAME}\" jobs/run_fsp_job.sh")
+    JOB_ID=$(ssh "${SSH}" "cd ${REMOTE_BASE} && qsub -l select=1:ncpus=${N_CPUS} -v FSP_FILE=\"${FSP_NAME}\",NTFY_TOPIC=${NTFY_TOPIC} jobs/run_fsp_job.sh")
     if [[ $? -ne 0 ]]; then
         echo "ERROR: qsub failed."
         exit 1
     fi
 else
     # ── Option 2: full Python pipeline on Zeus ────────────────────────────────
-    JOB_ID=$(ssh "${SSH}" "cd ${REMOTE_BASE} && qsub -v RUN_SCRIPT=${RUN_SCRIPT} jobs/run_python_job.sh")
+    JOB_ID=$(ssh "${SSH}" "cd ${REMOTE_BASE} && qsub -l select=1:ncpus=${N_CPUS} -v RUN_SCRIPT=${RUN_SCRIPT},NTFY_TOPIC=${NTFY_TOPIC} jobs/run_python_job.sh")
     if [[ $? -ne 0 ]]; then
         echo "ERROR: qsub failed. Check that you're connected to Zeus and PBS is available."
         exit 1
@@ -259,18 +224,14 @@ echo ""
 echo "============================================================"
 echo "Job submitted: ${JOB_ID}"
 echo ""
-echo "Monitor on Zeus:"
-echo "  ssh ${SSH}"
-echo "  qstat -u ${ZEUS_USER}         # queue status"
-echo "  qstat -f ${JOB_ID}            # detailed info"
-echo "  tail -f ${REMOTE_BASE}/jobs/bragg_pipeline.out  # live log"
+echo "You will receive an email at job start, finish, and failure."
+echo ""
+echo "Check status at any time:"
+echo "  bash hpc/deploy.sh --status"
+echo ""
+echo "Live log on Zeus:"
+echo "  ssh ${SSH} tail -f ${REMOTE_BASE}/jobs/bragg_pipeline.out"
 echo ""
 echo "Download results after job finishes:"
 echo "  bash hpc/deploy.sh --results"
 echo "============================================================"
-
-# ── --watch: poll until done then auto-download ───────────────────────────────
-if [[ "${WATCH}" == "true" ]]; then
-    watch_job "${JOB_ID}"
-    download_results
-fi

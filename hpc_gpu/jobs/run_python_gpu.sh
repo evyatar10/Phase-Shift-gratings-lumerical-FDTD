@@ -61,6 +61,14 @@ RUN_SCRIPT="${RUN_SCRIPT:-single_sim}"
 # fails — prevents long sweeps silently CPU-falling-back when the license tier
 # is missing fdtd_gpu.
 REQUIRE_GPU="${REQUIRE_GPU:-0}"
+
+# NVML trampoline: shim that stubs three symbols absent from Athena's R470 NVML
+# (nvmlDeviceGetPcieLinkMaxSpeed, nvmlDeviceGetBusType, nvmlDeviceGetMemoryBusWidth).
+# Without it, the dynamic linker aborts when loading liblumcudaquery.so — the
+# same failure mode that affected FSP jobs before the trampoline was added.
+# Build once with: bash ~/bragg_sim_gpu/jobs/build_nvml_tramp.sh
+# Skip (set to "") only on newer-driver nodes (R535+, e.g. L40S or H200 partition).
+NVML_TRAMP="${HOME}/nvml_tramp"
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Make sure remote scratch dirs exist
@@ -77,6 +85,9 @@ echo "REQUIRE_GPU:${REQUIRE_GPU}"
 echo "Work dir:   ${WORK_DIR}"
 echo "Container:  ${CONTAINER}"
 echo "============================================================"
+echo "--- nvidia-smi ---"
+nvidia-smi || echo "(nvidia-smi not available on this node)"
+echo "------------------"
 
 if [[ ! -f "${CONTAINER}" ]]; then
     echo "ERROR: container not found: ${CONTAINER}"
@@ -93,6 +104,15 @@ HOSTS_FILE="${HOME}/hosts_lum"
 if [[ ! -f "${HOSTS_FILE}" ]]; then
     cp /etc/hosts "${HOSTS_FILE}"
     echo "132.68.48.51 lumerical-lm.ece.technion.ac.il lumerical-lm" >> "${HOSTS_FILE}"
+fi
+
+# Build the --bind flag for the NVML trampoline (omit if directory absent or empty).
+TRAMP_BIND=""
+if [[ -n "${NVML_TRAMP}" && -d "${NVML_TRAMP}" && -f "${NVML_TRAMP}/libnvidia-ml.so.1" ]]; then
+    TRAMP_BIND="--bind ${NVML_TRAMP}:/nvml_tramp"
+    echo "NVML trampoline: ${NVML_TRAMP}"
+else
+    echo "NVML trampoline not found at ${NVML_TRAMP} — skipping (safe on R535+ nodes)"
 fi
 
 # ── Run the Python pipeline inside the container ──────────────────────────────
@@ -119,11 +139,16 @@ apptainer exec --nv \
     --bind "${RESULTS_DIR}:/work/results" \
     --bind "${LOGS_DIR}:/work/logs" \
     --bind "${HOSTS_FILE}:/etc/hosts" \
+    ${TRAMP_BIND} \
     --pwd /work \
     "${CONTAINER}" \
     bash -c "
 export LANG=C
 export LC_ALL=C
+if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
+    export LD_LIBRARY_PATH=\"/nvml_tramp:\${LD_LIBRARY_PATH}\"
+    echo '[nvml_tramp] activated: /nvml_tramp prepended to LD_LIBRARY_PATH'
+fi
 export ANSYSLMD_LICENSE_FILE='${LICENSE}'
 export ANSYSLI_SERVERS='${INTERCONNECT}'
 export ANSYS_APIP_DISABLE=1
@@ -155,5 +180,16 @@ if [[ "${EXIT_CODE}" -ne 0 ]]; then
     echo "             setresource('FDTD',1,'GPU',True) failed (no fdtd_gpu seat?)."
 fi
 echo "============================================================"
+
+if [[ -n "${NTFY_TOPIC}" ]]; then
+    _MINS=$(( SECONDS / 60 )); _SECS=$(( SECONDS % 60 ))
+    if [[ "${EXIT_CODE}" -eq 0 ]]; then
+        _MSG="✓ Job ${SLURM_JOB_ID} done — ${RUN_SCRIPT} — ${_MINS}m${_SECS}s"
+    else
+        _MSG="✗ Job ${SLURM_JOB_ID} FAILED (exit ${EXIT_CODE}) — ${RUN_SCRIPT}"
+    fi
+    curl -s -H "Title: Bragg FDTD" -d "${_MSG}" \
+        "https://ntfy.sh/${NTFY_TOPIC}" >/dev/null 2>&1 || true
+fi
 
 exit "${EXIT_CODE}"
