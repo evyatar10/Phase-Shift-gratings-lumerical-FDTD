@@ -44,7 +44,8 @@ FSP_LIST="${FSP_DIR}/fsp_list.txt"   # one .fsp basename per line
 CONTAINER="$HOME/containers/lumerical-2026R1.sif"
 LUM_HOME="/opt/lumerical/v261"
 ENGINE="${LUM_HOME}/bin/fdtd-engine-ompi-lcl"
-LICENSE="11055@dgx-master"
+LICENSE="${ATHENA_LICENSE:-11055@dgx-master}"
+INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
 
 NTHREADS="${SLURM_CPUS_PER_TASK}"
 # ─────────────────────────────────────────────────────────────────────────────
@@ -93,7 +94,7 @@ apptainer exec --nv \
 export LANG=C
 export LC_ALL=C
 export ANSYSLMD_LICENSE_FILE='${LICENSE}'
-export ANSYSLI_SERVERS='12325@172.25.0.12'
+export ANSYSLI_SERVERS='${INTERCONNECT}'
 export ANSYS_APIP_DISABLE=1
 export RDMAV_FORK_SAFE=1
 export FI_EFA_FORK_SAFE=1

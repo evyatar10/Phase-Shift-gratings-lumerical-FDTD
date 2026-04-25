@@ -29,6 +29,12 @@ LOCAL_NEFF="C:/Users/evyat/Lumerical/pi_shifts_FDTD_results/neff_vs_wl_new/FDE_s
 LOCAL_RESULTS_DIR="${LOCAL_PROJECT}/results_from_athena"
 
 POLL_INTERVAL=60   # seconds between squeue checks
+
+# License — single source of truth. Job scripts read these via --export.
+# (Verified 2026-04-25: 11055@dgx-master and 1055@132.68.48.51 both reach the
+# same backend lmgrd; 11055@dgx-master is what the working FSP path uses.)
+ATHENA_LICENSE="11055@dgx-master"
+ATHENA_INTERCONNECT="12325@172.25.0.12"
 # ─────────────────────────────────────────────────────────────────────────────
 
 UPLOAD_ONLY=false
@@ -274,12 +280,13 @@ if [[ "${OPTION}" == "1" ]]; then
         JOB_ID=$(ssh "${SSH}" \
             "cd ${REMOTE_BASE} && sbatch \
                 --array=0-${ARRAY_END}%${K} \
+                --export=ALL,ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_fsp_gpu_array.sh")
     else
         JOB_ID=$(ssh "${SSH}" \
             "cd ${REMOTE_BASE} && sbatch \
-                --export=FSP_FILE=\"${FSP_NAME}\" \
+                --export=ALL,FSP_FILE=\"${FSP_NAME}\",ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_fsp_gpu.sh")
     fi
@@ -288,7 +295,7 @@ else
     # ── Option 2: full Python pipeline ───────────────────────────────────────
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
-            --export=RUN_SCRIPT=${RUN_SCRIPT} \
+            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_gpu.sh")
 fi

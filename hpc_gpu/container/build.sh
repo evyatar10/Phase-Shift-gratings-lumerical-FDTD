@@ -22,7 +22,6 @@ REMOTE_CONTAINER_DIR="/home/${ATHENA_USER}/containers"
 
 IMAGE_NAME="lumerical-2026R1"
 SIF="${IMAGE_NAME}.sif"
-SQSH="${IMAGE_NAME}.sqsh"
 DEF="lumerical.def"
 
 LUM_SRC="${HOME}/ansys_incS/v261/Lumerical"
@@ -35,7 +34,6 @@ echo "============================================================"
 echo "  Lumerical container build + deploy"
 echo "  Source dir : ${LUM_SRC}"
 echo "  Image      : ${SIF}"
-echo "  Squash     : ${SQSH}"
 echo "  Target     : ${ATHENA_USER}@${ATHENA_HOST}:${REMOTE_CONTAINER_DIR}/"
 echo "============================================================"
 
@@ -54,48 +52,36 @@ echo "Source check OK: fdtd-engine-ompi-lcl found."
 echo ""
 echo "=== Building Apptainer image (this takes ~5–15 minutes) ==="
 echo "    (copying 3.7 GB Lumerical tree into the container)"
-apptainer build --force "${SIF}" "${DEF}"
+# --squashfs-comp gzip: Athena runs Apptainer 1.1.6 which only supports gzip/lzo/lz4.
+# Apptainer 1.2+ defaults to zstd, producing SIFs that 1.1.x cannot open.
+APPTAINER_SQUASHFS_COMP=gzip apptainer build --force "${SIF}" "${DEF}"
 
 # ── 3. Smoke test ─────────────────────────────────────────────────────────────
 echo ""
 echo "=== Smoke test: fdtd-engine-ompi-lcl ==="
 apptainer run "${SIF}" /opt/lumerical/v261/bin/fdtd-engine-ompi-lcl -v 2>&1 || true
 
-# ── 4. Convert .sif → .sqsh for Enroot/Pyxis ─────────────────────────────────
+# ── 4. Upload .sif to Athena ──────────────────────────────────────────────────
+# We use Apptainer's `--nv` runtime exclusively (no Pyxis/Enroot). The .sqsh
+# conversion that used to live here was dropped: it produced a redundant second
+# image format and Pyxis NVIDIA injection on Athena does not handle the CUDA
+# forward-compat shim ordering we need for the R470 host driver.
 echo ""
-echo "=== Converting .sif → .sqsh for Enroot ==="
-if command -v enroot &>/dev/null; then
-    enroot import --output "${SQSH}" "apptainer://${SCRIPT_DIR}/${SIF}"
-    echo "Created: ${SQSH}"
-    UPLOAD_FILE="${SQSH}"
-else
-    echo "WARNING: enroot not found locally — uploading .sif and converting on Athena."
-    UPLOAD_FILE="${SIF}"
-fi
-
-# ── 5. Upload to Athena ───────────────────────────────────────────────────────
-echo ""
-echo "=== Uploading ${UPLOAD_FILE} to Athena (this may take a while) ==="
+echo "=== Uploading ${SIF} to Athena (this may take a while; ~5.5 GB) ==="
 SSH="${ATHENA_USER}@${ATHENA_HOST}"
 ssh "${SSH}" "mkdir -p ${REMOTE_CONTAINER_DIR}"
-scp "${UPLOAD_FILE}" "${SSH}:${REMOTE_CONTAINER_DIR}/${UPLOAD_FILE}"
+scp "${SIF}" "${SSH}:${REMOTE_CONTAINER_DIR}/${SIF}"
 
 echo ""
 echo "============================================================"
-echo "Upload complete: ${REMOTE_CONTAINER_DIR}/${UPLOAD_FILE}"
+echo "Upload complete: ${REMOTE_CONTAINER_DIR}/${SIF}"
 echo ""
-if [[ "${UPLOAD_FILE}" == *.sif ]]; then
-    echo "Convert .sif → .sqsh on Athena login node:"
-    echo "  enroot import --output ${REMOTE_CONTAINER_DIR}/${SQSH} \\"
-    echo "      apptainer://${REMOTE_CONTAINER_DIR}/${SIF}"
-    echo ""
-fi
-echo "Verify license reachability:"
-echo "  nc -vz 132.68.48.51 1055"
+echo "CUDA forward-compat sanity test (should print 'CUDA Version: 12.2'):"
+echo "  ssh ${SSH}"
+echo "  srun --gpus=1 --time=00:02:00 apptainer exec --nv \\"
+echo "       ${REMOTE_CONTAINER_DIR}/${SIF} nvidia-smi | head -3"
 echo ""
-echo "Test the container:"
-echo "  srun --gpus=1 \\"
-echo "    --container-image=${REMOTE_CONTAINER_DIR}/${IMAGE_NAME}.sqsh \\"
-echo "    --container-env=ANSYSLMD_LICENSE_FILE=1055@132.68.48.51 \\"
-echo "    fdtd-engine-ompi-lcl -v"
+echo "Engine smoke test:"
+echo "  srun --gpus=1 apptainer exec --nv \\"
+echo "       ${REMOTE_CONTAINER_DIR}/${SIF} fdtd-engine-ompi-lcl -v"
 echo "============================================================"

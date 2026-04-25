@@ -11,12 +11,15 @@
 # Convert to Enroot .sqsh for Athena's Pyxis (run on Athena login node):
 #   enroot import --output lumerical-2026R1.sqsh apptainer://$(pwd)/lumerical-2026R1.sif
 #
-# License defaults baked into %environment (11055@172.25.0.12 / 12325@172.25.0.12).
+# License defaults baked into %environment (11055@dgx-master / 12325@172.25.0.12).
 # Override at runtime if the server address changes:
-#   --container-env=ANSYSLMD_LICENSE_FILE=11055@172.25.0.12
+#   apptainer exec --env ANSYSLMD_LICENSE_FILE=11055@dgx-master ...
 
 Bootstrap: docker
-From: nvcr.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
+From: nvcr.io/nvidia/cuda:12.2.2-devel-ubuntu22.04
+# Athena DGX nodes ship NVIDIA driver R470 LTS (native cap CUDA 11.4).
+# CUDA 12.2 is the smallest forward-compat bridge over R470 — see %environment
+# for the LD_LIBRARY_PATH ordering that activates the cuda-compat-12-2 shim.
 
 %files
     # Copy the already-installed Lumerical directory from the WSL2 host.
@@ -124,9 +127,14 @@ From: nvcr.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
     export LUMERICAL_HOME=/opt/lumerical/v261
     export ANSYS_LIC_CLIENT=/ansys_inc/v261/licensingclient/linx64
     export PATH="${LUMERICAL_HOME}/bin:${ANSYS_LIC_CLIENT}:${PATH}"
-    export LD_LIBRARY_PATH="${LUMERICAL_HOME}/lib:${LUMERICAL_HOME}/lib/mesa:${LD_LIBRARY_PATH}"
+    # /usr/local/cuda/compat MUST come first: it holds the cuda-compat-12-2
+    # userspace shim that lets the CUDA 12 runtime work over Athena's R470 host
+    # driver (which natively only supports CUDA 11.4). Without this prefix,
+    # apptainer --nv injects the host's R470 libcuda.so.1 first and the GPU
+    # FDTD engine fails to initialize (or silently CPU-falls-back).
+    export LD_LIBRARY_PATH="/usr/local/cuda/compat:${LUMERICAL_HOME}/lib:${LUMERICAL_HOME}/lib/mesa:${LD_LIBRARY_PATH}"
     export LUMAPI_PYTHON="${LUMERICAL_HOME}/api/python"
-    export ANSYSLMD_LICENSE_FILE=11055@172.25.0.12
+    export ANSYSLMD_LICENSE_FILE=11055@dgx-master
     export ANSYSLI_SERVERS=12325@172.25.0.12
     export QT_QPA_PLATFORM=offscreen
     export QT_OPENGL=software
@@ -137,8 +145,8 @@ From: nvcr.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
 %labels
     Maintainer evyatar10.rubin@gmail.com
     Lumerical 2026-R1.1
-    BaseImage nvcr.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
-    CUDA 12.4
+    BaseImage nvcr.io/nvidia/cuda:12.2.2-devel-ubuntu22.04
+    CUDA 12.2 (forward-compat over R470 host driver via /usr/local/cuda/compat)
     GPU A100-compatible (compute capability >=5.0)
 
 %help
@@ -146,11 +154,13 @@ From: nvcr.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
     Built by copying a pre-installed Lumerical tree from the WSL2 host.
 
     Engine-only run (Option 1):
-      srun --container-image=lumerical-2026R1.sqsh \
-           --container-env=ANSYSLMD_LICENSE_FILE=11055@172.25.0.12 \
+      apptainer exec --nv \
+           --bind <fsp_dir>:/work/layouts --bind ~/hosts_lum:/etc/hosts \
+           lumerical-2026R1.sif \
            fdtd-engine-ompi-lcl -t 16 -logall -use-gpu-resources my_sim.fsp
 
     Full Python / lumapi run (Option 2):
-      srun --container-image=lumerical-2026R1.sqsh \
-           --container-env=ANSYSLMD_LICENSE_FILE=11055@172.25.0.12 \
-           xvfb-run -a python /work/hpc_gpu/scripts/athena_run.py
+      apptainer exec --nv \
+           --bind <project_dir>:/work/project --bind ~/hosts_lum:/etc/hosts \
+           lumerical-2026R1.sif \
+           xvfb-run -a python /work/scripts/athena_run.py

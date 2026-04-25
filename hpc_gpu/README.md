@@ -10,8 +10,8 @@ Parallel GPU pipeline for running Lumerical FDTD on Technion's **Athena** cluste
 hpc_gpu/
 ├── deploy_athena.sh          ← run this on your laptop to submit jobs
 ├── container/
-│   ├── lumerical.def         ← Apptainer container recipe (Lumerical 2025 R2.2 + CUDA 12)
-│   └── build.sh              ← build .sif image, convert to .sqsh, upload to Athena
+│   ├── lumerical.def         ← Apptainer recipe (Lumerical 2026 R1.1 + CUDA 12.2)
+│   └── build.sh              ← build .sif image and upload to Athena
 ├── jobs/
 │   ├── run_fsp_gpu.sh        ← Phase 1: single .fsp → GPU engine (SLURM)
 │   ├── run_fsp_gpu_array.sh  ← Phase 1b: sweep .fsp list → GPU array (SLURM)
@@ -20,8 +20,26 @@ hpc_gpu/
     └── athena_run.py         ← server-side dispatcher (GPU-aware, Athena paths)
 ```
 
-**Zeus** (`hpc/`) uses PBS, `fdtd-engine-mpich2nem`, Lumerical 2021R2.5. Untouched.  
-**Athena** (`hpc_gpu/`) uses SLURM, `fdtd-engine-ompi-lcl`, Lumerical 2025 R2.2, GPU enabled.
+**Zeus** (`hpc/`) uses PBS, `fdtd-engine-mpich2nem`, Lumerical 2021R2.5. Untouched.
+**Athena** (`hpc_gpu/`) uses SLURM, `fdtd-engine-ompi-lcl`, Lumerical 2026 R1.1, GPU enabled.
+
+### Container & CUDA pin
+
+- Single image format: `.sif` (Apptainer). Both Option 1 and Option 2 use
+  `apptainer exec --nv` — no Pyxis/Enroot involvement.
+- Base image: `nvcr.io/nvidia/cuda:12.2.2-devel-ubuntu22.04`.
+- Athena DGX hosts ship NVIDIA driver R470 LTS (native cap CUDA 11.4).
+  CUDA 12 runs on R470 only via the **forward-compatibility shim** at
+  `/usr/local/cuda/compat/`. The container's `%environment` block prepends
+  that path to `LD_LIBRARY_PATH` so the shim is loaded ahead of the host's
+  R470 `libcuda.so.1` that `--nv` injects. CUDA 12.2 is the smallest forward
+  bridge over R470 of any CUDA 12.x — the rationale for this minor-version
+  pin lives in the planning notes; bump it if/when the Athena driver is
+  upgraded to R535+.
+- CUDA-aware MPI: out of scope. Lumerical's engine is a closed binary linked
+  against its own MPI; an external CUDA-aware OpenMPI build cannot be
+  injected. Within a DGX A100 node, the engine already uses CUDA IPC over
+  NVLink for inter-GPU traffic.
 
 ---
 
@@ -64,7 +82,20 @@ cd hpc_gpu/container
 bash build.sh
 ```
 
-This builds a `lumerical-2026R1.sqsh` Enroot image and uploads it to `~/containers/` on Athena.
+This builds `lumerical-2026R1.sif` and uploads it to `~/containers/` on Athena.
+
+After the upload completes, run the **CUDA forward-compat sanity test** once:
+
+```bash
+ssh evyatarrubin@dgx-master.technion.ac.il
+srun --gpus=1 --time=00:02:00 apptainer exec --nv \
+     ~/containers/lumerical-2026R1.sif nvidia-smi | head -3
+```
+
+The output must show `CUDA Version: 12.2`. If it shows `11.4`, the
+`LD_LIBRARY_PATH` prefix in `lumerical.def %environment` is being clobbered
+by something downstream — the GPU engine will silently CPU-fallback until
+that is fixed.
 
 ### Step 2 — Single simulation
 
@@ -133,11 +164,15 @@ Multi-node (>8 GPUs) requires **Business or Enterprise license** — verify with
 
 ## License
 
-Floating license server at `1055@132.68.48.51` (Technion internal). Passed to the container via:
-```bash
---container-env=ANSYSLMD_LICENSE_FILE=1055@132.68.48.51
-```
-Not baked into the container image — you can change the server without rebuilding.
+Single source of truth: `ATHENA_LICENSE` in
+[deploy_athena.sh](deploy_athena.sh) (currently `11055@dgx-master`,
+backed by Technion's ECE FlexLM at `132.68.48.51` via internal forwarding).
+The deploy script `--export`s it to every sbatch; job scripts pick it up
+with a sensible fallback default so manual `sbatch` invocations also work.
+
+The license server's hostname (`lumerical-lm.ece.technion.ac.il`) is not in
+Athena's DNS, so each job script binds a small `~/hosts_lum` file into the
+container's `/etc/hosts` to make the FlexLM handshake succeed.
 
 ---
 
@@ -151,3 +186,5 @@ Not baked into the container image — you can change the server without rebuild
 | `Out of GPU memory` | Reduce mesh size, or increase `--gpus` to spread across multiple A100s |
 | `setresource GPU error` | Verify license includes `fdtd_gpu` feature via `lmutil lmstat` |
 | `sbatch: error: Batch job submission failed` | Add `#SBATCH --account=<your_account>` to job scripts |
+| `nvidia-smi` shows `CUDA Version: 11.4` inside the container | The forward-compat shim isn't winning the `LD_LIBRARY_PATH` race. Confirm `lumerical.def %environment` prepends `/usr/local/cuda/compat`. |
+| Sweep ran for hours but logs say `WARNING: could not enable GPU` | Submit with `REQUIRE_GPU=1` (Option 2) so future runs hard-exit instead of silently CPU-falling-back. |

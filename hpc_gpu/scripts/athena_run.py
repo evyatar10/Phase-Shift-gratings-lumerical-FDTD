@@ -48,6 +48,7 @@ print(f"  LUMAPI_PATH    = {config.LUMAPI_PATH}")
 print(f"  BASE_SAVE_DIR  = {config.BASE_SAVE_DIR}")
 print(f"  NEFF_DATA_PATH = {config.NEFF_DATA_PATH}")
 print(f"  USE_GPU        = {config.USE_GPU}")
+print(f"  REQUIRE_GPU    = {os.environ.get('REQUIRE_GPU', '0')}")
 print("=" * 60)
 
 # ── 3. Import lumapi and configure GPU resource ───────────────────────────────
@@ -92,19 +93,35 @@ print(f"[athena_run] Running: {_run_script} ({_module_name}.{_func_name})")
 #    modification.
 
 _original_FDTD = _lumapi.FDTD
+_REQUIRE_GPU = os.environ.get("REQUIRE_GPU", "0") == "1"
 
 class _FDTD_GPU(_original_FDTD):
     """FDTD session subclass that enables GPU on the first resource entry."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            # setresource(resource_type, resource_index, key, value)
-            # resource_index=1 is the first (and typically only) resource entry.
             self.setresource("FDTD", 1, "GPU", True)
             print("[athena_run] GPU enabled on FDTD resource 1.")
         except Exception as _e:
-            print(f"[athena_run] WARNING: could not enable GPU via setresource: {_e}")
+            msg = f"could not enable GPU via setresource: {_e}"
+            if _REQUIRE_GPU:
+                print(f"[athena_run] FATAL: {msg}")
+                print("[athena_run] REQUIRE_GPU=1 — refusing to run on CPU.")
+                sys.exit(2)
+            print(f"[athena_run] WARNING: {msg}")
             print("[athena_run] Simulation will proceed on CPU as fallback.")
+            return
+
+        # Confirm what the engine will actually use. Logged unambiguously so the
+        # SLURM .out file records GPU=true/false without log-greppping later.
+        try:
+            gpu_state = self.getresource("FDTD", 1, "GPU")
+            print(f"[athena_run] getresource('FDTD',1,'GPU') = {gpu_state}")
+            if _REQUIRE_GPU and not gpu_state:
+                print("[athena_run] FATAL: GPU resource read back as False.")
+                sys.exit(2)
+        except Exception as _e:
+            print(f"[athena_run] WARNING: getresource readback failed: {_e}")
 
 _lumapi.FDTD = _FDTD_GPU
 
