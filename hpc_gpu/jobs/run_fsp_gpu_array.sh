@@ -85,6 +85,8 @@ echo "FSP file:  ${FSP_FILE}"
 echo "Container: ${CONTAINER}"
 echo "============================================================"
 
+REQUIRE_GPU="${REQUIRE_GPU:-1}"
+
 apptainer exec --nv \
     --bind "${FSP_DIR}:/work/layouts" \
     --bind "${HOSTS_FILE}:/etc/hosts" \
@@ -103,7 +105,46 @@ export OMPI_MCA_btl=self,tcp
 export OMPI_MCA_mtl='^ofi'
 export UCX_TLS=self,sm,tcp
 export UCX_NET_DEVICES=lo
-${ENGINE} -t ${NTHREADS} -logall -use-gpu-resources /work/layouts/${FSP_FILE}"
+
+if [ \"\$REQUIRE_GPU\" = \"1\" ]; then
+    LMUTIL=/ansys_inc/v261/licensingclient/linx64/lmutil
+    LMSTAT_OUT=\$(\$LMUTIL lmstat -a -c \"\$ANSYSLMD_LICENSE_FILE\" 2>&1)
+    if ! echo \"\$LMSTAT_OUT\" | grep -qE 'Users of (lum_fdtd_solve_gpu|lum_fdtd_gpu|fdtd_gpu)\b'; then
+        echo '============================================================'
+        echo 'FATAL: license pool has no GPU FDTD feature (lum_fdtd_solve_gpu).'
+        echo 'Engine would silently CPU-fall-back. Aborting to save hours.'
+        echo 'Available Lumerical features:'
+        echo \"\$LMSTAT_OUT\" | grep -E 'Users of lum_' | head -20
+        echo 'Override with REQUIRE_GPU=0 for a CPU run.'
+        echo '============================================================'
+        exit 2
+    fi
+fi
+
+${ENGINE} -t ${NTHREADS} -logall -use-gpu-resources /work/layouts/${FSP_FILE} &
+ENGINE_PID=\$!
+
+if [ \"\$REQUIRE_GPU\" = \"1\" ]; then
+    (
+        sleep 120
+        if kill -0 \$ENGINE_PID 2>/dev/null; then
+            MEM_USED=\$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ')
+            if [ -z \"\$MEM_USED\" ] || [ \"\$MEM_USED\" -lt 200 ]; then
+                echo \"FATAL: GPU unused 120s after engine start (mem=\${MEM_USED}MiB) — silent CPU fallback. Killing.\"
+                kill -TERM \$ENGINE_PID 2>/dev/null
+                sleep 5
+                kill -KILL \$ENGINE_PID 2>/dev/null
+            fi
+        fi
+    ) &
+    WATCHDOG_PID=\$!
+fi
+
+wait \$ENGINE_PID
+ENGINE_EXIT=\$?
+[ -n \"\$WATCHDOG_PID\" ] && kill \$WATCHDOG_PID 2>/dev/null
+exit \$ENGINE_EXIT
+"
 
 EXIT_CODE=$?
 

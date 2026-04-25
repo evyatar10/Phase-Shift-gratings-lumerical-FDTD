@@ -174,6 +174,44 @@ The license server's hostname (`lumerical-lm.ece.technion.ac.il`) is not in
 Athena's DNS, so each job script binds a small `~/hosts_lum` file into the
 container's `/etc/hosts` to make the FlexLM handshake succeed.
 
+### GPU FDTD feature is currently MISSING from the pool — confirmed 2026-04-25
+
+The Technion ECE Lumerical pool does **not** carry `lum_fdtd_solve_gpu`. CPU
+features (`lum_fdtd_solve`, `lum_fdtd_gui`, etc.) are present, but no GPU
+variant. Compare to Speos in the same pool which *does* carry
+`speos_solver_gpu` alongside `speos_solver`.
+
+Symptoms when this is the case:
+- Jobs run successfully on the assigned compute node — they just run on CPU.
+- `nvidia-smi` on the assigned node shows 0% util, 0 MiB memory, no compute apps.
+- Engine output shows `Required licenses (tasks) determined by total core and thread count: <CPU thread count>` and "*Max time remaining: 100+ hrs*" pacing.
+- This is a **silent CPU fallback** — no error appears in the engine log.
+
+How to verify the feature pool yourself:
+```bash
+ssh evyatarrubin@dgx-master.technion.ac.il
+srun --gpus=1 --time=00:03:00 apptainer exec --nv \
+  --bind $HOME/hosts_lum:/etc/hosts \
+  ~/containers/lumerical-2026R1.sif \
+  /ansys_inc/v261/licensingclient/linx64/lmutil lmstat -a -c 1055@132.68.48.51 \
+  | grep -E 'Users of (lum_|speos_solver)'
+```
+Look for any line beginning `Users of lum_fdtd_solve_gpu` (or
+`lum_fdtd_gpu` / `fdtd_gpu`). If absent, GPU runs cannot proceed.
+
+What to ask Technion CIS for:
+> "Please add the `lum_fdtd_solve_gpu` feature to the Lumerical entries
+> in the campus FlexLM file `/ansyslm/shared_files/licensing/license_files/ansyslmd.lic`.
+> The Speos product line in the same file already carries
+> `speos_solver_gpu`, so the convention is established. Reference: Ansys
+> Lumerical FDTD GPU support has been included in Standard since 2023 R2."
+
+The job scripts now pre-flight check this feature before launching the
+engine and a runtime watchdog kills the engine if no GPU memory is in use
+120s after start (`REQUIRE_GPU=1` is the default — set `REQUIRE_GPU=0` only
+if you specifically want a CPU run on Athena). Without these guards, a CPU
+fallback can waste 100+ hours of cluster time per `.fsp`.
+
 ---
 
 ## Troubleshooting
@@ -184,7 +222,8 @@ container's `/etc/hosts` to make the FlexLM handshake succeed.
 | `License server not responding` | Run `nc -vz 132.68.48.51 1055` from the compute node |
 | `fdtd-engine-ompi-lcl: command not found` | Container not built / wrong path — check `$LUMERICAL_HOME/bin/` |
 | `Out of GPU memory` | Reduce mesh size, or increase `--gpus` to spread across multiple A100s |
-| `setresource GPU error` | Verify license includes `fdtd_gpu` feature via `lmutil lmstat` |
+| `setresource GPU error` | Verify license includes `lum_fdtd_solve_gpu` (or `fdtd_gpu`) feature — see "GPU FDTD feature missing" above. |
+| Job runs but `nvidia-smi` shows 0% util, "Max time remaining: 100+ hrs" | Silent CPU fallback. License pool lacks GPU FDTD feature. The pre-flight check should now catch this in <10 s; if it doesn't, your `lmutil` query path is broken. |
 | `sbatch: error: Batch job submission failed` | Add `#SBATCH --account=<your_account>` to job scripts |
 | `nvidia-smi` shows `CUDA Version: 11.4` inside the container | The forward-compat shim isn't winning the `LD_LIBRARY_PATH` race. Confirm `lumerical.def %environment` prepends `/usr/local/cuda/compat`. |
 | Sweep ran for hours but logs say `WARNING: could not enable GPU` | Submit with `REQUIRE_GPU=1` (Option 2) so future runs hard-exit instead of silently CPU-falling-back. |
