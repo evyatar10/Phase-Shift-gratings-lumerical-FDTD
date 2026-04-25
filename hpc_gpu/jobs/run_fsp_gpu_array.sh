@@ -41,10 +41,10 @@ mkdir -p logs
 FSP_DIR="/home/evyatarrubin/bragg_sim_gpu/results/layouts"
 FSP_LIST="${FSP_DIR}/fsp_list.txt"   # one .fsp basename per line
 
-CONTAINER="$HOME/containers/lumerical-2026R1.sqsh"
+CONTAINER="$HOME/containers/lumerical-2026R1.sif"
 LUM_HOME="/opt/lumerical/v261"
 ENGINE="${LUM_HOME}/bin/fdtd-engine-ompi-lcl"
-LICENSE="11055@172.25.0.12"
+LICENSE="11055@dgx-master"
 
 NTHREADS="${SLURM_CPUS_PER_TASK}"
 # ─────────────────────────────────────────────────────────────────────────────
@@ -62,21 +62,47 @@ if [[ -z "${FSP_FILE}" ]]; then
     exit 1
 fi
 
+if [[ ! -f "${CONTAINER}" ]]; then
+    echo "ERROR: container not found: ${CONTAINER}"
+    exit 1
+fi
+
+# Bind custom hosts file so container can resolve lumerical-lm.ece.technion.ac.il → 132.68.48.51
+HOSTS_FILE="${HOME}/hosts_lum"
+if [[ ! -f "${HOSTS_FILE}" ]]; then
+    cp /etc/hosts "${HOSTS_FILE}"
+    echo "132.68.48.51 lumerical-lm.ece.technion.ac.il lumerical-lm" >> "${HOSTS_FILE}"
+fi
+
 echo "============================================================"
 echo "Array job: ${SLURM_ARRAY_JOB_ID}[${SLURM_ARRAY_TASK_ID}]"
 echo "Node:      $(hostname)"
 echo "Started:   $(date)"
-echo "GPU:       ${SLURM_GPUS}"
+echo "GPUs:      ${CUDA_VISIBLE_DEVICES}"
 echo "Threads:   ${NTHREADS}"
 echo "FSP file:  ${FSP_FILE}"
+echo "Container: ${CONTAINER}"
 echo "============================================================"
 
-
-srun \
-    --container-image="${CONTAINER}" \
-    --container-mounts="${FSP_DIR}:/work/layouts" \
-    --container-workdir=/work/layouts \
-    bash -c "export LANG=C && export LC_ALL=C && export ANSYSLMD_LICENSE_FILE='${LICENSE}' && export ANSYSLI_SERVERS='12325@172.25.0.12' && export ANSYS_APIP_DISABLE=1 && export OMPI_MCA_btl='^openib' && export OMPI_MCA_mtl='^ofi' && export UCX_TLS=tcp && echo 'ANSYSLMD_LICENSE_FILE='\$ANSYSLMD_LICENSE_FILE && echo 'ANSYSLI_SERVERS='\$ANSYSLI_SERVERS && ${ENGINE} -t ${NTHREADS} -logall -use-gpu-resources /work/layouts/${FSP_FILE}"
+apptainer exec --nv \
+    --bind "${FSP_DIR}:/work/layouts" \
+    --bind "${HOSTS_FILE}:/etc/hosts" \
+    --pwd /work/layouts \
+    "${CONTAINER}" \
+    bash -c "
+export LANG=C
+export LC_ALL=C
+export ANSYSLMD_LICENSE_FILE='${LICENSE}'
+export ANSYSLI_SERVERS='12325@172.25.0.12'
+export ANSYS_APIP_DISABLE=1
+export RDMAV_FORK_SAFE=1
+export FI_EFA_FORK_SAFE=1
+export FI_PROVIDER='^efa'
+export OMPI_MCA_btl=self,tcp
+export OMPI_MCA_mtl='^ofi'
+export UCX_TLS=self,sm,tcp
+export UCX_NET_DEVICES=lo
+${ENGINE} -t ${NTHREADS} -logall -use-gpu-resources /work/layouts/${FSP_FILE}"
 
 EXIT_CODE=$?
 
