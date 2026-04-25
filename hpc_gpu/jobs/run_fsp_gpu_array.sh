@@ -48,6 +48,7 @@ LICENSE="${ATHENA_LICENSE:-11055@dgx-master}"
 INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
 
 NTHREADS="${SLURM_CPUS_PER_TASK}"
+NVML_TRAMP="${HOME}/nvml_tramp"
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Select this task's .fsp file (0-indexed)
@@ -87,14 +88,23 @@ echo "============================================================"
 
 REQUIRE_GPU="${REQUIRE_GPU:-1}"
 
+TRAMP_BIND=""
+if [[ -n "${NVML_TRAMP}" && -d "${NVML_TRAMP}" && -f "${NVML_TRAMP}/libnvidia-ml.so.1" ]]; then
+    TRAMP_BIND="--bind ${NVML_TRAMP}:/nvml_tramp"
+fi
+
 apptainer exec --nv \
     --bind "${FSP_DIR}:/work/layouts" \
     --bind "${HOSTS_FILE}:/etc/hosts" \
+    ${TRAMP_BIND} \
     --pwd /work/layouts \
     "${CONTAINER}" \
     bash -c "
 export LANG=C
 export LC_ALL=C
+if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
+    export LD_LIBRARY_PATH=\"/nvml_tramp:\${LD_LIBRARY_PATH}\"
+fi
 export ANSYSLMD_LICENSE_FILE='${LICENSE}'
 export ANSYSLI_SERVERS='${INTERCONNECT}'
 export ANSYS_APIP_DISABLE=1
@@ -109,13 +119,11 @@ export UCX_NET_DEVICES=lo
 if [ \"\$REQUIRE_GPU\" = \"1\" ]; then
     LMUTIL=/ansys_inc/v261/licensingclient/linx64/lmutil
     LMSTAT_OUT=\$(\$LMUTIL lmstat -a -c \"\$ANSYSLMD_LICENSE_FILE\" 2>&1)
-    if ! echo \"\$LMSTAT_OUT\" | grep -qE 'Users of (lum_fdtd_solve_gpu|lum_fdtd_gpu|fdtd_gpu)\b'; then
+    if ! echo \"\$LMSTAT_OUT\" | grep -q 'Users of lum_fdtd_solve'; then
         echo '============================================================'
-        echo 'FATAL: license pool has no GPU FDTD feature (lum_fdtd_solve_gpu).'
-        echo 'Engine would silently CPU-fall-back. Aborting to save hours.'
-        echo 'Available Lumerical features:'
-        echo \"\$LMSTAT_OUT\" | grep -E 'Users of lum_' | head -20
-        echo 'Override with REQUIRE_GPU=0 for a CPU run.'
+        echo 'FATAL: lum_fdtd_solve not found — license server unreachable or pool empty.'
+        echo 'Available features:'
+        echo \"\$LMSTAT_OUT\" | grep -E 'Users of' | head -20
         echo '============================================================'
         exit 2
     fi

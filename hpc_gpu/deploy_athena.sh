@@ -224,6 +224,22 @@ ssh "${SSH}" "chmod +x ${REMOTE_BASE}/jobs/*.sh"
 ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/jobs/logs"
 
 echo ""
+echo "=== Building NVML trampoline on Athena (R470 A100 nodes) ==="
+# The trampoline shim stubs three NVML symbols absent from R470 that Lumerical
+# 2026 R1's GPU plugin imports. On newer-driver nodes (L40S / H200, R535+) the
+# tramp directory is not bound and has no effect.
+scp "${LOCAL_PROJECT}/hpc_gpu/container/nvml_tramp.c" \
+    "${SSH}:${REMOTE_BASE}/jobs/nvml_tramp.c"
+ssh "${SSH}" "
+    mkdir -p \${HOME}/nvml_tramp
+    gcc -O2 -shared -fPIC -Wl,-soname,libnvidia-ml.so.1 \
+        -o \${HOME}/nvml_tramp/libnvidia-ml.so.1 \
+        ${REMOTE_BASE}/jobs/nvml_tramp.c -ldl && \
+    echo '  NVML trampoline built: ~/nvml_tramp/libnvidia-ml.so.1' || \
+    echo '  WARNING: gcc failed — GPU jobs on R470 nodes will skip the trampoline'
+"
+
+echo ""
 echo "=== Upload complete ==="
 
 if [[ "${UPLOAD_ONLY}" == "true" ]]; then

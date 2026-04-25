@@ -41,6 +41,13 @@ INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
 
 # Threads — use all allocated CPUs (single rank).
 NTHREADS="${SLURM_CPUS_PER_TASK}"
+
+# NVML trampoline: shim that stubs three symbols absent from Athena's R470 NVML
+# (nvmlDeviceGetPcieLinkMaxSpeed, nvmlDeviceGetBusType, nvmlDeviceGetMemoryBusWidth).
+# Without it, the dynamic linker aborts when loading liblumcudaquery.so.
+# Build once with: bash ~/bragg_sim_gpu/jobs/build_nvml_tramp.sh
+# Skip (set to "") only on newer-driver nodes (R535+, e.g. L40S or H200 partition).
+NVML_TRAMP="${HOME}/nvml_tramp"
 # ─────────────────────────────────────────────────────────────────────────────
 
 echo "============================================================"
@@ -69,7 +76,7 @@ fi
 
 # ── Run the FDTD engine via Apptainer ────────────────────────────────────────
 # --nv          : auto-inject NVIDIA GPU devices + host driver libs (libcuda.so)
-# --bind        : mount FSP directory and custom hosts file into container
+# --bind        : mount FSP directory, custom hosts file, and NVML trampoline
 # --pwd         : working directory inside container
 #
 # Engine flags:
@@ -77,20 +84,36 @@ fi
 #   -logall            : verbose solver log
 #   -use-gpu-resources : enable CUDA GPU offload
 
-# REQUIRE_GPU=1 (default) makes the script abort if the engine can't actually
-# use the GPU — protects against silent CPU fallback when the FlexLM license
-# pool lacks the GPU FDTD feature (lum_fdtd_solve_gpu). Set REQUIRE_GPU=0 to
-# allow CPU runs (only useful if you specifically want a CPU benchmark).
+# REQUIRE_GPU=1 (default) runs the 120s nvidia-smi watchdog that kills the
+# engine if GPU memory stays near-zero (catches silent CPU fallback).
+# Set REQUIRE_GPU=0 only if you intentionally want a CPU run on Athena.
 REQUIRE_GPU="${REQUIRE_GPU:-1}"
+
+# Build the --bind flag for the NVML trampoline (omit if directory absent or empty).
+TRAMP_BIND=""
+if [[ -n "${NVML_TRAMP}" && -d "${NVML_TRAMP}" && -f "${NVML_TRAMP}/libnvidia-ml.so.1" ]]; then
+    TRAMP_BIND="--bind ${NVML_TRAMP}:/nvml_tramp"
+    echo "NVML trampoline: ${NVML_TRAMP}"
+else
+    echo "NVML trampoline not found at ${NVML_TRAMP} — skipping (safe on R535+ nodes)"
+fi
 
 apptainer exec --nv \
     --bind "${FSP_DIR}:/work/layouts" \
     --bind "${HOSTS_FILE}:/etc/hosts" \
+    ${TRAMP_BIND} \
     --pwd /work/layouts \
     "${CONTAINER}" \
     bash -c "
 export LANG=C
 export LC_ALL=C
+# NVML trampoline: prepend /nvml_tramp so our libnvidia-ml.so.1 is found before
+# /.singularity.d/libs (Apptainer --nv injection). On R535+ nodes the trampoline
+# directory won't exist, so LD_LIBRARY_PATH stays unchanged.
+if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
+    export LD_LIBRARY_PATH=\"/nvml_tramp:\${LD_LIBRARY_PATH}\"
+    echo '[nvml_tramp] activated: /nvml_tramp prepended to LD_LIBRARY_PATH'
+fi
 export ANSYSLMD_LICENSE_FILE='${LICENSE}'
 export ANSYSLI_SERVERS='${INTERCONNECT}'
 export ANSYS_APIP_DISABLE=1
@@ -102,24 +125,22 @@ export OMPI_MCA_mtl='^ofi'
 export UCX_TLS=self,sm,tcp
 export UCX_NET_DEVICES=lo
 
-# Pre-flight: confirm the license pool actually has a GPU FDTD feature.
-# If it doesn't, the engine would silently CPU-fall-back. Catch it now.
+# Pre-flight: verify the license server is reachable and lum_fdtd_solve is licensed.
+# Note: no separate GPU FDTD feature is required — lum_fdtd_solve covers GPU runs
+# (GPU tasks just consume more seats based on SM count).
 if [ \"\$REQUIRE_GPU\" = \"1\" ]; then
     LMUTIL=/ansys_inc/v261/licensingclient/linx64/lmutil
     LMSTAT_OUT=\$(\$LMUTIL lmstat -a -c \"\$ANSYSLMD_LICENSE_FILE\" 2>&1)
-    if ! echo \"\$LMSTAT_OUT\" | grep -qE 'Users of (lum_fdtd_solve_gpu|lum_fdtd_gpu|fdtd_gpu)\b'; then
+    if ! echo \"\$LMSTAT_OUT\" | grep -q 'Users of lum_fdtd_solve'; then
         echo '============================================================'
-        echo 'FATAL: license pool has no GPU FDTD feature (lum_fdtd_solve_gpu).'
-        echo 'The engine would run on CPU at ~5–10x slower despite --gpus=1.'
-        echo 'Available Lumerical features in this pool:'
-        echo \"\$LMSTAT_OUT\" | grep -E 'Users of lum_' | head -20
-        echo
-        echo 'Ask Technion CIS to add lum_fdtd_solve_gpu (Speos already has'
-        echo 'speos_solver_gpu in this pool — same precedent).'
-        echo 'To override and run on CPU anyway, resubmit with REQUIRE_GPU=0.'
+        echo 'FATAL: lum_fdtd_solve not found in license pool.'
+        echo 'Either the license server is unreachable or the pool is empty.'
+        echo 'Available features:'
+        echo \"\$LMSTAT_OUT\" | grep -E 'Users of' | head -20
         echo '============================================================'
         exit 2
     fi
+    echo 'License pre-flight: lum_fdtd_solve confirmed present.'
 fi
 
 # Engine in background so we can attach an nvidia-smi watchdog
