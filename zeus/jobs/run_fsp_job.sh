@@ -43,6 +43,13 @@ if [[ ! -f "${FSP_FILE}" ]]; then
     exit 1
 fi
 
+# Force the network license server (Technion Ansys FlexLM at 132.68.48.51).
+# Bypasses any user-side ~/.config/Lumerical/License.ini that might set
+# domain=1 (standalone) and break license checkout. See run_python_job.sh
+# for the full background. Keep in sync with the system License.ini.
+export ANSYSLMD_LICENSE_FILE="1055@132.68.48.51"
+export ANSYSLI_SERVERS="2325@132.68.48.51"
+
 APP="/usr/local/lumerical/bin/fdtd-engine-mpich2nem"
 MPI="/usr/local/lumerical/mpich2/nemesis/bin/mpiexec.hydra"
 NSOCKETS=4    # physical sockets on a zeus node

@@ -101,6 +101,15 @@ else
 fi
 rm -f "${OMPT_MAP}"
 
+# ── Lumerical license environment ────────────────────────────────────────────
+# Force the network license server (Technion Ansys FlexLM at 132.68.48.51).
+# This bypasses any user-side ~/.config/Lumerical/License.ini that might
+# accidentally set domain=1 (standalone) and break license checkout —
+# observed when the GUI is launched on the head node and writes a default
+# user profile. Keep these in sync with /usr/local/lumerical-2021R2.5/License.ini.
+export ANSYSLMD_LICENSE_FILE="1055@132.68.48.51"
+export ANSYSLI_SERVERS="2325@132.68.48.51"
+
 # ── Lumerical library environment ────────────────────────────────────────────
 # fdtd-solutions wrapper resets LD_LIBRARY_PATH, so provide the Lumerical
 # lib path via these variables so fdtd-solutions-app sees them.

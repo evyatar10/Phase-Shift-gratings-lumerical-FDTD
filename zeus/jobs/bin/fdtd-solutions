@@ -1,9 +1,18 @@
 #!/bin/bash
-# Wrapper for fdtd-solutions: hardcode library paths because libinterop-api
-# uses Qt QProcess with a custom environment, which may not carry
-# FDTD_LD_LIBRARY_PATH from the parent shell on all compute nodes.
-export FDTD_LD_LIBRARY_PATH=/usr/local/lumerical-2021R2.5/lib
-export LUMERICAL_LD_LIBRARY_PATH=/usr/local/lumerical-2021R2.5/lib
-export LUMERICAL_QT_PLUGIN_PATH=/usr/local/lumerical-2021R2.5/bin
+# Wrapper for fdtd-solutions: hardcode all paths and license env because
+# libinterop-api uses Qt QProcess with a custom environment that strips the
+# parent shell's env vars. Everything Lumerical needs must be re-exported here.
+_LUM=/usr/local/lumerical-2021R2.5
+
+# Library paths — MKL and Lumerical libs both live in _LUM/lib
+export LD_LIBRARY_PATH="${_LUM}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+export FDTD_LD_LIBRARY_PATH="${_LUM}/lib"
+export LUMERICAL_LD_LIBRARY_PATH="${_LUM}/lib"
+export LUMERICAL_QT_PLUGIN_PATH="${_LUM}/bin"
+
+# License — force network server (Technion FlexLM); overrides any user License.ini
+export ANSYSLMD_LICENSE_FILE="1055@132.68.48.51"
+export ANSYSLI_SERVERS="2325@132.68.48.51"
+
 export LD_PRELOAD="${HOME}/ompt_stub_v.so${LD_PRELOAD:+:${LD_PRELOAD}}"
-exec /usr/local/lumerical-2021R2.5/bin/fdtd-solutions "$@"
+exec "${_LUM}/bin/fdtd-solutions" "$@"
