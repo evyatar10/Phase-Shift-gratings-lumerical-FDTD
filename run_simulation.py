@@ -76,7 +76,7 @@ def run_single_sim(cfg: SimulationConfig) -> dict:
     finally:
         # ── 5. Cleanup temp files ─────────────────────────────────────────
         if cfg.run.cleanup_lumerical_data:
-            _cleanup_lumerical_temp_files(layout_path)
+            cleanup_lumerical_temp_files(layout_path)
 
         plt.show()        # display figures when running locally
         plt.close("all")
@@ -85,7 +85,7 @@ def run_single_sim(cfg: SimulationConfig) -> dict:
     return results
 
 
-def _cleanup_lumerical_temp_files(layout_path: str) -> None:
+def cleanup_lumerical_temp_files(layout_path: str) -> None:
     """Delete the .h5 scratch files Lumerical writes alongside the .fsp layout."""
     data_dir = layout_path.replace(".fsp", "")
     if not os.path.exists(data_dir):

@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 import config
 import post_processing
 from bragg_device import PiShiftBraggFDTD
+from run_simulation import cleanup_lumerical_temp_files
 from sim_helpers import apply_monitor_overrides, generate_file_tag
 from simulation_config import SimulationConfig
 
@@ -78,6 +79,8 @@ def run_single_sim_with_shift(cfg: SimulationConfig, shift_m: float, lengthen_ca
     finally:
         plt.close("all")
         sim.close()
+        if cfg.run.cleanup_lumerical_data:
+            cleanup_lumerical_temp_files(layout_path)
 
     return results
 

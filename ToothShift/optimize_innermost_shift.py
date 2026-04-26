@@ -127,7 +127,7 @@ def save_optimization_results(
         'best_T':          float(best_T),
         'shift_range_nm':  np.array([SHIFT_MIN_NM, SHIFT_MAX_NM]),
         'max_evals':       MAX_EVALS,
-    })
+    }, do_compression=True)
     print(f"Optimization results saved to: {output_path}")
 
 

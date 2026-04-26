@@ -217,7 +217,7 @@ def run_convergence(cfg: SimulationConfig = None):
         "side_nf_z": side_nf_z,
     }
 
-    sio.savemat(results_path, mat_data)
+    sio.savemat(results_path, mat_data, do_compression=True)
     print(f"\nResults saved: {results_path}")
 
     sim.close()

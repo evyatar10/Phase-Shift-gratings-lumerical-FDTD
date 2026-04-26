@@ -358,7 +358,7 @@ if __name__ == "__main__":
         save_dict = {k: {sk: sv for sk, sv in v.items()
                          if isinstance(sv, np.ndarray)}
                      for k, v in all_data.items()}
-        sio.savemat(SAVE_PATH, save_dict)
+        sio.savemat(SAVE_PATH, save_dict, do_compression=True)
         print(f"\nSaved: {SAVE_PATH}")
 
     plt.show()

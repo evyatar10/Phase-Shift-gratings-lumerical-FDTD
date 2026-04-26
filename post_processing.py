@@ -367,7 +367,7 @@ def assemble_results(
 def save_results(results: dict, results_path: str) -> None:
     """Save the assembled results dict to a MATLAB .mat file."""
     os.makedirs(os.path.dirname(results_path), exist_ok=True)
-    sio.savemat(results_path, results)
+    sio.savemat(results_path, results, do_compression=True)
     print(f"Results saved to: {results_path}")
 
 

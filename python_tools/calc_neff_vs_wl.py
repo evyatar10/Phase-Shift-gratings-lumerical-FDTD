@@ -154,7 +154,7 @@ class NeffSweeper:
             "neff_real": np.real(neff),
             "neff_imag": np.imag(neff)
         }
-        sio.savemat(filename, data)
+        sio.savemat(filename, data, do_compression=True)
         print(f"Saved Neff data to {filename}")
 
     def save_sim_file(self, filepath):

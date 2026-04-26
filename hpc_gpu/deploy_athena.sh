@@ -47,6 +47,7 @@ for arg in "$@"; do
         --run=*)        RUN_SCRIPT="${arg#--run=}" ;;
         --preset=*)     FSP_PRESET="${arg#--preset=}" ;;
         --fsp=*)        FSP_EXPLICIT="${arg#--fsp=}" ;;
+        --keep-h5)      KEEP_H5=1 ;;
     esac
 done
 
@@ -260,7 +261,7 @@ else
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
             --gpus=${N_GPUS} --cpus-per-task=${N_CPUS} \
-            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},NTFY_TOPIC=${NTFY_TOPIC} \
+            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_gpu.sh")
 fi

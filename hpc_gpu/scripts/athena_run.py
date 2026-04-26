@@ -65,6 +65,14 @@ from simulation_config import SimulationConfig
 cfg = SimulationConfig()
 cfg.mesh.simulation_mode = "optimization"
 
+# Server policy: delete Lumerical .h5 scratch after each iteration so NFS quota
+# does not balloon over a sweep (each scratch dir is comparable to the .fsp).
+# The .mat is the deliverable; the .fsp is kept for re-runs. Override per-job
+# with KEEP_H5=1 (sbatch --export=...,KEEP_H5=1) when you need raw monitor data.
+cfg.run.cleanup_lumerical_data = os.environ.get("KEEP_H5", "0") != "1"
+print(f"  cleanup_lumerical_data = {cfg.run.cleanup_lumerical_data} "
+      f"(KEEP_H5={os.environ.get('KEEP_H5', '0')})")
+
 # Override any parameter here without touching the original files:
 # cfg.grating.n_periods_each_side = 120
 # cfg.apodization.enabled = True
@@ -128,6 +136,14 @@ _lumapi.FDTD.__init__ = _patched_FDTD_init
 try:
     _run_func(cfg)
     print("\n[athena_run] Pipeline completed successfully.")
+    # All results are written and sim.close() has been called by the simulation
+    # module's finally block. Lumapi's interpreter-shutdown cleanup of the
+    # already-closed fdtd-solutions session returns non-zero (no traceback,
+    # marks the SLURM job FAILED despite success). Skip that chain by exiting
+    # immediately with a clean status — flush stdio first so logs aren't lost.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)
 
 except Exception as e:
     print("\n" + "=" * 60)

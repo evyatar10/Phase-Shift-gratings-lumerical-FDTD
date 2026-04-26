@@ -450,7 +450,7 @@ def run_simple_sim(cfg: SimulationConfig = None):
         'T_matrix': T_mat, 'S11_complex': S11, 'S21_complex': S21,
         'L_device': 2.0 * sim.x_grating_end,
     }
-    sio.savemat(results_path, mat_data)
+    sio.savemat(results_path, mat_data, do_compression=True)
     print(f"Data saved to: {results_path}")
 
     # Export for INTERCONNECT (respects cfg flag)

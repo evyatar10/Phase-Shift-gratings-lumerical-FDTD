@@ -184,7 +184,23 @@ export UCX_TLS=self,sm,tcp
 export UCX_NET_DEVICES=lo
 export RUN_SCRIPT='${RUN_SCRIPT}'
 export REQUIRE_GPU='${REQUIRE_GPU}'
-xvfb-run -a /opt/lumerical/v261/python/bin/python /work/scripts/athena_run.py"
+# KEEP_H5=1 disables the per-iteration .h5 scratch cleanup (default: cleanup on).
+export KEEP_H5=\"\${KEEP_H5:-0}\"
+# Manage Xvfb manually instead of via xvfb-run. The xvfb-run wrapper's
+# Xvfb-shutdown logic returns non-zero on this host even when the inner
+# Python process exited 0, which silently flips SLURM's job state to FAILED
+# despite all results being saved. Direct Xvfb control preserves Python's
+# exit code exactly.
+Xvfb :99 -screen 0 1024x768x24 -nolisten tcp >/tmp/xvfb.log 2>&1 &
+XVFB_PID=\$!
+trap 'kill \$XVFB_PID 2>/dev/null; wait \$XVFB_PID 2>/dev/null' EXIT
+export DISPLAY=:99
+sleep 1   # let Xvfb finish initialising before lumapi connects
+
+/opt/lumerical/v261/python/bin/python /work/scripts/athena_run.py
+PY_RC=\$?
+echo \"[wrapper] python exit code: \$PY_RC\"
+exit \$PY_RC"
 
 EXIT_CODE=$?
 
