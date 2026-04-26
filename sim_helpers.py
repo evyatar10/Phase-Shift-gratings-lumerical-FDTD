@@ -213,7 +213,7 @@ def generate_file_tag(sim):
     """
     Generate a compact file tag from simulation parameters.
 
-    Format: N{periods}[_A{apod}][_th][_D{detuning}][_avg|_avgx][_d]
+    Format: N{periods}[_A{apod}][_th][_D{detuning}][_S{shift_nm}][_fc][_avg|_avgx][_d]
     See FILE_NAMING.md for the full abbreviation reference.
     """
     N = sim.n_periods_each_side
@@ -226,15 +226,25 @@ def generate_file_tag(sim):
         if abs(detuning_nm) > 0.01:
             cav_tag = f"_D{detuning_nm:.2f}".replace(".", "p")
 
+    # Innermost-tooth shift (only annotated when nonzero — keeps default file
+    # names unchanged so all existing results / paths still match).
+    shift_tag = ""
+    fc_tag = ""
+    shift_m = float(getattr(sim, 'innermost_tooth_shift_m', 0.0) or 0.0)
+    if shift_m > 0.0:
+        shift_tag = f"_S{round(shift_m * 1e9):.0f}"
+        if not bool(getattr(sim, 'lengthen_cavity', True)):
+            fc_tag = "_fc"
+
     mat_tag = "" if sim.use_constant_materials else "_d"
     _cwo = getattr(sim, 'cavity_width_option', 'narrow')
     wgd_tag = "_avgx" if _cwo == "avg_ext" else "_avg" if _cwo == "avg" else ""
 
     if use_apod:
         tanh_tag = "_th" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""
-        return f"N{N}_A{Napod}{tanh_tag}{cav_tag}{mat_tag}{wgd_tag}"
+        return f"N{N}_A{Napod}{tanh_tag}{cav_tag}{shift_tag}{fc_tag}{mat_tag}{wgd_tag}"
     else:
-        return f"N{N}{cav_tag}{mat_tag}{wgd_tag}"
+        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{mat_tag}{wgd_tag}"
 
 
 def apply_monitor_overrides(sim, cfg):

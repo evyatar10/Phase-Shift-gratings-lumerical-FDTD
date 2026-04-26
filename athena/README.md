@@ -133,6 +133,44 @@ bash hpc_gpu/deploy_athena.sh --option2 --run sweep_shift
 
 Uploads the project + `athena_run.py`, submits `run_python_gpu.sh`. The dispatcher at `hpc_gpu/scripts/athena_run.py` sets `USE_GPU=True` and enables GPU on the FDTD resource via `fdtd.setresource("FDTD", 1, "GPU", True)` — all without modifying any simulation module.
 
+The sweep loop inside this option runs **sequentially** — one simulation at a time inside one SLURM job. Use Option 3 below for parallel sweeps.
+
+---
+
+## Phase 3: Python sweep as a SLURM job array (parallel)
+
+For parameter sweeps where each value is independent, submit one SLURM array task per value. Each task gets its own GPU + CPUs and runs end-to-end (build, solve, analyze, save `.mat`).
+
+```bash
+bash athena/deploy_athena.sh --option3 --sweep=shift
+bash athena/deploy_athena.sh --option3 --sweep=inner_size
+bash athena/deploy_athena.sh --option3 --sweep=generic
+bash athena/deploy_athena.sh --option3 --sweep=mesh_conv_a
+bash athena/deploy_athena.sh --option3 --sweep=mesh_conv_b
+
+# Or supply a project-level SweepSpec study file (one task per cartesian point):
+bash athena/deploy_athena.sh --spec=studies.sweep_apod_vs_shift
+```
+
+Flow:
+1. `build_sweep_list.py` runs **locally**, emitting one task line per sweep value (cartesian for `inner_size`).
+2. The list is uploaded to `${REMOTE_BASE}/data/sweep_list.txt`.
+3. `sbatch --array=0-N-1%K jobs/run_python_array.sh` submits the array. Each task reads its line by `$SLURM_ARRAY_TASK_ID` and dispatches via `athena_run_one.py`.
+
+`K` (max concurrent tasks) is `MAX_CONCURRENT` from `athena.conf` — override per run with `--max-concurrent=N`. Bounded by `lum_fdtd_solve` license seats; probe with:
+
+```bash
+bash athena/deploy_athena.sh --license-probe
+```
+
+Sources of value lists (edit these to change the sweep contents):
+- `shift`           → `ToothShift/run_sweep_innermost_shift.py::SHIFT_VALUES_M`
+- `inner_size`      → `ToothShift/run_sweep_inner_tooth_size.py::TOOTH_SHIFT_VALUES_NM × INNER_SIZE_VALUES_NM`
+- `generic`         → `run_sweep.py` `__main__` block (`cfg.sweep.parameter`, `cfg.sweep.values`)
+- `mesh_conv_a/b`   → `convergence_testing/run_mesh_convergence.py::PHASE_A_VALUES / PHASE_B_VALUES`
+
+Per-task logs land in `${REMOTE_BASE}/jobs/logs/lum_array-<JOBID>_<TASKID>.out`.
+
 ---
 
 ## GPU vs CPU guidance

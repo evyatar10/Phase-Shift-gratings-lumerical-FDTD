@@ -36,31 +36,39 @@ DOWNLOAD_RESULTS=false
 DOWNLOAD_NO_FSP=false
 DOWNLOAD_MODE_SET=false
 STATUS=false
+LICENSE_PROBE=false
 OPTION=""
 RUN_SCRIPT=""
 FSP_PRESET=""
 FSP_EXPLICIT=""
+SWEEP_KIND=""
+SPEC_MODULE=""
 
 for arg in "$@"; do
     case "${arg}" in
-        --option1)          OPTION="1" ;;
-        --option2)          OPTION="2" ;;
-        --upload-only)      UPLOAD_ONLY=true ;;
-        --results)          DOWNLOAD_RESULTS=true ;;
-        --results-no-fsp)   DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=true; DOWNLOAD_MODE_SET=true ;;
-        --results-full)     DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=false; DOWNLOAD_MODE_SET=true ;;
-        --status)           STATUS=true ;;
-        --run=*)            RUN_SCRIPT="${arg#--run=}" ;;
-        --preset=*)         FSP_PRESET="${arg#--preset=}" ;;
-        --fsp=*)            FSP_EXPLICIT="${arg#--fsp=}" ;;
-        --keep-h5)          KEEP_H5=1 ;;
+        --option1)            OPTION="1" ;;
+        --option2)            OPTION="2" ;;
+        --option3)            OPTION="3" ;;
+        --upload-only)        UPLOAD_ONLY=true ;;
+        --results)            DOWNLOAD_RESULTS=true ;;
+        --results-no-fsp)     DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=true; DOWNLOAD_MODE_SET=true ;;
+        --results-full)       DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=false; DOWNLOAD_MODE_SET=true ;;
+        --status)             STATUS=true ;;
+        --license-probe)      LICENSE_PROBE=true ;;
+        --run=*)              RUN_SCRIPT="${arg#--run=}" ;;
+        --preset=*)           FSP_PRESET="${arg#--preset=}" ;;
+        --fsp=*)              FSP_EXPLICIT="${arg#--fsp=}" ;;
+        --sweep=*)            SWEEP_KIND="${arg#--sweep=}" ;;
+        --spec=*)             OPTION="3"; SWEEP_KIND="spec"; SPEC_MODULE="${arg#--spec=}" ;;
+        --max-concurrent=*)   MAX_CONCURRENT="${arg#--max-concurrent=}" ;;
+        --keep-h5)            KEEP_H5=1 ;;
     esac
 done
 
 SSH="${ATHENA_USER}@${ATHENA_HOST}"
 
 # ── Prompt for option if not specified ────────────────────────────────────────
-if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${STATUS}" == "false" ]]; then
+if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${STATUS}" == "false" && "${LICENSE_PROBE}" == "false" ]]; then
     echo ""
     echo "============================================================"
     echo "  Athena GPU — Choose run mode:"
@@ -68,10 +76,13 @@ if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == 
     echo "     (RECOMMENDED — no license required on compute node at FSP build time)"
     echo ""
     echo "  2) Upload Python code → run full lumapi pipeline on GPU"
-    echo "     (requires license at run time; enables USE_GPU=True)"
+    echo "     (single sequential job; requires license at run time)"
+    echo ""
+    echo "  3) Python pipeline as a SLURM job array (parallel sweep)"
+    echo "     (one task per sweep value; throttled by MAX_CONCURRENT in athena.conf)"
     echo "============================================================"
-    read -rp "Enter 1 or 2: " OPTION
-    if [[ "${OPTION}" != "1" && "${OPTION}" != "2" ]]; then
+    read -rp "Enter 1, 2, or 3: " OPTION
+    if [[ "${OPTION}" != "1" && "${OPTION}" != "2" && "${OPTION}" != "3" ]]; then
         echo "Invalid option. Exiting."
         exit 1
     fi
@@ -113,6 +124,28 @@ if [[ "${OPTION}" == "2" && -z "${RUN_SCRIPT}" && "${UPLOAD_ONLY}" == "false" ]]
     esac
 fi
 
+# ── Prompt for sweep kind if option 3 ─────────────────────────────────────────
+if [[ "${OPTION}" == "3" && -z "${SWEEP_KIND}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    echo ""
+    echo "============================================================"
+    echo "  Choose sweep to parallelize as a SLURM array:"
+    echo "  1) shift           — innermost tooth shift (SHIFT_VALUES_M)"
+    echo "  2) inner_size      — shift × inner-size 2D sweep (cartesian)"
+    echo "  3) generic         — run_sweep.py (cfg.sweep.parameter / .values)"
+    echo "  4) mesh_conv_a     — convergence Phase A (cells_per_half_period)"
+    echo "  5) mesh_conv_b     — convergence Phase B (dz_divisor); requires Phase A done"
+    echo "============================================================"
+    read -rp "Enter 1-5: " _sweep_choice
+    case "${_sweep_choice}" in
+        1) SWEEP_KIND="shift" ;;
+        2) SWEEP_KIND="inner_size" ;;
+        3) SWEEP_KIND="generic" ;;
+        4) SWEEP_KIND="mesh_conv_a" ;;
+        5) SWEEP_KIND="mesh_conv_b" ;;
+        *) echo "Invalid choice. Exiting."; exit 1 ;;
+    esac
+fi
+
 # ── Helper: download results ───────────────────────────────────────────────────
 download_results() {
     local no_fsp="${1:-false}"
@@ -142,6 +175,32 @@ check_status() {
 # ── --status: one-shot check then exit ────────────────────────────────────────
 if [[ "${STATUS}" == "true" ]]; then
     check_status
+    exit 0
+fi
+
+# ── --license-probe: report FlexLM seat counts then exit ──────────────────────
+if [[ "${LICENSE_PROBE}" == "true" ]]; then
+    echo ""
+    echo "=== Probing Lumerical license seats on Athena (server: ${ATHENA_LICENSE}) ==="
+    # lmutil ships inside the Lumerical install on Athena. The path matches the one
+    # used in run_fsp_gpu_array.sh. Keep both in sync if Lumerical's install path moves.
+    ssh "${SSH}" "
+        for lmutil in /ansys_inc/v261/licensingclient/linx64/lmutil \
+                      /opt/lumerical/v261/lumerical/lib/lmutil \
+                      /opt/lumerical/v261/bin/lmutil; do
+            if [ -x \"\$lmutil\" ]; then
+                echo \"Using: \$lmutil\"
+                \"\$lmutil\" lmstat -a -c '${ATHENA_LICENSE}' \
+                    | grep -E 'Users of (lum_fdtd|fdtd_)' \
+                    || echo '  (no FDTD features found)'
+                exit 0
+            fi
+        done
+        echo 'ERROR: lmutil not found on Athena. Try inside the container instead:'
+        echo '  apptainer exec ~/containers/lumerical-2026R1.sif /ansys_inc/v261/licensingclient/linx64/lmutil lmstat -a -c ${ATHENA_LICENSE}'
+    "
+    echo ""
+    echo "Set MAX_CONCURRENT in athena/athena.conf to (free seats), capped at 8."
     exit 0
 fi
 
@@ -262,10 +321,11 @@ if [[ "${OPTION}" == "1" ]]; then
             > ${REMOTE_BASE}/results/layouts/fsp_list.txt"
         ARRAY_END=$(( FSP_COUNT - 1 ))
 
-        # K = max concurrent jobs (license throttle). Adjust once you know your seat count.
-        K=4
+        # K = max concurrent jobs (license throttle). Set in athena.conf; override
+        # for one run via --max-concurrent N. Discover the real seat count with
+        # `bash athena/deploy_athena.sh --license-probe`.
+        K="${MAX_CONCURRENT:-4}"
         echo "Array: 0-${ARRAY_END}%${K}  (max ${K} concurrent, ~${FSP_COUNT} engine seats used)"
-        echo "Edit K in deploy_athena.sh after running: lmutil lmstat -a -c 1055@132.68.48.51"
 
         JOB_ID=$(ssh "${SSH}" \
             "cd ${REMOTE_BASE} && sbatch \
@@ -283,14 +343,73 @@ if [[ "${OPTION}" == "1" ]]; then
                 jobs/run_fsp_gpu.sh")
     fi
 
-else
-    # ── Option 2: full Python pipeline ───────────────────────────────────────
+elif [[ "${OPTION}" == "2" ]]; then
+    # ── Option 2: full Python pipeline (single sequential job) ───────────────
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
             --gpus=${N_GPUS} --cpus-per-task=${N_CPUS} \
             --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_gpu.sh")
+
+else
+    # ── Option 3: Python pipeline as a SLURM job array (parallel sweep) ──────
+    echo ""
+    echo "Option 3: building sweep_list.txt locally for kind='${SWEEP_KIND}'..."
+    LOCAL_SWEEP_LIST="${LOCAL_PROJECT}/results_from_athena/_sweep_list.txt"
+    LOCAL_PYTHON=$(which python 2>/dev/null || which python3 2>/dev/null)
+    if [[ -z "${LOCAL_PYTHON}" ]]; then
+        echo "ERROR: no local python found on PATH."
+        exit 1
+    fi
+    if [[ "${SWEEP_KIND}" == "spec" ]]; then
+        if [[ -z "${SPEC_MODULE}" ]]; then
+            echo "ERROR: --spec=<module> is required for kind=spec."
+            exit 1
+        fi
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+            --kind spec --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
+    else
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+            --kind "${SWEEP_KIND}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
+    fi
+    echo "${BUILD_OUT}"
+    if [[ $? -ne 0 ]]; then
+        echo "ERROR: build_sweep_list.py failed."
+        exit 1
+    fi
+
+    # Capture optional metadata (SWEEP_META: key=value lines) into env vars to
+    # forward via sbatch --export. Lines look like "SWEEP_META: param=foo.bar".
+    SWEEP_PARAM=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: param=//p')
+    SWEEP_FIXED_DZ=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: fixed_dz=//p')
+    SWEEP_FIXED_CELLS=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: fixed_cells=//p')
+    SWEEP_SPEC_MODULE=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: spec_module=//p')
+
+    N_TASKS=$(grep -c . "${LOCAL_SWEEP_LIST}")
+    if [[ "${N_TASKS}" -lt 1 ]]; then
+        echo "ERROR: sweep_list.txt is empty."
+        exit 1
+    fi
+    ARRAY_END=$(( N_TASKS - 1 ))
+    K="${MAX_CONCURRENT:-4}"
+
+    echo "Uploading sweep_list.txt to Athena..."
+    ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/data"
+    scp "${LOCAL_SWEEP_LIST}" "${SSH}:${REMOTE_BASE}/data/sweep_list.txt"
+
+    echo "Array: 0-${ARRAY_END}%${K}  (${N_TASKS} tasks, max ${K} concurrent)"
+    if [[ -n "${SWEEP_PARAM}" ]];      then echo "  SWEEP_PARAM=${SWEEP_PARAM}"; fi
+    if [[ -n "${SWEEP_FIXED_DZ}" ]];   then echo "  SWEEP_FIXED_DZ=${SWEEP_FIXED_DZ}"; fi
+    if [[ -n "${SWEEP_FIXED_CELLS}" ]];then echo "  SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS}"; fi
+
+    JOB_ID=$(ssh "${SSH}" \
+        "cd ${REMOTE_BASE} && sbatch \
+            --array=0-${ARRAY_END}%${K} \
+            --gpus=${N_GPUS} --cpus-per-task=${N_CPUS} \
+            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DZ=${SWEEP_FIXED_DZ},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
+            --chdir=${REMOTE_BASE}/jobs \
+            jobs/run_python_array.sh")
 fi
 
 if [[ $? -ne 0 ]]; then

@@ -26,18 +26,23 @@ from typing import Optional
 from simulation_config import SimulationConfig
 
 
-# Card field name → (dot-path on SimulationConfig, value transform or None)
+# Card field name → (dot-path on SimulationConfig, value transform or None).
+# Single source of truth used by both ExperimentCard and SweepSpec.
 _CARD_FIELD_MAP = {
-    "n_periods_each_side":     ("grating.n_periods_each_side",        None),
-    "center_mod_depth_nm":     ("apodization.center_mod_depth_nm",    None),
-    "apod_method":             ("apodization.method",                 None),
-    "tanh_steepness":          ("apodization.tanh_steepness",         None),
-    "corrugation_depth_nm":    ("geometry.corrugation_depth_m",       lambda v: v * 1e-9),
-    "pitch_nm":                ("grating.pitch_m",                    lambda v: v * 1e-9),
+    "n_periods_each_side":      ("grating.n_periods_each_side",          None),
+    "center_mod_depth_nm":      ("apodization.center_mod_depth_nm",      None),
+    "apod_method":              ("apodization.method",                   None),
+    "tanh_steepness":           ("apodization.tanh_steepness",           None),
+    "corrugation_depth_nm":     ("geometry.corrugation_depth_m",         lambda v: v * 1e-9),
+    "pitch_nm":                 ("grating.pitch_m",                      lambda v: v * 1e-9),
     "n_apod_periods_each_side": ("apodization.n_apod_periods_each_side", None),
-    "cavity_length_nm":         ("grating.override_cavity_length_nm",   None),
-    "center_wavelength_nm":     ("spectral.center_wavelength_m",        lambda v: v * 1e-9),
-    "scan_width_nm":            ("spectral.scan_width_nm",              None),
+    "cavity_length_nm":         ("grating.override_cavity_length_nm",    None),
+    "cavity_neg_detuning_nm":   ("grating.cavity_neg_detuning_nm",       None),
+    "innermost_tooth_shift_nm": ("grating.innermost_tooth_shift_m",      lambda v: v * 1e-9),
+    "lengthen_cavity":          ("grating.lengthen_cavity",              None),
+    "center_wavelength_nm":     ("spectral.center_wavelength_m",         lambda v: v * 1e-9),
+    "scan_width_nm":            ("spectral.scan_width_nm",               None),
+    "farfield":                 ("farfield.enabled",                     None),
 }
 
 
