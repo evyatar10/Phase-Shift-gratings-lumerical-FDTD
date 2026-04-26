@@ -87,43 +87,42 @@ _run_func = getattr(_module, _func_name)
 print(f"[athena_run] Running: {_run_script} ({_module_name}.{_func_name})")
 
 # ── 7. Enable GPU on the FDTD resource before running ────────────────────────
-#    We monkey-patch lumapi's FDTD class to inject the GPU resource setting
-#    immediately after any FDTD session is opened, so all downstream code
-#    (run_simulation, sweep modules) transparently runs on GPU without
-#    modification.
+#    Patch lumapi.FDTD.__init__ (the method), NOT the class itself.
+#    Replacing the class object breaks lumapi's own super(FDTD, self) call
+#    because "FDTD" is looked up by name in lumapi's module globals at runtime —
+#    swapping the class (or replacing it with a function) makes super() see the
+#    wrong type and raises TypeError. Patching only __init__ keeps the class
+#    identity intact so lumapi's super() continues to resolve correctly.
 
-_original_FDTD = _lumapi.FDTD
+_original_FDTD_init = _lumapi.FDTD.__init__
 _REQUIRE_GPU = os.environ.get("REQUIRE_GPU", "0") == "1"
 
-class _FDTD_GPU(_original_FDTD):
-    """FDTD session subclass that enables GPU on the first resource entry."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        try:
-            self.setresource("FDTD", 1, "GPU", True)
-            print("[athena_run] GPU enabled on FDTD resource 1.")
-        except Exception as _e:
-            msg = f"could not enable GPU via setresource: {_e}"
-            if _REQUIRE_GPU:
-                print(f"[athena_run] FATAL: {msg}")
-                print("[athena_run] REQUIRE_GPU=1 — refusing to run on CPU.")
-                sys.exit(2)
-            print(f"[athena_run] WARNING: {msg}")
-            print("[athena_run] Simulation will proceed on CPU as fallback.")
-            return
+def _patched_FDTD_init(self, *args, **kwargs):
+    _original_FDTD_init(self, *args, **kwargs)
+    try:
+        self.setresource("FDTD", 1, "GPU", True)
+        print("[athena_run] GPU enabled on FDTD resource 1.")
+    except Exception as _e:
+        msg = f"could not enable GPU via setresource: {_e}"
+        if _REQUIRE_GPU:
+            print(f"[athena_run] FATAL: {msg}")
+            print("[athena_run] REQUIRE_GPU=1 — refusing to run on CPU.")
+            sys.exit(2)
+        print(f"[athena_run] WARNING: {msg}")
+        print("[athena_run] Simulation will proceed on CPU as fallback.")
+        return
 
-        # Confirm what the engine will actually use. Logged unambiguously so the
-        # SLURM .out file records GPU=true/false without log-greppping later.
-        try:
-            gpu_state = self.getresource("FDTD", 1, "GPU")
-            print(f"[athena_run] getresource('FDTD',1,'GPU') = {gpu_state}")
-            if _REQUIRE_GPU and not gpu_state:
-                print("[athena_run] FATAL: GPU resource read back as False.")
-                sys.exit(2)
-        except Exception as _e:
-            print(f"[athena_run] WARNING: getresource readback failed: {_e}")
+    # Confirm what the engine will actually use.
+    try:
+        gpu_state = self.getresource("FDTD", 1, "GPU")
+        print(f"[athena_run] getresource('FDTD',1,'GPU') = {gpu_state}")
+        if _REQUIRE_GPU and not gpu_state:
+            print("[athena_run] FATAL: GPU resource read back as False.")
+            sys.exit(2)
+    except Exception as _e:
+        print(f"[athena_run] WARNING: getresource readback failed: {_e}")
 
-_lumapi.FDTD = _FDTD_GPU
+_lumapi.FDTD.__init__ = _patched_FDTD_init
 
 # ── 8. Run — with fallback notification on failure ────────────────────────────
 try:

@@ -149,6 +149,20 @@ if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
     export LD_LIBRARY_PATH=\"/nvml_tramp:\${LD_LIBRARY_PATH}\"
     echo '[nvml_tramp] activated: /nvml_tramp prepended to LD_LIBRARY_PATH'
 fi
+# fdtd-solutions resets LD_LIBRARY_PATH to \$FDTD_LD_LIBRARY_PATH:\$LUMERICAL_LD_LIBRARY_PATH.
+# Both are empty in the container, wiping all Apptainer-injected paths (NVML trampoline,
+# CUDA compat shim, /.singularity.d/libs with host libcuda.so.1, Lumerical libs).
+# Capture the full current LD_LIBRARY_PATH into LUMERICAL_LD_LIBRARY_PATH so fdtd-solutions
+# effectively restores it instead of resetting to empty.
+export LUMERICAL_LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}\"
+# Force-load Intel TBB's malloc/free interceptor BEFORE any other library. Without
+# this preload some library allocates with the system malloc before tbbmalloc_proxy
+# is initialized; the later free goes through TBB -> 'free(): invalid pointer' crash.
+# Both libs preloaded with absolute paths because lumapi spawns subprocesses
+# (e.g. /bin/bash for fdtd-solutions) with an environment where /opt/lumerical/v261/lib
+# is not on LD_LIBRARY_PATH at process-start time, so ld.so can't resolve the
+# tbbmalloc_proxy -> tbbmalloc DT_NEEDED dependency by name alone.
+export LD_PRELOAD=/opt/lumerical/v261/lib/libtbbmalloc.so.2:/opt/lumerical/v261/lib/libtbbmalloc_proxy.so.2
 export ANSYSLMD_LICENSE_FILE='${LICENSE}'
 export ANSYSLI_SERVERS='${INTERCONNECT}'
 export ANSYS_APIP_DISABLE=1
@@ -161,7 +175,7 @@ export UCX_TLS=self,sm,tcp
 export UCX_NET_DEVICES=lo
 export RUN_SCRIPT='${RUN_SCRIPT}'
 export REQUIRE_GPU='${REQUIRE_GPU}'
-xvfb-run -a python /work/scripts/athena_run.py"
+xvfb-run -a /opt/lumerical/v261/python/bin/python /work/scripts/athena_run.py"
 
 EXIT_CODE=$?
 

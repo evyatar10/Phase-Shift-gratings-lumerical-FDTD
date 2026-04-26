@@ -149,13 +149,7 @@ ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/{project,data,results/layouts,jobs/logs,sc
 
 echo ""
 echo "=== Uploading project files ==="
-for f in config.py simulation_config.py sim_helpers.py \
-          bragg_device.py \
-          run_simulation.py post_processing.py; do
-    if [[ -f "${LOCAL_PROJECT}/${f}" ]]; then
-        scp "${LOCAL_PROJECT}/${f}" "${SSH}:${REMOTE_BASE}/project/"
-    fi
-done
+scp "${LOCAL_PROJECT}"/*.py "${SSH}:${REMOTE_BASE}/project/"
 echo "  uploading ToothShift/"
 scp -r "${LOCAL_PROJECT}/ToothShift" "${SSH}:${REMOTE_BASE}/project/"
 
