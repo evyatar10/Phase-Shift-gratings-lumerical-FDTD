@@ -1,22 +1,24 @@
 #!/bin/bash
 #
 # Local script: upload project files to Athena and submit a SLURM GPU job.
-# This is the Athena analog of hpc/deploy.sh (Zeus/PBS). Zeus is NOT touched.
+# This is the Athena analog of zeus/deploy.sh (Zeus/PBS). Zeus is NOT touched.
 #
 # Run from Git Bash, WSL, or VS Code tasks on your local Windows machine.
 #
 # Usage:
-#   bash hpc_gpu/deploy_athena.sh --option1 --preset single       # RECOMMENDED
-#   bash hpc_gpu/deploy_athena.sh --option1 --preset sweep_shift
-#   bash hpc_gpu/deploy_athena.sh --option1 --preset sweep_inner_size
-#   bash hpc_gpu/deploy_athena.sh --option2 --run single_sim
-#   bash hpc_gpu/deploy_athena.sh --option2 --run sweep_shift
-#   bash hpc_gpu/deploy_athena.sh --upload-only
-#   bash hpc_gpu/deploy_athena.sh --watch
-#   bash hpc_gpu/deploy_athena.sh --watch-only
-#   bash hpc_gpu/deploy_athena.sh --results
+#   bash athena/deploy_athena.sh --option1 --preset single       # RECOMMENDED
+#   bash athena/deploy_athena.sh --option1 --preset sweep_shift
+#   bash athena/deploy_athena.sh --option1 --preset sweep_inner_size
+#   bash athena/deploy_athena.sh --option2 --run single_sim
+#   bash athena/deploy_athena.sh --option2 --run sweep_shift
+#   bash athena/deploy_athena.sh --upload-only
+#   bash athena/deploy_athena.sh --watch
+#   bash athena/deploy_athena.sh --watch-only
+#   bash athena/deploy_athena.sh --results            # prompts: data only or full (incl. .fsp)
+#   bash athena/deploy_athena.sh --results-no-fsp    # download .mat / logs only (fast)
+#   bash athena/deploy_athena.sh --results-full      # download everything incl. .fsp (heavy)
 
-# ── CONFIGURE — edit hpc_gpu/athena.conf, not this file ──────────────────────
+# ── CONFIGURE — edit athena/athena.conf, not this file ───────────────────────
 CONF="$(cd "$(dirname "$0")" && pwd)/athena.conf"
 if [[ ! -f "${CONF}" ]]; then
     echo "ERROR: athena.conf not found at ${CONF}"
@@ -31,6 +33,8 @@ LOCAL_NEFF=$(python -c "import sys; sys.path.insert(0,'${LOCAL_PROJECT}'); impor
 
 UPLOAD_ONLY=false
 DOWNLOAD_RESULTS=false
+DOWNLOAD_NO_FSP=false
+DOWNLOAD_MODE_SET=false
 STATUS=false
 OPTION=""
 RUN_SCRIPT=""
@@ -39,15 +43,17 @@ FSP_EXPLICIT=""
 
 for arg in "$@"; do
     case "${arg}" in
-        --option1)      OPTION="1" ;;
-        --option2)      OPTION="2" ;;
-        --upload-only)  UPLOAD_ONLY=true ;;
-        --results)      DOWNLOAD_RESULTS=true ;;
-        --status)       STATUS=true ;;
-        --run=*)        RUN_SCRIPT="${arg#--run=}" ;;
-        --preset=*)     FSP_PRESET="${arg#--preset=}" ;;
-        --fsp=*)        FSP_EXPLICIT="${arg#--fsp=}" ;;
-        --keep-h5)      KEEP_H5=1 ;;
+        --option1)          OPTION="1" ;;
+        --option2)          OPTION="2" ;;
+        --upload-only)      UPLOAD_ONLY=true ;;
+        --results)          DOWNLOAD_RESULTS=true ;;
+        --results-no-fsp)   DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=true; DOWNLOAD_MODE_SET=true ;;
+        --results-full)     DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=false; DOWNLOAD_MODE_SET=true ;;
+        --status)           STATUS=true ;;
+        --run=*)            RUN_SCRIPT="${arg#--run=}" ;;
+        --preset=*)         FSP_PRESET="${arg#--preset=}" ;;
+        --fsp=*)            FSP_EXPLICIT="${arg#--fsp=}" ;;
+        --keep-h5)          KEEP_H5=1 ;;
     esac
 done
 
@@ -109,10 +115,17 @@ fi
 
 # ── Helper: download results ───────────────────────────────────────────────────
 download_results() {
+    local no_fsp="${1:-false}"
     echo ""
-    echo "=== Downloading results from Athena ==="
     mkdir -p "${LOCAL_RESULTS_DIR}"
-    scp -r "${SSH}:${REMOTE_BASE}/results/." "${LOCAL_RESULTS_DIR}/"
+    if [[ "${no_fsp}" == "true" ]]; then
+        echo "=== Downloading results from Athena (data files only, skipping .fsp) ==="
+        ssh "${SSH}" "tar --exclude='*.fsp' -czf - -C '${REMOTE_BASE}/results' ." \
+            | tar -xzf - -C "${LOCAL_RESULTS_DIR}/"
+    else
+        echo "=== Downloading results from Athena (full, including .fsp) ==="
+        scp -r "${SSH}:${REMOTE_BASE}/results/." "${LOCAL_RESULTS_DIR}/"
+    fi
     echo "Results saved to: ${LOCAL_RESULTS_DIR}"
 }
 
@@ -134,7 +147,21 @@ fi
 
 # ── --results: immediate download ─────────────────────────────────────────────
 if [[ "${DOWNLOAD_RESULTS}" == "true" ]]; then
-    download_results
+    if [[ "${DOWNLOAD_MODE_SET}" == "false" ]]; then
+        echo ""
+        echo "============================================================"
+        echo "  Choose download mode:"
+        echo "  1) Data files only — .mat and logs, no .fsp  (fast)"
+        echo "  2) Full results    — includes .fsp layout files (heavy)"
+        echo "============================================================"
+        read -rp "Enter 1 or 2: " _dl_choice
+        case "${_dl_choice}" in
+            1) DOWNLOAD_NO_FSP=true ;;
+            2) DOWNLOAD_NO_FSP=false ;;
+            *) echo "Invalid choice. Exiting."; exit 1 ;;
+        esac
+    fi
+    download_results "${DOWNLOAD_NO_FSP}"
     exit 0
 fi
 
@@ -164,9 +191,9 @@ else
 fi
 
 echo ""
-echo "=== Uploading HPC GPU scripts ==="
-scp "${LOCAL_PROJECT}/hpc_gpu/jobs/"*.sh      "${SSH}:${REMOTE_BASE}/jobs/"
-scp "${LOCAL_PROJECT}/hpc_gpu/scripts/"*.py   "${SSH}:${REMOTE_BASE}/scripts/"
+echo "=== Uploading Athena scripts ==="
+scp "${LOCAL_PROJECT}/athena/jobs/"*.sh      "${SSH}:${REMOTE_BASE}/jobs/"
+scp "${LOCAL_PROJECT}/athena/scripts/"*.py   "${SSH}:${REMOTE_BASE}/scripts/"
 ssh "${SSH}" "chmod +x ${REMOTE_BASE}/jobs/*.sh"
 ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/jobs/logs"
 
@@ -175,7 +202,7 @@ echo "=== Building NVML trampoline on Athena (R470 A100 nodes) ==="
 # The trampoline shim stubs three NVML symbols absent from R470 that Lumerical
 # 2026 R1's GPU plugin imports. On newer-driver nodes (L40S / H200, R535+) the
 # tramp directory is not bound and has no effect.
-scp "${LOCAL_PROJECT}/hpc_gpu/container/nvml_tramp.c" \
+scp "${LOCAL_PROJECT}/athena/container/nvml_tramp.c" \
     "${SSH}:${REMOTE_BASE}/jobs/nvml_tramp.c"
 ssh "${SSH}" "
     mkdir -p \${HOME}/nvml_tramp
@@ -283,11 +310,13 @@ echo ""
 echo "You will receive an email at job start, finish, and failure."
 echo ""
 echo "Check status at any time:"
-echo "  bash hpc_gpu/deploy_athena.sh --status"
+echo "  bash athena/deploy_athena.sh --status"
 echo ""
 echo "Live log on Athena:"
 echo "  ssh ${SSH} tail -f ${REMOTE_BASE}/jobs/logs/lum_*${NUMERIC_JOB}*.out"
 echo ""
 echo "Download results after job finishes:"
-echo "  bash hpc_gpu/deploy_athena.sh --results"
+echo "  bash athena/deploy_athena.sh --results           # prompts for mode"
+echo "  bash athena/deploy_athena.sh --results-no-fsp    # data files only (fast)"
+echo "  bash athena/deploy_athena.sh --results-full      # everything incl. .fsp (heavy)"
 echo "============================================================"

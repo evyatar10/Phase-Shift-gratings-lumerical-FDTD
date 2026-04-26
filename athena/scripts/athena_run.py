@@ -64,6 +64,7 @@ from simulation_config import SimulationConfig
 # ── 5. Configure simulation parameters ───────────────────────────────────────
 cfg = SimulationConfig()
 cfg.mesh.simulation_mode = "optimization"
+cfg.grating.cavity_neg_detuning_nm = 5.76   # phase-matched detuning (= pitch/2 − 244.24 nm)
 
 # Server policy: delete Lumerical .h5 scratch after each iteration so NFS quota
 # does not balloon over a sweep (each scratch dir is comparable to the .fsp).
@@ -167,7 +168,7 @@ except Exception as e:
         print(f"  Layout saved at: {latest_fsp}")
         print()
         print("  Submit engine-only job from your local machine:")
-        print(f"    bash hpc_gpu/deploy_athena.sh --option1 --fsp {fsp_name}")
+        print(f"    bash athena/deploy_athena.sh --option1 --fsp {fsp_name}")
         print()
         print("  Or manually on Athena:")
         print(f"    sbatch --export=FSP_FILE=\"{fsp_name}\" "

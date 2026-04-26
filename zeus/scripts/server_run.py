@@ -41,7 +41,7 @@ else:
         print(f"  {p}")
     print("\nFix: run this on Zeus to find the correct path:")
     print("  find /usr/local -name 'lumapi.py' 2>/dev/null")
-    print("Then update _api_candidates in hpc/scripts/server_run.py")
+    print("Then update _api_candidates in zeus/scripts/server_run.py")
     sys.exit(1)
 
 print("=" * 60)
@@ -70,6 +70,7 @@ from simulation_config import SimulationConfig
 # ── 4. Configure ─────────────────────────────────────────────────────────────
 cfg = SimulationConfig()
 cfg.mesh.simulation_mode = "optimization"
+cfg.grating.cavity_neg_detuning_nm = 5.76   # phase-matched detuning (= pitch/2 − 244.24 nm)
 
 # Override any parameter here without touching the original files:
 # cfg.grating.n_periods_each_side = 120

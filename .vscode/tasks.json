@@ -10,7 +10,7 @@
         {
             "label": "Zeus: Deploy (choose option)",
             "type": "shell",
-            "command": "bash hpc/deploy.sh",
+            "command": "bash zeus/deploy.sh",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -22,7 +22,7 @@
         {
             "label": "Zeus: Deploy Option 1 - local .fsp → engine on Zeus (RECOMMENDED)",
             "type": "shell",
-            "command": "bash hpc/deploy.sh --option1",
+            "command": "bash zeus/deploy.sh --option1",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -34,7 +34,7 @@
         {
             "label": "Zeus: Deploy Option 2 - full Python pipeline on Zeus",
             "type": "shell",
-            "command": "bash hpc/deploy.sh --option2",
+            "command": "bash zeus/deploy.sh --option2",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -46,7 +46,7 @@
         {
             "label": "Zeus: Upload Only (no submit)",
             "type": "shell",
-            "command": "bash hpc/deploy.sh --upload-only",
+            "command": "bash zeus/deploy.sh --upload-only",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -58,7 +58,7 @@
         {
             "label": "Zeus: Download Results",
             "type": "shell",
-            "command": "bash hpc/deploy.sh --results",
+            "command": "bash zeus/deploy.sh --results",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -82,7 +82,7 @@
         {
             "label": "Zeus: Watch Job Status (no deploy)",
             "type": "shell",
-            "command": "bash hpc/deploy.sh --watch-only",
+            "command": "bash zeus/deploy.sh --watch-only",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -94,7 +94,7 @@
         {
             "label": "Athena: Deploy (choose option)",
             "type": "shell",
-            "command": "bash hpc_gpu/deploy_athena.sh",
+            "command": "bash athena/deploy_athena.sh",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -106,7 +106,7 @@
         {
             "label": "Athena: Deploy Option 1 - local .fsp → engine on Athena (RECOMMENDED)",
             "type": "shell",
-            "command": "bash hpc_gpu/deploy_athena.sh --option1",
+            "command": "bash athena/deploy_athena.sh --option1",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -118,7 +118,7 @@
         {
             "label": "Athena: Deploy Option 2 - full Python pipeline on Athena",
             "type": "shell",
-            "command": "bash hpc_gpu/deploy_athena.sh --option2",
+            "command": "bash athena/deploy_athena.sh --option2",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -130,7 +130,7 @@
         {
             "label": "Athena: Upload Only (no submit)",
             "type": "shell",
-            "command": "bash hpc_gpu/deploy_athena.sh --upload-only",
+            "command": "bash athena/deploy_athena.sh --upload-only",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -142,7 +142,7 @@
         {
             "label": "Athena: Download Results",
             "type": "shell",
-            "command": "bash hpc_gpu/deploy_athena.sh --results",
+            "command": "bash athena/deploy_athena.sh --results",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -166,7 +166,7 @@
         {
             "label": "Athena: Watch Job Status (no deploy)",
             "type": "shell",
-            "command": "bash hpc_gpu/deploy_athena.sh --watch-only",
+            "command": "bash athena/deploy_athena.sh --watch-only",
             "group": "build",
             "presentation": {
                 "reveal": "always",

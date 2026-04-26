@@ -38,7 +38,7 @@
 │   ├── run_sweep_innermost_shift.py  # Innermost tooth shift sweep
 │   ├── run_sweep_inner_tooth_size.py # 2D sweep: inner tooth size × shift
 │   └── optimize_innermost_shift.py   # Brent's method optimizer for shift
-├── hpc/
+├── zeus/
 │   ├── deploy.sh                # Upload project to Zeus and submit PBS job
 │   ├── scripts/
 │   │   └── server_run.py        # Server-side pipeline wrapper (patches config paths)
@@ -377,48 +377,47 @@ Each stage is a standalone function and can be called independently (e.g., to re
 
   The convergence metric is configurable (`"Q"` for Q-factor or `"lambda"` for resonance wavelength). Early stopping activates when the metric changes by less than the threshold for two consecutive mesh values, and checkpoints are written to a JSON file after every run.
 
-## HPC Deployment (Zeus / Technion Cluster)
+## Zeus Deployment (CPU / PBS)
 
-The `hpc/` directory contains scripts for running simulations on the Zeus PBS cluster at Technion.
+The `zeus/` directory contains scripts for running simulations on the Zeus PBS cluster at Technion.
 
 ### Workflow
 
 1. **Upload and submit:**
    ```bash
-   bash hpc/deploy.sh
+   bash zeus/deploy.sh
    ```
-   This syncs all Python source files and neff data to Zeus via `rsync`, then submits a PBS job with `qsub`.
+   This syncs all Python source files and neff data to Zeus via `scp`, then submits a PBS job with `qsub`.
 
 2. **Upload only (no job submission):**
    ```bash
-   bash hpc/deploy.sh --upload-only
+   bash zeus/deploy.sh --upload-only
    ```
 
 3. **Download results after the job finishes:**
    ```bash
-   bash hpc/deploy.sh --results
+   bash zeus/deploy.sh --results
    ```
    Results are saved locally to `./results_from_server/`.
 
 ### Configuration
 
-Edit the top of `hpc/deploy.sh` to set:
+Edit `zeus/zeus.conf` to set:
 
 | Variable | Description |
 |----------|-------------|
 | `ZEUS_USER` | Your Zeus username |
 | `ZEUS_HOST` | Zeus hostname (default: `zeus.technion.ac.il`) |
 | `REMOTE_BASE` | Remote working directory |
-| `LOCAL_NEFF` | Local path to neff `.mat` data file |
 
 ### Files
 
 | File | Description |
 |------|-------------|
-| `hpc/deploy.sh` | Main deploy/submit/download script |
-| `hpc/scripts/server_run.py` | Server-side pipeline wrapper; patches `config.py` paths for Zeus at runtime |
-| `hpc/jobs/run_python_job.sh` | PBS job script that runs the Python pipeline |
-| `hpc/jobs/run_fsp_job.sh` | PBS job script for running a standalone `.fsp` file |
+| `zeus/deploy.sh` | Main deploy/submit/download script |
+| `zeus/scripts/server_run.py` | Server-side pipeline wrapper; patches `config.py` paths for Zeus at runtime |
+| `zeus/jobs/run_python_job.sh` | PBS job script that runs the Python pipeline |
+| `zeus/jobs/run_fsp_job.sh` | PBS job script for running a standalone `.fsp` file |
 
 ## Output Format
 

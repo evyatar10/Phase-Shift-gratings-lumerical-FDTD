@@ -4,14 +4,16 @@
 # Run from Git Bash, WSL, or via VS Code tasks.
 #
 # Usage:
-#   bash hpc/deploy.sh --option1    # generate .fsp locally → upload → run engine on Zeus (RECOMMENDED)
-#   bash hpc/deploy.sh --option2    # upload Python code → run full lumapi pipeline on Zeus
-#   bash hpc/deploy.sh --upload-only
-#   bash hpc/deploy.sh --watch
-#   bash hpc/deploy.sh --watch-only
-#   bash hpc/deploy.sh --results
+#   bash zeus/deploy.sh --option1    # generate .fsp locally → upload → run engine on Zeus (RECOMMENDED)
+#   bash zeus/deploy.sh --option2    # upload Python code → run full lumapi pipeline on Zeus
+#   bash zeus/deploy.sh --upload-only
+#   bash zeus/deploy.sh --watch
+#   bash zeus/deploy.sh --watch-only
+#   bash zeus/deploy.sh --results            # prompts: data only or full (incl. .fsp)
+#   bash zeus/deploy.sh --results-no-fsp    # download .mat / logs only (fast)
+#   bash zeus/deploy.sh --results-full      # download everything incl. .fsp (heavy)
 
-# ── CONFIGURE — edit hpc/zeus.conf, not this file ────────────────────────────
+# ── CONFIGURE — edit zeus/zeus.conf, not this file ────────────────────────────
 CONF="$(cd "$(dirname "$0")" && pwd)/zeus.conf"
 if [[ ! -f "${CONF}" ]]; then
     echo "ERROR: zeus.conf not found at ${CONF}"
@@ -26,6 +28,8 @@ LOCAL_NEFF=$(python -c "import sys; sys.path.insert(0,'${LOCAL_PROJECT}'); impor
 
 UPLOAD_ONLY=false
 DOWNLOAD_RESULTS=false
+DOWNLOAD_NO_FSP=false
+DOWNLOAD_MODE_SET=false
 STATUS=false
 OPTION=""
 RUN_SCRIPT=""
@@ -33,14 +37,16 @@ FSP_PRESET=""
 
 for arg in "$@"; do
     case "$arg" in
-        --option1)      OPTION="1" ;;
-        --option2)      OPTION="2" ;;
-        --upload-only)  UPLOAD_ONLY=true ;;
-        --results)      DOWNLOAD_RESULTS=true ;;
-        --status)       STATUS=true ;;
-        --run)          shift; RUN_SCRIPT="$1" ;;
-        --run=*)        RUN_SCRIPT="${arg#--run=}" ;;
-        --preset=*)     FSP_PRESET="${arg#--preset=}" ;;
+        --option1)          OPTION="1" ;;
+        --option2)          OPTION="2" ;;
+        --upload-only)      UPLOAD_ONLY=true ;;
+        --results)          DOWNLOAD_RESULTS=true ;;
+        --results-no-fsp)   DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=true; DOWNLOAD_MODE_SET=true ;;
+        --results-full)     DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=false; DOWNLOAD_MODE_SET=true ;;
+        --status)           STATUS=true ;;
+        --run)              shift; RUN_SCRIPT="$1" ;;
+        --run=*)            RUN_SCRIPT="${arg#--run=}" ;;
+        --preset=*)         FSP_PRESET="${arg#--preset=}" ;;
     esac
 done
 
@@ -102,10 +108,17 @@ SSH="${ZEUS_USER}@${ZEUS_HOST}"
 
 # ── Helper: download results ──────────────────────────────────────────────────
 download_results() {
+    local no_fsp="${1:-false}"
     echo ""
-    echo "=== Downloading results ==="
     mkdir -p "${LOCAL_RESULTS_DIR}"
-    scp -r "${SSH}:${REMOTE_BASE}/results/." "${LOCAL_RESULTS_DIR}/"
+    if [[ "${no_fsp}" == "true" ]]; then
+        echo "=== Downloading results (data files only, skipping .fsp) ==="
+        ssh "${SSH}" "tar --exclude='*.fsp' -czf - -C '${REMOTE_BASE}/results' ." \
+            | tar -xzf - -C "${LOCAL_RESULTS_DIR}/"
+    else
+        echo "=== Downloading results (full, including .fsp) ==="
+        scp -r "${SSH}:${REMOTE_BASE}/results/." "${LOCAL_RESULTS_DIR}/"
+    fi
     echo "Results saved to: ${LOCAL_RESULTS_DIR}"
 }
 
@@ -127,7 +140,21 @@ fi
 
 # ── --results: immediate download ────────────────────────────────────────────
 if [[ "${DOWNLOAD_RESULTS}" == "true" ]]; then
-    download_results
+    if [[ "${DOWNLOAD_MODE_SET}" == "false" ]]; then
+        echo ""
+        echo "============================================================"
+        echo "  Choose download mode:"
+        echo "  1) Data files only — .mat and logs, no .fsp  (fast)"
+        echo "  2) Full results    — includes .fsp layout files (heavy)"
+        echo "============================================================"
+        read -rp "Enter 1 or 2: " _dl_choice
+        case "${_dl_choice}" in
+            1) DOWNLOAD_NO_FSP=true ;;
+            2) DOWNLOAD_NO_FSP=false ;;
+            *) echo "Invalid choice. Exiting."; exit 1 ;;
+        esac
+    fi
+    download_results "${DOWNLOAD_NO_FSP}"
     exit 0
 fi
 
@@ -166,11 +193,11 @@ fi
 
 echo ""
 echo "=== Uploading HPC scripts ==="
-scp "${LOCAL_PROJECT}/hpc/jobs/"*.sh    "${SSH}:${REMOTE_BASE}/jobs/"
-scp "${LOCAL_PROJECT}/hpc/jobs/"*.c     "${SSH}:${REMOTE_BASE}/jobs/" 2>/dev/null || true
-scp "${LOCAL_PROJECT}/hpc/scripts/"*.py "${SSH}:${REMOTE_BASE}/scripts/"
+scp "${LOCAL_PROJECT}/zeus/jobs/"*.sh    "${SSH}:${REMOTE_BASE}/jobs/"
+scp "${LOCAL_PROJECT}/zeus/jobs/"*.c     "${SSH}:${REMOTE_BASE}/jobs/" 2>/dev/null || true
+scp "${LOCAL_PROJECT}/zeus/scripts/"*.py "${SSH}:${REMOTE_BASE}/scripts/"
 ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/jobs/bin"
-scp "${LOCAL_PROJECT}/hpc/jobs/bin/fdtd-solutions" "${SSH}:${REMOTE_BASE}/jobs/bin/fdtd-solutions"
+scp "${LOCAL_PROJECT}/zeus/jobs/bin/fdtd-solutions" "${SSH}:${REMOTE_BASE}/jobs/bin/fdtd-solutions"
 ssh "${SSH}" "chmod +x ${REMOTE_BASE}/jobs/*.sh ${REMOTE_BASE}/jobs/bin/fdtd-solutions"
 
 echo ""
@@ -189,7 +216,7 @@ if [[ "${OPTION}" == "1" ]]; then
     # ── Option 1: generate .fsp locally, upload it, run engine on Zeus ───────
     echo "Option 1: generating .fsp locally..."
     LOCAL_PYTHON=$(which python 2>/dev/null || which python3 2>/dev/null)
-    FSP_OUTPUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/hpc/scripts/local_save_fsp.py" --preset "${FSP_PRESET}" 2>&1)
+    FSP_OUTPUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/zeus/scripts/local_save_fsp.py" --preset "${FSP_PRESET}" 2>&1)
     echo "${FSP_OUTPUT}"
 
     FSP_PATH=$(echo "${FSP_OUTPUT}" | grep "^FSP_SAVED:" | sed 's/FSP_SAVED://')
@@ -227,11 +254,13 @@ echo ""
 echo "You will receive an email at job start, finish, and failure."
 echo ""
 echo "Check status at any time:"
-echo "  bash hpc/deploy.sh --status"
+echo "  bash zeus/deploy.sh --status"
 echo ""
 echo "Live log on Zeus:"
 echo "  ssh ${SSH} tail -f ${REMOTE_BASE}/jobs/bragg_pipeline.out"
 echo ""
 echo "Download results after job finishes:"
-echo "  bash hpc/deploy.sh --results"
+echo "  bash zeus/deploy.sh --results           # prompts for mode"
+echo "  bash zeus/deploy.sh --results-no-fsp    # data files only (fast)"
+echo "  bash zeus/deploy.sh --results-full      # everything incl. .fsp (heavy)"
 echo "============================================================"

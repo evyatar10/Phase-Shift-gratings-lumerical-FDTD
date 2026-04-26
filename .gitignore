@@ -4,5 +4,5 @@ __pycache__/
 results*/
 
 # Large binary/container files
-hpc_gpu/container/lumerical-2026R1.sif
-hpc_gpu/container/AnsysInstaller.sh
+athena/container/lumerical-2026R1.sif
+athena/container/AnsysInstaller.sh
