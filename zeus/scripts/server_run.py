@@ -83,9 +83,10 @@ cfg.grating.cavity_neg_detuning_nm = 5.76   # phase-matched detuning (= pitch/2 
 # the sweep is iterated sequentially in this same process — Zeus has no job-array
 # support, so this matches the local target=local behavior.
 _SCRIPTS = {
-    "single_sim":     ("runners.single.run_simulation",   "run_single_sim"),
-    "simple_bragg":   ("runners.single.run_simple_bragg", "run_simple_sim"),
-    "run_experiment": ("runners.single.run_experiment",   "run_experiment"),
+    "single_sim":                 ("runners.single.run_simulation",            "run_single_sim"),
+    "simple_bragg":               ("runners.single.run_simple_bragg",          "run_simple_sim"),
+    "run_experiment":             ("runners.single.run_experiment",            "run_experiment"),
+    "compare_3d_field_default_vs_shift": ("runners.single.compare_3d_field_default_vs_shift", "run_compare_3d_field_default_vs_shift"),
 }
 _run_script = os.environ.get("RUN_SCRIPT", "single_sim")
 import importlib

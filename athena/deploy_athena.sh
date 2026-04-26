@@ -136,15 +136,17 @@ if [[ "${OPTION}" == "2" && "${_PIPELINE_KIND:-}" == "single" && -z "${RUN_SCRIP
     echo ""
     echo "============================================================"
     echo "  Choose which single-sim script to run on Athena:"
-    echo "  1) single_sim     — Pi-Shift Bragg with cavity     (run_simulation.py)"
-    echo "  2) simple_bragg   — uniform Bragg, no cavity        (run_simple_bragg.py)"
-    echo "  3) run_experiment — ExperimentCard example          (run_experiment.py)"
+    echo "  1) single_sim               — Pi-Shift Bragg with cavity     (run_simulation.py)"
+    echo "  2) simple_bragg             — uniform Bragg, no cavity        (run_simple_bragg.py)"
+    echo "  3) run_experiment           — ExperimentCard example          (run_experiment.py)"
+    echo "  4) compare_3d_field_default_vs_shift — 3D + far-field; default vs 100 nm shift"
     echo "============================================================"
-    read -rp "Enter 1, 2, or 3: " _script_choice
+    read -rp "Enter 1, 2, 3, or 4: " _script_choice
     case "${_script_choice}" in
         1) RUN_SCRIPT="single_sim" ;;
         2) RUN_SCRIPT="simple_bragg" ;;
         3) RUN_SCRIPT="run_experiment" ;;
+        4) RUN_SCRIPT="compare_3d_field_default_vs_shift" ;;
         *) echo "Invalid choice. Exiting."; exit 1 ;;
     esac
 fi
@@ -387,14 +389,14 @@ if [[ "${OPTION}" == "1" ]]; then
         JOB_ID=$(ssh "${SSH}" \
             "cd ${REMOTE_BASE} && sbatch \
                 --array=0-${ARRAY_END}%${K} \
-                --gpus=${N_GPUS} --cpus-per-task=${N_CPUS} \
+                --gpus=1 --cpus-per-task=${N_CPUS} \
                 --export=ALL,ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_fsp_gpu_array.sh")
     else
         JOB_ID=$(ssh "${SSH}" \
             "cd ${REMOTE_BASE} && sbatch \
-                --gpus=${N_GPUS} --cpus-per-task=${N_CPUS} \
+                --gpus=1 --cpus-per-task=${N_CPUS} \
                 --export=ALL,FSP_FILE=\"${FSP_NAME}\",ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_fsp_gpu.sh")
@@ -404,7 +406,7 @@ elif [[ "${OPTION}" == "2" ]]; then
     # ── Option 2: full Python pipeline (single sequential job) ───────────────
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
-            --gpus=${N_GPUS} --cpus-per-task=${N_CPUS} \
+            --gpus=1 --cpus-per-task=${N_CPUS} \
             --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_gpu.sh")
@@ -463,7 +465,7 @@ else
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
             --array=0-${ARRAY_END}%${K} \
-            --gpus=${N_GPUS} --cpus-per-task=${N_CPUS} \
+            --gpus=1 --cpus-per-task=${N_CPUS} \
             --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DZ=${SWEEP_FIXED_DZ},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_array.sh")

@@ -121,15 +121,17 @@ if [[ "${OPTION}" == "2" && "${_PIPELINE_KIND:-}" == "single" && -z "${RUN_SCRIP
     echo ""
     echo "============================================================"
     echo "  Choose which single-sim script to run on Zeus:"
-    echo "  1) single_sim     — Pi-Shift Bragg with cavity     (run_simulation.py)"
-    echo "  2) simple_bragg   — uniform Bragg, no cavity        (run_simple_bragg.py)"
-    echo "  3) run_experiment — ExperimentCard example          (run_experiment.py)"
+    echo "  1) single_sim               — Pi-Shift Bragg with cavity     (run_simulation.py)"
+    echo "  2) simple_bragg             — uniform Bragg, no cavity        (run_simple_bragg.py)"
+    echo "  3) run_experiment           — ExperimentCard example          (run_experiment.py)"
+    echo "  4) compare_3d_field_default_vs_shift — 3D + far-field; default vs 100 nm shift"
     echo "============================================================"
-    read -rp "Enter 1, 2, or 3: " _script_choice
+    read -rp "Enter 1, 2, 3, or 4: " _script_choice
     case "${_script_choice}" in
         1) RUN_SCRIPT="single_sim" ;;
         2) RUN_SCRIPT="simple_bragg" ;;
         3) RUN_SCRIPT="run_experiment" ;;
+        4) RUN_SCRIPT="compare_3d_field_default_vs_shift" ;;
         *) echo "Invalid choice. Exiting."; exit 1 ;;
     esac
 fi
