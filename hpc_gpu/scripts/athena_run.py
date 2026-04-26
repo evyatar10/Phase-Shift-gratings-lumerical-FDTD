@@ -100,8 +100,8 @@ _REQUIRE_GPU = os.environ.get("REQUIRE_GPU", "0") == "1"
 def _patched_FDTD_init(self, *args, **kwargs):
     _original_FDTD_init(self, *args, **kwargs)
     try:
-        self.setresource("FDTD", 1, "GPU", True)
-        print("[athena_run] GPU enabled on FDTD resource 1.")
+        self.setresource("FDTD", 1, "device type", "GPU")
+        print("[athena_run] GPU enabled on FDTD resource 1 (device type='GPU').")
     except Exception as _e:
         msg = f"could not enable GPU via setresource: {_e}"
         if _REQUIRE_GPU:
@@ -114,10 +114,10 @@ def _patched_FDTD_init(self, *args, **kwargs):
 
     # Confirm what the engine will actually use.
     try:
-        gpu_state = self.getresource("FDTD", 1, "GPU")
-        print(f"[athena_run] getresource('FDTD',1,'GPU') = {gpu_state}")
-        if _REQUIRE_GPU and not gpu_state:
-            print("[athena_run] FATAL: GPU resource read back as False.")
+        device_type = self.getresource("FDTD", 1, "device type")
+        print(f"[athena_run] getresource('FDTD',1,'device type') = {device_type!r}")
+        if _REQUIRE_GPU and str(device_type).strip().upper() != "GPU":
+            print(f"[athena_run] FATAL: device type read back as {device_type!r}, expected 'GPU'.")
             sys.exit(2)
     except Exception as _e:
         print(f"[athena_run] WARNING: getresource readback failed: {_e}")

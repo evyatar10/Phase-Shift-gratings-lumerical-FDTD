@@ -162,7 +162,16 @@ export LUMERICAL_LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}\"
 # (e.g. /bin/bash for fdtd-solutions) with an environment where /opt/lumerical/v261/lib
 # is not on LD_LIBRARY_PATH at process-start time, so ld.so can't resolve the
 # tbbmalloc_proxy -> tbbmalloc DT_NEEDED dependency by name alone.
-export LD_PRELOAD=/opt/lumerical/v261/lib/libtbbmalloc.so.2:/opt/lumerical/v261/lib/libtbbmalloc_proxy.so.2
+# NVML trampoline must also be on LD_PRELOAD: lumapi spawns fdtd-solutions, which
+# spawns fdtd-engine. Each spawn drops /nvml_tramp from LD_LIBRARY_PATH (only
+# LUMERICAL_LD_LIBRARY_PATH is honored by fdtd-solutions, not by fdtd-engine).
+# LD_PRELOAD survives exec(), so the trampoline gets loaded by every descendant
+# process and satisfies the engine's libnvidia-ml.so.1 dlopen by soname.
+LD_PRELOAD_NVML=\"\"
+if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
+    LD_PRELOAD_NVML=\"/nvml_tramp/libnvidia-ml.so.1:\"
+fi
+export LD_PRELOAD=\"\${LD_PRELOAD_NVML}/opt/lumerical/v261/lib/libtbbmalloc.so.2:/opt/lumerical/v261/lib/libtbbmalloc_proxy.so.2\"
 export ANSYSLMD_LICENSE_FILE='${LICENSE}'
 export ANSYSLI_SERVERS='${INTERCONNECT}'
 export ANSYS_APIP_DISABLE=1

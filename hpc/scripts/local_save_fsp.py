@@ -126,8 +126,8 @@ for shift_m in shifts:
         apply_monitor_overrides(sim, iter_cfg)
         if args.gpu:
             try:
-                sim.fdtd.setresource("FDTD", 1, "GPU", True)
-                print("  GPU resource enabled (setresource FDTD 1 GPU True)")
+                sim.fdtd.setresource("FDTD", 1, "device type", "GPU")
+                print("  GPU resource enabled (setresource FDTD 1 'device type' 'GPU')")
             except Exception as _e:
                 print(f"  WARNING: setresource GPU failed: {_e}")
         sim.fdtd.save(layout_path)
