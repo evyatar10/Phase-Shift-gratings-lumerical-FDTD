@@ -8,7 +8,7 @@
     },
     "tasks": [
         {
-            "label": "Zeus: Deploy (choose option)",
+            "label": "Zeus: Deploy (choose mode)",
             "type": "shell",
             "command": "bash zeus/deploy.sh",
             "group": "build",
@@ -20,7 +20,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Zeus: Deploy Option 1 - local .fsp → engine on Zeus (RECOMMENDED)",
+            "label": "Zeus: Deploy — FSP job (local .fsp → engine on Zeus)",
             "type": "shell",
             "command": "bash zeus/deploy.sh --option1",
             "group": "build",
@@ -32,7 +32,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Zeus: Deploy Option 2 - full Python pipeline on Zeus",
+            "label": "Zeus: Deploy — Python job (single sim)",
             "type": "shell",
             "command": "bash zeus/deploy.sh --option2",
             "group": "build",
@@ -92,7 +92,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Athena: Deploy (choose option)",
+            "label": "Athena: Deploy (choose mode)",
             "type": "shell",
             "command": "bash athena/deploy_athena.sh",
             "group": "build",
@@ -104,7 +104,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Athena: Deploy Option 1 - local .fsp → engine on Athena (RECOMMENDED)",
+            "label": "Athena: Deploy — FSP job (local .fsp → engine on Athena)",
             "type": "shell",
             "command": "bash athena/deploy_athena.sh --option1",
             "group": "build",
@@ -116,7 +116,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Athena: Deploy Option 2 - full Python pipeline on Athena",
+            "label": "Athena: Deploy — Python job (single or sweep)",
             "type": "shell",
             "command": "bash athena/deploy_athena.sh --option2",
             "group": "build",

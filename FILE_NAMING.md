@@ -16,31 +16,18 @@ to keep paths short enough for Lumerical's internal path-length limit.
 | `_d` | `_disp` | Dispersive material model (omitted = constant index) |
 | `_ff` | `_ff` | Far-field monitors enabled (unchanged) |
 | `_S90` | `_shift_90.0nm` | Innermost tooth shift (nm) |
-| `_I100` | `_innersize_100nm` | Innermost tooth corrugation depth (nm) |
+| `_M125` | `_innersize_125nm` | Center modulation depth (nm); shown only when use_apod and value differs from default 100 |
 | `_fc` | `_fixed_cav` | Fixed cavity length (no adaptive lengthening) |
 
 ## Example
 
 ```
-Old: layout_80_periods_1_apod_neg_det_5.76nm_avg_wgd_shift_90.0nm_innersize_100nm.fsp
-New: layout_N80_A1_D5p76_avg_S90_I100.fsp
-```
-
-## Directory structure
-
-Sweep subfolders follow the same convention:
-
-```
-layouts/
-  S90/              ← formerly shift_90nm/
-    layout_N80_A1_D5p76_avg_S90_I100.fsp
-results/
-  S90/
-    result_N80_A1_D5p76_avg_S90_I100.mat
+Old: layout_80_periods_1_apod_neg_det_5.76nm_avg_wgd_shift_90.0nm_innersize_125nm.fsp
+New: layout_N80_A1_M125_D5p76_avg_S90.fsp
 ```
 
 ## Where abbreviations are generated
 
-- `generate_file_tag()` in `sim_helpers.py` — produces the base tag (`N{periods}[_A{apod}]…`)
-- `run_sweep_inner_tooth_size.py` — appends `_S{shift}_I{innersize}`
-- `run_sweep_innermost_shift.py` — appends `_S{shift}`
+- `generate_file_tag()` in `sim_helpers.py` — produces the full tag for all
+  sweep dimensions (periods, apod count, mod depth, detuning, shift, etc.).
+  Sweep runners no longer append per-study suffixes; everything is one place.

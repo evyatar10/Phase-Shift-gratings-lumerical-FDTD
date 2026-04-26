@@ -242,7 +242,11 @@ def generate_file_tag(sim):
 
     if use_apod:
         tanh_tag = "_th" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""
-        return f"N{N}_A{Napod}{tanh_tag}{cav_tag}{shift_tag}{fc_tag}{mat_tag}{wgd_tag}"
+        # Annotate center modulation depth only when it differs from the
+        # historical default (100 nm) — keeps pre-sweep filenames stable.
+        mod_depth_nm = float(getattr(sim, 'center_mod_depth', 100e-9)) * 1e9
+        mod_tag = f"_M{round(mod_depth_nm):.0f}" if abs(mod_depth_nm - 100.0) > 0.5 else ""
+        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{mat_tag}{wgd_tag}"
     else:
         return f"N{N}{cav_tag}{shift_tag}{fc_tag}{mat_tag}{wgd_tag}"
 

@@ -54,7 +54,8 @@ LICENSE="${ATHENA_LICENSE:-11055@dgx-master}"
 INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
 
 # RUN_SCRIPT can be set via --export at sbatch, or hardcoded here as fallback.
-# Valid values: single_sim | sweep_shift | sweep_inner_size
+# Valid values: see _SCRIPTS in athena/scripts/athena_run.py
+# (currently: single_sim | simple_bragg | run_experiment)
 RUN_SCRIPT="${RUN_SCRIPT:-single_sim}"
 
 # REQUIRE_GPU=1 makes athena_run.py exit non-zero if setresource(...,"GPU",True)

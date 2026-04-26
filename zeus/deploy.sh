@@ -4,8 +4,12 @@
 # Run from Git Bash, WSL, or via VS Code tasks.
 #
 # Usage:
-#   bash zeus/deploy.sh --option1    # generate .fsp locally → upload → run engine on Zeus (RECOMMENDED)
-#   bash zeus/deploy.sh --option2    # upload Python code → run full lumapi pipeline on Zeus
+#   bash zeus/deploy.sh                                      # interactive: engine or pipeline
+#   bash zeus/deploy.sh --option1                            # engine: generate .fsp locally → run engine on Zeus
+#   bash zeus/deploy.sh --option2                            # pipeline; prompts: single or sweep
+#   bash zeus/deploy.sh --option2 --run=single_sim           # pipeline single (no prompt)
+#   bash zeus/deploy.sh --option2 --run=simple_bragg         # pipeline single, uniform Bragg
+#   bash zeus/deploy.sh --option2 --spec=runners.sweeps.innermost_shift  # sweep (sequential, single PBS job)
 #   bash zeus/deploy.sh --upload-only
 #   bash zeus/deploy.sh --watch
 #   bash zeus/deploy.sh --watch-only
@@ -34,6 +38,7 @@ STATUS=false
 OPTION=""
 RUN_SCRIPT=""
 FSP_PRESET=""
+SPEC_MODULE=""
 
 for arg in "$@"; do
     case "$arg" in
@@ -47,19 +52,23 @@ for arg in "$@"; do
         --run)              shift; RUN_SCRIPT="$1" ;;
         --run=*)            RUN_SCRIPT="${arg#--run=}" ;;
         --preset=*)         FSP_PRESET="${arg#--preset=}" ;;
+        --spec=*)           RUN_SCRIPT="sweep_spec"; SPEC_MODULE="${arg#--spec=}" ;;
     esac
 done
 
-# ── Prompt for option if not specified ───────────────────────────────────────
+# ── Prompt for top-level mode if not specified ───────────────────────────────
+# Two conceptual modes (matches Athena layout):
+#   1) Engine    → generate .fsp locally, run FDTD engine on Zeus
+#   2) Pipeline  → run lumapi Python pipeline on Zeus (single sim only)
+# Sweeps are not supported on Zeus (no SLURM array) — use Athena for those.
 if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${STATUS}" == "false" ]]; then
     echo ""
     echo "============================================================"
-    echo "  Choose run mode:"
-    echo "  1) Generate .fsp locally → upload → run FDTD engine on Zeus"
-    echo "     (RECOMMENDED — no license issues on compute nodes)"
+    echo "  Zeus — Choose run mode:"
+    echo "  1) FSP job    — generate .fsp locally → run FDTD engine on Zeus"
     echo ""
-    echo "  2) Upload Python code → run full lumapi pipeline on Zeus"
-    echo "     (may fail if Lumerical license is unavailable on node)"
+    echo "  2) Python job — run lumapi Python pipeline on Zeus (single sim only)"
+    echo "                  (for sweeps, use Athena: athena/deploy_athena.sh)"
     echo "============================================================"
     read -rp "Enter 1 or 2: " OPTION
     if [[ "${OPTION}" != "1" && "${OPTION}" != "2" ]]; then
@@ -86,22 +95,72 @@ if [[ "${OPTION}" == "1" && -z "${FSP_PRESET}" && "${UPLOAD_ONLY}" == "false" ]]
     esac
 fi
 
-# ── Prompt for script if option 2 and not specified ──────────────────────────
+# ── Pipeline sub-prompt: single or sweep ─────────────────────────────────────
+# Mirrors the Athena layout. Zeus has no SLURM array support, so a "sweep"
+# here is just a sequential loop inside a single PBS job (the same as running
+# `run_sweep_spec(SPEC, target="local")` locally — no parallelism).
 if [[ "${OPTION}" == "2" && -z "${RUN_SCRIPT}" && "${UPLOAD_ONLY}" == "false" ]]; then
     echo ""
     echo "============================================================"
-    echo "  Choose which script to run on Zeus:"
-    echo "  1) single_sim          — run_simulation.py (one simulation)"
-    echo "  2) sweep_shift         — ToothShift/run_sweep_innermost_shift.py"
-    echo "  3) sweep_inner_size    — ToothShift/run_sweep_inner_tooth_size.py"
+    echo "  Python pipeline mode:"
+    echo "  1) Single simulation"
+    echo "  2) Sweep (sequential — one config after another, single PBS job)"
+    echo "============================================================"
+    read -rp "Enter 1 or 2: " _pipeline_choice
+    case "${_pipeline_choice}" in
+        1) _PIPELINE_KIND="single" ;;
+        2) _PIPELINE_KIND="sweep" ;;
+        *) echo "Invalid choice. Exiting."; exit 1 ;;
+    esac
+fi
+
+# ── Single-runner picker (option 2 → single) ─────────────────────────────────
+# Auto-discovers runners/single/run_*.py files. New runners appear here as
+# soon as they expose a top-level callable matching _SCRIPTS in server_run.py.
+if [[ "${OPTION}" == "2" && "${_PIPELINE_KIND:-}" == "single" && -z "${RUN_SCRIPT}" ]]; then
+    echo ""
+    echo "============================================================"
+    echo "  Choose which single-sim script to run on Zeus:"
+    echo "  1) single_sim     — Pi-Shift Bragg with cavity     (run_simulation.py)"
+    echo "  2) simple_bragg   — uniform Bragg, no cavity        (run_simple_bragg.py)"
+    echo "  3) run_experiment — ExperimentCard example          (run_experiment.py)"
     echo "============================================================"
     read -rp "Enter 1, 2, or 3: " _script_choice
     case "${_script_choice}" in
         1) RUN_SCRIPT="single_sim" ;;
-        2) RUN_SCRIPT="sweep_shift" ;;
-        3) RUN_SCRIPT="sweep_inner_size" ;;
+        2) RUN_SCRIPT="simple_bragg" ;;
+        3) RUN_SCRIPT="run_experiment" ;;
         *) echo "Invalid choice. Exiting."; exit 1 ;;
     esac
+fi
+
+# ── Sweep study picker (option 2 → sweep) ────────────────────────────────────
+# Auto-discovers any module under runners/sweeps/ that defines a top-level SPEC.
+# New studies appear automatically the next time this script runs.
+if [[ "${OPTION}" == "2" && "${_PIPELINE_KIND:-}" == "sweep" && -z "${SPEC_MODULE}" ]]; then
+    mapfile -t _STUDIES < <(
+        grep -l '^SPEC' "${LOCAL_PROJECT}/runners/sweeps/"*.py 2>/dev/null \
+            | xargs -n1 basename | sed 's/\.py$//' | sort
+    )
+    if [[ ${#_STUDIES[@]} -eq 0 ]]; then
+        echo "ERROR: no study modules found in runners/sweeps/ (need top-level SPEC = SweepSpec(...))"
+        exit 1
+    fi
+    echo ""
+    echo "============================================================"
+    echo "  Choose sweep study to run (runners/sweeps/<name>.py):"
+    for _i in "${!_STUDIES[@]}"; do
+        printf "  %d) %s\n" "$((_i+1))" "${_STUDIES[$_i]}"
+    done
+    echo "============================================================"
+    read -rp "Enter number: " _study_choice
+    if [[ "${_study_choice}" =~ ^[0-9]+$ ]] && (( _study_choice >= 1 && _study_choice <= ${#_STUDIES[@]} )); then
+        SPEC_MODULE="runners.sweeps.${_STUDIES[$((_study_choice-1))]}"
+        RUN_SCRIPT="sweep_spec"
+        echo "Selected: ${SPEC_MODULE}"
+    else
+        echo "Invalid choice. Exiting."; exit 1
+    fi
 fi
 
 SSH="${ZEUS_USER}@${ZEUS_HOST}"
@@ -172,14 +231,14 @@ echo ""
 echo "=== Uploading project files ==="
 # Core files required to run simulations on Zeus
 for f in config.py simulation_config.py sim_helpers.py \
-          bragg_device.py \
-          run_simulation.py post_processing.py; do
+          bragg_device.py analysis.py experiment_card.py \
+          post_processing.py; do
     if [[ -f "${LOCAL_PROJECT}/${f}" ]]; then
         scp "${LOCAL_PROJECT}/${f}" "${SSH}:${REMOTE_BASE}/project/"
     fi
 done
-echo "  uploading ToothShift/"
-scp -r "${LOCAL_PROJECT}/ToothShift" "${SSH}:${REMOTE_BASE}/project/"
+echo "  uploading runners/ (single + sweeps + studies)"
+scp -r "${LOCAL_PROJECT}/runners" "${SSH}:${REMOTE_BASE}/project/"
 
 echo ""
 echo "=== Uploading neff data ==="
@@ -238,7 +297,9 @@ if [[ "${OPTION}" == "1" ]]; then
     fi
 else
     # ── Option 2: full Python pipeline on Zeus ────────────────────────────────
-    JOB_ID=$(ssh "${SSH}" "cd ${REMOTE_BASE} && qsub -l select=1:ncpus=${N_CPUS} -v RUN_SCRIPT=${RUN_SCRIPT},NTFY_TOPIC=${NTFY_TOPIC} jobs/run_python_job.sh")
+    # SWEEP_SPEC_MODULE is only used when RUN_SCRIPT=sweep_spec (sweep mode);
+    # for single runs it's empty and ignored by server_run.py.
+    JOB_ID=$(ssh "${SSH}" "cd ${REMOTE_BASE} && qsub -l select=1:ncpus=${N_CPUS} -v RUN_SCRIPT=${RUN_SCRIPT},SWEEP_SPEC_MODULE=${SPEC_MODULE},NTFY_TOPIC=${NTFY_TOPIC} jobs/run_python_job.sh")
     if [[ $? -ne 0 ]]; then
         echo "ERROR: qsub failed. Check that you're connected to Zeus and PBS is available."
         exit 1

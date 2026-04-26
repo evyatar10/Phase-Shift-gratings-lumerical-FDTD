@@ -6,11 +6,13 @@
 # Run from Git Bash, WSL, or VS Code tasks on your local Windows machine.
 #
 # Usage:
-#   bash athena/deploy_athena.sh --option1 --preset single       # RECOMMENDED
+#   bash athena/deploy_athena.sh                                 # interactive: engine or pipeline
+#   bash athena/deploy_athena.sh --option1 --preset single       # engine, RECOMMENDED
 #   bash athena/deploy_athena.sh --option1 --preset sweep_shift
 #   bash athena/deploy_athena.sh --option1 --preset sweep_inner_size
-#   bash athena/deploy_athena.sh --option2 --run single_sim
-#   bash athena/deploy_athena.sh --option2 --run sweep_shift
+#   bash athena/deploy_athena.sh --option2                       # pipeline, prompts: single or sweep
+#   bash athena/deploy_athena.sh --option2 --run=single_sim      # pipeline, single (no prompt)
+#   bash athena/deploy_athena.sh --option3 --spec=runners.sweeps.innermost_shift  # pipeline, sweep (no prompt)
 #   bash athena/deploy_athena.sh --upload-only
 #   bash athena/deploy_athena.sh --watch
 #   bash athena/deploy_athena.sh --watch-only
@@ -67,25 +69,27 @@ done
 
 SSH="${ATHENA_USER}@${ATHENA_HOST}"
 
-# ── Prompt for option if not specified ────────────────────────────────────────
+# ── Prompt for top-level mode if not specified ────────────────────────────────
+# Two conceptual modes presented to the user:
+#   1) Engine    → generate .fsp locally, run FDTD engine on GPU (no Python on node)
+#   2) Pipeline  → run lumapi Python pipeline on GPU (sub-prompt: single or sweep)
+# Internally OPTION is still 1/2/3 (3 = pipeline-as-array). The single→sweep flip
+# happens in the pipeline sub-prompt below.
 if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${STATUS}" == "false" && "${LICENSE_PROBE}" == "false" ]]; then
     echo ""
     echo "============================================================"
     echo "  Athena GPU — Choose run mode:"
-    echo "  1) Generate .fsp locally → upload → run FDTD engine on GPU"
-    echo "     (RECOMMENDED — no license required on compute node at FSP build time)"
+    echo "  1) FSP job    — generate .fsp locally → run FDTD engine on GPU"
     echo ""
-    echo "  2) Upload Python code → run full lumapi pipeline on GPU"
-    echo "     (single sequential job; requires license at run time)"
-    echo ""
-    echo "  3) Python pipeline as a SLURM job array (parallel sweep)"
-    echo "     (one task per sweep value; throttled by MAX_CONCURRENT in athena.conf)"
+    echo "  2) Python job — run lumapi Python pipeline on GPU"
+    echo "                  (asks: single simulation or sweep)"
     echo "============================================================"
-    read -rp "Enter 1, 2, or 3: " OPTION
-    if [[ "${OPTION}" != "1" && "${OPTION}" != "2" && "${OPTION}" != "3" ]]; then
-        echo "Invalid option. Exiting."
-        exit 1
-    fi
+    read -rp "Enter 1 or 2: " _mode_choice
+    case "${_mode_choice}" in
+        1) OPTION="1" ;;
+        2) OPTION="2" ;;  # pipeline; sub-prompt below may flip to OPTION=3 (sweep)
+        *) echo "Invalid option. Exiting."; exit 1 ;;
+    esac
 fi
 
 # ── Prompt for preset if option 1 ─────────────────────────────────────────────
@@ -106,44 +110,97 @@ if [[ "${OPTION}" == "1" && -z "${FSP_PRESET}" && -z "${FSP_EXPLICIT}" && "${UPL
     esac
 fi
 
-# ── Prompt for script if option 2 ─────────────────────────────────────────────
-if [[ "${OPTION}" == "2" && -z "${RUN_SCRIPT}" && "${UPLOAD_ONLY}" == "false" ]]; then
+# ── Pipeline sub-prompt: single or sweep ──────────────────────────────────────
+# Fires only for OPTION=2 with no explicit script/sweep already passed on CLI.
+# Picking "sweep" flips OPTION to 3 (SLURM job array) and routes to the study
+# picker below.
+if [[ "${OPTION}" == "2" && -z "${RUN_SCRIPT}" && -z "${SWEEP_KIND}" && "${UPLOAD_ONLY}" == "false" ]]; then
     echo ""
     echo "============================================================"
-    echo "  Choose Python script to run on Athena:"
-    echo "  1) single_sim          — run_simulation.py (one simulation)"
-    echo "  2) sweep_shift         — ToothShift/run_sweep_innermost_shift.py"
-    echo "  3) sweep_inner_size    — ToothShift/run_sweep_inner_tooth_size.py"
+    echo "  Python pipeline mode:"
+    echo "  1) Single simulation"
+    echo "  2) Sweep (parallel SLURM job array)"
     echo "============================================================"
-    read -rp "Enter 1, 2, or 3: " _script_choice
-    case "${_script_choice}" in
-        1) RUN_SCRIPT="single_sim" ;;
-        2) RUN_SCRIPT="sweep_shift" ;;
-        3) RUN_SCRIPT="sweep_inner_size" ;;
+    read -rp "Enter 1 or 2: " _pipeline_choice
+    case "${_pipeline_choice}" in
+        1) _PIPELINE_KIND="single" ;;
+        2) OPTION="3"; SWEEP_KIND="spec" ;;
         *) echo "Invalid choice. Exiting."; exit 1 ;;
     esac
 fi
 
-# ── Prompt for sweep kind if option 3 ─────────────────────────────────────────
+# ── Single-runner picker (option 2 → single) ──────────────────────────────────
+# Mirrors zeus/deploy.sh. Available runners must be wired up in athena_run.py's
+# _SCRIPTS dict. Add new runners there once and they're selectable from both servers.
+if [[ "${OPTION}" == "2" && "${_PIPELINE_KIND:-}" == "single" && -z "${RUN_SCRIPT}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    echo ""
+    echo "============================================================"
+    echo "  Choose which single-sim script to run on Athena:"
+    echo "  1) single_sim     — Pi-Shift Bragg with cavity     (run_simulation.py)"
+    echo "  2) simple_bragg   — uniform Bragg, no cavity        (run_simple_bragg.py)"
+    echo "  3) run_experiment — ExperimentCard example          (run_experiment.py)"
+    echo "============================================================"
+    read -rp "Enter 1, 2, or 3: " _script_choice
+    case "${_script_choice}" in
+        1) RUN_SCRIPT="single_sim" ;;
+        2) RUN_SCRIPT="simple_bragg" ;;
+        3) RUN_SCRIPT="run_experiment" ;;
+        *) echo "Invalid choice. Exiting."; exit 1 ;;
+    esac
+fi
+
+# ── Sweep study picker (option 3, kind=spec) ──────────────────────────────────
+# Auto-discovers any module under runners/sweeps/ that defines a top-level SPEC.
+# New studies appear automatically the next time this script runs.
+if [[ "${OPTION}" == "3" && "${SWEEP_KIND}" == "spec" && -z "${SPEC_MODULE}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    mapfile -t _STUDIES < <(
+        grep -l '^SPEC' "${LOCAL_PROJECT}/runners/sweeps/"*.py 2>/dev/null \
+            | xargs -n1 basename | sed 's/\.py$//' | sort
+    )
+    if [[ ${#_STUDIES[@]} -eq 0 ]]; then
+        echo "ERROR: no study modules found in runners/sweeps/ (need top-level SPEC = SweepSpec(...))"
+        exit 1
+    fi
+    echo ""
+    echo "============================================================"
+    echo "  Choose sweep study to run (runners/sweeps/<name>.py):"
+    for _i in "${!_STUDIES[@]}"; do
+        printf "  %d) %s\n" "$((_i+1))" "${_STUDIES[$_i]}"
+    done
+    echo "============================================================"
+    read -rp "Enter number: " _study_choice
+    if [[ "${_study_choice}" =~ ^[0-9]+$ ]] && (( _study_choice >= 1 && _study_choice <= ${#_STUDIES[@]} )); then
+        SPEC_MODULE="runners.sweeps.${_STUDIES[$((_study_choice-1))]}"
+        echo "Selected: ${SPEC_MODULE}"
+    else
+        echo "Invalid choice. Exiting."; exit 1
+    fi
+fi
+
+# ── Sweep kind picker (only when --sweep= not given and not the spec path) ────
+# Reachable only via explicit --option3 with no --sweep= and no --spec= (e.g.
+# convergence-testing flows). Normal users go through the pipeline sub-prompt.
 if [[ "${OPTION}" == "3" && -z "${SWEEP_KIND}" && "${UPLOAD_ONLY}" == "false" ]]; then
     echo ""
     echo "============================================================"
-    echo "  Choose sweep to parallelize as a SLURM array:"
-    echo "  1) shift           — innermost tooth shift (SHIFT_VALUES_M)"
-    echo "  2) inner_size      — shift × inner-size 2D sweep (cartesian)"
-    echo "  3) generic         — run_sweep.py (cfg.sweep.parameter / .values)"
-    echo "  4) mesh_conv_a     — convergence Phase A (cells_per_half_period)"
-    echo "  5) mesh_conv_b     — convergence Phase B (dz_divisor); requires Phase A done"
+    echo "  Choose sweep kind:"
+    echo "  1) spec            — SweepSpec study (pass --spec=runners.sweeps.<study>)"
+    echo "  2) mesh_conv_a     — convergence Phase A (cells_per_half_period)"
+    echo "  3) mesh_conv_b     — convergence Phase B (dz_divisor); requires Phase A done"
     echo "============================================================"
-    read -rp "Enter 1-5: " _sweep_choice
+    read -rp "Enter 1-3: " _sweep_choice
     case "${_sweep_choice}" in
-        1) SWEEP_KIND="shift" ;;
-        2) SWEEP_KIND="inner_size" ;;
-        3) SWEEP_KIND="generic" ;;
-        4) SWEEP_KIND="mesh_conv_a" ;;
-        5) SWEEP_KIND="mesh_conv_b" ;;
+        1) SWEEP_KIND="spec" ;;
+        2) SWEEP_KIND="mesh_conv_a" ;;
+        3) SWEEP_KIND="mesh_conv_b" ;;
         *) echo "Invalid choice. Exiting."; exit 1 ;;
     esac
+    if [[ "${SWEEP_KIND}" == "spec" && -z "${SPEC_MODULE}" ]]; then
+        read -rp "Enter dotted module path (e.g. runners.sweeps.innermost_shift): " SPEC_MODULE
+        if [[ -z "${SPEC_MODULE}" ]]; then
+            echo "ERROR: spec module is required."; exit 1
+        fi
+    fi
 fi
 
 # ── Helper: download results ───────────────────────────────────────────────────
@@ -237,8 +294,8 @@ ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/{project,data,results/layouts,jobs/logs,sc
 echo ""
 echo "=== Uploading project files ==="
 scp "${LOCAL_PROJECT}"/*.py "${SSH}:${REMOTE_BASE}/project/"
-echo "  uploading ToothShift/"
-scp -r "${LOCAL_PROJECT}/ToothShift" "${SSH}:${REMOTE_BASE}/project/"
+echo "  uploading runners/ (single + sweeps + studies)"
+scp -r "${LOCAL_PROJECT}/runners" "${SSH}:${REMOTE_BASE}/project/"
 
 echo ""
 echo "=== Uploading neff data ==="

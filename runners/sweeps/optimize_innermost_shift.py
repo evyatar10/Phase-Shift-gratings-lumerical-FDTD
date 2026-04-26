@@ -8,16 +8,16 @@ combined with parabolic interpolation for fast convergence on smooth functions.
 Budget: MAX_EVALS simulations.
 
 Usage:
-    python optimize_innermost_shift.py
+    python -m runners.sweeps.optimize_innermost_shift       # from project root
+    python runners/sweeps/optimize_innermost_shift.py       # also works
 """
 
 import sys
 import os
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = os.path.dirname(_HERE)
-sys.path.insert(0, _ROOT)
-sys.path.insert(0, _HERE)
+# Make the project root importable when invoked as a script.
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, _PROJECT_ROOT)
 
 import copy
 import gc
@@ -29,7 +29,7 @@ from scipy.optimize import minimize_scalar
 
 import config
 from simulation_config import SimulationConfig
-from run_sweep_innermost_shift import run_single_sim_with_shift
+from runners.single.run_simulation import run_single_sim
 
 # ── Search parameters ──────────────────────────────────────────────────────────
 
@@ -45,10 +45,11 @@ MAX_EVALS    = 8      # simulation budget
 def _evaluate(cfg: SimulationConfig, shift_nm: float, lengthen_cavity: bool,
               tested_shifts: list, tested_T: list) -> float:
     """Run one simulation, record the result, and return resonance transmission."""
-    shift_m = shift_nm * 1e-9
     iter_cfg = copy.deepcopy(cfg)
+    iter_cfg.grating.innermost_tooth_shift_m = shift_nm * 1e-9
+    iter_cfg.grating.lengthen_cavity = lengthen_cavity
     try:
-        results = run_single_sim_with_shift(iter_cfg, shift_m, lengthen_cavity)
+        results = run_single_sim(iter_cfg)
         T = float(results['resonance_transmission'])
     finally:
         gc.collect()

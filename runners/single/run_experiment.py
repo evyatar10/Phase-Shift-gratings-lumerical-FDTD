@@ -9,12 +9,19 @@ Three usage patterns:
 Uncomment the example you want to run, or import and adapt in your own script.
 
 Usage:
-    python run_experiment.py
+    python -m runners.single.run_experiment         # from project root
+    python runners/single/run_experiment.py         # also works
 """
+
+import os
+import sys
+
+# Make the project root importable when invoked as `python runners/single/run_experiment.py`.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from experiment_card import ExperimentCard, run_card, run_cards
 from simulation_config import SimulationConfig
-from run_sweep import run_sweep
+from runners.sweeps.sweep_spec import SweepSpec, run_sweep_spec
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -71,8 +78,18 @@ def example_sweep(base=None):
         corrugation_depth_nm=200,
         label="Period sweep",
     )
-    cfg = card.to_sweep_config("n_periods_each_side", [30, 40, 50, 60], base=base)
-    run_sweep(cfg)
+    spec = SweepSpec(n_periods_each_side=[30, 40, 50, 60], label="period_sweep")
+    run_sweep_spec(spec, target="local", base=card.to_config(base))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Server entry point — used by Zeus/Athena dispatchers (RUN_SCRIPT=run_experiment)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def run_experiment(cfg=None):
+    """Default 'experiment' run for HPC dispatch — runs example_single_run.
+    Edit this body to switch to example_compare_devices or example_sweep."""
+    return example_single_run(base=cfg)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -149,11 +149,11 @@ bash athena/deploy_athena.sh --option3 --sweep=mesh_conv_a
 bash athena/deploy_athena.sh --option3 --sweep=mesh_conv_b
 
 # Or supply a project-level SweepSpec study file (one task per cartesian point):
-bash athena/deploy_athena.sh --spec=studies.sweep_apod_vs_shift
+bash athena/deploy_athena.sh --spec=runners.sweeps.apod_and_shift
 ```
 
 Flow:
-1. `build_sweep_list.py` runs **locally**, emitting one task line per sweep value (cartesian for `inner_size`).
+1. `build_sweep_list.py` runs **locally**, emitting one task line per sweep value (one line per `SPEC.expand()` config).
 2. The list is uploaded to `${REMOTE_BASE}/data/sweep_list.txt`.
 3. `sbatch --array=0-N-1%K jobs/run_python_array.sh` submits the array. Each task reads its line by `$SLURM_ARRAY_TASK_ID` and dispatches via `athena_run_one.py`.
 
@@ -163,10 +163,8 @@ Flow:
 bash athena/deploy_athena.sh --license-probe
 ```
 
-Sources of value lists (edit these to change the sweep contents):
-- `shift`           → `ToothShift/run_sweep_innermost_shift.py::SHIFT_VALUES_M`
-- `inner_size`      → `ToothShift/run_sweep_inner_tooth_size.py::TOOTH_SHIFT_VALUES_NM × INNER_SIZE_VALUES_NM`
-- `generic`         → `run_sweep.py` `__main__` block (`cfg.sweep.parameter`, `cfg.sweep.values`)
+Available sweep kinds:
+- `spec`            → any module in `runners/sweeps/` exposing `SPEC: SweepSpec`. Pass with `--spec=runners.sweeps.<study>`.
 - `mesh_conv_a/b`   → `convergence_testing/run_mesh_convergence.py::PHASE_A_VALUES / PHASE_B_VALUES`
 
 Per-task logs land in `${REMOTE_BASE}/jobs/logs/lum_array-<JOBID>_<TASKID>.out`.

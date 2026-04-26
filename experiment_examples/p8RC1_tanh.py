@@ -20,7 +20,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from experiment_card import ExperimentCard
-from run_sweep import run_sweep
+from runners.sweeps.sweep_spec import SweepSpec, run_sweep_spec
 
 PITCH_NM = 528.0
 CAVITY_LENGTH_NM = PITCH_NM / 2 #- 105  # = 264 - 105 = 159 nm
@@ -46,4 +46,5 @@ card = ExperimentCard(
 )
 
 if __name__ == "__main__":
-    run_sweep(card.to_sweep_config("n_periods_each_side", SWEEP_N_PERIODS))
+    spec = SweepSpec(n_periods_each_side=SWEEP_N_PERIODS, label="p8RC1_tanh")
+    run_sweep_spec(spec, target="local", base=card.to_config())

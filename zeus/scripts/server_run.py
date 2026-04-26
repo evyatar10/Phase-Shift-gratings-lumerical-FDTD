@@ -78,20 +78,39 @@ cfg.grating.cavity_neg_detuning_nm = 5.76   # phase-matched detuning (= pitch/2 
 # cfg.farfield.enabled = True
 
 # ── 5. Dispatch to selected script ───────────────────────────────────────────
+# Single-sim runners are looked up by RUN_SCRIPT name. For sweeps we use
+# RUN_SCRIPT=sweep_spec and read SWEEP_SPEC_MODULE (e.g. "runners.sweeps.innermost_shift");
+# the sweep is iterated sequentially in this same process — Zeus has no job-array
+# support, so this matches the local target=local behavior.
 _SCRIPTS = {
-    "single_sim":       ("run_simulation",                          "run_single_sim"),
-    "sweep_shift":      ("ToothShift.run_sweep_innermost_shift",    "run_sweep_innermost_shift"),
-    "sweep_inner_size": ("ToothShift.run_sweep_inner_tooth_size",   "run_sweep_inner_tooth_size"),
+    "single_sim":     ("runners.single.run_simulation",   "run_single_sim"),
+    "simple_bragg":   ("runners.single.run_simple_bragg", "run_simple_sim"),
+    "run_experiment": ("runners.single.run_experiment",   "run_experiment"),
 }
 _run_script = os.environ.get("RUN_SCRIPT", "single_sim")
-if _run_script not in _SCRIPTS:
-    print(f"ERROR: Unknown RUN_SCRIPT='{_run_script}'. Valid options: {list(_SCRIPTS)}")
-    sys.exit(1)
-_module_name, _func_name = _SCRIPTS[_run_script]
 import importlib
-_module = importlib.import_module(_module_name)
-_run_func = getattr(_module, _func_name)
-print(f"[server_run] Running: {_run_script} ({_module_name}.{_func_name})")
+
+if _run_script == "sweep_spec":
+    _spec_module = os.environ.get("SWEEP_SPEC_MODULE", "")
+    if not _spec_module:
+        print("ERROR: RUN_SCRIPT=sweep_spec requires SWEEP_SPEC_MODULE env var.")
+        sys.exit(1)
+    _module = importlib.import_module(_spec_module)
+    if not hasattr(_module, "SPEC"):
+        print(f"ERROR: {_spec_module} has no top-level SPEC.")
+        sys.exit(1)
+    from runners.sweeps.sweep_spec import run_sweep_spec
+    print(f"[server_run] Running sweep: {_spec_module} (sequential, target=local)")
+    def _run_func(_cfg):
+        return run_sweep_spec(_module.SPEC, target="local", base=_cfg)
+else:
+    if _run_script not in _SCRIPTS:
+        print(f"ERROR: Unknown RUN_SCRIPT='{_run_script}'. Valid options: {list(_SCRIPTS)} or 'sweep_spec'")
+        sys.exit(1)
+    _module_name, _func_name = _SCRIPTS[_run_script]
+    _module = importlib.import_module(_module_name)
+    _run_func = getattr(_module, _func_name)
+    print(f"[server_run] Running: {_run_script} ({_module_name}.{_func_name})")
 
 # ── 6. Run — with fallback notification on failure ───────────────────────────
 try:

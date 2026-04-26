@@ -110,10 +110,6 @@ for shift_m in shifts:
             tag += "_3D"
         if iter_cfg.farfield.enabled:
             tag += "_ff"
-        if shift_m is not None and shift_m > 0.0:
-            tag += f"_S{shift_m * 1e9:.0f}"
-        if size_nm is not None:
-            tag += f"_I{size_nm:.0f}"
 
         layout_path = os.path.join(output_dir, f"layout_{tag}.fsp")
 

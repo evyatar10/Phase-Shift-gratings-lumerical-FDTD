@@ -4,12 +4,17 @@ Simple (uniform) Bragg grating simulation — no pi-shift cavity, no apodization
 Uses SimpleBraggFDTD device class with shared config from simulation_config.py.
 
 Usage:
-    python run_simple_bragg.py
+    python -m runners.single.run_simple_bragg       # from project root
+    python runners/single/run_simple_bragg.py       # also works
 """
 
 import os
+import sys
 import time
 import importlib.util
+
+# Make the project root importable when invoked as `python runners/single/run_simple_bragg.py`.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import matplotlib.pyplot as plt
 import numpy as np

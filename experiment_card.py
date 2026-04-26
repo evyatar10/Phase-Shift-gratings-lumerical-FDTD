@@ -111,36 +111,6 @@ class ExperimentCard:
 
         return cfg
 
-    def to_sweep_config(
-        self,
-        sweep_field: str,
-        values: list,
-        base: Optional[SimulationConfig] = None,
-    ) -> SimulationConfig:
-        """
-        Produce a SimulationConfig ready for run_sweep(), sweeping a card-level
-        parameter.
-
-        Example:
-            cfg = card.to_sweep_config("n_periods_each_side", [30, 40, 50, 60])
-        """
-        cfg = self.to_config(base)
-
-        if sweep_field not in _CARD_FIELD_MAP:
-            raise ValueError(
-                f"Unknown card field '{sweep_field}'. "
-                f"Valid fields: {list(_CARD_FIELD_MAP)}"
-            )
-
-        dot_path, transform = _CARD_FIELD_MAP[sweep_field]
-        if transform is not None:
-            values = [transform(v) for v in values]
-
-        cfg.sweep.parameter = dot_path
-        cfg.sweep.values = values
-        return cfg
-
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # Convenience runners
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -157,7 +127,7 @@ def _print_card_results(results: dict) -> None:
 
 def run_card(card: ExperimentCard, base: Optional[SimulationConfig] = None) -> dict:
     """Run a single simulation from an experiment card."""
-    from run_simulation import run_single_sim
+    from runners.single.run_simulation import run_single_sim
 
     print(f"\n{'=' * 60}")
     print(f"EXPERIMENT: {card.label or card}")
@@ -174,7 +144,7 @@ def run_cards(
     """Run one simulation per card, comparing multiple experiments."""
     import gc
     import matplotlib.pyplot as plt
-    from run_simulation import run_single_sim
+    from runners.single.run_simulation import run_single_sim
 
     results = []
     for i, card in enumerate(cards):

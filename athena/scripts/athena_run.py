@@ -80,9 +80,9 @@ print(f"  cleanup_lumerical_data = {cfg.run.cleanup_lumerical_data} "
 
 # ── 6. Dispatch to selected script ───────────────────────────────────────────
 _SCRIPTS = {
-    "single_sim":       ("run_simulation",                          "run_single_sim"),
-    "sweep_shift":      ("ToothShift.run_sweep_innermost_shift",    "run_sweep_innermost_shift"),
-    "sweep_inner_size": ("ToothShift.run_sweep_inner_tooth_size",   "run_sweep_inner_tooth_size"),
+    "single_sim":     ("runners.single.run_simulation",   "run_single_sim"),
+    "simple_bragg":   ("runners.single.run_simple_bragg", "run_simple_sim"),
+    "run_experiment": ("runners.single.run_experiment",   "run_experiment"),
 }
 _run_script = os.environ.get("RUN_SCRIPT", "single_sim")
 if _run_script not in _SCRIPTS:

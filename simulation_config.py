@@ -198,27 +198,6 @@ class PhaseCorrectionConfig:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Sweep
-# ═══════════════════════════════════════════════════════════════════════════════
-
-@dataclass
-class SweepConfig:
-    """
-    Parameter sweep settings.
-
-    The sweep runs the core simulation pipeline once per value, overriding
-    the parameter specified by 'parameter' on each iteration.
-
-    Parameter uses dot notation to target nested config fields:
-      "grating.n_periods_each_side"
-      "apodization.center_mod_depth_nm"
-      "apodization.n_apod_periods_each_side"
-    """
-    parameter: str = "grating.n_periods_each_side"  # Dot-path to the parameter to sweep
-    values: list = field(default_factory=lambda: [100])  # Values to iterate over
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
 # Runtime
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -273,7 +252,6 @@ class SimulationConfig:
     monitors: MonitorConfig = field(default_factory=MonitorConfig)
     farfield: FarFieldConfig = field(default_factory=FarFieldConfig)
     phase_correction: PhaseCorrectionConfig = field(default_factory=PhaseCorrectionConfig)
-    sweep: SweepConfig = field(default_factory=SweepConfig)
     run: RunConfig = field(default_factory=RunConfig)
 
     # --- Simple Bragg (used by run_simple_bragg.py only) ---

@@ -11,11 +11,12 @@ lives in post_processing.py. See that module for details on each stage.
 
 Usage:
     # With default parameters (defined in simulation_config.py):
-    python run_simulation.py
+    python -m runners.single.run_simulation         # from project root
+    python runners/single/run_simulation.py         # also works
 
     # To override parameters, edit the __main__ block below or import:
     from simulation_config import SimulationConfig
-    from run_simulation import run_single_sim
+    from runners.single.run_simulation import run_single_sim
     cfg = SimulationConfig()
     cfg.grating.n_periods_each_side = 120
     run_single_sim(cfg)
@@ -23,7 +24,11 @@ Usage:
 
 import glob
 import os
+import sys
 import time
+
+# Make the project root importable when invoked as `python runners/single/run_simulation.py`.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import matplotlib.pyplot as plt
 

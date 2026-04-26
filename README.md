@@ -14,15 +14,23 @@
 .
 ├── simulation_config.py         # All simulation parameters (edit this)
 ├── config.py                    # Machine-specific paths (edit this)
-├── run_simulation.py            # Core simulation pipeline
-├── run_sweep.py                 # Parameter sweep (thin wrapper)
-├── run_experiment.py            # Experiment card runner (examples)
-├── run_simple_bragg.py          # Simple uniform grating (no cavity)
 ├── experiment_card.py           # ExperimentCard dataclass + run_card/run_cards
 ├── bragg_device.py              # PiShiftBraggFDTD device builder (incl. innermost-tooth shift)
 ├── analysis.py                  # Phase correction & S-parameter processing
 ├── post_processing.py           # Full post-simulation analysis pipeline
 ├── sim_helpers.py               # Shared helper functions
+├── runners/
+│   ├── single/
+│   │   ├── run_simulation.py            # Core simulation pipeline
+│   │   ├── run_experiment.py            # Experiment card runner (examples)
+│   │   └── run_simple_bragg.py          # Simple uniform grating (no cavity)
+│   └── sweeps/
+│       ├── sweep_spec.py                  # SweepSpec engine + run_sweep_spec dispatcher
+│       ├── number_of_periods.py           # Sweep over n_periods_each_side
+│       ├── innermost_shift.py             # Sweep over innermost tooth shift
+│       ├── inner_tooth_size.py            # 2D sweep: inner tooth size × shift
+│       ├── apod_and_shift.py              # 2D sweep: n_apod_periods × shift
+│       └── optimize_innermost_shift.py    # Brent's method optimizer for shift
 ├── python_tools/
 │   ├── calc_neff_vs_wl.py       # FDE mode solver for neff data
 │   ├── plot_loss_spectra.py     # Plot radiation loss spectra
@@ -34,10 +42,6 @@
 ├── convergence_testing/
 │   ├── run_convergence.py       # Far-field convergence test
 │   └── run_mesh_convergence.py  # Coordinate-descent mesh convergence test
-├── ToothShift/
-│   ├── run_sweep_innermost_shift.py  # Innermost tooth shift sweep
-│   ├── run_sweep_inner_tooth_size.py # 2D sweep: inner tooth size × shift
-│   └── optimize_innermost_shift.py   # Brent's method optimizer for shift
 ├── zeus/
 │   ├── deploy.sh                # Upload project to Zeus and submit PBS job
 │   ├── scripts/
@@ -79,32 +83,29 @@
 
 3. **Run a single simulation:**
    ```bash
-   python run_simulation.py
+   python -m runners.single.run_simulation
    ```
 
-4. **Run a parameter sweep:**
+4. **Run a parameter sweep.** Each file in `runners/sweeps/` is one study,
+   defined declaratively as a `SweepSpec`. Edit the lists inside the file, then:
    ```bash
-   python run_sweep.py
+   python -m runners.sweeps.number_of_periods    # sweep n_periods_each_side
+   python -m runners.sweeps.innermost_shift      # sweep tooth shift
+   python -m runners.sweeps.inner_tooth_size     # 2D: shift × inner-tooth depth
+   python -m runners.sweeps.apod_and_shift        # 2D: n_apod periods × shift
+   ```
+   To create a new sweep: copy any of these files and change the `SweepSpec`
+   field lists. The same file runs locally (sequential) or on Athena as a
+   parallel SLURM array via `bash athena/deploy_athena.sh --option3 --spec=runners.sweeps.<study>`.
+
+5. **Optimize the innermost tooth shift automatically:**
+   ```bash
+   python -m runners.sweeps.optimize_innermost_shift
    ```
 
-5. **Run an innermost tooth shift sweep:**
+6. **Run with an experiment card:**
    ```bash
-   python ToothShift/run_sweep_innermost_shift.py
-   ```
-
-6. **Run a 2D inner tooth size × shift sweep:**
-   ```bash
-   python ToothShift/run_sweep_inner_tooth_size.py
-   ```
-
-7. **Optimize the innermost tooth shift automatically:**
-   ```bash
-   python ToothShift/optimize_innermost_shift.py
-   ```
-
-8. **Run with an experiment card:**
-   ```bash
-   python run_experiment.py
+   python -m runners.single.run_experiment
    ```
 
 ## Configuration
@@ -130,7 +131,6 @@
 | `MonitorConfig` | `record_2d_fields`, `record_3d_fields` | Field monitor settings |
 | `FarFieldConfig` | `enabled`, `farfield_x_span_m`, `farfield_dist_wls` | Far-field monitors |
 | `PhaseCorrectionConfig` | `do_length_correction`, `do_envelope_correction` | S-parameter corrections |
-| `SweepConfig` | `parameter`, `values` | Parameter sweep control |
 
 ### How to change key parameters
 
@@ -197,10 +197,10 @@ from bragg_device import PiShiftBraggFDTD
 sim = PiShiftBraggFDTD(**kwargs, innermost_tooth_shift_m=105e-9)
 ```
 
-The `ToothShift/` directory contains three scripts for exploring this design parameter:
+The `runners/sweeps/` directory contains studies for exploring this design parameter:
 
-- **`run_sweep_innermost_shift.py`** — sweeps a list of shift values, saves a `.mat` result per shift, and plots all transmission spectra on one figure.
-- **`run_sweep_inner_tooth_size.py`** — runs a 2D sweep: for each shift value in `TOOTH_SHIFT_VALUES_NM`, iterates over all corrugation depth values in `INNER_SIZE_VALUES_NM`.
+- **`innermost_shift.py`** — `SweepSpec` over `innermost_tooth_shift_nm`, saves a `.mat` per shift.
+- **`inner_tooth_size.py`** — 2D `SweepSpec`: `innermost_tooth_shift_nm × center_mod_depth_nm` (innermost-tooth depth via 1-period apodization).
 - **`optimize_innermost_shift.py`** — finds the shift that maximizes resonance transmission using Brent's method (bounded golden-section + parabolic interpolation) within a configurable budget of FDTD evaluations.
 
 The MATLAB script `matlab_plotting/plot_resonance_vs_param.m` can visualize both resonance wavelength and peak transmission vs. shift or inner tooth size from the saved `.mat` files.
@@ -301,26 +301,32 @@ For simple Bragg gratings (no cavity), Stage B+C should typically be disabled si
 
 ## Parameter Sweep
 
-`run_sweep.py` is a thin wrapper over `run_simulation.run_single_sim()`. It iterates over a list of values for any config parameter using dot notation:
+Sweeps are declarative `SweepSpec` instances. Each file in `runners/sweeps/`
+is one study. The sweep engine ([`runners/sweeps/sweep_spec.py`](runners/sweeps/sweep_spec.py))
+takes a `SweepSpec`, expands the cartesian (or zipped) product of all populated
+fields into a list of `SimulationConfig` objects, and runs them.
 
 ```python
-cfg = SimulationConfig()
-cfg.sweep.parameter = "grating.n_periods_each_side"
-cfg.sweep.values = [80, 100, 120]
+from runners.sweeps.sweep_spec import SweepSpec, run_sweep_spec
+from simulation_config import SimulationConfig
+
+SPEC = SweepSpec(
+    n_periods_each_side      = [80, 100, 120],
+    center_mod_depth_nm      = [5.0, 10.0, 20.0, 40.0],
+    label = "periods_x_mod_depth",
+)
+
+if __name__ == "__main__":
+    base = SimulationConfig()
+    base.mesh.simulation_mode = "optimization"
+    run_sweep_spec(SPEC, target="local", base=base)   # 12 sims, sequential
 ```
 
-Other sweep examples:
-```python
-# Sweep apodization depth
-cfg.sweep.parameter = "apodization.center_mod_depth_nm"
-cfg.sweep.values = [5.0, 10.0, 20.0, 40.0]
+Sweepable fields are listed in `experiment_card._CARD_FIELD_MAP`. To add a new
+one, add an entry there once and it becomes available to every `SweepSpec`.
 
-# Sweep number of apodized periods
-cfg.sweep.parameter = "apodization.n_apod_periods_each_side"
-cfg.sweep.values = [5, 10, 20, 50]
-```
-
-Each sweep iteration creates a deep copy of the config, overrides the target parameter, and runs the full simulation pipeline.
+The same study file dispatches to a SLURM array on Athena (one task per
+combo) via `bash athena/deploy_athena.sh --option3 --spec=runners.sweeps.<study>`.
 
 ## Post-Processing Pipeline
 

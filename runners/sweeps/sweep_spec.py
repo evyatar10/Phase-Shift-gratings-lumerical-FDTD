@@ -8,14 +8,14 @@ Athena (SLURM job array, parallel) — only the runner backend changes.
 
 Per-study usage pattern:
 
-    # studies/sweep_apod_vs_shift.py
-    from sweep_spec import SweepSpec, run_sweep_spec
+    # runners/sweeps/apod_and_shift.py
+    from runners.sweeps.sweep_spec import SweepSpec, run_sweep_spec
 
     SPEC = SweepSpec(
         n_apod_periods_each_side  = [0, 3, 5],
         innermost_tooth_shift_nm  = [0, 50, 100, 150],
         cavity_neg_detuning_nm    = [5.76],
-        label = "apod_vs_shift",
+        label = "apod_and_shift",
     )
 
     if __name__ == "__main__":
@@ -181,7 +181,7 @@ def run_sweep_spec(
     elif target == "athena":
         raise NotImplementedError(
             "target='athena' is invoked via the deploy script, not Python. "
-            "Run: bash athena/deploy_athena.sh --option3 --spec <module>"
+            "Run: bash athena/deploy_athena.sh --option2  (choose sweep, then pick study)"
         )
     else:
         raise ValueError(f"Unknown target {target!r}. Choose 'local'|'zeus'|'athena'.")
@@ -191,7 +191,7 @@ def _run_local(spec: SweepSpec, base: Optional[SimulationConfig]) -> List[dict]:
     """Sequential execution in the current Python process."""
     import gc
     import matplotlib.pyplot as plt
-    from run_simulation import run_single_sim
+    from runners.single.run_simulation import run_single_sim
 
     configs = spec.expand(base)
     results: List[dict] = []

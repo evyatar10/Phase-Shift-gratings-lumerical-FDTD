@@ -3,7 +3,7 @@
 # SLURM job array: run a list of .fsp files in parallel on GPU, with
 # license-throttling to avoid exhausting the ANSYS license server.
 #
-# Designed for parameter sweeps (ToothShift, inner-size, etc.) where the
+# Designed for parameter sweeps (innermost-shift, inner-size, etc.) where the
 # .fsp files are generated locally by local_save_fsp.py and uploaded.
 #
 # Usage:

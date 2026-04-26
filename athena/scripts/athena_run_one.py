@@ -11,7 +11,7 @@ Reads:
                       (default: best_cells from Phase A checkpoint, else DEFAULT_CELLS)
   SWEEP_SPEC_MODULE  for kind=spec: dotted module path of a study file that
                       exposes a top-level SPEC: SweepSpec
-                      (e.g. studies.sweep_apod_vs_shift)
+                      (e.g. runners.sweeps.apod_and_shift)
 
 Same container plumbing as athena_run.py — only the dispatch differs.
 """
@@ -114,50 +114,6 @@ cfg.run.cleanup_lumerical_data = os.environ.get("KEEP_H5", "0") != "1"
 
 
 # ── 5. Dispatch ───────────────────────────────────────────────────────────────
-def _run_kind_shift(line: str) -> None:
-    """One innermost-tooth-shift simulation."""
-    from ToothShift.run_sweep_innermost_shift import run_single_sim_with_shift
-    shift_nm = float(line)
-    shift_m  = shift_nm * 1e-9
-    # Match the Phase-A defaults of run_sweep_innermost_shift.py __main__.
-    cfg.grating.n_periods_each_side = 80
-    cfg.spectral.scan_width_nm = 20.0
-    run_single_sim_with_shift(cfg, shift_m, lengthen_cavity=True)
-
-
-def _run_kind_inner_size(line: str) -> None:
-    """One (shift, inner_size) simulation from the cartesian product."""
-    from ToothShift.run_sweep_inner_tooth_size import run_single_sim_with_inner_size
-    parts = [p.strip() for p in line.split(",")]
-    if len(parts) != 2:
-        raise ValueError(f"inner_size line must be 'shift_nm,size_nm', got {line!r}")
-    shift_nm, size_nm = float(parts[0]), float(parts[1])
-    cfg.grating.n_periods_each_side = 80
-    cfg.spectral.scan_width_nm = 16.0
-    run_single_sim_with_inner_size(
-        cfg, shift_m=shift_nm * 1e-9, inner_size_nm=size_nm, lengthen_cavity=True,
-    )
-
-
-def _run_kind_generic(line: str) -> None:
-    """One run of the generic single-parameter sweep (cfg.sweep.parameter)."""
-    from run_simulation import run_single_sim
-    from simulation_config import set_nested_attr
-    param = os.environ.get("SWEEP_PARAM", "")
-    if not param:
-        raise RuntimeError("SWEEP_PARAM env var required for kind=generic")
-    # Try int first, then float, else leave as string
-    try:
-        value: object = int(line)
-    except ValueError:
-        try:
-            value = float(line)
-        except ValueError:
-            value = line
-    set_nested_attr(cfg, param, value)
-    run_single_sim(cfg)
-
-
 def _run_kind_mesh_conv_a(line: str) -> None:
     """Convergence Phase A: one cells_per_half_period value."""
     from convergence_testing.run_mesh_convergence import (
@@ -202,7 +158,7 @@ def _run_kind_spec(line: str) -> None:
     The line content is unused — the array task index is the source of truth.
     """
     import importlib
-    from run_simulation import run_single_sim
+    from runners.single.run_simulation import run_single_sim
     module_name = os.environ.get("SWEEP_SPEC_MODULE", "")
     if not module_name:
         raise RuntimeError("SWEEP_SPEC_MODULE env var required for kind=spec")
@@ -220,9 +176,6 @@ def _run_kind_spec(line: str) -> None:
 
 
 _DISPATCH = {
-    "shift":       _run_kind_shift,
-    "inner_size":  _run_kind_inner_size,
-    "generic":     _run_kind_generic,
     "mesh_conv_a": _run_kind_mesh_conv_a,
     "mesh_conv_b": _run_kind_mesh_conv_b,
     "spec":        _run_kind_spec,
