@@ -241,7 +241,20 @@ class SimpleBraggFDTD:
         fdtd.set("background material", self.clad_material)
         fdtd.set("simulation time", 100e-12)
         fdtd.set("auto shutoff min", 1e-6)
-        fdtd.set("mesh accuracy", 3)
+
+        dx_global = (self.pitch / 2.0) / float(max(1, int(self.cells_per_half_period)))
+        fdtd.set("mesh type", "custom non-uniform")
+        fdtd.set("mesh cells per wavelength", 14)
+        fdtd.set("define x mesh by", "maximum mesh step")
+        fdtd.set("dx", dx_global)
+        fdtd.set("define y mesh by", "mesh cells per wavelength")
+        fdtd.set("define z mesh by", "mesh cells per wavelength")
+        fdtd.set("allow grading in x", 0)
+        fdtd.set("allow grading in y", 1)
+        fdtd.set("allow grading in z", 1)
+        fdtd.set("grading factor", 1.41421)
+        fdtd.set("mesh refinement", "conformal variant 0")
+
         fdtd.set("dt stability factor", 0.5)
 
     def _add_aligned_mesh_override(self, cells_per_half_period=5):

@@ -101,8 +101,8 @@ class SpectralConfig:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 _MESH_MODE_CELLS = {
-    "accurate":     7,   # 250 nm / 7 ≈ 35.7 nm dx  — use for final/accurate results
-    "optimization": 5,   # 250 nm / 5 = 50 nm dx     — use for sweeps and optimization
+    "accurate":     7,   # pitch/(2*7) ≈ 35.7 nm dx (at pitch=500 nm) — final/accurate
+    "optimization": 5,   # pitch/(2*5) = 50 nm dx   (at pitch=500 nm) — sweeps/optimization
 }
 
 
@@ -111,12 +111,13 @@ class MeshConfig:
     """FDTD simulation domain sizing and mesh settings."""
     n_periods_dist_to_port: int = 20            # Distance from grating edge to port (in periods)
     n_wls_dist_port_to_pml: float = 5.0         # Distance from port to PML (in wavelengths)
-    use_cavity_mesh_override: bool = True        # Extra mesh refinement at the cavity
     simulation_mode: str = "accurate"            # "accurate" (dx≈35nm) or "optimization" (dx=50nm)
 
     @property
     def cells_per_half_period(self) -> int:
-        """Number of mesh cells per half-pitch in X (controls dx)."""
+        """Number of mesh cells across one half-period in X — controls dx
+        as dx = pitch / (2 * cells_per_half_period). Period-based, so dx is
+        independent of cavity length, tooth shift, or detuning."""
         if self.simulation_mode not in _MESH_MODE_CELLS:
             raise ValueError(
                 f"Unknown simulation_mode '{self.simulation_mode}'. "
@@ -333,7 +334,6 @@ class SimulationConfig:
             center_mod_depth_nm=ap.center_mod_depth_nm,
             apod_method=ap.method if ap.enabled else 'linear',
             tanh_steepness=ap.tanh_steepness,
-            use_cavity_mesh_override=me.use_cavity_mesh_override,
             cells_per_half_period=me.cells_per_half_period,
             simulation_mode=me.simulation_mode,
             use_symmetry=sy.use_y_symmetry,

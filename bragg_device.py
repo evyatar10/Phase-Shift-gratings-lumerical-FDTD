@@ -39,7 +39,6 @@ class PiShiftBraggFDTD:
                  center_mod_depth_nm=40.0,
                  apod_method='linear',
                  tanh_steepness=2.0,
-                 use_cavity_mesh_override=False,
                  cells_per_half_period=5,
                  simulation_mode="accurate",
                  use_symmetry=True,
@@ -100,8 +99,8 @@ class PiShiftBraggFDTD:
         self.apod_method = apod_method
         self.tanh_steepness = tanh_steepness
 
-        self.use_cavity_mesh_override = use_cavity_mesh_override
-        self.cells_per_half_period = int(cells_per_half_period)
+        self.cells_per_half_period = max(1, int(cells_per_half_period))
+        self.dx_override = (pitch / 2.0) / float(self.cells_per_half_period)
         self.simulation_mode = simulation_mode
 
         # --- NEW STATE VARS ---
@@ -126,13 +125,13 @@ class PiShiftBraggFDTD:
 
         if override_cavity_length_nm:
             self.cavity_length = override_cavity_length_nm * 1e-9
-            self.cavity_overridden = True
         else:
             self.cavity_length = pitch / 2.0
-            self.cavity_overridden = False
 
         self.innermost_tooth_shift_m = float(innermost_tooth_shift_m)
         self.lengthen_cavity = bool(lengthen_cavity)
+        cavity_extra = 2.0 * self.innermost_tooth_shift_m if self.lengthen_cavity else 0.0
+        self.cavity_length_effective = self.cavity_length + cavity_extra
         half_pitch_val = pitch / 2.0
         if not (0.0 <= self.innermost_tooth_shift_m < half_pitch_val):
             raise ValueError(
@@ -268,7 +267,7 @@ class PiShiftBraggFDTD:
     def build(self):
         self._reset_layout()
         self._add_fdtd_region()
-        self._add_aligned_mesh_override(self.cells_per_half_period)
+        self._add_aligned_mesh_override()
         self._add_bragg_core()
         self._add_source_and_monitors()
 
@@ -299,60 +298,63 @@ class PiShiftBraggFDTD:
         fdtd.set("background material", self.clad_material)
         fdtd.set("simulation time", 1000e-12)
         fdtd.set("auto shutoff min", 1e-6)
-        fdtd.set("mesh accuracy", 3)
+
+        fdtd.set("mesh type", "custom non-uniform")
+        fdtd.set("mesh cells per wavelength", 14)
+        fdtd.set("define x mesh by", "maximum mesh step")
+        fdtd.set("dx", self.dx_override)
+        fdtd.set("define y mesh by", "mesh cells per wavelength")
+        fdtd.set("define z mesh by", "mesh cells per wavelength")
+        fdtd.set("allow grading in x", 0)
+        fdtd.set("allow grading in y", 1)
+        fdtd.set("allow grading in z", 1)
+        fdtd.set("grading factor", 1.41421)
+        fdtd.set("mesh refinement", "conformal variant 0")
+
         fdtd.set("dt stability factor", 0.7)
 
-    def _add_aligned_mesh_override(self, cells_per_half_period=5):
+    def _add_aligned_mesh_override(self):
+        # Single override box centered at x=0 with dx = pitch/(2*N) — period-based,
+        # independent of cavity_length_effective. Span = M*dx with M parity-matched
+        # to N so a cell-edge sits at x=0 for even N (cell-center for odd N), which
+        # places mesh edges exactly on the wide/narrow transitions at ±(2k+1)·pitch/4
+        # in the nominal (no shift, no detuning) case.
         fdtd = self.fdtd
-        half_pitch = 0.5 * self.pitch
-        n_cells_half = max(1, int(cells_per_half_period))
-        dx_grating = half_pitch / float(n_cells_half)
-        dy_global = self.width_narrow / 13.0
-        dz_global = self.core_height / 7.0
+        N = self.cells_per_half_period
+        dx = self.dx_override
+
+        if dx > 0.25 * self.pitch:
+            print(
+                f"  WARNING: dx={dx*1e9:.2f} nm > pitch/4 ({self.pitch*0.25e9:.2f} nm). "
+                f"Consider bumping cells_per_half_period (e.g. simulation_mode='accurate')."
+            )
+
+        min_span = self.sim_x_span + 2e-6
+        M = math.ceil(min_span / dx)
+        if (M % 2) != (N % 2):
+            M += 1
+        box_span = M * dx
+
         max_device_width = max(self.width_port, self.width_wide, self.width_narrow)
         y_span_override = max_device_width * 1.2
         z_span_override = self.core_height
-        x_cav_right = self.cavity_length / 2.0
-        x_cav_left = -self.cavity_length / 2.0
-        x_sim_left = -self.sim_x_span / 2.0 - 1e-6
-        x_sim_right = self.sim_x_span / 2.0 + 1e-6
+        dy_global = self.width_narrow / 13.0
+        dz_global = self.core_height / 7.0
 
-        def add_mesh_box(name, x, x_span, dx_val):
-            fdtd.addmesh()
-            fdtd.set("name", name)
-            fdtd.set("x", x)
-            fdtd.set("x span", x_span)
-            fdtd.set("y", 0.0)
-            fdtd.set("y span", y_span_override)
-            fdtd.set("z", 0.0)
-            fdtd.set("z span", z_span_override)
-            fdtd.set("override x mesh", 1)
-            fdtd.set("override y mesh", 1)
-            fdtd.set("override z mesh", 1)
-            fdtd.set("dx", dx_val)
-            fdtd.set("dy", dy_global)
-            fdtd.set("dz", dz_global)
-
-        full_span = x_sim_right - x_sim_left
-        full_center = x_sim_left + full_span / 2.0
-
-        if self.cavity_overridden:
-            # Left: sim_left → x_cav_left
-            len_left = x_cav_left - x_sim_left
-            add_mesh_box("mesh_left", x_sim_left + len_left / 2.0, len_left, dx_grating)
-
-            # Center: x_cav_left → end of R_narrow_1 (cavity + R_narrow_1 span)
-            x_center_end = x_cav_right + half_pitch
-            center_span = x_center_end - x_cav_left
-            n_center = max(1, math.ceil(center_span / dx_grating))
-            dx_center = center_span / float(n_center)
-            add_mesh_box("mesh_center", x_cav_left + center_span / 2.0, center_span, dx_center)
-
-            # Right: end of R_narrow_1 → sim_right
-            len_right = x_sim_right - x_center_end
-            add_mesh_box("mesh_right", x_center_end + len_right / 2.0, len_right, dx_grating)
-        else:
-            add_mesh_box("mesh_override", full_center, full_span, dx_grating)
+        fdtd.addmesh()
+        fdtd.set("name", "mesh_override")
+        fdtd.set("x", 0.0)
+        fdtd.set("x span", box_span)
+        fdtd.set("y", 0.0)
+        fdtd.set("y span", y_span_override)
+        fdtd.set("z", 0.0)
+        fdtd.set("z span", z_span_override)
+        fdtd.set("override x mesh", 1)
+        fdtd.set("override y mesh", 1)
+        fdtd.set("override z mesh", 1)
+        fdtd.set("dx", dx)
+        fdtd.set("dy", dy_global)
+        fdtd.set("dz", dz_global)
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
@@ -451,9 +453,7 @@ class PiShiftBraggFDTD:
 
     def _add_source_and_monitors(self):
         fdtd = self.fdtd
-        half_pitch = 0.5 * self.pitch
-        n_cells_half = max(1, int(self.cells_per_half_period))
-        dx_mesh = half_pitch / float(n_cells_half)
+        dx_mesh = self.dx_override
         dist_snapped = round(self.dist_grating_to_port / dx_mesh) * dx_mesh
         self.dist_grating_to_port = dist_snapped
         self.x_port = self.x_grating_end + dist_snapped

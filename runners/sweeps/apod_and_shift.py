@@ -25,8 +25,8 @@ from simulation_config import SimulationConfig
 
 
 SPEC = SweepSpec(
-    n_apod_periods_each_side  = [1, 3],
-    innermost_tooth_shift_nm  = [0, 110],
+    n_apod_periods_each_side  = [2, 3],
+    innermost_tooth_shift_nm  = [0],
     apod_method               = ["linear"],
     cavity_neg_detuning_nm    = [5.76],   # phase-matched detuning
     label = "apod_and_shift",

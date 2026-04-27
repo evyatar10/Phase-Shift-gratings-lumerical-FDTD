@@ -482,6 +482,7 @@ else
         PRELIM_RAW=$(ssh "${SSH}" \
             "cd ${REMOTE_BASE} && sbatch \
                 --gpus=1 --cpus-per-task=${N_CPUS} \
+                --time=${PRELIM_TIME:-00:10:00} \
                 --export=ALL,RUN_SCRIPT=${SWEEP_PRELIM_RUN_SCRIPT},LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_python_gpu.sh")
@@ -500,6 +501,7 @@ else
         "cd ${REMOTE_BASE} && sbatch \
             --array=0-${ARRAY_END}%${K} ${DEP_FLAG} \
             --gpus=1 --cpus-per-task=${N_CPUS} \
+            --time=${ARRAY_TIME:-00:45:00} \
             --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DZ=${SWEEP_FIXED_DZ},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_array.sh")
