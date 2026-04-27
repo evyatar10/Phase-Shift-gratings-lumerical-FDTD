@@ -156,8 +156,20 @@ def _run_kind_spec(line: str) -> None:
     """One sim from a SweepSpec module's expand() at index SWEEP_INDEX.
 
     The line content is unused — the array task index is the source of truth.
+
+    Optional module-level hooks (all backward-compatible — no hook == old behavior):
+      module.BASE             - SimulationConfig used as the base for SPEC.expand()
+                                Lets a sweep encode all non-swept settings (e.g.
+                                record_3d_fields, farfield.enabled) in one place
+                                instead of per-task code.
+      LOCKED_LAMBDA_FILE env  - Path to a JSON sidecar written by a prelim job
+                                ({'lambda_res_m': float, ...}). When present, the
+                                file is read and cfg.spectral.center_wavelength_m
+                                is overwritten with lambda_res_m before running.
+                                Used for the prelim → array chain.
     """
     import importlib
+    import json
     from runners.single.run_simulation import run_single_sim
     module_name = os.environ.get("SWEEP_SPEC_MODULE", "")
     if not module_name:
@@ -165,10 +177,31 @@ def _run_kind_spec(line: str) -> None:
     module = importlib.import_module(module_name)
     if not hasattr(module, "SPEC"):
         raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
-    configs = module.SPEC.expand()
+
+    # Optional per-module BASE config. Modules without BASE keep their existing
+    # behavior (expand() with no base ⇒ default SimulationConfig per combo).
+    spec_base = getattr(module, "BASE", None)
+    configs = module.SPEC.expand(base=spec_base)
+
     if idx < 0 or idx >= len(configs):
         raise IndexError(f"SWEEP_INDEX={idx} out of range (spec produces {len(configs)} configs)")
     cfg_for_task = configs[idx]
+
+    # Optional per-task center-wavelength lock from a prerequisite (prelim) job.
+    locked_path = os.environ.get("LOCKED_LAMBDA_FILE", "").strip()
+    if locked_path:
+        if os.path.exists(locked_path):
+            with open(locked_path) as f:
+                locked = json.load(f)
+            lam_m = float(locked["lambda_res_m"])
+            cfg_for_task.spectral.center_wavelength_m = lam_m
+            print(f"[athena_run_one] LOCKED_LAMBDA_FILE applied: "
+                  f"center_wavelength_m = {lam_m*1e9:.4f} nm  ({locked_path})")
+        else:
+            print(f"[athena_run_one] WARNING: LOCKED_LAMBDA_FILE={locked_path} "
+                  f"does not exist; using cfg's center_wavelength = "
+                  f"{cfg_for_task.spectral.center_wavelength_m*1e9:.4f} nm.")
+
     # Apply common Athena overrides on top of the spec-built config (the spec
     # encodes the science; these encode the runtime environment policy).
     cfg_for_task.run.cleanup_lumerical_data = cfg.run.cleanup_lumerical_data

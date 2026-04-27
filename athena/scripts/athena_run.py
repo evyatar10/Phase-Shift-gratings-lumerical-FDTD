@@ -84,6 +84,10 @@ _SCRIPTS = {
     "simple_bragg":               ("runners.single.run_simple_bragg",          "run_simple_sim"),
     "run_experiment":             ("runners.single.run_experiment",            "run_experiment"),
     "compare_3d_field_default_vs_shift": ("runners.single.compare_3d_field_default_vs_shift", "run_compare_3d_field_default_vs_shift"),
+    # Prelim half of the chained 3D-field comparison: runs ONE quick sim,
+    # writes λ_res to LOCKED_LAMBDA_FILE, then exits. Used as Job 1 of the
+    # prelim → array chain triggered by runners/sweeps/compare_3d_field_shift.py.
+    "compare_3d_field_prelim":    ("runners.single.compare_3d_field_default_vs_shift", "run_compare_3d_field_prelim"),
 }
 _run_script = os.environ.get("RUN_SCRIPT", "single_sim")
 if _run_script not in _SCRIPTS:

@@ -187,6 +187,9 @@ export RUN_SCRIPT='${RUN_SCRIPT}'
 export REQUIRE_GPU='${REQUIRE_GPU}'
 # KEEP_H5=1 disables the per-iteration .h5 scratch cleanup (default: cleanup on).
 export KEEP_H5=\"\${KEEP_H5:-0}\"
+# LOCKED_LAMBDA_FILE — used by RUN_SCRIPT=compare_3d_field_prelim (writes the
+# resonance λ here for the array half to read). Empty for unrelated runs.
+export LOCKED_LAMBDA_FILE='${LOCKED_LAMBDA_FILE:-}'
 # Manage Xvfb manually instead of via xvfb-run. The xvfb-run wrapper's
 # Xvfb-shutdown logic returns non-zero on this host even when the inner
 # Python process exited 0, which silently flips SLURM's job state to FAILED

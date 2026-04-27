@@ -264,8 +264,11 @@ def apply_monitor_overrides(sim, cfg):
         print(f"Override: Set 2D monitors to {n_2d_pts} points.")
 
     if getattr(sim, 'record_3d_fields', False):
-        sim.fdtd.setnamed("field_profile_3D", "frequency points", n_2d_pts)
-        print(f"Override: Set 3D monitor to {n_2d_pts} points.")
+        n_3d_pts = cfg.monitors.n_3d_freq_points
+        if n_3d_pts is None:
+            n_3d_pts = n_2d_pts
+        sim.fdtd.setnamed("field_profile_3D", "frequency points", n_3d_pts)
+        print(f"Override: Set 3D monitor to {n_3d_pts} points.")
 
     if sim.record_farfield:
         sim.fdtd.setnamed("side_monitor", "frequency points", 1)

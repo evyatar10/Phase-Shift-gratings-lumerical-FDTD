@@ -91,6 +91,16 @@ def main():
             sys.exit(1)
         lines = _values_spec(args.module)
         meta["spec_module"] = args.module
+        # Optional spec-module hooks for chained workflows. deploy_athena.sh
+        # picks these up: PRELIM_RUN_SCRIPT triggers a prerequisite single-sim
+        # job with that RUN_SCRIPT, and LOCKED_LAMBDA_FILE is forwarded as an
+        # env var to both jobs (the prelim writes it; the array reads it).
+        # Modules without these constants keep current behavior (no chaining).
+        _study_module = importlib.import_module(args.module)
+        if hasattr(_study_module, "PRELIM_RUN_SCRIPT"):
+            meta["prelim_run_script"] = str(_study_module.PRELIM_RUN_SCRIPT)
+        if hasattr(_study_module, "LOCKED_LAMBDA_FILE"):
+            meta["locked_lambda_file"] = str(_study_module.LOCKED_LAMBDA_FILE)
 
     os.makedirs(os.path.dirname(os.path.abspath(args.output)) or ".", exist_ok=True)
     with open(args.output, "w") as f:

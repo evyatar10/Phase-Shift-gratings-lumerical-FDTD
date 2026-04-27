@@ -444,6 +444,11 @@ else
     SWEEP_FIXED_DZ=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: fixed_dz=//p')
     SWEEP_FIXED_CELLS=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: fixed_cells=//p')
     SWEEP_SPEC_MODULE=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: spec_module=//p')
+    # Optional prelim chaining (kind=spec only): when the spec module declares
+    # PRELIM_RUN_SCRIPT, submit that single sim first, then queue the array with
+    # --dependency=afterok so the array starts only if the prelim succeeds.
+    SWEEP_PRELIM_RUN_SCRIPT=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: prelim_run_script=//p')
+    SWEEP_LOCKED_LAMBDA_FILE=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: locked_lambda_file=//p')
 
     N_TASKS=$(grep -c . "${LOCAL_SWEEP_LIST}")
     if [[ "${N_TASKS}" -lt 1 ]]; then
@@ -462,11 +467,40 @@ else
     if [[ -n "${SWEEP_FIXED_DZ}" ]];   then echo "  SWEEP_FIXED_DZ=${SWEEP_FIXED_DZ}"; fi
     if [[ -n "${SWEEP_FIXED_CELLS}" ]];then echo "  SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS}"; fi
 
+    # ── Optional prelim chain ────────────────────────────────────────────────
+    # If the spec module declared PRELIM_RUN_SCRIPT, submit a single-sim
+    # prerequisite job first. The array then waits with --dependency=afterok.
+    # Both jobs receive LOCKED_LAMBDA_FILE in --export so the prelim writes
+    # the JSON sidecar and each array task reads it.
+    DEP_FLAG=""
+    EXTRA_EXPORT=""
+    if [[ -n "${SWEEP_PRELIM_RUN_SCRIPT}" ]]; then
+        echo ""
+        echo "Spec declares prelim: RUN_SCRIPT=${SWEEP_PRELIM_RUN_SCRIPT}"
+        echo "  locked-lambda sidecar: ${SWEEP_LOCKED_LAMBDA_FILE:-(spec default)}"
+        echo "Submitting prelim (single sim, GPU)..."
+        PRELIM_RAW=$(ssh "${SSH}" \
+            "cd ${REMOTE_BASE} && sbatch \
+                --gpus=1 --cpus-per-task=${N_CPUS} \
+                --export=ALL,RUN_SCRIPT=${SWEEP_PRELIM_RUN_SCRIPT},LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
+                --chdir=${REMOTE_BASE}/jobs \
+                jobs/run_python_gpu.sh")
+        if [[ $? -ne 0 ]]; then
+            echo "ERROR: prelim sbatch failed."
+            exit 1
+        fi
+        echo "Submitted prelim: ${PRELIM_RAW}"
+        PRELIM_ID=$(echo "${PRELIM_RAW}" | awk '{print $NF}')
+        DEP_FLAG="--dependency=afterok:${PRELIM_ID}"
+        EXTRA_EXPORT=",LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE}"
+        echo "Array will start after prelim job ${PRELIM_ID} succeeds."
+    fi
+
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
-            --array=0-${ARRAY_END}%${K} \
+            --array=0-${ARRAY_END}%${K} ${DEP_FLAG} \
             --gpus=1 --cpus-per-task=${N_CPUS} \
-            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DZ=${SWEEP_FIXED_DZ},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
+            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DZ=${SWEEP_FIXED_DZ},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_array.sh")
 fi

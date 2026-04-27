@@ -138,6 +138,10 @@ export SWEEP_FIXED_CELLS='${SWEEP_FIXED_CELLS}'
 export SWEEP_SPEC_MODULE='${SWEEP_SPEC_MODULE}'
 export REQUIRE_GPU='${REQUIRE_GPU}'
 export KEEP_H5=\"\${KEEP_H5:-0}\"
+# LOCKED_LAMBDA_FILE — when set by deploy_athena.sh (chained-prelim sweeps),
+# athena_run_one._run_kind_spec reads this JSON sidecar and overrides
+# cfg.spectral.center_wavelength_m before running the per-task sim.
+export LOCKED_LAMBDA_FILE='${LOCKED_LAMBDA_FILE:-}'
 
 Xvfb :99 -screen 0 1024x768x24 -nolisten tcp >/tmp/xvfb.log 2>&1 &
 XVFB_PID=\$!
