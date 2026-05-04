@@ -25,6 +25,9 @@ sys.path.insert(0, PROJECT_DIR)
 # ── 2. Patch config BEFORE any other project imports ─────────────────────────
 #    Patching BASE_SAVE_DIR is sufficient — LAYOUTS_DIR and RESULTS_DIR are
 #    derived dynamically via config.__getattr__ (see config.py).
+_run_name = os.environ.get("RUN_SCRIPT", "")
+if _run_name:
+    os.environ["RUN_NAME"] = _run_name
 import config
 
 config.BASE_SAVE_DIR  = '/work/results'

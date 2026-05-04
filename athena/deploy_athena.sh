@@ -19,6 +19,8 @@
 #   bash athena/deploy_athena.sh --results            # prompts: data only or full (incl. .fsp)
 #   bash athena/deploy_athena.sh --results-no-fsp    # download .mat / logs only (fast)
 #   bash athena/deploy_athena.sh --results-full      # download everything incl. .fsp (heavy)
+#   bash athena/deploy_athena.sh --results-files     # interactive: pick subfolder, then files
+#   bash athena/deploy_athena.sh --results-files=path1,path2,...  # download specific files (rel to results/)
 
 # ── CONFIGURE — edit athena/athena.conf, not this file ───────────────────────
 CONF="$(cd "$(dirname "$0")" && pwd)/athena.conf"
@@ -31,12 +33,19 @@ source "${CONF}"
 LOCAL_PROJECT="$(cd "$(dirname "$0")/.." && pwd)"
 LOCAL_RESULTS_DIR="${LOCAL_PROJECT}/results_from_athena"
 LOCAL_NEFF=$(python -c "import sys; sys.path.insert(0,'${LOCAL_PROJECT}'); import config; print(config.NEFF_DATA_PATH)")
+# rsync misreads Windows-style "C:\..." as a remote "host:path"; normalize to
+# POSIX form. cygpath ships with Git Bash; on Linux/WSL the path is already POSIX.
+if command -v cygpath >/dev/null 2>&1; then
+    LOCAL_NEFF=$(cygpath -u "${LOCAL_NEFF}")
+fi
 # ─────────────────────────────────────────────────────────────────────────────
 
 UPLOAD_ONLY=false
 DOWNLOAD_RESULTS=false
 DOWNLOAD_NO_FSP=false
 DOWNLOAD_MODE_SET=false
+DOWNLOAD_FILES_MODE=false
+DOWNLOAD_FILES_PATHS=""
 STATUS=false
 LICENSE_PROBE=false
 OPTION=""
@@ -55,6 +64,8 @@ for arg in "$@"; do
         --results)            DOWNLOAD_RESULTS=true ;;
         --results-no-fsp)     DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=true; DOWNLOAD_MODE_SET=true ;;
         --results-full)       DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=false; DOWNLOAD_MODE_SET=true ;;
+        --results-files)      DOWNLOAD_RESULTS=true; DOWNLOAD_FILES_MODE=true ;;
+        --results-files=*)    DOWNLOAD_RESULTS=true; DOWNLOAD_FILES_MODE=true; DOWNLOAD_FILES_PATHS="${arg#--results-files=}" ;;
         --status)             STATUS=true ;;
         --license-probe)      LICENSE_PROBE=true ;;
         --run=*)              RUN_SCRIPT="${arg#--run=}" ;;
@@ -288,6 +299,150 @@ download_results() {
     echo "Results saved to: ${LOCAL_RESULTS_DIR}"
 }
 
+# ── Helper: download specific files (two-step picker or by comma-separated paths) ──
+# Step 1 (interactive): list immediate subfolders of ${REMOTE_BASE}/results/, plus a
+#                       sentinel "(files at root)" if the directory itself has files.
+# Step 2 (interactive): recursively list files inside the picked subfolder, accept
+#                       multi-select via "1,3,5", "1-3,7", or "all".
+# Non-interactive form: --results-files=path1,path2,... (paths relative to results/).
+# Transfer uses a single `tar` over SSH so multi-file selections need only one
+# round trip; the local extraction recreates parent directories automatically.
+download_files() {
+    local _paths=()
+    echo ""
+    if [[ -n "${DOWNLOAD_FILES_PATHS}" ]]; then
+        IFS=',' read -ra _paths <<< "${DOWNLOAD_FILES_PATHS}"
+    else
+        echo "=== Listing subfolders under ${REMOTE_BASE}/results/ ==="
+        # SSH returns "DIR <name>" lines for each subfolder and a single "ROOT" line
+        # if there is at least one regular file directly at results/.
+        local _step1
+        _step1=$(ssh "${SSH}" "
+            cd '${REMOTE_BASE}/results' 2>/dev/null || exit 1
+            for d in */; do [ -d \"\$d\" ] && echo \"DIR \${d%/}\"; done
+            for f in *; do [ -f \"\$f\" ] && { echo 'ROOT'; break; }; done
+        ")
+        local _dirs=() _has_root=false
+        while IFS= read -r _line; do
+            case "${_line}" in
+                'DIR '*) _dirs+=("${_line#DIR }") ;;
+                'ROOT')  _has_root=true ;;
+            esac
+        done <<< "${_step1}"
+        if [[ ${#_dirs[@]} -eq 0 && "${_has_root}" == "false" ]]; then
+            echo "ERROR: ${REMOTE_BASE}/results/ is empty."
+            exit 1
+        fi
+
+        local _options=()
+        if [[ "${_has_root}" == "true" ]]; then
+            _options+=("__ROOT__")
+        fi
+        for _d in "${_dirs[@]}"; do
+            _options+=("${_d}")
+        done
+
+        echo ""
+        echo "============================================================"
+        for _i in "${!_options[@]}"; do
+            if [[ "${_options[$_i]}" == "__ROOT__" ]]; then
+                printf "  %d) (files at root)\n" "$((_i+1))"
+            else
+                printf "  %d) %s/\n" "$((_i+1))" "${_options[$_i]}"
+            fi
+        done
+        echo "============================================================"
+        read -rp "Pick a subfolder (number): " _dir_choice
+        if [[ ! "${_dir_choice}" =~ ^[0-9]+$ ]] || \
+           (( _dir_choice < 1 || _dir_choice > ${#_options[@]} )); then
+            echo "Invalid choice. Exiting."
+            exit 1
+        fi
+
+        local _picked="${_options[$((_dir_choice-1))]}"
+        local _scope_prefix="" _find_target _maxdepth_arg=""
+        if [[ "${_picked}" == "__ROOT__" ]]; then
+            _find_target="${REMOTE_BASE}/results"
+            _maxdepth_arg="-maxdepth 1"
+        else
+            _scope_prefix="${_picked}/"
+            _find_target="${REMOTE_BASE}/results/${_picked}"
+        fi
+
+        echo ""
+        echo "=== Files under ${_picked//__ROOT__/(root)} (newest first) ==="
+        local _listing
+        _listing=$(ssh "${SSH}" \
+            "find '${_find_target}' ${_maxdepth_arg} -type f -printf '%T@ %P\n' 2>/dev/null \
+                | sort -rn | cut -d' ' -f2-")
+        if [[ -z "${_listing}" ]]; then
+            echo "ERROR: no files found in selection."
+            exit 1
+        fi
+        local _files=()
+        while IFS= read -r _line; do
+            [[ -n "${_line}" ]] && _files+=("${_line}")
+        done <<< "${_listing}"
+
+        echo ""
+        echo "============================================================"
+        for _i in "${!_files[@]}"; do
+            printf "  %d) %s\n" "$((_i+1))" "${_files[$_i]}"
+        done
+        echo "============================================================"
+        echo "Enter file numbers (e.g. '1,3,5' or '1-3,7' or 'all'):"
+        read -rp "> " _file_input
+        if [[ -z "${_file_input}" ]]; then
+            echo "No selection. Exiting."
+            exit 1
+        fi
+
+        local _indices=()
+        if [[ "${_file_input}" == "all" ]]; then
+            for _i in "${!_files[@]}"; do _indices+=("$((_i+1))"); done
+        else
+            local _toks
+            IFS=',' read -ra _toks <<< "${_file_input}"
+            for _tok in "${_toks[@]}"; do
+                _tok="${_tok// /}"
+                if [[ "${_tok}" =~ ^[0-9]+$ ]]; then
+                    _indices+=("${_tok}")
+                elif [[ "${_tok}" =~ ^([0-9]+)-([0-9]+)$ ]]; then
+                    local _a="${BASH_REMATCH[1]}" _b="${BASH_REMATCH[2]}"
+                    while (( _a <= _b )); do _indices+=("${_a}"); _a=$((_a+1)); done
+                else
+                    echo "Invalid token: '${_tok}'. Exiting."
+                    exit 1
+                fi
+            done
+        fi
+
+        for _idx in "${_indices[@]}"; do
+            if (( _idx < 1 || _idx > ${#_files[@]} )); then
+                echo "Index out of range: ${_idx}. Exiting."
+                exit 1
+            fi
+            _paths+=("${_scope_prefix}${_files[$((_idx-1))]}")
+        done
+    fi
+
+    if [[ ${#_paths[@]} -eq 0 ]]; then
+        echo "No files selected. Exiting."
+        exit 1
+    fi
+
+    mkdir -p "${LOCAL_RESULTS_DIR}"
+    echo ""
+    echo "=== Downloading ${#_paths[@]} file(s) from Athena ==="
+    for _p in "${_paths[@]}"; do echo "  ${_p}"; done
+    # One tar stream over SSH; -x recreates parent dirs locally.
+    local _tar_args=""
+    for _p in "${_paths[@]}"; do _tar_args+=" '${_p}'"; done
+    ssh "${SSH}" "tar -czf - -C '${REMOTE_BASE}/results' ${_tar_args}" \
+        | tar -xzf - -C "${LOCAL_RESULTS_DIR}/"
+    echo "Saved under: ${LOCAL_RESULTS_DIR}/"
+}
+
 # ── Helper: one-shot status check ─────────────────────────────────────────────
 check_status() {
     echo ""
@@ -332,6 +487,10 @@ fi
 
 # ── --results: immediate download ─────────────────────────────────────────────
 if [[ "${DOWNLOAD_RESULTS}" == "true" ]]; then
+    if [[ "${DOWNLOAD_FILES_MODE}" == "true" ]]; then
+        download_files
+        exit 0
+    fi
     if [[ "${DOWNLOAD_MODE_SET}" == "false" ]]; then
         echo ""
         echo "============================================================"
@@ -362,16 +521,20 @@ ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/{project,data,results/layouts,jobs/logs,sc
 
 echo ""
 echo "=== Uploading project files ==="
-scp "${LOCAL_PROJECT}"/*.py "${SSH}:${REMOTE_BASE}/project/"
-echo "  uploading runners/ (single + sweeps + studies)"
-scp -r "${LOCAL_PROJECT}/runners" "${SSH}:${REMOTE_BASE}/project/"
-echo "  uploading convergence_testing/"
-scp -r "${LOCAL_PROJECT}/convergence_testing" "${SSH}:${REMOTE_BASE}/project/"
+# rsync transfers only files whose size or mtime differs from the remote copy;
+# repeated deploys are near-instant when nothing has changed.
+rsync -av --itemize-changes "${LOCAL_PROJECT}"/*.py "${SSH}:${REMOTE_BASE}/project/"
+echo "  syncing runners/ (single + sweeps + studies)"
+rsync -av --delete --itemize-changes \
+    "${LOCAL_PROJECT}/runners/" "${SSH}:${REMOTE_BASE}/project/runners/"
+echo "  syncing convergence_testing/"
+rsync -av --delete --itemize-changes \
+    "${LOCAL_PROJECT}/convergence_testing/" "${SSH}:${REMOTE_BASE}/project/convergence_testing/"
 
 echo ""
 echo "=== Uploading neff data ==="
 if [[ -f "${LOCAL_NEFF}" ]]; then
-    scp "${LOCAL_NEFF}" "${SSH}:${REMOTE_BASE}/data/FDE_sweep_results.mat"
+    rsync -av --itemize-changes "${LOCAL_NEFF}" "${SSH}:${REMOTE_BASE}/data/FDE_sweep_results.mat"
 else
     echo "WARNING: neff data not found at: ${LOCAL_NEFF}"
     echo "  Update LOCAL_NEFF in deploy_athena.sh or upload manually."
@@ -379,8 +542,8 @@ fi
 
 echo ""
 echo "=== Uploading Athena scripts ==="
-scp "${LOCAL_PROJECT}/athena/jobs/"*.sh      "${SSH}:${REMOTE_BASE}/jobs/"
-scp "${LOCAL_PROJECT}/athena/scripts/"*.py   "${SSH}:${REMOTE_BASE}/scripts/"
+rsync -av --itemize-changes "${LOCAL_PROJECT}/athena/jobs/"*.sh    "${SSH}:${REMOTE_BASE}/jobs/"
+rsync -av --itemize-changes "${LOCAL_PROJECT}/athena/scripts/"*.py "${SSH}:${REMOTE_BASE}/scripts/"
 ssh "${SSH}" "chmod +x ${REMOTE_BASE}/jobs/*.sh"
 ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/jobs/logs"
 
@@ -389,7 +552,7 @@ echo "=== Building NVML trampoline on Athena (R470 A100 nodes) ==="
 # The trampoline shim stubs three NVML symbols absent from R470 that Lumerical
 # 2026 R1's GPU plugin imports. On newer-driver nodes (L40S / H200, R535+) the
 # tramp directory is not bound and has no effect.
-scp "${LOCAL_PROJECT}/athena/container/nvml_tramp.c" \
+rsync -av --itemize-changes "${LOCAL_PROJECT}/athena/container/nvml_tramp.c" \
     "${SSH}:${REMOTE_BASE}/jobs/nvml_tramp.c"
 ssh "${SSH}" "
     mkdir -p \${HOME}/nvml_tramp
@@ -414,6 +577,10 @@ echo "=== Submitting SLURM job ==="
 
 if [[ "${OPTION}" == "1" ]]; then
     # ── Option 1: generate .fsp locally, upload, run engine on GPU ───────────
+    # Each .fsp lands in its own per-stem folder: ${REMOTE_BASE}/results/<stem>/<stem>.fsp
+    # Engine writes its outputs (.h5, .log) into the same folder. fsp_list.txt
+    # for arrays sits at ${REMOTE_BASE}/results/fsp_list.txt and stores stems
+    # (one per line, no extension, no parent dir).
     if [[ -n "${FSP_EXPLICIT}" ]]; then
         echo "Option 1: using explicit .fsp: ${FSP_EXPLICIT}"
         FSP_NAME="${FSP_EXPLICIT}"
@@ -425,28 +592,46 @@ if [[ "${OPTION}" == "1" ]]; then
             --preset "${FSP_PRESET}" --gpu 2>&1)
         echo "${FSP_OUTPUT}"
 
-        FSP_PATH=$(echo "${FSP_OUTPUT}" | grep "^FSP_SAVED:" | sed 's/FSP_SAVED://')
-        if [[ -z "${FSP_PATH}" ]]; then
+        mapfile -t FSP_PATHS < <(echo "${FSP_OUTPUT}" | sed -n 's/^FSP_SAVED://p')
+        if [[ ${#FSP_PATHS[@]} -eq 0 ]]; then
             echo "ERROR: Failed to generate .fsp file locally."
             exit 1
         fi
-        FSP_NAME=$(basename "${FSP_PATH}")
-        echo "Generated: ${FSP_PATH}"
 
-        echo "Uploading .fsp to Athena..."
-        scp "${FSP_PATH}" "${SSH}:${REMOTE_BASE}/results/layouts/${FSP_NAME}"
+        echo "Uploading ${#FSP_PATHS[@]} .fsp file(s) to Athena (per-stem folders)..."
+        for _fsp in "${FSP_PATHS[@]}"; do
+            _name=$(basename "${_fsp}")
+            _stem="${_name%.fsp}"
+            ssh "${SSH}" "mkdir -p '${REMOTE_BASE}/results/${_stem}'"
+            scp "${_fsp}" "${SSH}:${REMOTE_BASE}/results/${_stem}/${_name}"
+        done
+        # FSP_NAME is only consulted in the single-file branch below.
+        FSP_NAME=$(basename "${FSP_PATHS[0]}")
     fi
 
-    # Detect if this is a sweep (multiple .fsp files → job array)
-    FSP_COUNT=$(ssh "${SSH}" "ls ${REMOTE_BASE}/results/layouts/*.fsp 2>/dev/null | wc -l")
-    echo "Found ${FSP_COUNT} .fsp file(s) in ${REMOTE_BASE}/results/layouts/"
+    # Detect sweep based on the freshly uploaded .fsp set, not a remote glob —
+    # legacy files in ${REMOTE_BASE}/results/layouts/ from earlier runs must not
+    # influence the submission mode of the current deploy.
+    if [[ -n "${FSP_EXPLICIT}" ]]; then
+        FSP_COUNT=1
+    else
+        FSP_COUNT=${#FSP_PATHS[@]}
+    fi
+    echo "This deploy uploaded ${FSP_COUNT} .fsp file(s)."
 
     if [[ "${FSP_COUNT}" -gt 1 ]]; then
         echo ""
         echo "Multiple .fsp files detected — submitting as a SLURM job array."
-        echo "Building fsp_list.txt on Athena..."
-        ssh "${SSH}" "ls ${REMOTE_BASE}/results/layouts/*.fsp | xargs -n1 basename \
-            > ${REMOTE_BASE}/results/layouts/fsp_list.txt"
+        # Build fsp_list.txt locally (one stem per line) and upload to
+        # ${REMOTE_BASE}/results/fsp_list.txt. The array job reads line N and
+        # derives FSP_FILE and FSP_DIR from the stem.
+        LOCAL_FSP_LIST="${LOCAL_PROJECT}/results_from_athena/_fsp_list.txt"
+        : > "${LOCAL_FSP_LIST}"
+        for _fsp in "${FSP_PATHS[@]}"; do
+            _name=$(basename "${_fsp}")
+            echo "${_name%.fsp}" >> "${LOCAL_FSP_LIST}"
+        done
+        scp "${LOCAL_FSP_LIST}" "${SSH}:${REMOTE_BASE}/results/fsp_list.txt"
         ARRAY_END=$(( FSP_COUNT - 1 ))
 
         # K = max concurrent jobs (license throttle). Set in athena.conf; override

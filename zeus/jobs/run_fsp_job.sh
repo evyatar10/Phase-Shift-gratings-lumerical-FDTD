@@ -22,10 +22,14 @@
 ulimit -s unlimited
 
 # ── CONFIGURE ────────────────────────────────────────────────────────────────
-FSP_DIR="/home/evyatarrubin/bragg_sim/results/layouts"
+# Per-run layout: each .fsp lives in its own folder ${RESULTS_ROOT}/<stem>/<stem>.fsp.
+# Engine writes its outputs alongside the input.
+RESULTS_ROOT="/home/evyatarrubin/bragg_sim/results"
 
 # FSP_FILE can be set via -v when submitting, or hardcoded here as a fallback:
 FSP_FILE="${FSP_FILE:-layout_REPLACE_ME.fsp}"
+FSP_STEM="${FSP_STEM:-${FSP_FILE%.fsp}}"
+FSP_DIR="${RESULTS_ROOT}/${FSP_STEM}"
 # ─────────────────────────────────────────────────────────────────────────────
 
 echo "============================================================"

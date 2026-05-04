@@ -26,10 +26,14 @@ ulimit -s unlimited
 mkdir -p logs
 
 # ── CONFIGURE ─────────────────────────────────────────────────────────────────
-FSP_DIR="/home/evyatarrubin/bragg_sim_gpu/results/layouts"
+# Per-run layout: each .fsp lives in its own folder ${RESULTS_ROOT}/<stem>/<stem>.fsp.
+# Engine writes its outputs (.h5 monitors, .log) into the same per-stem folder.
+RESULTS_ROOT="/home/evyatarrubin/bragg_sim_gpu/results"
 
 # FSP_FILE can be set via --export when submitting, or hardcoded here as fallback:
 FSP_FILE="${FSP_FILE:-layout_REPLACE_ME.fsp}"
+FSP_STEM="${FSP_FILE%.fsp}"
+FSP_DIR="${RESULTS_ROOT}/${FSP_STEM}"
 
 CONTAINER="$HOME/containers/lumerical-2026R1.sif"
 LUM_HOME="/opt/lumerical/v261"

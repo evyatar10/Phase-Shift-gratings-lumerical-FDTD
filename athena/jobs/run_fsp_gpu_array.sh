@@ -38,8 +38,10 @@ ulimit -s unlimited
 mkdir -p logs
 
 # ── CONFIGURE ─────────────────────────────────────────────────────────────────
-FSP_DIR="/home/evyatarrubin/bragg_sim_gpu/results/layouts"
-FSP_LIST="${FSP_DIR}/fsp_list.txt"   # one .fsp basename per line
+# Per-run layout: each .fsp lives in its own folder ${RESULTS_ROOT}/<stem>/<stem>.fsp.
+# fsp_list.txt at ${RESULTS_ROOT}/fsp_list.txt holds one stem per line.
+RESULTS_ROOT="/home/evyatarrubin/bragg_sim_gpu/results"
+FSP_LIST="${RESULTS_ROOT}/fsp_list.txt"
 
 CONTAINER="$HOME/containers/lumerical-2026R1.sif"
 LUM_HOME="/opt/lumerical/v261"
@@ -58,11 +60,13 @@ if [[ ! -f "${FSP_LIST}" ]]; then
     exit 1
 fi
 
-FSP_FILE=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "${FSP_LIST}")
-if [[ -z "${FSP_FILE}" ]]; then
+FSP_STEM=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "${FSP_LIST}")
+if [[ -z "${FSP_STEM}" ]]; then
     echo "ERROR: No entry at line $((SLURM_ARRAY_TASK_ID + 1)) of ${FSP_LIST}"
     exit 1
 fi
+FSP_FILE="${FSP_STEM}.fsp"
+FSP_DIR="${RESULTS_ROOT}/${FSP_STEM}"
 
 if [[ ! -f "${CONTAINER}" ]]; then
     echo "ERROR: container not found: ${CONTAINER}"

@@ -81,7 +81,7 @@ THRESHOLD_T      = 0.015        # 1.5% — for T_res convergence metric
 
 # Sweep values for each phase (coarse → fine).
 PHASE_X_VALUES  = [4, 5, 6, 7, 8, 9]        # cells_per_half_period (controls dx)
-PHASE_YZ_VALUES = [60, 50, 40, 30, 20]       # dyz_max_step_nm (global + box dy=dz, in nm)
+PHASE_YZ_VALUES = [50, 25, 10]               # dyz_max_step_nm: only divisors of GCD(350,700,800,900)=50, so every value tiles cleanly into core_height and all three widths (no Lumerical mesh snapping artifacts).
 
 # Default (current production) values — used as fixed values in other phases
 DEFAULT_CELLS    = 5

@@ -26,6 +26,10 @@ if not os.path.isdir(PROJECT_DIR):
 sys.path.insert(0, PROJECT_DIR)
 
 # ── 1. Patch config BEFORE any other project imports ─────────────────────────
+_run_name = (os.environ.get("SWEEP_SPEC_MODULE", "").rsplit(".", 1)[-1]
+             or os.environ.get("RUN_SCRIPT", ""))
+if _run_name:
+    os.environ["RUN_NAME"] = _run_name
 import config
 
 config.BASE_SAVE_DIR  = '/work/results'

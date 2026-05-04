@@ -16,6 +16,9 @@ sys.path.insert(0, PROJECT_DIR)
 # ── 2. Patch config BEFORE any other project imports ─────────────────────────
 #    config.LAYOUTS_DIR and config.RESULTS_DIR are derived dynamically from
 #    BASE_SAVE_DIR via __getattr__, so patching BASE_SAVE_DIR is sufficient.
+_run_name = os.environ.get("RUN_SCRIPT", "")
+if _run_name:
+    os.environ["RUN_NAME"] = _run_name
 import config
 
 config.BASE_SAVE_DIR  = '/home/evyatarrubin/bragg_sim/results'
