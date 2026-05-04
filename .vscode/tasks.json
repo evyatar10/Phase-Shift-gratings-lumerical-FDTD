@@ -92,18 +92,6 @@
             "problemMatcher": []
         },
         {
-            "label": "Athena: Deploy (choose mode)",
-            "type": "shell",
-            "command": "bash athena/deploy_athena.sh",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "Athena: Deploy — FSP job (local .fsp → engine on Athena)",
             "type": "shell",
             "command": "bash athena/deploy_athena.sh --option1",
@@ -116,7 +104,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Athena: Deploy — Python job (single or sweep)",
+            "label": "Athena: Deploy Python Job",
             "type": "shell",
             "command": "bash athena/deploy_athena.sh --option2",
             "group": "build",
@@ -174,6 +162,6 @@
                 "clear": true
             },
             "problemMatcher": []
-        }
+        },
     ]
 }

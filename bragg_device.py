@@ -296,15 +296,20 @@ class PiShiftBraggFDTD:
         if _cfg.USE_GPU:
             fdtd.setdevice("GPU")
         fdtd.set("background material", self.clad_material)
-        fdtd.set("simulation time", 1000e-12)
-        fdtd.set("auto shutoff min", 1e-6)
+        fdtd.set("simulation time", 2000e-12)
+        fdtd.set("auto shutoff min", 1e-7)
 
         fdtd.set("mesh type", "custom non-uniform")
-        fdtd.set("mesh cells per wavelength", 14)
         fdtd.set("define x mesh by", "maximum mesh step")
         fdtd.set("dx", self.dx_override)
-        fdtd.set("define y mesh by", "mesh cells per wavelength")
-        fdtd.set("define z mesh by", "mesh cells per wavelength")
+        # Pin dy/dz absolutely so transverse sampling is constant across runs
+        # at different λ (we scan 1300–1700 nm). 50 nm matches the 14-cells-per-λ
+        # rule at ~1384 nm with n_SiN=1.977 — slightly conservative below that,
+        # mildly relaxed above. Was previously "mesh cells per wavelength"=14.
+        fdtd.set("define y mesh by", "maximum mesh step")
+        fdtd.set("dy", 50e-9)
+        fdtd.set("define z mesh by", "maximum mesh step")
+        fdtd.set("dz", 50e-9)
         fdtd.set("allow grading in x", 0)
         fdtd.set("allow grading in y", 1)
         fdtd.set("allow grading in z", 1)

@@ -7,68 +7,85 @@ metric and threshold are configurable (see user-editable settings below):
   "lambda" — resonance wavelength;   threshold 1.0% (Ansys/Lumerical standard)
 
 Sweep order:
-  Phase A — cells_per_half_period  [4, 5, 6, 7, 8, 10]  controls dx
-  Phase B — dz_divisor             [5, 7, 9, 12, 15]     controls dz = core_height / divisor
-  (dy_divisor not swept — dy=50 nm / 13 cells across narrow width is well-resolved)
+  Phase X  — cells_per_half_period  [4, 5, 6, 7, 8, 10]   controls dx via dx = pitch/(2N)
+  Phase YZ — dyz_max_step_nm        [60, 50, 40, 30, 20]  controls global + box dy = dz
 
 Each phase fixes the best-converged value from the previous phase.
 Early stopping: if |Δmetric/metric| < threshold for two consecutive mesh values,
 the phase stops and recommends the coarser of those two.
 
+Mesh model — mirrors production (bragg_device.py, single mesh-override box):
+  • Global FDTD region uses "custom non-uniform" with max-mesh-step in x (=dx_override),
+    y (=dyz), z (=dyz). Grading enabled in y/z.
+  • One mesh-override box centered at x=0 with dx=pitch/(2N), dy=dyz, dz=dyz.
+  • Source/monitor positions snap to dx_override.
+
 Results are checkpointed to a JSON file named checkpoint_p{N_PERIODS}_{METRIC}.json
 after every run.  Different (periods, metric) combinations write separate files and
 never overwrite each other.
 
-Run from the project root:
+Usage:
+    # Local sequential sweep
     python convergence_testing/run_mesh_convergence.py
+
+    # Aggregate Athena array per-task results into the checkpoint.
+    # Normally invoked automatically by the server-side aggregator job
+    # submitted with --dependency=afterok after each mesh_conv array.
+    python convergence_testing/run_mesh_convergence.py --aggregate X
+    python convergence_testing/run_mesh_convergence.py --aggregate YZ
 """
 
+# PHASES / KIND_PREFIX: read by athena/deploy_athena.sh's Convergence picker.
+# Expands this file into one menu entry per phase ("run_mesh_convergence X" /
+# "...YZ") that submit as parallel SLURM arrays with SWEEP_KIND=mesh_conv_x /
+# mesh_conv_yz. Files in convergence_testing/ without these constants are
+# offered as a single sequential entry instead.
+PHASES      = ["X", "YZ"]
+KIND_PREFIX = "mesh_conv"
+
+# IS_HELPER: hide from the Single-runner picker (legacy guard — Single now
+# only scans runners/single/, so this is defensive only).
+IS_HELPER = True
+
+import argparse
+import glob
 import json
-import math
 import os
 import sys
 import time
 
-import matplotlib.pyplot as plt
-import numpy as np
-
 # ── path setup ────────────────────────────────────────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# config is stdlib-safe (no scipy/lumapi) — needed for CONV_DIR at module level.
 import config
-from bragg_device import PiShiftBraggFDTD
-from post_processing import extract_s_parameters, find_resonance
-from sim_helpers import apply_monitor_overrides
-from simulation_config import SimulationConfig
+# Simulation imports (bragg_device → analysis → scipy) are deferred to inside
+# _run_one / _make_cfg so that --aggregate runs without triggering them.
 
 # ═════════════════════════════════════════════════════════════════════════════
 # User-editable settings
 # ═════════════════════════════════════════════════════════════════════════════
 
 # ── Convergence metric ───────────────────────────────────────────────────────
-# Set CONVERGENCE_METRIC to "Q" or "lambda".
-# Each metric has its own threshold based on published FDTD standards:
+# Set CONVERGENCE_METRIC to "Q", "lambda", or "T".
 #   lambda — 1.0%: Ansys/Lumerical stated standard for resonance wavelength
-#   Q      — 2.0%: typical published FDTD standard for mesh convergence of Q.
-#             Note: Lumerical's 0.2% criterion refers to auto-shutoff convergence
-#             (field decay within a single run), NOT mesh-to-mesh convergence.
-CONVERGENCE_METRIC   = "Q"      # "Q" or "lambda"
+#   Q      — 2.0%: typical published FDTD standard for mesh convergence of Q
+#   T      — 1.5%: T_res (transmission at resonance); useful when peak height
+#                  matters more than Q or λ (e.g. for filter design).
+CONVERGENCE_METRIC   = "Q"      # "Q", "lambda", or "T"
 N_PERIODS_EACH_SIDE  = 80       # device length; also encoded in checkpoint filename
 
 THRESHOLD_LAMBDA = 0.010        # 1.0% — for lambda convergence metric
 THRESHOLD_Q      = 0.020        # 2.0% — for Q convergence metric
+THRESHOLD_T      = 0.015        # 1.5% — for T_res convergence metric
 
 # Sweep values for each phase (coarse → fine).
-# cells=3 removed from Phase A: too coarse, guaranteed non-converged, wastes a run.
-# Phase C (dy_divisor) dropped: dy=50 nm is already 13 cells across the 650 nm
-# narrow width — well-resolved and not a convergence concern.
-PHASE_A_VALUES = [4, 5, 6, 7, 8, 10]        # cells_per_half_period (controls dx)
-PHASE_B_VALUES = [5, 7, 9, 12, 15]          # dz_divisor            (controls dz)
+PHASE_X_VALUES  = [4, 5, 6, 7, 8, 9]        # cells_per_half_period (controls dx)
+PHASE_YZ_VALUES = [60, 50, 40, 30, 20]       # dyz_max_step_nm (global + box dy=dz, in nm)
 
 # Default (current production) values — used as fixed values in other phases
-DEFAULT_CELLS  = 5
-DEFAULT_DZ_DIV = 7
-DEFAULT_DY_DIV = 13
+DEFAULT_CELLS    = 5
+DEFAULT_DYZ_NM   = 50.0   # production pins global dy = dz = 50 nm (max-mesh-step)
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Output paths
@@ -77,8 +94,6 @@ DEFAULT_DY_DIV = 13
 CONV_DIR     = os.path.join(config.BASE_SAVE_DIR, "mesh_convergence")
 LAYOUTS_DIR  = os.path.join(CONV_DIR, "layouts")
 RESULTS_DIR  = os.path.join(CONV_DIR, "results")
-# Checkpoint filename encodes periods + metric so different run configurations
-# never overwrite each other (e.g. checkpoint_p80_Q.json vs checkpoint_p60_lambda.json).
 CHECKPOINT   = os.path.join(CONV_DIR,
     f"checkpoint_p{N_PERIODS_EACH_SIDE}_{CONVERGENCE_METRIC}.json")
 
@@ -87,104 +102,22 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# Subclass: tunable mesh divisors, zero changes to bragg_device.py
-# ═════════════════════════════════════════════════════════════════════════════
-
-class _ConvergenceBraggFDTD(PiShiftBraggFDTD):
-    """
-    PiShiftBraggFDTD with cells_per_half_period, dy_divisor, dz_divisor exposed
-    as constructor arguments.  Only _add_aligned_mesh_override is overridden;
-    all other behaviour (geometry, source, monitors, S-parameters) is identical
-    to the parent class.
-    """
-
-    def __init__(self, *args,
-                 cells_per_half_period=DEFAULT_CELLS,
-                 dy_divisor=DEFAULT_DY_DIV,
-                 dz_divisor=DEFAULT_DZ_DIV,
-                 **kwargs):
-        self._cells  = int(cells_per_half_period)
-        self._dy_div = float(dy_divisor)
-        self._dz_div = float(dz_divisor)
-        super().__init__(*args, **kwargs)
-
-    def _add_aligned_mesh_override(self, cells_per_half_period=5):
-        """
-        3-box mesh override (left periodic, cavity, right periodic)
-        with tunable dy/dz divisors and cells_per_half_period.
-        """
-        fdtd = self.fdtd
-        half_pitch = 0.5 * self.pitch
-        n_cells_half = max(1, self._cells)
-        dx_grating = half_pitch / float(n_cells_half)
-        dy = self.width_narrow / self._dy_div
-        dz = self.core_height / self._dz_div
-
-        # Cavity and grating boundaries
-        x_grating_start = -self.x_grating_end
-        x_grating_end   =  self.x_grating_end
-        x_cav_left  = -self.cavity_length / 2.0
-        x_cav_right =  self.cavity_length / 2.0
-
-        # Cavity dx: snap to nearest integer cells
-        n_cav = max(1, round(self.cavity_length / dx_grating))
-        dx_cav = self.cavity_length / float(n_cav)
-        if abs(dx_cav - dx_grating) / dx_grating > 0.05:
-            print(f"  WARNING: cavity dx={dx_cav*1e9:.1f}nm deviates >5% from "
-                  f"dx_grating={dx_grating*1e9:.1f}nm")
-
-        # Y/Z extent: waveguide + evanescent margin (1 tail for optimization, 2 for accurate)
-        _dn_sq = max(self.n_eff_guess**2 - self.n_clad_const**2, 0.01)
-        _decay_len = self.lambda_B / (2.0 * math.pi * math.sqrt(_dn_sq))
-        _n_tails = 2.0 if self.simulation_mode == "accurate" else 1.0
-        y_span_override = self.width_wide  + 2.0 * _n_tails * _decay_len
-        z_span_override = self.core_height + 2.0 * _n_tails * _decay_len
-
-        def add_mesh_box(name, x_left, x_right, dx_val):
-            span = x_right - x_left
-            fdtd.addmesh()
-            fdtd.set("name", name)
-            fdtd.set("x", x_left + span / 2.0)
-            fdtd.set("x span", span)
-            fdtd.set("y", 0.0)
-            fdtd.set("y span", y_span_override)
-            fdtd.set("z", 0.0)
-            fdtd.set("z span", z_span_override)
-            fdtd.set("override x mesh", 1)
-            fdtd.set("override y mesh", 1)
-            fdtd.set("override z mesh", 1)
-            fdtd.set("dx", dx_val)
-            fdtd.set("dy", dy)
-            fdtd.set("dz", dz)
-
-        # Left periodic: exact dx_grating (span = n_periods*pitch, always divisible)
-        add_mesh_box("mesh_left_periodic", x_grating_start, x_cav_left, dx_grating)
-        # Cavity: snap_dx to fit cavity_length exactly
-        add_mesh_box("mesh_cavity", x_cav_left, x_cav_right, dx_cav)
-        # Right periodic: exact dx_grating
-        add_mesh_box("mesh_right_periodic", x_cav_right, x_grating_end, dx_grating)
-
-
-# ═════════════════════════════════════════════════════════════════════════════
 # Simulation config
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _make_cfg() -> SimulationConfig:
+def _make_cfg():
     """SimulationConfig tuned for convergence testing: no 2D/3D/far-field monitors."""
+    from simulation_config import SimulationConfig
     cfg = SimulationConfig()
     cfg.apodization.enabled        = False
     cfg.monitors.record_2d_fields  = False
     cfg.monitors.record_3d_fields  = False
     cfg.farfield.enabled           = False
     cfg.run.cleanup_lumerical_data = True
-    # Fewer periods: shorter device → faster sim + faster auto-shutoff (lower Q
-    # decays quicker). 40 periods is enough to see a clear resonance and get a
-    # stable Q ratio for convergence comparison purposes.
     cfg.grating.n_periods_each_side = N_PERIODS_EACH_SIDE
-    # Narrow scan: 20 nm is sufficient to capture the cavity resonance peak
+    # Narrow scan: 20 nm is enough to capture the cavity resonance peak
     # and avoids wasting DFT points outside the stopband.
     cfg.spectral.scan_width_nm = 20.0
-    # Fewer DFT monitor points: 3001 is overkill for just locating the resonance.
     cfg.spectral.n_wl_points = 1001
     return cfg
 
@@ -205,46 +138,68 @@ def _save_checkpoint(data: dict) -> None:
         json.dump(data, f, indent=2)
 
 
+def _threshold_for(metric: str) -> float:
+    return {"Q": THRESHOLD_Q, "lambda": THRESHOLD_LAMBDA, "T": THRESHOLD_T}[metric]
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 # Single simulation runner
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _run_one(cfg: SimulationConfig,
-             cells: int, dy_div: float, dz_div: float,
-             tag: str) -> dict:
+def _run_one(cfg, cells: int, dyz_nm: float, tag: str) -> dict:
     """
     Build and run one FDTD simulation, extract Q factor from S-parameters.
 
     Parameters
     ----------
     cfg     : SimulationConfig (monitors already disabled)
-    cells   : cells_per_half_period
-    dy_div  : dy = width_narrow / dy_div
-    dz_div  : dz = core_height  / dz_div
+    cells   : cells_per_half_period (controls dx = pitch/(2*cells))
+    dyz_nm  : max-mesh-step in nm applied to both global and override-box dy/dz
     tag     : short string used in layout / results filenames
 
     Returns
     -------
-    dict with keys: cells, dy_div, dz_div, dx_nm, dy_nm, dz_nm,
-                    Q, resonance_nm, fwhm_pm, sim_time_s
+    dict with keys: cells, dyz_nm, dx_nm, dy_nm, dz_nm,
+                    Q, resonance_nm, fwhm_pm, transmission, sim_time_s
     """
+    import matplotlib.pyplot as plt
+    from bragg_device import PiShiftBraggFDTD
+    from post_processing import extract_s_parameters, find_resonance
+    from sim_helpers import apply_monitor_overrides
+
+    class _ConvergenceBraggFDTD(PiShiftBraggFDTD):
+        def __init__(self, *args, dyz_max_step_m=DEFAULT_DYZ_NM * 1e-9, **kwargs):
+            self._dyz_m = float(dyz_max_step_m)
+            super().__init__(*args, **kwargs)
+
+        def _setup_fdtd_region(self):
+            super()._setup_fdtd_region()
+            self.fdtd.set("dy", self._dyz_m)
+            self.fdtd.set("dz", self._dyz_m)
+
+        def _add_aligned_mesh_override(self):
+            super()._add_aligned_mesh_override()
+            self.fdtd.setnamed("mesh_override", "dy", self._dyz_m)
+            self.fdtd.setnamed("mesh_override", "dz", self._dyz_m)
+
     half_pitch = cfg.grating.pitch_m / 2.0
     dx_nm = half_pitch / cells * 1e9
-    dy_nm = cfg.geometry.width_narrow_m / dy_div * 1e9
-    dz_nm = cfg.geometry.core_height_m  / dz_div * 1e9
+    dy_nm = float(dyz_nm)
+    dz_nm = float(dyz_nm)
 
     print(f"\n{'─' * 62}")
     print(f"  [{tag}]")
-    print(f"  cells={cells}  dy_div={dy_div}  dz_div={dz_div}")
+    print(f"  cells={cells}  dyz={dyz_nm:.1f} nm")
     print(f"  dx={dx_nm:.1f} nm   dy={dy_nm:.1f} nm   dz={dz_nm:.1f} nm")
     print(f"{'─' * 62}")
 
     device_kwargs = cfg.to_device_kwargs()
+    # Force the swept cells through to the parent (override whatever the cfg
+    # supplied via simulation_mode).
+    device_kwargs["cells_per_half_period"] = int(cells)
     sim = _ConvergenceBraggFDTD(
         **device_kwargs,
-        cells_per_half_period=cells,
-        dy_divisor=dy_div,
-        dz_divisor=dz_div,
+        dyz_max_step_m=float(dyz_nm) * 1e-9,
     )
 
     layout_path  = os.path.join(LAYOUTS_DIR, f"layout_{tag}.fsp")
@@ -266,11 +221,8 @@ def _run_one(cfg: SimulationConfig,
     try:
         s_params  = extract_s_parameters(sim, cfg)
         resonance = find_resonance(s_params)
-        # find_resonance computes FWHM as peak_width_samples * dw, where
-        # dw = wl[1] - wl[0].  Lumerical returns wavelengths in descending
-        # order (sampled uniformly in frequency), so dw < 0 and FWHM comes
-        # out negative.  abs() corrects the sign without touching the
-        # original post_processing.py.
+        # Lumerical returns wavelengths in descending order (uniform in frequency),
+        # so dw < 0 and find_resonance's FWHM comes out negative. abs() corrects.
         fwhm_m = abs(resonance.spectral_fwhm_m)
         Q = resonance.wavelength_m / fwhm_m
         print(f"  lambda_res = {resonance.wavelength_m * 1e9:.4f} nm  "
@@ -282,15 +234,14 @@ def _run_one(cfg: SimulationConfig,
         sim.close()
 
     return {
-        "cells":        cells,
-        "dy_div":       dy_div,
-        "dz_div":       dz_div,
+        "cells":        int(cells),
+        "dyz_nm":       float(dyz_nm),
         "dx_nm":        round(dx_nm,  2),
         "dy_nm":        round(dy_nm,  2),
         "dz_nm":        round(dz_nm,  2),
-        "Q":            Q,
-        "resonance_nm": resonance.wavelength_m * 1e9,
-        "fwhm_pm":      fwhm_m * 1e12,
+        "Q":            float(Q),
+        "resonance_nm": float(resonance.wavelength_m * 1e9),
+        "fwhm_pm":      float(fwhm_m * 1e12),
         "transmission": float(resonance.transmission),
         "sim_time_s":   round(elapsed, 1),
     }
@@ -304,38 +255,39 @@ def _run_phase(phase: str,
                param: str,
                values: list,
                fixed_cells: int,
-               fixed_dy_div: float,
-               fixed_dz_div: float,
-               cfg: SimulationConfig,
+               fixed_dyz_nm: float,
+               cfg,
                checkpoint: dict,
                metric: str,
                threshold: float) -> tuple:
     """
-    Sweep one parameter while fixing the others.
+    Sweep one parameter while fixing the other.
 
-    metric    : "Q" or "lambda" — which quantity drives convergence checking.
-    threshold : fractional threshold (e.g. 0.02 = 2%) for the chosen metric.
+    param     : "cells_per_half_period" or "dyz_max_step_nm"
+    metric    : "Q" or "lambda" — drives convergence checking.
+    threshold : fractional threshold (e.g. 0.02 = 2%).
 
-    Returns (results_list, best_value) where best_value is the coarser of
-    the two values that first showed |Delta_metric/metric| < threshold for
-    two consecutive steps.  Falls back to the finest value if no convergence.
+    Returns (results_list, best_value).
     """
     print(f"\n{'=' * 62}")
     print(f"  Phase {phase}: sweeping {param}  [metric={metric}, threshold={threshold*100:.1f}%]")
-    print(f"  Fixed: cells={fixed_cells}, dy_div={fixed_dy_div}, dz_div={fixed_dz_div}")
+    print(f"  Fixed: cells={fixed_cells}, dyz={fixed_dyz_nm} nm")
     print(f"{'=' * 62}")
 
     results         = []
     prev_wl         = None
     prev_Q          = None
+    prev_T          = None
     converged_count = 0
     best_value      = values[-1]   # fallback: finest mesh
 
     for i, val in enumerate(values):
-        # Build (cells, dy_div, dz_div) for this step
-        cells  = int(val)   if param == "cells_per_half_period" else fixed_cells
-        dz_div = float(val) if param == "dz_divisor"           else fixed_dz_div
-        dy_div = float(val) if param == "dy_divisor"           else fixed_dy_div
+        if param == "cells_per_half_period":
+            cells  = int(val)
+            dyz_nm = float(fixed_dyz_nm)
+        else:
+            cells  = int(fixed_cells)
+            dyz_nm = float(val)
 
         ck_key = f"ph{phase}_{val}"
 
@@ -344,19 +296,22 @@ def _run_phase(phase: str,
             rec = checkpoint[ck_key]
         else:
             tag = f"ph{phase}_{param.replace('_', '')}_{val}"
-            rec = _run_one(cfg, cells, dy_div, dz_div, tag)
+            rec = _run_one(cfg, cells, dyz_nm, tag)
             checkpoint[ck_key] = rec
             _save_checkpoint(checkpoint)
 
         results.append(rec)
         wl = rec["resonance_nm"]
         Q  = rec["Q"]
+        T  = rec["transmission"]
 
-        # Convergence check on the selected metric
         if prev_wl is not None:
             if metric == "Q":
                 delta = abs(Q - prev_Q) / max(abs(prev_Q), 1e-12)
                 label = f"|ΔQ/Q| = {delta * 100:.3f}%"
+            elif metric == "T":
+                delta = abs(T - prev_T) / max(abs(prev_T), 1e-12)
+                label = f"|ΔT/T| = {delta * 100:.3f}%"
             else:
                 delta = abs(wl - prev_wl) / max(abs(prev_wl), 1e-12)
                 label = f"|Δλ/λ| = {delta * 100:.3f}%"
@@ -364,7 +319,7 @@ def _run_phase(phase: str,
             if delta < threshold:
                 converged_count += 1
                 if converged_count >= 2:
-                    best_value = values[i - 1]   # coarser value, already stable
+                    best_value = values[i - 1]
                     print(f"\n  Converged at {param}={val}  ({label})")
                     print(f"  Using {param} = {best_value}  (coarser, already stable)")
                     break
@@ -373,6 +328,7 @@ def _run_phase(phase: str,
 
         prev_wl = wl
         prev_Q  = Q
+        prev_T  = T
     else:
         print(f"\n  No convergence within sweep range. "
               f"Using finest value: {param} = {best_value}")
@@ -385,7 +341,7 @@ def _run_phase(phase: str,
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _print_table(phase: str, param_label: str, results: list) -> None:
-    col = 12
+    col = 14
     sep = "─" * 118
     header = (f"  {'Param val':<{col}} {'dx(nm)':<8} {'dy(nm)':<8} {'dz(nm)':<8}"
               f" {'lambda(nm)':>12}  {'FWHM(pm)':>10}  {'Q':>10}"
@@ -399,9 +355,8 @@ def _print_table(phase: str, param_label: str, results: list) -> None:
     prev_wl = None
     prev_Q  = None
     for r in results:
-        val = r.get("cells") if param_label == "cells_per_half_period" else \
-              r.get("dz_div") if param_label == "dz_divisor" else \
-              r.get("dy_div")
+        val = r.get("cells") if param_label == "cells_per_half_period" \
+              else r.get("dyz_nm")
         dlam_str = "         —"
         dQ_str   = "         —"
         if prev_wl is not None:
@@ -421,7 +376,102 @@ def _print_table(phase: str, param_label: str, results: list) -> None:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# Main
+# Aggregator: fold Athena array per-task JSONs into the checkpoint
+# ═════════════════════════════════════════════════════════════════════════════
+
+def aggregate_array_parts(phase: str) -> dict:
+    """
+    Fold per-task results from Athena array runs into the checkpoint.
+
+    Athena writes each task's record to mesh_convergence/array_part_ph{X|YZ}_NNNN.json
+    (avoids concurrent writes to the shared checkpoint). This function reads
+    those files in numerical order, reconstructs ck_key = ph{X|YZ}_{value} entries,
+    and — for the X-phase — computes best_cells_phase_x using the same convergence
+    rule as _run_phase so build_sweep_list.py can pin SWEEP_FIXED_CELLS for the
+    follow-on YZ array. Normally invoked by athena/jobs/run_mesh_aggregate.sh
+    via --dependency=afterok after the mesh_conv_{x,yz} array completes.
+    """
+    phase = phase.upper()
+    if phase not in {"X", "YZ"}:
+        raise ValueError(f"phase must be 'X' or 'YZ', got {phase!r}")
+
+    pattern = os.path.join(CONV_DIR, f"array_part_ph{phase}_*.json")
+    parts = sorted(glob.glob(pattern))
+    if not parts:
+        print(f"No array_part files matched: {pattern}")
+        return _load_checkpoint()
+
+    checkpoint = _load_checkpoint()
+    threshold  = _threshold_for(CONVERGENCE_METRIC)
+
+    print(f"\nAggregating {len(parts)} Phase {phase} part files into checkpoint")
+    print(f"  checkpoint: {CHECKPOINT}")
+
+    records = []
+    for p in parts:
+        with open(p) as f:
+            rec = json.load(f)
+        if phase == "X":
+            val = rec["cells"]
+        else:
+            val = rec.get("dyz_nm", rec.get("dz_nm"))
+        ck_key = f"ph{phase}_{val}"
+        checkpoint[ck_key] = rec
+        records.append((val, rec))
+        print(f"  [{phase}] {ck_key:<20s}  Q={rec['Q']:>8.2f}  "
+              f"λ={rec['resonance_nm']:.4f} nm  ({os.path.basename(p)})")
+
+    # Sort by the swept value so the convergence rule sees coarse → fine order.
+    if phase == "X":
+        # cells: ascending → finer
+        records.sort(key=lambda kv: int(kv[0]))
+    else:
+        # dyz_nm: descending → finer
+        records.sort(key=lambda kv: -float(kv[0]))
+
+    # Recompute the converged "best" value with the same rule used by _run_phase.
+    converged_count = 0
+    best_value = records[-1][0]   # fallback: finest
+    prev_wl = None
+    prev_Q  = None
+    prev_T  = None
+    for i, (val, rec) in enumerate(records):
+        wl = rec["resonance_nm"]
+        Q  = rec["Q"]
+        T  = rec["transmission"]
+        if prev_wl is not None:
+            if CONVERGENCE_METRIC == "Q":
+                delta = abs(Q - prev_Q) / max(abs(prev_Q), 1e-12)
+            elif CONVERGENCE_METRIC == "T":
+                delta = abs(T - prev_T) / max(abs(prev_T), 1e-12)
+            else:
+                delta = abs(wl - prev_wl) / max(abs(prev_wl), 1e-12)
+            if delta < threshold:
+                converged_count += 1
+                if converged_count >= 2:
+                    best_value = records[i - 1][0]
+                    break
+            else:
+                converged_count = 0
+        prev_wl = wl
+        prev_Q  = Q
+        prev_T  = T
+
+    if phase == "X":
+        checkpoint["best_cells_phase_x"] = int(best_value)
+        print(f"\n  best_cells_phase_x = {int(best_value)}  "
+              f"(picked up by build_sweep_list.py for mesh_conv_yz SWEEP_FIXED_CELLS)")
+    else:
+        checkpoint["best_dyz_nm_phase_yz"] = float(best_value)
+        print(f"\n  best_dyz_nm_phase_yz = {float(best_value):.1f} nm")
+
+    _save_checkpoint(checkpoint)
+    print(f"  Wrote {CHECKPOINT}")
+    return checkpoint
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Main (local sequential sweep)
 # ═════════════════════════════════════════════════════════════════════════════
 
 def main():
@@ -429,7 +479,7 @@ def main():
     checkpoint = _load_checkpoint()
 
     half_pitch = cfg.grating.pitch_m / 2.0
-    threshold  = THRESHOLD_Q if CONVERGENCE_METRIC == "Q" else THRESHOLD_LAMBDA
+    threshold  = _threshold_for(CONVERGENCE_METRIC)
 
     print("\n" + "=" * 62)
     print("  MESH CONVERGENCE")
@@ -438,47 +488,63 @@ def main():
     print(f"  Periods each side     : {cfg.grating.n_periods_each_side}")
     print(f"  Current defaults      : cells={DEFAULT_CELLS} "
           f"(dx={half_pitch / DEFAULT_CELLS * 1e9:.0f} nm), "
-          f"dz_div={DEFAULT_DZ_DIV} "
-          f"(dz={cfg.geometry.core_height_m / DEFAULT_DZ_DIV * 1e9:.0f} nm), "
-          f"dy_div={DEFAULT_DY_DIV} "
-          f"(dy={cfg.geometry.width_narrow_m / DEFAULT_DY_DIV * 1e9:.0f} nm)")
+          f"dyz={DEFAULT_DYZ_NM:.0f} nm (global + box, max-mesh-step)")
     print(f"  Checkpoint            : {CHECKPOINT}")
     print("=" * 62)
 
-    # ── Phase A: cells_per_half_period (controls dx) ──────────────────────
-    res_A, best_cells = _run_phase(
-        phase="A", param="cells_per_half_period", values=PHASE_A_VALUES,
-        fixed_cells=DEFAULT_CELLS, fixed_dy_div=DEFAULT_DY_DIV,
-        fixed_dz_div=DEFAULT_DZ_DIV,
+    # ── Phase X: cells_per_half_period (controls dx) ──────────────────────
+    res_X, best_cells = _run_phase(
+        phase="X", param="cells_per_half_period", values=PHASE_X_VALUES,
+        fixed_cells=DEFAULT_CELLS, fixed_dyz_nm=DEFAULT_DYZ_NM,
         cfg=cfg, checkpoint=checkpoint,
         metric=CONVERGENCE_METRIC, threshold=threshold,
     )
-    _print_table("A", "cells_per_half_period", res_A)
+    _print_table("X", "cells_per_half_period", res_X)
+    checkpoint["best_cells_phase_x"] = int(best_cells)
+    _save_checkpoint(checkpoint)
 
-    # ── Phase B: dz_divisor (controls dz = core_height / divisor) ────────
-    res_B, best_dz_div = _run_phase(
-        phase="B", param="dz_divisor", values=PHASE_B_VALUES,
-        fixed_cells=best_cells, fixed_dy_div=DEFAULT_DY_DIV,
-        fixed_dz_div=DEFAULT_DZ_DIV,
+    # ── Phase YZ: dyz_max_step_nm (global + box dy=dz) ────────────────────
+    res_YZ, best_dyz = _run_phase(
+        phase="YZ", param="dyz_max_step_nm", values=PHASE_YZ_VALUES,
+        fixed_cells=best_cells, fixed_dyz_nm=DEFAULT_DYZ_NM,
         cfg=cfg, checkpoint=checkpoint,
         metric=CONVERGENCE_METRIC, threshold=threshold,
     )
-    _print_table("B", "dz_divisor", res_B)
+    _print_table("YZ", "dyz_max_step_nm", res_YZ)
+    checkpoint["best_dyz_nm_phase_yz"] = float(best_dyz)
+    _save_checkpoint(checkpoint)
 
     # ── Final recommendation ──────────────────────────────────────────────
     dx_rec = half_pitch / best_cells * 1e9
-    dz_rec = cfg.geometry.core_height_m  / best_dz_div * 1e9
 
     print(f"\n{'=' * 62}")
     print("  RECOMMENDED MESH SETTINGS")
     print(f"{'=' * 62}")
-    print(f"  cells_per_half_period : {best_cells}  ->  dx = {dx_rec:.1f} nm")
-    print(f"  dz_divisor            : {best_dz_div}  ->  dz = {dz_rec:.1f} nm")
-    print(f"  dy_divisor            : {DEFAULT_DY_DIV}  ->  dy = {cfg.geometry.width_narrow_m / DEFAULT_DY_DIV * 1e9:.1f} nm  (not swept — already well-resolved)")
-    print(f"\n  (Current defaults: dx=50 nm, dz=50 nm, dy=50 nm)")
+    print(f"  cells_per_half_period : {best_cells}      ->  dx = {dx_rec:.1f} nm")
+    print(f"  dyz_max_step_nm       : {best_dyz:.1f}   ->  dy = dz = {best_dyz:.1f} nm")
+    print(f"\n  (Production defaults: cells=5 ⇒ dx=50 nm, dy=dz=50 nm)")
     print(f"  Results saved to: {CONV_DIR}")
     print(f"{'=' * 62}\n")
 
 
-if __name__ == "__main__":
+# Auto-discovery contract: athena_run.py looks for `run` on each runner module.
+# Ignores cfg argument — this script builds its own SimulationConfig via _make_cfg().
+def run(cfg=None):
     main()
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# CLI entry
+# ═════════════════════════════════════════════════════════════════════════════
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--aggregate", choices=["X", "YZ"], default=None,
+                        help="Fold Athena array per-task JSONs (array_part_ph{X|YZ}_*.json) "
+                             "into the checkpoint. Skips simulation entirely.")
+    args = parser.parse_args()
+
+    if args.aggregate is not None:
+        aggregate_array_parts(args.aggregate)
+    else:
+        main()

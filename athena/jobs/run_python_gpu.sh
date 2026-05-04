@@ -54,9 +54,9 @@ LICENSE="${ATHENA_LICENSE:-11055@dgx-master}"
 INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
 
 # RUN_SCRIPT can be set via --export at sbatch, or hardcoded here as fallback.
-# Valid values: see _SCRIPTS in athena/scripts/athena_run.py
-# (currently: single_sim | simple_bragg | run_experiment)
-RUN_SCRIPT="${RUN_SCRIPT:-single_sim}"
+# Valid values: bare module name from runners/single/ or convergence_testing/
+# (auto-discovered by athena_run.py — anything with a top-level `run` callable).
+RUN_SCRIPT="${RUN_SCRIPT:-run_simulation}"
 
 # REQUIRE_GPU=1 makes athena_run.py exit non-zero if setresource(...,"GPU",True)
 # fails — prevents long sweeps silently CPU-falling-back when the license tier

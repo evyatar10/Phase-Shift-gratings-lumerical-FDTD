@@ -107,6 +107,10 @@ def cleanup_lumerical_temp_files(layout_path: str) -> None:
 # Entry point
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# Auto-discovery contract: athena_run.py looks for `run` on each runner module.
+run = run_single_sim
+
+
 if __name__ == "__main__":
     # Create config with defaults from simulation_config.py.
     # Override any parameters below before running:

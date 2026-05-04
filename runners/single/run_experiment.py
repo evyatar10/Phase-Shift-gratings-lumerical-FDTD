@@ -92,6 +92,10 @@ def run_experiment(cfg=None):
     return example_single_run(base=cfg)
 
 
+# Auto-discovery contract: athena_run.py looks for `run` on each runner module.
+run = run_experiment
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Entry point — uncomment one example to run
 # ═══════════════════════════════════════════════════════════════════════════════

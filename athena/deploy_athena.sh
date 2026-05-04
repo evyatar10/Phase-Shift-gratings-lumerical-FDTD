@@ -110,54 +110,79 @@ if [[ "${OPTION}" == "1" && -z "${FSP_PRESET}" && -z "${FSP_EXPLICIT}" && "${UPL
     esac
 fi
 
-# ── Pipeline sub-prompt: single or sweep ──────────────────────────────────────
+# ── Pipeline sub-prompt: single / sweep / convergence ────────────────────────
 # Fires only for OPTION=2 with no explicit script/sweep already passed on CLI.
-# Picking "sweep" flips OPTION to 3 (SLURM job array) and routes to the study
-# picker below.
+# Each branch dispatches to its OWN folder picker — no cross-mixing.
+#   1) Single       → runners/single/*.py  (OPTION=2, sequential job)
+#   2) Sweep        → runners/sweeps/*.py  (OPTION=3, kind=spec, one entry per study)
+#   3) Convergence  → convergence_testing/*.py
+#                     (files with PHASES = [...] expand to one entry per phase
+#                      and submit as SLURM arrays; bare files run sequentially)
 if [[ "${OPTION}" == "2" && -z "${RUN_SCRIPT}" && -z "${SWEEP_KIND}" && "${UPLOAD_ONLY}" == "false" ]]; then
     echo ""
     echo "============================================================"
     echo "  Python pipeline mode:"
-    echo "  1) Single simulation"
-    echo "  2) Sweep (parallel SLURM job array)"
+    echo "  1) Single       (one node, sequential — runners/single/)"
+    echo "  2) Sweep        (parallel SLURM job array — runners/sweeps/)"
+    echo "  3) Convergence  (convergence_testing/ — incl. mesh_conv X/YZ)"
     echo "============================================================"
-    read -rp "Enter 1 or 2: " _pipeline_choice
+    read -rp "Enter 1, 2, or 3: " _pipeline_choice
     case "${_pipeline_choice}" in
         1) _PIPELINE_KIND="single" ;;
-        2) OPTION="3"; SWEEP_KIND="spec" ;;
+        2) OPTION="3"; _PIPELINE_KIND="sweep" ;;
+        3) _PIPELINE_KIND="convergence" ;;
         *) echo "Invalid choice. Exiting."; exit 1 ;;
     esac
 fi
 
-# ── Single-runner picker (option 2 → single) ──────────────────────────────────
-# Mirrors zeus/deploy.sh. Available runners must be wired up in athena_run.py's
-# _SCRIPTS dict. Add new runners there once and they're selectable from both servers.
-if [[ "${OPTION}" == "2" && "${_PIPELINE_KIND:-}" == "single" && -z "${RUN_SCRIPT}" && "${UPLOAD_ONLY}" == "false" ]]; then
+# ── Single-runner picker (mode=single) — AUTO-DISCOVERED ─────────────────────
+# Scans runners/single/*.py only. Any module with a top-level `run` callable
+# appears; drop a new file in, it shows up next time.
+# Files starting with "_" or named __init__.py are skipped.
+if [[ "${_PIPELINE_KIND:-}" == "single" && -z "${RUN_SCRIPT}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    # Static scan (grep, not import) — local Python doesn't have lumapi.
+    mapfile -t _RUNNERS < <(
+        for _f in "${LOCAL_PROJECT}/runners/single"/*.py; do
+            [[ -e "${_f}" ]] || continue
+            _name=$(basename "${_f}" .py)
+            [[ "${_name}" == _* || "${_name}" == "__init__" ]] && continue
+            grep -qE '^(def[[:space:]]+run[[:space:]]*\(|run[[:space:]]*=)' "${_f}" 2>/dev/null || continue
+            grep -qE '^IS_HELPER[[:space:]]*=[[:space:]]*True' "${_f}" 2>/dev/null && continue
+            echo "${_name}"
+        done | sort
+    )
+    if [[ ${#_RUNNERS[@]} -eq 0 ]]; then
+        echo "ERROR: no runners discovered in runners/single/."
+        echo "       Each module needs a top-level callable 'run'."
+        exit 1
+    fi
     echo ""
     echo "============================================================"
-    echo "  Choose which single-sim script to run on Athena:"
-    echo "  1) single_sim               — Pi-Shift Bragg with cavity     (run_simulation.py)"
-    echo "  2) simple_bragg             — uniform Bragg, no cavity        (run_simple_bragg.py)"
-    echo "  3) run_experiment           — ExperimentCard example          (run_experiment.py)"
-    echo "  4) compare_3d_field_default_vs_shift — 3D + far-field; default vs 100 nm shift"
+    echo "  Choose which script to run on Athena (runners/single/):"
+    for _i in "${!_RUNNERS[@]}"; do
+        printf "  %d) %s\n" "$((_i+1))" "${_RUNNERS[$_i]}"
+    done
     echo "============================================================"
-    read -rp "Enter 1, 2, 3, or 4: " _script_choice
-    case "${_script_choice}" in
-        1) RUN_SCRIPT="single_sim" ;;
-        2) RUN_SCRIPT="simple_bragg" ;;
-        3) RUN_SCRIPT="run_experiment" ;;
-        4) RUN_SCRIPT="compare_3d_field_default_vs_shift" ;;
-        *) echo "Invalid choice. Exiting."; exit 1 ;;
-    esac
+    read -rp "Enter number: " _script_choice
+    if [[ "${_script_choice}" =~ ^[0-9]+$ ]] && (( _script_choice >= 1 && _script_choice <= ${#_RUNNERS[@]} )); then
+        RUN_SCRIPT="${_RUNNERS[$((_script_choice-1))]}"
+        echo "Selected: ${RUN_SCRIPT}"
+    else
+        echo "Invalid choice. Exiting."; exit 1
+    fi
 fi
 
-# ── Sweep study picker (option 3, kind=spec) ──────────────────────────────────
+# ── Sweep study picker (mode=sweep) ──────────────────────────────────────────
 # Auto-discovers any module under runners/sweeps/ that defines a top-level SPEC.
-# New studies appear automatically the next time this script runs.
-if [[ "${OPTION}" == "3" && "${SWEEP_KIND}" == "spec" && -z "${SPEC_MODULE}" && "${UPLOAD_ONLY}" == "false" ]]; then
+# Selecting a study sets SWEEP_KIND=spec and SPEC_MODULE — no separate prompt.
+if [[ "${_PIPELINE_KIND:-}" == "sweep" && -z "${SPEC_MODULE}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    SWEEP_KIND="spec"
+    # Hide prelim-only helpers (IS_PRELIM = True) — internal to chained workflows.
     mapfile -t _STUDIES < <(
-        grep -l '^SPEC' "${LOCAL_PROJECT}/runners/sweeps/"*.py 2>/dev/null \
-            | xargs -n1 basename | sed 's/\.py$//' | sort
+        for _f in $(grep -rl '[[:space:]]*SPEC[[:space:]]*=' "${LOCAL_PROJECT}/runners/sweeps/"*.py 2>/dev/null \
+                        | grep -v 'sweep_spec\.py'); do
+            grep -q '^IS_PRELIM[[:space:]]*=[[:space:]]*True' "${_f}" || basename "${_f}" .py
+        done | sort
     )
     if [[ ${#_STUDIES[@]} -eq 0 ]]; then
         echo "ERROR: no study modules found in runners/sweeps/ (need top-level SPEC = SweepSpec(...))"
@@ -179,30 +204,72 @@ if [[ "${OPTION}" == "3" && "${SWEEP_KIND}" == "spec" && -z "${SPEC_MODULE}" && 
     fi
 fi
 
-# ── Sweep kind picker (only when --sweep= not given and not the spec path) ────
-# Reachable only via explicit --option3 with no --sweep= and no --spec= (e.g.
-# convergence-testing flows). Normal users go through the pipeline sub-prompt.
-if [[ "${OPTION}" == "3" && -z "${SWEEP_KIND}" && "${UPLOAD_ONLY}" == "false" ]]; then
+# ── Convergence picker (mode=convergence) — AUTO-DISCOVERED w/ phase expansion ─
+# Scans convergence_testing/*.py. Two flavors per file:
+#   • Has PHASES = [...] and KIND_PREFIX = "..." → one entry per phase,
+#     each runs as a SLURM array with SWEEP_KIND=<prefix>_<phase_lower>.
+#   • Otherwise → one sequential entry that runs as a normal pipeline job.
+# Drop a new file in convergence_testing/ → it appears automatically.
+if [[ "${_PIPELINE_KIND:-}" == "convergence" && -z "${RUN_SCRIPT}" && -z "${SWEEP_KIND}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    # Each row: "<label>|<routing>|<payload>"
+    #   routing=array  → payload is SWEEP_KIND
+    #   routing=single → payload is RUN_SCRIPT (module bare name)
+    mapfile -t _CONV < <(
+        for _f in "${LOCAL_PROJECT}/convergence_testing"/*.py; do
+            [[ -e "${_f}" ]] || continue
+            _name=$(basename "${_f}" .py)
+            [[ "${_name}" == _* || "${_name}" == "__init__" ]] && continue
+            grep -qE '^(def[[:space:]]+run[[:space:]]*\(|run[[:space:]]*=)' "${_f}" 2>/dev/null || continue
+            _kind_prefix=$(grep -E '^KIND_PREFIX[[:space:]]*=' "${_f}" 2>/dev/null \
+                | sed -E 's/^KIND_PREFIX[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/' | head -1)
+            _phases_raw=$(grep -E '^PHASES[[:space:]]*=' "${_f}" 2>/dev/null | head -1)
+            _phases=$(echo "${_phases_raw}" | grep -oE '"[A-Za-z0-9_]+"' | tr -d '"')
+            if [[ -n "${_phases}" && -n "${_kind_prefix}" ]]; then
+                for _ph in ${_phases}; do
+                    _ph_lower=$(echo "${_ph}" | tr '[:upper:]' '[:lower:]')
+                    printf "%s %s (array)|array|%s_%s\n" "${_name}" "${_ph}" "${_kind_prefix}" "${_ph_lower}"
+                done
+            else
+                printf "%s (sequential)|single|%s\n" "${_name}" "${_name}"
+            fi
+        done | sort
+    )
+    if [[ ${#_CONV[@]} -eq 0 ]]; then
+        echo "ERROR: no convergence modules discovered in convergence_testing/."
+        exit 1
+    fi
     echo ""
     echo "============================================================"
-    echo "  Choose sweep kind:"
-    echo "  1) spec            — SweepSpec study (pass --spec=runners.sweeps.<study>)"
-    echo "  2) mesh_conv_a     — convergence Phase A (cells_per_half_period)"
-    echo "  3) mesh_conv_b     — convergence Phase B (dz_divisor); requires Phase A done"
+    echo "  Choose convergence run (convergence_testing/):"
+    for _i in "${!_CONV[@]}"; do
+        IFS='|' read -r _label _ _ <<<"${_CONV[$_i]}"
+        printf "  %d) %s\n" "$((_i+1))" "${_label}"
+    done
     echo "============================================================"
-    read -rp "Enter 1-3: " _sweep_choice
-    case "${_sweep_choice}" in
-        1) SWEEP_KIND="spec" ;;
-        2) SWEEP_KIND="mesh_conv_a" ;;
-        3) SWEEP_KIND="mesh_conv_b" ;;
-        *) echo "Invalid choice. Exiting."; exit 1 ;;
-    esac
-    if [[ "${SWEEP_KIND}" == "spec" && -z "${SPEC_MODULE}" ]]; then
-        read -rp "Enter dotted module path (e.g. runners.sweeps.innermost_shift): " SPEC_MODULE
-        if [[ -z "${SPEC_MODULE}" ]]; then
-            echo "ERROR: spec module is required."; exit 1
+    read -rp "Enter number: " _conv_choice
+    if [[ "${_conv_choice}" =~ ^[0-9]+$ ]] && (( _conv_choice >= 1 && _conv_choice <= ${#_CONV[@]} )); then
+        IFS='|' read -r _label _routing _payload <<<"${_CONV[$((_conv_choice-1))]}"
+        if [[ "${_routing}" == "array" ]]; then
+            OPTION="3"
+            SWEEP_KIND="${_payload}"
+            echo "Selected: ${_label} → SWEEP_KIND=${SWEEP_KIND}"
+        else
+            OPTION="2"
+            RUN_SCRIPT="${_payload}"
+            echo "Selected: ${_label} → RUN_SCRIPT=${RUN_SCRIPT}"
         fi
+    else
+        echo "Invalid choice. Exiting."; exit 1
     fi
+fi
+
+# ── Sweep kind picker (defensive fallback) ────────────────────────────────────
+# Only reachable via explicit --option3 with no --sweep= and no --spec= on CLI.
+# Interactive flow always sets SWEEP_KIND in the mode pickers above.
+if [[ "${OPTION}" == "3" && -z "${SWEEP_KIND}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    echo "ERROR: --option3 requires --sweep=<kind> or --spec=<module>."
+    echo "       Use the interactive flow (no flags) for the menu."
+    exit 1
 fi
 
 # ── Helper: download results ───────────────────────────────────────────────────
@@ -298,6 +365,8 @@ echo "=== Uploading project files ==="
 scp "${LOCAL_PROJECT}"/*.py "${SSH}:${REMOTE_BASE}/project/"
 echo "  uploading runners/ (single + sweeps + studies)"
 scp -r "${LOCAL_PROJECT}/runners" "${SSH}:${REMOTE_BASE}/project/"
+echo "  uploading convergence_testing/"
+scp -r "${LOCAL_PROJECT}/convergence_testing" "${SSH}:${REMOTE_BASE}/project/"
 
 echo ""
 echo "=== Uploading neff data ==="
@@ -441,13 +510,14 @@ else
     # Capture optional metadata (SWEEP_META: key=value lines) into env vars to
     # forward via sbatch --export. Lines look like "SWEEP_META: param=foo.bar".
     SWEEP_PARAM=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: param=//p')
-    SWEEP_FIXED_DZ=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: fixed_dz=//p')
+    SWEEP_FIXED_DYZ_NM=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: fixed_dyz_nm=//p')
     SWEEP_FIXED_CELLS=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: fixed_cells=//p')
     SWEEP_SPEC_MODULE=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: spec_module=//p')
     # Optional prelim chaining (kind=spec only): when the spec module declares
     # PRELIM_RUN_SCRIPT, submit that single sim first, then queue the array with
     # --dependency=afterok so the array starts only if the prelim succeeds.
     SWEEP_PRELIM_RUN_SCRIPT=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: prelim_run_script=//p')
+    SWEEP_HAS_PRELIM_SPEC=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: has_prelim_spec=//p')
     SWEEP_LOCKED_LAMBDA_FILE=$(echo "${BUILD_OUT}" | sed -n 's/^SWEEP_META: locked_lambda_file=//p')
 
     N_TASKS=$(grep -c . "${LOCAL_SWEEP_LIST}")
@@ -463,9 +533,9 @@ else
     scp "${LOCAL_SWEEP_LIST}" "${SSH}:${REMOTE_BASE}/data/sweep_list.txt"
 
     echo "Array: 0-${ARRAY_END}%${K}  (${N_TASKS} tasks, max ${K} concurrent)"
-    if [[ -n "${SWEEP_PARAM}" ]];      then echo "  SWEEP_PARAM=${SWEEP_PARAM}"; fi
-    if [[ -n "${SWEEP_FIXED_DZ}" ]];   then echo "  SWEEP_FIXED_DZ=${SWEEP_FIXED_DZ}"; fi
-    if [[ -n "${SWEEP_FIXED_CELLS}" ]];then echo "  SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS}"; fi
+    if [[ -n "${SWEEP_PARAM}" ]];        then echo "  SWEEP_PARAM=${SWEEP_PARAM}"; fi
+    if [[ -n "${SWEEP_FIXED_DYZ_NM}" ]]; then echo "  SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM}"; fi
+    if [[ -n "${SWEEP_FIXED_CELLS}" ]];  then echo "  SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS}"; fi
 
     # ── Optional prelim chain ────────────────────────────────────────────────
     # If the spec module declared PRELIM_RUN_SCRIPT, submit a single-sim
@@ -474,7 +544,54 @@ else
     # the JSON sidecar and each array task reads it.
     DEP_FLAG=""
     EXTRA_EXPORT=""
-    if [[ -n "${SWEEP_PRELIM_RUN_SCRIPT}" ]]; then
+    # Always forward LOCKED_LAMBDA_FILE when the spec module declares one. The
+    # value can be a path or a template containing {idx} (expanded per task by
+    # athena_run_one). Used for both prelim sweeps (IS_PRELIM=True ⇒ task
+    # WRITES the sidecar) and main sweeps (task READS it). No chaining here —
+    # prelim and main are independent deploys submitted in sequence by hand.
+    if [[ -n "${SWEEP_LOCKED_LAMBDA_FILE}" ]]; then
+        EXTRA_EXPORT=",LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE}"
+        echo "Spec declares LOCKED_LAMBDA_FILE: ${SWEEP_LOCKED_LAMBDA_FILE}"
+    fi
+    if [[ "${SWEEP_HAS_PRELIM_SPEC}" == "true" ]]; then
+        # ── Array-prelim chain ───────────────────────────────────────────────
+        # Module defines PRELIM_SPEC alongside SPEC. Build a separate sweep_list
+        # for the prelim using --prelim flag, submit it as its own array, then
+        # queue the main array with --dependency=afterok.
+        echo ""
+        echo "Module declares PRELIM_SPEC — submitting prelim array first."
+        echo "  locked-lambda sidecar template: ${SWEEP_LOCKED_LAMBDA_FILE}"
+        LOCAL_PRELIM_LIST="${LOCAL_PROJECT}/results_from_athena/_prelim_sweep_list.txt"
+        PRELIM_BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+            --kind spec --module "${SWEEP_SPEC_MODULE}" --prelim --output "${LOCAL_PRELIM_LIST}" 2>&1)
+        echo "${PRELIM_BUILD_OUT}"
+        PRELIM_N=$(grep -c . "${LOCAL_PRELIM_LIST}")
+        if [[ "${PRELIM_N}" -lt 1 ]]; then
+            echo "ERROR: prelim sweep_list is empty."
+            exit 1
+        fi
+        PRELIM_END=$(( PRELIM_N - 1 ))
+        echo "Uploading prelim_sweep_list.txt to Athena..."
+        scp "${LOCAL_PRELIM_LIST}" "${SSH}:${REMOTE_BASE}/data/prelim_sweep_list.txt"
+        echo "Prelim array: 0-${PRELIM_END}%${K}  (${PRELIM_N} tasks)"
+        echo "Submitting prelim array..."
+        PRELIM_RAW=$(ssh "${SSH}" \
+            "cd ${REMOTE_BASE} && sbatch \
+                --array=0-${PRELIM_END}%${K} \
+                --gpus=1 --cpus-per-task=${N_CPUS} \
+                --time=${PRELIM_TIME:-00:10:00} \
+                --export=ALL,SWEEP_KIND=spec,SWEEP_LIST=/work/data/prelim_sweep_list.txt,SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},SWEEP_IS_PRELIM=1,LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
+                --chdir=${REMOTE_BASE}/jobs \
+                jobs/run_python_array.sh")
+        if [[ $? -ne 0 ]]; then
+            echo "ERROR: prelim sbatch failed."
+            exit 1
+        fi
+        echo "Submitted prelim: ${PRELIM_RAW}"
+        PRELIM_ID=$(echo "${PRELIM_RAW}" | awk '{print $NF}')
+        DEP_FLAG="--dependency=afterok:${PRELIM_ID}"
+        echo "Main array will start after prelim array ${PRELIM_ID} succeeds (all tasks)."
+    elif [[ -n "${SWEEP_PRELIM_RUN_SCRIPT}" ]]; then
         echo ""
         echo "Spec declares prelim: RUN_SCRIPT=${SWEEP_PRELIM_RUN_SCRIPT}"
         echo "  locked-lambda sidecar: ${SWEEP_LOCKED_LAMBDA_FILE:-(spec default)}"
@@ -502,7 +619,7 @@ else
             --array=0-${ARRAY_END}%${K} ${DEP_FLAG} \
             --gpus=1 --cpus-per-task=${N_CPUS} \
             --time=${ARRAY_TIME:-00:45:00} \
-            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DZ=${SWEEP_FIXED_DZ},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
+            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_array.sh")
 fi
@@ -515,6 +632,36 @@ fi
 echo "Submitted: ${JOB_ID}"
 # Extract numeric ID from sbatch output ("Submitted batch job 12345")
 NUMERIC_JOB=$(echo "${JOB_ID}" | awk '{print $NF}')
+
+# ── Auto-queue server-side aggregator after a mesh-convergence array ─────────
+# Submitted with --dependency=afterok so it only runs if every array task
+# succeeded. Writes the converged best_cells / best_dyz into the checkpoint at
+# /work/results/mesh_convergence/checkpoint_*.json — picked up by the next
+# `--results` download with no extra local step. Fully replaces the old local
+# `python ... --aggregate {X|YZ}` flow.
+AGG_PHASE=""
+if [[ "${SWEEP_KIND}" == "mesh_conv_x"  ]]; then AGG_PHASE="X";  fi
+if [[ "${SWEEP_KIND}" == "mesh_conv_yz" ]]; then AGG_PHASE="YZ"; fi
+if [[ -n "${AGG_PHASE}" ]]; then
+    echo ""
+    echo "=== Queueing server-side aggregator for Phase ${AGG_PHASE} ==="
+    AGG_RAW=$(ssh "${SSH}" \
+        "cd ${REMOTE_BASE} && sbatch \
+            --dependency=afterok:${NUMERIC_JOB} \
+            --export=ALL,PHASE=${AGG_PHASE} \
+            --chdir=${REMOTE_BASE}/jobs \
+            jobs/run_mesh_aggregate.sh")
+    if [[ $? -eq 0 ]]; then
+        AGG_ID=$(echo "${AGG_RAW}" | awk '{print $NF}')
+        echo "Aggregator queued: ${AGG_RAW}"
+        echo "  Will run after array ${NUMERIC_JOB} completes (afterok)."
+        echo "  Aggregator log: ${REMOTE_BASE}/jobs/logs/mesh_aggregate-${AGG_ID}.out"
+    else
+        echo "WARNING: aggregator sbatch failed — fall back to local"
+        echo "  python convergence_testing/run_mesh_convergence.py --aggregate ${AGG_PHASE}"
+        echo "  (after downloading results)."
+    fi
+fi
 
 # ── Show monitoring commands ───────────────────────────────────────────────────
 echo ""

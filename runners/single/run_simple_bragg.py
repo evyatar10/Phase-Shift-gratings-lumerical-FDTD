@@ -239,8 +239,8 @@ class SimpleBraggFDTD:
         if config.USE_GPU:
             fdtd.setdevice("GPU")
         fdtd.set("background material", self.clad_material)
-        fdtd.set("simulation time", 100e-12)
-        fdtd.set("auto shutoff min", 1e-6)
+        fdtd.set("simulation time", 2000e-12)
+        fdtd.set("auto shutoff min", 1e-7)
 
         dx_global = (self.pitch / 2.0) / float(max(1, int(self.cells_per_half_period)))
         fdtd.set("mesh type", "custom non-uniform")
@@ -490,6 +490,10 @@ def run_simple_sim(cfg: SimulationConfig = None):
     plt.show()
 
     sim.close()
+
+
+# Auto-discovery contract: athena_run.py looks for `run` on each runner module.
+run = run_simple_sim
 
 
 if __name__ == "__main__":

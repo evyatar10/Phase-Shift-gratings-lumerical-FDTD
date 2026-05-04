@@ -111,7 +111,7 @@ class MeshConfig:
     """FDTD simulation domain sizing and mesh settings."""
     n_periods_dist_to_port: int = 20            # Distance from grating edge to port (in periods)
     n_wls_dist_port_to_pml: float = 5.0         # Distance from port to PML (in wavelengths)
-    simulation_mode: str = "accurate"            # "accurate" (dx≈35nm) or "optimization" (dx=50nm)
+    simulation_mode: str = "optimization"            # "accurate" (dx≈35nm) or "optimization" (dx=50nm)
 
     @property
     def cells_per_half_period(self) -> int:

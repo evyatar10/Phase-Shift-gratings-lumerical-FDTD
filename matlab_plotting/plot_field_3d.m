@@ -14,7 +14,7 @@
 
 addpath(fileparts(fileparts(mfilename('fullpath'))));
 clear; clc;
-
+close all;
 %% --- Configuration ---
 prefs_file = fullfile(fileparts(mfilename('fullpath')), 'plot_prefs.mat');
 
@@ -24,6 +24,10 @@ x_range_xz    = [-crop_val, crop_val];
 z_range_xz    = [-Inf, Inf];
 x_range_xy    = [-crop_val, crop_val];
 y_range_xy    = [-Inf, Inf];
+
+% Crop bounds [um] for 3D field-profile figure (wider — show field decay)
+x_range_3d    = [-20, 20];
+enable_3d_fig = false;          % set true to render the 3D volumetric figure
 
 % YZ panel crop
 y_range_yz_um = [-3, 3];
@@ -44,7 +48,8 @@ log_compress_k        = 10;
 arrow_min_frac        = 0.60;
 
 % YZ subplot Poynting overlay (lower density)
-yz_arrows_per_axis    = 12;
+yz_arrows_per_axis    = 14;
+yz_threshold_dB       = 70;     % looser intensity gate for YZ arrows
 
 % Geometry overlay
 avg_corrugation_width = 800e-9;
@@ -220,10 +225,12 @@ if n_struct == 1
         arrow_color, arrow_linewidth, poynting_threshold_dB, ...
         log_compress_k, arrow_min_frac);
 
-    plot_3d_iso(St, clim_global, iso_levels_dB, iso_alpha, iso_color, ...
-        quiver3_target_count, quiver3_threshold_dB, quiver3_color, ...
-        quiver3_lw, quiver3_scale, eff_cav, width_narrow, core_height, ...
-        pitch, St.n_per);
+    if enable_3d_fig
+        plot_3d_iso([], St, clim_global, iso_levels_dB, iso_alpha, iso_color, ...
+            quiver3_target_count, quiver3_threshold_dB, quiver3_color, ...
+            quiver3_lw, quiver3_scale, eff_cav, width_narrow, core_height, ...
+            pitch, St.n_per, x_range_3d);
+    end
 
 else  % n_struct == 2  → comparison layouts
     fprintf('\n=== 2-structure comparison: %s  vs  %s ===\n', S{1}.tag, S{2}.tag);
@@ -239,27 +246,25 @@ else  % n_struct == 2  → comparison layouts
         core_height, arrows_per_axis, min_skip, arrow_scale, arrow_color, ...
         arrow_linewidth, poynting_threshold_dB, log_compress_k, arrow_min_frac);
 
-    plot_yz_compare(S, pitch, width_narrow, width_wide, core_height, ...
+    for kind = {'narrow', 'wide', 'transition'}
+        plot_yz_compare(S, pitch, width_narrow, width_wide, core_height, ...
+            y_range_yz_um, z_range_yz_um, clim_global, field_colormap, ...
+            geom_color, geom_lw, lengthen_cavity, yz_arrows_per_axis, min_skip, ...
+            arrow_scale, arrow_color, arrow_linewidth, yz_threshold_dB, ...
+            log_compress_k, arrow_min_frac, kind{1});
+    end
+
+    plot_yz_cavity_compare(S, width_narrow, core_height, ...
         y_range_yz_um, z_range_yz_um, clim_global, field_colormap, ...
-        geom_color, geom_lw, lengthen_cavity, yz_arrows_per_axis, min_skip, ...
-        arrow_scale, arrow_color, arrow_linewidth, poynting_threshold_dB, ...
+        geom_color, geom_lw, yz_arrows_per_axis, min_skip, ...
+        arrow_scale, arrow_color, arrow_linewidth, yz_threshold_dB, ...
         log_compress_k, arrow_min_frac);
 
-    % 3D isosurface stays one figure per structure (3D rotation needs full window).
-    ax3d = gobjects(1, 2);
-    for s = 1:2
-        St = S{s};
-        eff_cav = St.cav_len + ternary(St.t_shift > 0 && lengthen_cavity, 2*St.t_shift, 0);
-        plot_3d_iso(St, clim_global, iso_levels_dB, iso_alpha, iso_color, ...
+    if enable_3d_fig
+        plot_3d_iso_compare(S, clim_global, iso_levels_dB, iso_alpha, iso_color, ...
             quiver3_target_count, quiver3_threshold_dB, quiver3_color, ...
-            quiver3_lw, quiver3_scale, eff_cav, width_narrow, core_height, ...
-            pitch, St.n_per);
-        ax3d(s) = gca;
-    end
-    % Link cameras so the two 3D figures rotate together (toggle on/off in code if undesired).
-    try
-        linkprop(ax3d, {'CameraPosition','CameraUpVector','CameraTarget','CameraViewAngle'});
-    catch
+            quiver3_lw, quiver3_scale, lengthen_cavity, width_narrow, core_height, ...
+            pitch, x_range_3d);
     end
 end
 
@@ -274,11 +279,11 @@ function plot_xz_compare(S, x_range, z_range, clim_g, cmap, geom_color, geom_lw,
         lengthen_cav, core_height, arrows_per_axis, min_skip, arrow_scale, ...
         arrow_color, arrow_lw, thr_dB, log_k, min_frac)
     % Two stacked XZ panels in one window with a shared colorbar.
-    fig = figure('Name', sprintf('XZ compare — %s vs %s', S{1}.tag, S{2}.tag), ...
+    fig = figure('Name', sprintf('XZ compare — %s vs %s', display_name(S{1}), display_name(S{2})), ...
         'Color', 'w', 'Position', [120 70 950 900]);
     tl = tiledlayout(fig, 2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
-    title(tl, sprintf('XZ side view — %s  vs  %s | global dB clim', S{1}.tag, S{2}.tag), ...
-        'Interpreter', 'none');
+    title(tl, sprintf('XZ side view — %s  vs  %s', display_name(S{1}), display_name(S{2})), ...
+        'FontSize', 14, 'FontWeight', 'bold');
 
     for s = 1:2
         St = S{s};
@@ -292,8 +297,7 @@ function plot_xz_compare(S, x_range, z_range, clim_g, cmap, geom_color, geom_lw,
         imagesc(x_c*1e6, z_c*1e6, I_xz_dB');
         set(ax, 'YDir', 'normal'); colormap(ax, cmap); clim(ax, clim_g);
         xlabel(ax, 'X [\mum]'); ylabel(ax, 'Z [\mum]');
-        title(ax, sprintf('%s | %s | \\lambda=%.3f nm | shift = %.0f nm', ...
-            St.tag, St.geom_str, St.lam*1e9, St.t_shift*1e9), 'Interpreter','none');
+        title(ax, display_name(St), 'FontSize', 13, 'FontWeight', 'bold');
         hold(ax, 'on');
 
         if St.has_P
@@ -323,11 +327,11 @@ function plot_xy_compare(S, x_range, y_range, clim_g, cmap, geom_color, geom_lw,
         geom_mode, apod_method, tanh_steepness, center_mod_depth_nm, lengthen_cav, ...
         pitch, w_narrow, w_wide, core_height, arrows_per_axis, min_skip, arrow_scale, ...
         arrow_color, arrow_lw, thr_dB, log_k, min_frac)
-    fig = figure('Name', sprintf('XY compare — %s vs %s', S{1}.tag, S{2}.tag), ...
+    fig = figure('Name', sprintf('XY compare — %s vs %s', display_name(S{1}), display_name(S{2})), ...
         'Color', 'w', 'Position', [80 50 950 950]);
     tl = tiledlayout(fig, 2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
-    title(tl, sprintf('XY top view — %s  vs  %s | global dB clim', S{1}.tag, S{2}.tag), ...
-        'Interpreter', 'none');
+    title(tl, sprintf('XY top view — %s  vs  %s', display_name(S{1}), display_name(S{2})), ...
+        'FontSize', 14, 'FontWeight', 'bold');
 
     for s = 1:2
         St = S{s};
@@ -341,8 +345,7 @@ function plot_xy_compare(S, x_range, y_range, clim_g, cmap, geom_color, geom_lw,
         imagesc(x_c*1e6, y_c*1e6, I_xy_dB');
         set(ax, 'YDir', 'normal'); colormap(ax, cmap); clim(ax, clim_g);
         xlabel(ax, 'X [\mum]'); ylabel(ax, 'Y [\mum]');
-        title(ax, sprintf('%s | %s | \\lambda=%.3f nm | shift = %.0f nm', ...
-            St.tag, St.geom_str, St.lam*1e9, St.t_shift*1e9), 'Interpreter','none');
+        title(ax, display_name(St), 'FontSize', 13, 'FontWeight', 'bold');
         hold(ax, 'on');
 
         if St.has_P
@@ -376,93 +379,214 @@ end
 function plot_yz_compare(S, pitch, w_narrow, w_wide, core_height, ...
         y_range, z_range, clim_g, cmap, geom_color, geom_lw, lengthen_cav, ...
         arrows_per_axis, min_skip, arrow_scale, arrow_color, arrow_lw, ...
-        thr_dB, log_k, min_frac)
-    % Outer 3-row × 2-col layout: rows = depth groups (cavity / d=1 / d=2),
-    % cols = the two structures. Each cell is a nested 1×3 of YZ slices.
-    fig = figure('Name', sprintf('YZ compare — %s vs %s', S{1}.tag, S{2}.tag), ...
-        'Color', 'w', 'Position', [40 30 1500 950]);
-    outer = tiledlayout(fig, 3, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
-    title(outer, sprintf('YZ cross-sections — %s  vs  %s | global dB clim', ...
-        S{1}.tag, S{2}.tag), 'Interpreter', 'none');
+        thr_dB, log_k, min_frac, slice_kind)
+    % 2-row × n_cols flat layout. Row = structure. Columns sample one YZ slice
+    % per period, going outward from the cavity on the +x side. Column 1 is
+    % always the cavity center. `slice_kind` selects the per-period sample
+    % point: 'narrow' (narrow-tooth center), 'wide' (wide-tooth center),
+    % 'transition' (narrow→wide sidewall step).
+    if nargin < 21 || isempty(slice_kind); slice_kind = 'narrow'; end
 
-    % depth groups: each row of the outer layout
-    group_labels = {'cavity', 'd=1 narrow / wide', 'd=2 narrow'};
+    n_periods_show     = 8;                  % cavity + 8 period slices
+    x_far_target_um    = 10;                  % last column samples near this x
+    far_highlight_color = [0.85 0.33 0.1];    % orange — flags the non-contiguous tile
+    n_cols = 1 + n_periods_show;
 
-    for row = 1:3
-        for col = 1:2
-            St = S{col};
-            half_pitch = pitch/2;
-            L_n1 = half_pitch - St.t_shift;
-            cav_edge = (St.cav_len + ternary(St.t_shift > 0 && lengthen_cav, 2*St.t_shift, 0))/2;
+    fig = figure('Name', sprintf('YZ compare (%s) — %s vs %s', slice_kind, display_name(S{1}), display_name(S{2})), ...
+        'Color', 'w', 'Position', [30 80 1700 600]);
+    tl = tiledlayout(fig, 2, n_cols, 'TileSpacing', 'compact', 'Padding', 'compact');
+    title(tl, sprintf('YZ mode profile vs distance from cavity  (%s slices)', slice_kind), ...
+        'FontSize', 16, 'FontWeight', 'bold');
+    subtitle(tl, sprintf('%s    vs    %s', display_name(S{1}), display_name(S{2})), ...
+        'FontSize', 12);
 
-            switch row
-                case 1   % cavity center, ±cavity edges
-                    slices = {
-                        struct('x', 0,         'lab', 'cavity center',     'w', w_narrow);
-                        struct('x', -cav_edge, 'lab', 'cavity edge -',     'w', w_narrow);
-                        struct('x',  cav_edge, 'lab', 'cavity edge +',     'w', w_narrow);
-                    };
-                case 2   % d=1 narrow center, d=1 wide centers ±
-                    cen_n1 = cav_edge + L_n1/2;
-                    cen_w1 = cav_edge + L_n1 + half_pitch/2;
-                    slices = {
-                        struct('x',  cen_n1, 'lab', 'd=1 narrow ctr +',   'w', w_narrow);
-                        struct('x', -cen_w1, 'lab', 'd=1 wide ctr -',     'w', w_wide  );
-                        struct('x',  cen_w1, 'lab', 'd=1 wide ctr +',     'w', w_wide  );
-                    };
-                case 3   % d=2 narrow centers ± and -d=1 narrow center
-                    cen_n1 = cav_edge + L_n1/2;
-                    cen_n2 = cav_edge + L_n1 + half_pitch + half_pitch/2;
-                    slices = {
-                        struct('x', -cen_n1, 'lab', 'd=1 narrow ctr -',   'w', w_narrow);
-                        struct('x', -cen_n2, 'lab', 'd=2 narrow ctr -',   'w', w_narrow);
-                        struct('x',  cen_n2, 'lab', 'd=2 narrow ctr +',   'w', w_narrow);
-                    };
+    half_pitch = pitch / 2;
+
+    for row = 1:2
+        St = S{row};
+        L_n1 = half_pitch - St.t_shift;
+        cav_edge = (St.cav_len + ternary(St.t_shift > 0 && lengthen_cav, 2*St.t_shift, 0))/2;
+
+        % Sequential periods d=1..(n_periods_show-1), then a far-jump period
+        % whose x is closest to x_far_target_um µm. List of d values per col.
+        d_seq = 1:(n_periods_show - 1);
+        switch slice_kind
+            case 'narrow'
+                d_far = max(2, round((x_far_target_um*1e-6 - cav_edge - L_n1)/pitch + 1.5));
+            case 'wide'
+                d_far = max(1, round((x_far_target_um*1e-6 - cav_edge - L_n1 - half_pitch/2)/pitch + 1));
+            case 'transition'
+                d_far = max(1, round((x_far_target_um*1e-6 - cav_edge - L_n1)/pitch + 1));
+            otherwise
+                error('Unknown slice_kind: %s', slice_kind);
+        end
+        d_list = [d_seq, d_far];
+
+        slices = cell(1, n_cols);
+        slices{1} = struct('x', 0, 'lab', 'cavity center', 'is_far', false);
+        for j = 1:numel(d_list)
+            d = d_list(j);
+            switch slice_kind
+                case 'narrow'
+                    if d == 1
+                        xc = cav_edge + L_n1/2;
+                    else
+                        xc = cav_edge + L_n1 + half_pitch + (d-2)*pitch + half_pitch/2;
+                    end
+                    lab = sprintf('d=%d narrow', d);
+                case 'wide'
+                    xc = cav_edge + L_n1 + (d-1)*pitch + half_pitch/2;
+                    lab = sprintf('d=%d wide', d);
+                case 'transition'
+                    if d == 1
+                        xc = cav_edge + L_n1;
+                    else
+                        xc = cav_edge + L_n1 + (d-1)*pitch;
+                    end
+                    lab = sprintf('d=%d trans', d);
+            end
+            is_far = (j == numel(d_list));
+            slices{j+1} = struct('x', xc, 'lab', lab, 'is_far', is_far);
+        end
+
+        [y_c, iy] = crop_to_range(St.y, y_range);
+        [z_c, iz] = crop_to_range(St.z, z_range);
+        sy = max(min_skip, round(numel(iy) / arrows_per_axis));
+        sz = max(min_skip, round(numel(iz) / arrows_per_axis));
+
+        for k = 1:n_cols
+            sl = slices{k};
+            [~, ix] = min(abs(St.x - sl.x));
+            I_yz_dB = squeeze(St.I_3D_dB(ix, iy, iz));
+
+            tile_idx = (row - 1) * n_cols + k;
+            ax = nexttile(tl, tile_idx);
+            imagesc(ax, y_c*1e6, z_c*1e6, I_yz_dB');
+            set(ax, 'YDir', 'normal', 'Layer', 'top');
+            colormap(ax, cmap); clim(ax, clim_g);
+            hold(ax, 'on');
+
+            if St.has_P
+                Py = squeeze(St.P_3D(ix, iy, iz, 2));
+                Pz = squeeze(St.P_3D(ix, iy, iz, 3));
+                draw_poynting_quiver_simple(ax, y_c*1e6, z_c*1e6, Py, Pz, sy, sz, ...
+                    arrow_scale, arrow_color, arrow_lw, ...
+                    I_yz_dB, max(I_yz_dB(:)), thr_dB, log_k, min_frac);
             end
 
-            tile_idx = (row - 1) * 2 + col;     % outer is 3 rows × 2 cols, row-major
-            inner = tiledlayout(outer, 1, 3, 'TileSpacing', 'tight', 'Padding', 'tight');
-            inner.Layout.Tile     = tile_idx;
-            inner.Layout.TileSpan = [1 1];
-            title(inner, sprintf('%s — %s  (shift=%.0f nm)', St.tag, group_labels{row}, ...
-                St.t_shift*1e9), 'Interpreter','none', 'FontSize', 9);
-
-            [y_c, iy] = crop_to_range(St.y, y_range);
-            [z_c, iz] = crop_to_range(St.z, z_range);
-            sy = max(min_skip, round(numel(iy) / arrows_per_axis));
-            sz = max(min_skip, round(numel(iz) / arrows_per_axis));
-
-            for k = 1:3
-                sl = slices{k};
-                [~, ix] = min(abs(St.x - sl.x));
-                I_yz_dB = squeeze(St.I_3D_dB(ix, iy, iz));
-
-                ax = nexttile(inner);
-                imagesc(y_c*1e6, z_c*1e6, I_yz_dB');
-                set(ax, 'YDir', 'normal'); colormap(ax, cmap); clim(ax, clim_g);
-                xlabel(ax, 'Y [\mum]'); ylabel(ax, 'Z [\mum]');
-                title(ax, sprintf('%s  (x=%.2f \\mum)', sl.lab, St.x(ix)*1e6), 'FontSize', 8);
-                hold(ax, 'on');
-
-                if St.has_P
-                    Py = squeeze(St.P_3D(ix, iy, iz, 2));
-                    Pz = squeeze(St.P_3D(ix, iy, iz, 3));
-                    draw_poynting_quiver(y_c*1e6, z_c*1e6, Py, Pz, sy, sz, ...
-                        arrow_scale, arrow_color, arrow_lw, ...
-                        I_yz_dB, max(I_yz_dB(:)), thr_dB, log_k, min_frac);
+            % Geometry overlay: cavity tile is always narrow (uniform slab).
+            % For periodic tiles, draw the box that matches the local cross-section.
+            wg_hh = core_height / 2 * 1e6;
+            if k == 1
+                widths_to_draw = w_narrow;
+            else
+                switch slice_kind
+                    case 'narrow';     widths_to_draw = w_narrow;
+                    case 'wide';       widths_to_draw = w_wide;
+                    case 'transition'; widths_to_draw = [w_narrow, w_wide];
                 end
-
-                wg_hw = sl.w / 2 * 1e6;
-                wg_hh = core_height / 2 * 1e6;
+            end
+            for ww = widths_to_draw
+                wg_hw = ww / 2 * 1e6;
                 rectangle(ax, 'Position', [-wg_hw, -wg_hh, 2*wg_hw, 2*wg_hh], ...
                           'EdgeColor', geom_color, 'LineStyle', '-', 'LineWidth', geom_lw);
-                hold(ax, 'off');
             end
+
+            % Axes labels only on left column / bottom row to reduce clutter.
+            if k == 1
+                ylabel(ax, 'Z [\mum]', 'FontSize', 12);
+            else
+                set(ax, 'YTickLabel', []);
+            end
+            if row == 2
+                xlabel(ax, 'Y [\mum]', 'FontSize', 12);
+            else
+                set(ax, 'XTickLabel', []);
+            end
+            set(ax, 'FontSize', 11);
+
+            % Top-row tiles get the slice label as a bold title; bottom row only x.
+            if row == 1
+                title(ax, {sl.lab, sprintf('x = %.2f \\mum', St.x(ix)*1e6)}, ...
+                    'FontSize', 13, 'FontWeight', 'bold');
+            else
+                title(ax, sprintf('x = %.2f \\mum', St.x(ix)*1e6), 'FontSize', 12);
+            end
+
+            % Highlight the far-jump tile so viewers don't read it as the
+            % period contiguous with d=(n-1).
+            if sl.is_far
+                set(ax, 'XColor', far_highlight_color, 'YColor', far_highlight_color, ...
+                    'LineWidth', 2);
+                title(ax, get(ax, 'Title').String, 'Color', far_highlight_color);
+            end
+            hold(ax, 'off');
         end
     end
 
+    % Per-row structure-tag labels on the far left, large and rotated.
+    for row = 1:2
+        ax_left = nexttile(tl, (row - 1) * n_cols + 1);
+        text(ax_left, -0.42, 0.5, display_name(S{row}), ...
+            'Units', 'normalized', 'Rotation', 90, ...
+            'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', ...
+            'FontSize', 14, 'FontWeight', 'bold');
+    end
+
     cb = colorbar; cb.Layout.Tile = 'east';
-    ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]  (global)');
+    ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]  (global)', 'FontSize', 12);
+    cb.FontSize = 11;
+end
+
+
+function plot_yz_cavity_compare(S, w_narrow, core_height, y_range, z_range, ...
+        clim_g, cmap, geom_color, geom_lw, arrows_per_axis, min_skip, ...
+        arrow_scale, arrow_color, arrow_lw, thr_dB, log_k, min_frac)
+    % Side-by-side YZ slice at the cavity center (x=0) for the two structures.
+    fig = figure('Name', sprintf('YZ cavity center — %s vs %s', ...
+        display_name(S{1}), display_name(S{2})), ...
+        'Color', 'w', 'Position', [200 150 1100 600]);
+    tl = tiledlayout(fig, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+    title(tl, 'YZ cross-section at cavity center', ...
+        'FontSize', 16, 'FontWeight', 'bold');
+
+    for col = 1:2
+        St = S{col};
+        [y_c, iy] = crop_to_range(St.y, y_range);
+        [z_c, iz] = crop_to_range(St.z, z_range);
+        [~, ix0]  = min(abs(St.x));
+        I_yz_dB = squeeze(St.I_3D_dB(ix0, iy, iz));
+
+        ax = nexttile(tl);
+        imagesc(ax, y_c*1e6, z_c*1e6, I_yz_dB');
+        set(ax, 'YDir', 'normal', 'Layer', 'top', 'FontSize', 12);
+        colormap(ax, cmap); clim(ax, clim_g);
+        hold(ax, 'on');
+
+        if St.has_P
+            Py = squeeze(St.P_3D(ix0, iy, iz, 2));
+            Pz = squeeze(St.P_3D(ix0, iy, iz, 3));
+            sy = max(min_skip, round(numel(iy) / arrows_per_axis));
+            sz = max(min_skip, round(numel(iz) / arrows_per_axis));
+            draw_poynting_quiver_simple(ax, y_c*1e6, z_c*1e6, Py, Pz, sy, sz, ...
+                arrow_scale, arrow_color, arrow_lw, ...
+                I_yz_dB, max(I_yz_dB(:)), thr_dB, log_k, min_frac);
+        end
+
+        wg_hw = w_narrow / 2 * 1e6;
+        wg_hh = core_height / 2 * 1e6;
+        rectangle(ax, 'Position', [-wg_hw, -wg_hh, 2*wg_hw, 2*wg_hh], ...
+                  'EdgeColor', geom_color, 'LineStyle', '-', 'LineWidth', geom_lw);
+
+        xlabel(ax, 'Y [\mum]', 'FontSize', 13);
+        ylabel(ax, 'Z [\mum]', 'FontSize', 13);
+        title(ax, display_name(St), 'FontSize', 14, 'FontWeight', 'bold');
+        hold(ax, 'off');
+    end
+
+    cb = colorbar; cb.Layout.Tile = 'east';
+    ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]  (global)', 'FontSize', 12);
+    cb.FontSize = 11;
 end
 
 
@@ -478,13 +602,12 @@ function plot_xz_view(St, x_range, z_range, clim_g, dB_limit, cmap, geom_color, 
     [z_c, iz] = crop_to_range(St.z, z_range);
     I_xz_dB = squeeze(St.I_3D_dB(ix, iy0, iz));      % (Nx_c, Nz_c)
 
-    figure('Name', sprintf('XZ — %s', St.tag), 'Color', 'w', 'Position', [200 100 850 500]);
+    figure('Name', sprintf('XZ — %s', display_name(St)), 'Color', 'w', 'Position', [200 100 850 500]);
     imagesc(x_c*1e6, z_c*1e6, I_xz_dB');
     set(gca, 'YDir', 'normal'); colormap(cmap); clim(clim_g);
     cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
     xlabel('Position X [\mum]'); ylabel('Position Z [\mum]');
-    title(sprintf('XZ — %s | %s | \\lambda=%.3f nm | global clim', ...
-        St.tag, St.geom_str, St.lam*1e9), 'Interpreter','none');
+    title(sprintf('XZ — %s', display_name(St)), 'FontSize', 14, 'FontWeight', 'bold');
 
     hold on;
     if St.has_P
@@ -520,13 +643,12 @@ function plot_xy_view(St, x_range, y_range, clim_g, dB_limit, cmap, geom_color, 
     [y_c, iy] = crop_to_range(St.y, y_range);
     I_xy_dB = squeeze(St.I_3D_dB(ix, iy, iz0));      % (Nx_c, Ny_c)
 
-    figure('Name', sprintf('XY — %s', St.tag), 'Color', 'w', 'Position', [100 150 750 650]);
+    figure('Name', sprintf('XY — %s', display_name(St)), 'Color', 'w', 'Position', [100 150 750 650]);
     imagesc(x_c*1e6, y_c*1e6, I_xy_dB');
     set(gca, 'YDir', 'normal'); colormap(cmap); clim(clim_g);
     cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
     xlabel('Position X [\mum]'); ylabel('Position Y [\mum]');
-    title(sprintf('XY — %s | %s | \\lambda=%.3f nm | global clim', ...
-        St.tag, St.geom_str, St.lam*1e9), 'Interpreter','none');
+    title(sprintf('XY — %s', display_name(St)), 'FontSize', 14, 'FontWeight', 'bold');
 
     hold on;
     if St.has_P
@@ -586,11 +708,11 @@ function plot_yz_panel(St, eff_cav, pitch, w_narrow, w_wide, core_height, ...
     [y_c, iy] = crop_to_range(St.y, y_range);
     [z_c, iz] = crop_to_range(St.z, z_range);
 
-    fig = figure('Name', sprintf('YZ panel — %s', St.tag), 'Color', 'w', ...
+    fig = figure('Name', sprintf('YZ panel — %s', display_name(St)), 'Color', 'w', ...
         'Position', [80 60 1100 900]);
     tl = tiledlayout(fig, 3, 3, 'TileSpacing','compact', 'Padding','compact');
-    title(tl, sprintf('YZ cross-sections — %s | %s | \\lambda=%.3f nm', ...
-        St.tag, St.geom_str, St.lam*1e9), 'Interpreter','none');
+    title(tl, sprintf('YZ cross-sections — %s', display_name(St)), ...
+        'FontSize', 14, 'FontWeight', 'bold');
 
     Ny_c = numel(iy); Nz_c = numel(iz);
     skip_y = max(min_skip, round(Ny_c / arrows_per_axis));
@@ -630,72 +752,107 @@ end
 
 
 %% =====================================================================
-%  3D isosurface + Poynting quiver
+%  3D field profile (orthogonal slice planes — direct 3D analog of 2D heatmap)
 %% =====================================================================
-function plot_3d_iso(St, clim_g, iso_levels_dB, iso_alpha, iso_color, ...
-        q_target, q_thr_dB, q_color, q_lw, q_scale, eff_cav, w_narrow, core_height, ...
-        pitch, n_per)
+function plot_3d_iso(ax, St, clim_g, ~, ~, ~, ~, ~, ~, ~, ~, eff_cav, ...
+        w_narrow, core_height, pitch, n_per, x_range_um)
+    if nargin < 17 || isempty(x_range_um); x_range_um = []; end
 
-    figure('Name', sprintf('3D — %s', St.tag), 'Color', 'w', 'Position', [60 40 1000 800]);
-    ax = axes; hold(ax, 'on');
+    if isempty(ax)
+        figure('Name', sprintf('3D — %s', display_name(St)), 'Color', 'w', 'Position', [60 40 1000 800]);
+        ax = axes;
+    end
+    hold(ax, 'on');
 
-    peak = clim_g(2);                    % global peak
-    % MATLAB isosurface expects (Y,X,Z) ordering after meshgrid
-    I_perm  = permute(St.I_3D_dB, [2 1 3]);
-    [Xg,Yg,Zg] = meshgrid(St.x*1e6, St.y*1e6, St.z*1e6);
+    % Optional X crop for the central region
+    if ~isempty(x_range_um)
+        [x_keep, ix_keep] = crop_to_range(St.x, x_range_um);
+    else
+        x_keep  = St.x;
+        ix_keep = 1:numel(St.x);
+    end
 
-    for li = 1:numel(iso_levels_dB)
-        lvl = peak + iso_levels_dB(li);
+    I_dB_crop = St.I_3D_dB(ix_keep, :, :);
+    % isosurface expects volumes in (Y,X,Z) order via meshgrid
+    I_perm = permute(I_dB_crop, [2 1 3]);
+    [Xg, Yg, Zg] = meshgrid(x_keep*1e6, St.y*1e6, St.z*1e6);
+
+    % Volumetric rendering via dense isosurface stack (no slice planes).
+    % Many nested transparent shells at log-spaced dB levels accumulate to
+    % give a true 3D field-volume appearance, with the colormap mapping dB
+    % level → color and alpha rising for higher (brighter) levels.
+    n_levels   = 16;
+    levels_dB  = linspace(clim_g(1) + 3, clim_g(2) - 0.5, n_levels);
+    cmap_data  = hot(256);
+    for k = 1:n_levels
+        lvl  = levels_dB(k);
+        frac = (lvl - clim_g(1)) / (clim_g(2) - clim_g(1));   % 0..1
+        cidx = max(1, min(256, round(frac * 255) + 1));
+        face_color = cmap_data(cidx, :);
+        face_alpha = 0.03 + 0.25 * frac^2;                    % outer shells faint
         try
             fv = isosurface(Xg, Yg, Zg, I_perm, lvl);
             if ~isempty(fv.vertices)
-                p = patch(fv, 'FaceColor', iso_color{li}, 'EdgeColor', 'none', ...
-                    'FaceAlpha', iso_alpha(li));
+                p = patch(ax, fv, 'FaceColor', face_color, 'EdgeColor', 'none', ...
+                    'FaceAlpha', face_alpha);
                 isonormals(Xg, Yg, Zg, I_perm, p);
             end
         catch ME
             warning('isosurface @ %.1f dB failed: %s', lvl, ME.message);
         end
     end
+    lighting(ax, 'gouraud'); camlight(ax, 'headlight');
 
-    % Sparse 3D Poynting quiver
-    if St.has_P
-        Nx = numel(St.x); Ny = numel(St.y); Nz = numel(St.z);
-        ix = unique(round(linspace(1, Nx, q_target)));
-        iy = unique(round(linspace(1, Ny, q_target)));
-        iz = unique(round(linspace(1, Nz, q_target)));
-        [Yq,Xq,Zq] = meshgrid(St.y(iy)*1e6, St.x(ix)*1e6, St.z(iz)*1e6);
-        Px = St.P_3D(ix, iy, iz, 1);
-        Py = St.P_3D(ix, iy, iz, 2);
-        Pz = St.P_3D(ix, iy, iz, 3);
-        Pmag = sqrt(Px.^2 + Py.^2 + Pz.^2) + 1e-30;
-        Pxn = Px./Pmag; Pyn = Py./Pmag; Pzn = Pz./Pmag;
-
-        I_q = St.I_3D_dB(ix, iy, iz);
-        mask = I_q >= (peak - q_thr_dB);
-        Pxn(~mask)=0; Pyn(~mask)=0; Pzn(~mask)=0;
-        quiver3(Xq, Yq, Zq, Pxn, Pyn, Pzn, q_scale, ...
-            'Color', q_color, 'LineWidth', q_lw, 'MaxHeadSize', 0.5);
+    % Waveguide bounding box (cavity slab) clipped to the cropped X range
+    L_dev_full = (n_per * pitch + eff_cav/2) * 1e6;
+    if ~isempty(x_range_um)
+        L_lo = max(-L_dev_full, x_range_um(1));
+        L_hi = min( L_dev_full, x_range_um(2));
+    else
+        L_lo = -L_dev_full; L_hi = L_dev_full;
     end
-
-    % Waveguide bounding box (cavity slab)
-    L_dev = (n_per * pitch + eff_cav/2) * 1e6;   % half-length
     hh = core_height/2 * 1e6;
     hw = w_narrow/2 * 1e6;
-    draw_box(ax, [-L_dev L_dev], [-hw hw], [-hh hh], geom_box_color(), 1.0);
-
-    % Cavity outline
+    draw_box(ax, [L_lo L_hi], [-hw hw], [-hh hh], geom_box_color(), 1.0);
     draw_box(ax, [-eff_cav/2 eff_cav/2]*1e6, [-hw hw], [-hh hh], [1 1 0], 1.5);
 
-    xlabel('X [\mum]'); ylabel('Y [\mum]'); zlabel('Z [\mum]');
-    title(sprintf('3D |E|^2 isosurfaces (%.0f, %.0f dB) + Poynting — %s | %s | \\lambda=%.3f nm', ...
-        iso_levels_dB(1), iso_levels_dB(2), St.tag, St.geom_str, St.lam*1e9), ...
-        'Interpreter', 'none');
-    axis(ax, 'tight'); axis(ax, 'equal'); grid on; box on;
-    view(40, 25); camlight; lighting gouraud;
-    cb = colorbar; clim(clim_g);
-    ylabel(cb, '|E|^2 isosurface levels [dB] (global clim)');
+    xlabel(ax, 'X [\mum]'); ylabel(ax, 'Y [\mum]'); zlabel(ax, 'Z [\mum]');
+    title(ax, sprintf('3D |E|^2 field profile — %s', display_name(St)), ...
+        'FontSize', 14, 'FontWeight', 'bold');
+    axis(ax, 'tight'); axis(ax, 'equal'); grid(ax, 'on'); box(ax, 'on');
+    if ~isempty(x_range_um); xlim(ax, x_range_um); end
+    view(ax, 40, 25);
+    colormap(ax, 'hot'); clim(ax, clim_g);
     hold(ax, 'off');
+end
+
+
+function plot_3d_iso_compare(S, clim_g, iso_levels_dB, iso_alpha, iso_color, ...
+        q_target, q_thr_dB, q_color, q_lw, q_scale, lengthen_cav, w_narrow, ...
+        core_height, pitch, x_range_um)
+    fig = figure('Name', sprintf('3D compare — %s vs %s', display_name(S{1}), display_name(S{2})), ...
+        'Color', 'w', 'Position', [40 40 1700 800]);
+    tl = tiledlayout(fig, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+    title(tl, sprintf('3D |E|^2 field profile — %s  vs  %s', display_name(S{1}), display_name(S{2})), ...
+        'FontSize', 14, 'FontWeight', 'bold');
+
+    ax3d = gobjects(1, 2);
+    for s = 1:2
+        St = S{s};
+        eff_cav = St.cav_len + ternary(St.t_shift > 0 && lengthen_cav, 2*St.t_shift, 0);
+        ax = nexttile(tl);
+        plot_3d_iso(ax, St, clim_g, iso_levels_dB, iso_alpha, iso_color, ...
+            q_target, q_thr_dB, q_color, q_lw, q_scale, eff_cav, w_narrow, ...
+            core_height, pitch, St.n_per, x_range_um);
+        ax3d(s) = ax;
+    end
+
+    cb = colorbar(ax3d(2)); cb.Layout.Tile = 'east';
+    ylabel(cb, '|E|^2 isosurface levels [dB] (global clim)');
+    try
+        linkprop(ax3d, {'CameraPosition','CameraUpVector','CameraTarget','CameraViewAngle'});
+    catch
+    end
 end
 
 
@@ -719,6 +876,15 @@ end
 
 function out = ternary(cond, a, b)
     if cond; out = a; else; out = b; end
+end
+
+function s = display_name(St)
+    % Clean human title: "80 periods" or "80 periods, 100 nm shift".
+    if St.t_shift > 0
+        s = sprintf('%d periods, %.0f nm shift', St.n_per, round(St.t_shift*1e9));
+    else
+        s = sprintf('%d periods', St.n_per);
+    end
 end
 
 function [coord_crop, idx] = crop_to_range(coord_m, range_um)
@@ -799,6 +965,35 @@ function draw_poynting_quiver(coord1, coord2, P1, P2, skip1, skip2, scale, color
     quiver(C1q, C2q, P1_draw, P2_draw, scale, 'Color', color, 'LineWidth', lw);
 end
 
+function draw_poynting_quiver_simple(ax, coord1, coord2, P1, P2, skip1, skip2, scale, color, lw, I_dB, max_dB, threshold_dB, log_k, min_frac)
+    % Relaxed version of draw_poynting_quiver: no coherence/neighbor pruning,
+    % no convergence-pair removal. Keeps log-compressed lengths and a loose
+    % per-slice intensity gate so dim-region arrows still appear.
+    n1 = numel(coord1); n2 = numel(coord2);
+    idx1 = (1:skip1:n1)'; idx2 = (1:skip2:n2)';
+    c1_q = coord1(idx1); c2_q = coord2(idx2);
+    [C1q, C2q] = meshgrid(c1_q, c2_q);
+    P1_q = P1(idx1, idx2).';  P2_q = P2(idx1, idx2).';
+
+    Pmag = sqrt(P1_q.^2 + P2_q.^2);
+    Pmag_max = max(Pmag(:));
+    if Pmag_max == 0; return; end
+    Pmag_norm = Pmag / Pmag_max;
+    log_norm = log1p(Pmag_norm * log_k) / log1p(log_k);
+    vis_scale = min_frac + (1 - min_frac) * log_norm;
+
+    I_dB_q = I_dB(idx1, idx2).';
+    mask = I_dB_q >= (max_dB - threshold_dB);
+    c1r = max(c1_q) - min(c1_q); c2r = max(c2_q) - min(c2_q);
+    mask = mask & (C1q >= min(c1_q) + 0.01*c1r) & (C1q <= max(c1_q) - 0.01*c1r) ...
+               & (C2q >= min(c2_q) + 0.01*c2r) & (C2q <= max(c2_q) - 0.01*c2r);
+
+    vis_scale = vis_scale .* mask;
+    P1_draw = (P1_q ./ (Pmag + 1e-30)) .* vis_scale;
+    P2_draw = (P2_q ./ (Pmag + 1e-30)) .* vis_scale;
+    quiver(ax, C1q, C2q, P1_draw, P2_draw, scale, 'Color', color, 'LineWidth', lw);
+end
+
 function [n_per, n_apod, cav_len, t_shift] = resolve_geometry_params( ...
         fpath, data, pitch, n_per_manual, n_apod_manual, cav_len_manual, t_shift_manual)
     n_per   = n_per_manual;
@@ -827,6 +1022,11 @@ function [n_per, n_apod, cav_len, t_shift] = resolve_geometry_params( ...
     end
     if isempty(t_shift)
         tok = regexp(fname, '_shift_([\d.]+)nm', 'tokens', 'once');
+        if ~isempty(tok); t_shift = str2double(tok{1}) * 1e-9; end
+    end
+    if isempty(t_shift)
+        % Compact filename style: "_S100_" → 100 nm shift.
+        tok = regexp(fname, '_S(\d+)(?:_|$)', 'tokens', 'once');
         if ~isempty(tok); t_shift = str2double(tok{1}) * 1e-9; end
     end
     if isempty(n_per) && isfield(data, 'L_device')

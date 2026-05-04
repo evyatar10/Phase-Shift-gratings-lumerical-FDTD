@@ -9,7 +9,6 @@ This file runs INSIDE the Lumerical container on Athena compute nodes.
 It is invoked by hpc_gpu/jobs/run_python_gpu.sh via:
     xvfb-run -a python /work/scripts/athena_run.py
 """
-import glob
 import os
 import sys
 import traceback
@@ -78,24 +77,85 @@ print(f"  cleanup_lumerical_data = {cfg.run.cleanup_lumerical_data} "
 # cfg.grating.n_periods_each_side = 120
 # cfg.apodization.enabled = True
 
-# ── 6. Dispatch to selected script ───────────────────────────────────────────
-_SCRIPTS = {
-    "single_sim":                 ("runners.single.run_simulation",            "run_single_sim"),
-    "simple_bragg":               ("runners.single.run_simple_bragg",          "run_simple_sim"),
-    "run_experiment":             ("runners.single.run_experiment",            "run_experiment"),
-    "compare_3d_field_default_vs_shift": ("runners.single.compare_3d_field_default_vs_shift", "run_compare_3d_field_default_vs_shift"),
-    # Prelim half of the chained 3D-field comparison: runs ONE quick sim,
-    # writes λ_res to LOCKED_LAMBDA_FILE, then exits. Used as Job 1 of the
-    # prelim → array chain triggered by runners/sweeps/compare_3d_field_shift.py.
-    "compare_3d_field_prelim":    ("runners.single.compare_3d_field_default_vs_shift", "run_compare_3d_field_prelim"),
+# ── 6. Dispatch to selected script (auto-discovery) ──────────────────────────
+# RUN_SCRIPT can be:
+#   • a bare module name discovered under runners/single/ or convergence_testing/
+#     (e.g. "run_simulation", "run_mesh_convergence"). Module must define a
+#     top-level `run(cfg=None)` callable. Files with IS_HELPER=True or starting
+#     with "_" are skipped.
+#   • an entry from _ALIAS_SCRIPTS below — used by chained workflows whose
+#     entry function isn't `run` (e.g. compare_3d_field_prelim).
+import importlib
+
+_AUTO_DIRS = [
+    ("runners.single",       os.path.join(PROJECT_DIR, "runners", "single")),
+    ("convergence_testing",  os.path.join(PROJECT_DIR, "convergence_testing")),
+]
+
+# Chain-trigger aliases: entry functions that aren't the conventional `run`.
+# Keep this small — only for programmatic invocation by SPEC modules with
+# PRELIM_RUN_SCRIPT. Auto-discovered names take priority over aliases.
+_ALIAS_SCRIPTS = {
+    "compare_3d_field_prelim": ("runners.single.compare_3d_field_default_vs_shift",
+                                "run_compare_3d_field_prelim"),
+    # Back-compat for old picker labels — will be removed once docs/scripts
+    # are updated to use bare module names.
+    "single_sim":   ("runners.single.run_simulation",   "run_single_sim"),
+    "simple_bragg": ("runners.single.run_simple_bragg", "run_simple_sim"),
 }
-_run_script = os.environ.get("RUN_SCRIPT", "single_sim")
-if _run_script not in _SCRIPTS:
-    print(f"ERROR: Unknown RUN_SCRIPT='{_run_script}'. Valid options: {list(_SCRIPTS)}")
+
+
+def _discover_runners() -> dict:
+    """Scan auto-discovery dirs; return {bare_module_name: dotted_module_path}.
+    A module is included iff it defines a top-level `run` callable AND does
+    not set IS_HELPER=True. Files starting with '_' are skipped."""
+    found = {}
+    for pkg, dir_path in _AUTO_DIRS:
+        if not os.path.isdir(dir_path):
+            continue
+        for fname in sorted(os.listdir(dir_path)):
+            if not fname.endswith(".py") or fname.startswith("_"):
+                continue
+            mod_short = fname[:-3]
+            dotted = f"{pkg}.{mod_short}"
+            try:
+                mod = importlib.import_module(dotted)
+            except Exception as _e:
+                print(f"[athena_run]   skip {dotted}: import error ({_e!r})")
+                continue
+            if getattr(mod, "IS_HELPER", False):
+                continue
+            if not callable(getattr(mod, "run", None)):
+                continue
+            found[mod_short] = dotted
+    return found
+
+
+_DISCOVERED = _discover_runners()
+print(f"[athena_run] discovered runners: {sorted(_DISCOVERED)}")
+
+# Back-compat: existing job scripts default to RUN_SCRIPT=single_sim. Map the
+# old hardcoded registry names to the auto-discovered module names so old
+# submissions still work after the auto-discovery refactor.
+_LEGACY_RUN_SCRIPT = {
+    "single_sim":     "run_simulation",
+    "simple_bragg":   "run_simple_bragg",
+    "run_experiment": "run_experiment",
+}
+
+_run_script = os.environ.get("RUN_SCRIPT", "run_simulation")
+_run_script = _LEGACY_RUN_SCRIPT.get(_run_script, _run_script)
+
+if _run_script in _DISCOVERED:
+    _module_name = _DISCOVERED[_run_script]
+    _func_name   = "run"
+elif _run_script in _ALIAS_SCRIPTS:
+    _module_name, _func_name = _ALIAS_SCRIPTS[_run_script]
+else:
+    valid = sorted(set(_DISCOVERED) | set(_ALIAS_SCRIPTS))
+    print(f"ERROR: Unknown RUN_SCRIPT='{_run_script}'. Valid options: {valid}")
     sys.exit(1)
 
-_module_name, _func_name = _SCRIPTS[_run_script]
-import importlib
 _module = importlib.import_module(_module_name)
 _run_func = getattr(_module, _func_name)
 print(f"[athena_run] Running: {_run_script} ({_module_name}.{_func_name})")

@@ -1,29 +1,19 @@
 """
 Sweep: 3D-field comparison of two devices (innermost_tooth_shift = 0 vs 100 nm).
 
-This is the PARALLEL-array half of the chained two-job workflow that replaces
-the sequential runners/single/compare_3d_field_default_vs_shift.py on Athena:
+Two deployment modes, toggled by USE_PRELIM below:
 
-    Job 1  prelim sim                           (single GPU, ~5 min)
-           RUN_SCRIPT=compare_3d_field_prelim
-           → writes λ_res to LOCKED_LAMBDA_FILE
+  USE_PRELIM = True  (default)
+    Job 1  prelim array of 2 — defined by PRELIM_SPEC / PRELIM_BASE below.
+           Finds λ_res per shift option, writes per-task JSON sidecars.
+    Job 2  this sweep, SLURM array of 2  (--dependency=afterok:Job1)
+           reads each sidecar and runs locked-λ 3D + far-field.
+    Submit ONCE — deploy_athena.sh chains the two arrays automatically.
 
-    Job 2  this sweep, SLURM array of 2         (1 GPU per task, parallel)
-           --dependency=afterok:Job1
-           → each task reads LOCKED_LAMBDA_FILE, sets center_wavelength_m,
-             runs locked-wavelength 3D + far-field.
-
-deploy_athena.sh recognizes the PRELIM_RUN_SCRIPT / LOCKED_LAMBDA_FILE
-module-level constants below and submits the two jobs in the right order.
-build_sweep_list.py forwards them as SWEEP_META lines for the deploy script;
-athena_run_one.py picks up LOCKED_LAMBDA_FILE at task start.
-
-Run locally (sequential, no SLURM, no chaining):
-    python -m runners.sweeps.compare_3d_field_shift
-
-  → defers to runners/single/compare_3d_field_default_vs_shift.py, which does
-    prelim + both big sims back-to-back in the same Python process. The
-    sequential variant is also what Zeus uses (no job-array support there).
+  USE_PRELIM = False
+    Skip the prelim; λ_res values are hardcoded from a prior run.
+    Only valid when the device geometry and materials are unchanged.
+    Update KNOWN_RESONANCES_NM whenever you re-characterise the device.
 """
 
 import os
@@ -35,38 +25,62 @@ from runners.sweeps.sweep_spec import SweepSpec
 from simulation_config import SimulationConfig
 
 
-# ── Spec-module hooks read by build_sweep_list.py / deploy_athena.sh ──────────
-# Presence of PRELIM_RUN_SCRIPT triggers the prelim → array chain on Athena.
-# Modules without these constants behave exactly as before (single array,
-# no prerequisite).
-PRELIM_RUN_SCRIPT  = "compare_3d_field_prelim"
-LOCKED_LAMBDA_FILE = "/work/results/compare_3d_lambda_res.json"
+# ══════════════════════════════════════════════════════════════════════════════
+# Toggle here
+# ══════════════════════════════════════════════════════════════════════════════
+USE_PRELIM = False
+
+# Used only when USE_PRELIM = False. Update if geometry or materials change.
+SHIFTS_NM           = [0,        100      ]
+KNOWN_RESONANCES_NM = [1560.103, 1560.480 ]   # from full 3D run 2026-04-29
+# ══════════════════════════════════════════════════════════════════════════════
 
 
-# ── Base config shared by both array tasks ────────────────────────────────────
-# All non-swept settings live here so the SPEC stays minimal. The base is read
-# by athena_run_one._run_kind_spec via getattr(module, 'BASE', None) and
-# passed into SPEC.expand(base=BASE). spectral.center_wavelength_m is then
-# overwritten per-task at runtime from LOCKED_LAMBDA_FILE.
+# ── Main sim config ───────────────────────────────────────────────────────────
 BASE = SimulationConfig()
 BASE.monitors.record_3d_fields    = True
 BASE.monitors.record_2d_fields    = False
-BASE.monitors.n_3d_freq_points    = 1      # locked-wavelength snapshot — keeps the 3D array small
-BASE.farfield.enabled             = True   # widens the simulation domain to 5 λ
+BASE.monitors.n_3d_freq_points    = 1       # single-bin snapshot at λ_res
+BASE.farfield.enabled             = True    # 5 λ domain for far-field capture
 BASE.grating.cavity_width_option  = "narrow"
-BASE.spectral.scan_width_nm       = 6.0    # narrow band around λ_res
+BASE.spectral.scan_width_nm       = 10.0    # 10 nm band centered on λ_res
 
 
-SPEC = SweepSpec(
-    innermost_tooth_shift_nm = [0, 100],
-    label = "compare_3d_field_shift",
-)
+if USE_PRELIM:
+    # Prelim config: fast resonance scan, no 3D/2D/far-field, narrow domain.
+    # Gated here so build_sweep_list only detects PRELIM_SPEC when USE_PRELIM=True.
+    PRELIM_BASE = SimulationConfig()
+    PRELIM_BASE.monitors.record_3d_fields    = False
+    PRELIM_BASE.monitors.record_2d_fields    = False
+    PRELIM_BASE.farfield.enabled             = False
+    PRELIM_BASE.grating.cavity_width_option  = "narrow"
+    PRELIM_BASE.spectral.center_wavelength_m = 1560e-9
+    PRELIM_BASE.spectral.scan_width_nm       = 20.0
+
+    PRELIM_SPEC = SweepSpec(
+        innermost_tooth_shift_nm = SHIFTS_NM,
+        label                    = "compare_3d_field_prelim",
+    )
+
+    # {idx} expands to SLURM_ARRAY_TASK_ID so task k reads the sidecar written
+    # by prelim task k.
+    LOCKED_LAMBDA_FILE = "/work/results/compare_3d_lambda_res_{idx}.json"
+
+    SPEC = SweepSpec(
+        innermost_tooth_shift_nm = SHIFTS_NM,
+        label                    = "compare_3d_field_shift",
+    )
+else:
+    # No prelim. center_wavelength_nm is zipped with shift so each task gets
+    # the exact λ_res from the last full run.
+    SPEC = SweepSpec(
+        innermost_tooth_shift_nm = SHIFTS_NM,
+        center_wavelength_nm     = KNOWN_RESONANCES_NM,
+        mode                     = "zipped",
+        label                    = "compare_3d_field_shift",
+    )
 
 
 if __name__ == "__main__":
-    # Local entrypoint hands off to the sequential single-script variant.
-    # Same end result, no SLURM coordination needed off-cluster.
-    from runners.single.compare_3d_field_default_vs_shift import (
-        run_compare_3d_field_default_vs_shift,
-    )
-    run_compare_3d_field_default_vs_shift()
+    from runners.sweeps.sweep_spec import run_sweep_spec
+    run_sweep_spec(SPEC, target="local", base=BASE)

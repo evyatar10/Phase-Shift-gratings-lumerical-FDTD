@@ -257,6 +257,15 @@ def extract_3d_fields(sim) -> dict:
         'lambda_3d': np.squeeze(res_3d['lambda']),
     }
     del res_3d
+
+    try:
+        print("  Extracting Poynting vector for 3D monitor...")
+        p_3d = sim.fdtd.getresult("field_profile_3D", "P")
+        data['P_res'] = p_3d['P']
+        del p_3d
+    except Exception as e:
+        print(f"  Warning: could not extract Poynting vector for 3D monitor: {e}")
+
     return data
 
 

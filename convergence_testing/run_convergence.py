@@ -224,5 +224,9 @@ def run_convergence(cfg: SimulationConfig = None):
     print("Done.")
 
 
+# Auto-discovery contract: athena_run.py looks for `run` on each runner module.
+run = run_convergence
+
+
 if __name__ == "__main__":
     run_convergence()

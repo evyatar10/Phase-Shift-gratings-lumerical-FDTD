@@ -2,13 +2,13 @@
 Single-iteration entry point for Athena SLURM array tasks (--option3).
 
 Reads:
-  SWEEP_KIND      shift | inner_size | generic | mesh_conv_a | mesh_conv_b | spec
+  SWEEP_KIND      mesh_conv_x | mesh_conv_yz | shutoff_conv_shutoff | spec
   SWEEP_INDEX     line index (0-based) into SWEEP_LIST   (= SLURM_ARRAY_TASK_ID)
   SWEEP_LIST      path to sweep_list.txt (default: /work/data/sweep_list.txt)
-  SWEEP_PARAM     for kind=generic: dot-path of the swept config field
-  SWEEP_FIXED_DZ  for kind=mesh_conv_a: dz_divisor value to fix (default DEFAULT_DZ_DIV)
-  SWEEP_FIXED_CELLS  for kind=mesh_conv_b: cells_per_half_period to fix
-                      (default: best_cells from Phase A checkpoint, else DEFAULT_CELLS)
+  SWEEP_FIXED_DYZ_NM  for kind=mesh_conv_x: global+box dyz to fix (default DEFAULT_DYZ_NM)
+  SWEEP_FIXED_CELLS   for kind=mesh_conv_yz: cells_per_half_period to fix
+                       (default: best_cells from Phase X checkpoint, else DEFAULT_CELLS)
+  SWEEP_SPEC_MODULE   for kind=spec: dotted module path exposing SPEC: SweepSpec
   SWEEP_SPEC_MODULE  for kind=spec: dotted module path of a study file that
                       exposes a top-level SPEC: SweepSpec
                       (e.g. runners.sweeps.apod_and_shift)
@@ -42,7 +42,8 @@ SWEEP_KIND  = os.environ.get("SWEEP_KIND", "")
 SWEEP_LIST  = os.environ.get("SWEEP_LIST", "/work/data/sweep_list.txt")
 SWEEP_INDEX = os.environ.get("SWEEP_INDEX", os.environ.get("SLURM_ARRAY_TASK_ID", ""))
 
-VALID_KINDS = {"shift", "inner_size", "generic", "mesh_conv_a", "mesh_conv_b", "spec"}
+VALID_KINDS = {"shift", "inner_size", "generic", "mesh_conv_x", "mesh_conv_yz",
+               "shutoff_conv_shutoff", "spec"}
 if SWEEP_KIND not in VALID_KINDS:
     print(f"ERROR: invalid SWEEP_KIND={SWEEP_KIND!r}; expected one of {sorted(VALID_KINDS)}")
     sys.exit(1)
@@ -114,39 +115,51 @@ cfg.run.cleanup_lumerical_data = os.environ.get("KEEP_H5", "0") != "1"
 
 
 # ── 5. Dispatch ───────────────────────────────────────────────────────────────
-def _run_kind_mesh_conv_a(line: str) -> None:
-    """Convergence Phase A: one cells_per_half_period value."""
+def _run_kind_mesh_conv_x(line: str) -> None:
+    """Mesh-convergence X-axis (dx): sweeps one cells_per_half_period value."""
     from convergence_testing.run_mesh_convergence import (
-        _run_one, _make_cfg, DEFAULT_DY_DIV, DEFAULT_DZ_DIV,
+        _run_one, _make_cfg, DEFAULT_DYZ_NM, CONV_DIR,
     )
     cells = int(line)
-    dz_div = float(os.environ.get("SWEEP_FIXED_DZ", DEFAULT_DZ_DIV))
+    dyz_nm = float(os.environ.get("SWEEP_FIXED_DYZ_NM", "") or DEFAULT_DYZ_NM)
     mc_cfg = _make_cfg()
-    rec = _run_one(mc_cfg, cells=cells, dy_div=DEFAULT_DY_DIV, dz_div=dz_div,
-                   tag=f"phA_array_cells_{cells}")
-    _save_array_part("phA", idx, rec)
+    rec = _run_one(mc_cfg, cells=cells, dyz_nm=dyz_nm,
+                   tag=f"phX_array_cells_{cells}")
+    _save_array_part(CONV_DIR, "phX", idx, rec)
 
 
-def _run_kind_mesh_conv_b(line: str) -> None:
-    """Convergence Phase B: one dz_divisor value (cells fixed from Phase A)."""
+def _run_kind_mesh_conv_yz(line: str) -> None:
+    """Mesh-convergence YZ-axis (dy=dz): sweeps one dyz_max_step_nm value
+    (cells fixed from the X-phase via SWEEP_FIXED_CELLS env)."""
     from convergence_testing.run_mesh_convergence import (
-        _run_one, _make_cfg, DEFAULT_DY_DIV, DEFAULT_CELLS,
+        _run_one, _make_cfg, DEFAULT_CELLS, CONV_DIR,
     )
-    dz_div = float(line)
-    cells = int(os.environ.get("SWEEP_FIXED_CELLS", DEFAULT_CELLS))
+    dyz_nm = float(line)
+    cells = int(os.environ.get("SWEEP_FIXED_CELLS", "") or DEFAULT_CELLS)
     mc_cfg = _make_cfg()
-    rec = _run_one(mc_cfg, cells=cells, dy_div=DEFAULT_DY_DIV, dz_div=dz_div,
-                   tag=f"phB_array_dzdiv_{dz_div}")
-    _save_array_part("phB", idx, rec)
+    rec = _run_one(mc_cfg, cells=cells, dyz_nm=dyz_nm,
+                   tag=f"phYZ_array_dyz_{dyz_nm}")
+    _save_array_part(CONV_DIR, "phYZ", idx, rec)
 
 
-def _save_array_part(phase_tag: str, task_idx: int, record: dict) -> None:
-    """Per-task JSON for the convergence sweep — avoids concurrent writes to
+def _run_kind_shutoff_conv(line: str) -> None:
+    """Auto-shutoff convergence: sweeps one auto_shutoff_min value."""
+    from convergence_testing.run_auto_shutoff_convergence import (
+        _run_one, _make_cfg, CONV_DIR,
+    )
+    shutoff_min = float(line)
+    sc_cfg = _make_cfg()
+    rec = _run_one(sc_cfg, shutoff_min=shutoff_min,
+                   tag=f"phSHUTOFF_array_{shutoff_min:.0e}")
+    _save_array_part(CONV_DIR, "phSHUTOFF", idx, rec)
+
+
+def _save_array_part(conv_dir: str, phase_tag: str, task_idx: int, record: dict) -> None:
+    """Per-task JSON for a convergence sweep — avoids concurrent writes to
     the shared checkpoint. Aggregate locally after the array completes."""
     import json
-    from convergence_testing.run_mesh_convergence import CONV_DIR
-    os.makedirs(CONV_DIR, exist_ok=True)
-    out = os.path.join(CONV_DIR, f"array_part_{phase_tag}_{task_idx:04d}.json")
+    os.makedirs(conv_dir, exist_ok=True)
+    out = os.path.join(conv_dir, f"array_part_{phase_tag}_{task_idx:04d}.json")
     with open(out, "w") as f:
         json.dump(record, f, indent=2)
     print(f"[athena_run_one] wrote per-task result: {out}")
@@ -178,18 +191,31 @@ def _run_kind_spec(line: str) -> None:
     if not hasattr(module, "SPEC"):
         raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
 
-    # Optional per-module BASE config. Modules without BASE keep their existing
-    # behavior (expand() with no base ⇒ default SimulationConfig per combo).
-    spec_base = getattr(module, "BASE", None)
-    configs = module.SPEC.expand(base=spec_base)
+    # When SWEEP_IS_PRELIM=1 the task runs PRELIM_SPEC/PRELIM_BASE from the
+    # same module instead of SPEC/BASE. IS_PRELIM flag triggers sidecar write.
+    is_prelim = os.environ.get("SWEEP_IS_PRELIM", "0") == "1" or \
+                bool(getattr(module, "IS_PRELIM", False))
+    spec_attr = "PRELIM_SPEC" if is_prelim else "SPEC"
+    base_attr = "PRELIM_BASE" if is_prelim else "BASE"
+    if not hasattr(module, spec_attr):
+        raise RuntimeError(f"Module {module_name!r} has no {spec_attr} attribute")
+    spec_base = getattr(module, base_attr, None)
+    configs = getattr(module, spec_attr).expand(base=spec_base)
 
     if idx < 0 or idx >= len(configs):
         raise IndexError(f"SWEEP_INDEX={idx} out of range (spec produces {len(configs)} configs)")
     cfg_for_task = configs[idx]
 
-    # Optional per-task center-wavelength lock from a prerequisite (prelim) job.
+    # Per-task locked-lambda path. {idx} expands to SLURM_ARRAY_TASK_ID so a
+    # prelim ARRAY can write per-task sidecars and the main array can read
+    # the matching one (task k ↔ task k).
     locked_path = os.environ.get("LOCKED_LAMBDA_FILE", "").strip()
     if locked_path:
+        locked_path = locked_path.replace("{idx}", str(idx))
+
+    # Read the sidecar only for non-prelim tasks. Prelim tasks WRITE it after
+    # the sim completes (below), so the file shouldn't exist yet at this point.
+    if locked_path and not is_prelim:
         if os.path.exists(locked_path):
             with open(locked_path) as f:
                 locked = json.load(f)
@@ -205,13 +231,31 @@ def _run_kind_spec(line: str) -> None:
     # Apply common Athena overrides on top of the spec-built config (the spec
     # encodes the science; these encode the runtime environment policy).
     cfg_for_task.run.cleanup_lumerical_data = cfg.run.cleanup_lumerical_data
-    run_single_sim(cfg_for_task)
+    result = run_single_sim(cfg_for_task)
+
+    # Prelim sweep tasks write a per-task λ_res sidecar for the downstream main
+    # array to consume. The main array's LOCKED_LAMBDA_FILE template uses the
+    # same {idx} so task k ↔ task k.
+    if is_prelim and locked_path:
+        lam_nm = float(result["resonance_wavelength_nm"])
+        payload = {
+            "lambda_res_nm": lam_nm,
+            "lambda_res_m":  lam_nm * 1e-9,
+            "scan_width_nm": float(getattr(cfg_for_task.spectral, "scan_width_nm", 0.0)),
+            "source":        module_name,
+            "task_idx":      idx,
+        }
+        os.makedirs(os.path.dirname(locked_path) or ".", exist_ok=True)
+        with open(locked_path, "w") as f:
+            json.dump(payload, f, indent=2)
+        print(f"[athena_run_one] prelim wrote λ_res = {lam_nm:.4f} nm → {locked_path}")
 
 
 _DISPATCH = {
-    "mesh_conv_a": _run_kind_mesh_conv_a,
-    "mesh_conv_b": _run_kind_mesh_conv_b,
-    "spec":        _run_kind_spec,
+    "mesh_conv_x":           _run_kind_mesh_conv_x,
+    "mesh_conv_yz":          _run_kind_mesh_conv_yz,
+    "shutoff_conv_shutoff":  _run_kind_shutoff_conv,
+    "spec":                  _run_kind_spec,
 }
 
 try:

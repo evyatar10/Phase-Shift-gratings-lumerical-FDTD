@@ -52,7 +52,9 @@ from simulation_config import SimulationConfig
 
 
 SHIFT_M              = 100e-9   # second device's innermost-tooth shift
-LOCKED_SCAN_WIDTH_NM = 6.0      # narrowed scan around the locked resonance
+PRELIM_CENTER_NM     = 1560.0   # source center for the prelim resonance scan
+PRELIM_SCAN_WIDTH_NM = 20.0     # broad prelim band — brackets both shift values
+LOCKED_SCAN_WIDTH_NM = 10.0     # narrowed scan around the locked resonance
 
 
 def _resolve_locked_lambda_path() -> str:
@@ -65,13 +67,21 @@ def _resolve_locked_lambda_path() -> str:
 
 
 def _make_prelim_config(cfg: SimulationConfig | None) -> SimulationConfig:
-    """Quick prelim sim: no 3D, no 2D, no far-field — just locate the resonance."""
+    """Quick prelim sim: no 3D, no 2D, no far-field — just locate the resonance.
+
+    Source centered at PRELIM_CENTER_NM with PRELIM_SCAN_WIDTH_NM band so the
+    same prelim brackets both shift=0 and shift=SHIFT_M without re-tuning.
+    Inherits cfg.grating.innermost_tooth_shift_m from the caller (the chained
+    Athena workflow uses one prelim PER shift; the local runner below resets it
+    to 0 explicitly when calling this helper).
+    """
     cfg = copy.deepcopy(cfg) if cfg is not None else SimulationConfig()
-    cfg.monitors.record_3d_fields  = False
-    cfg.monitors.record_2d_fields  = False
-    cfg.farfield.enabled           = False        # narrow 1.8 λ domain → fast
-    cfg.grating.cavity_width_option = "narrow"
-    cfg.grating.innermost_tooth_shift_m = 0.0      # default device
+    cfg.monitors.record_3d_fields    = False
+    cfg.monitors.record_2d_fields    = False
+    cfg.farfield.enabled             = False        # narrow 1.8 λ domain → fast
+    cfg.grating.cavity_width_option  = "narrow"
+    cfg.spectral.center_wavelength_m = PRELIM_CENTER_NM * 1e-9
+    cfg.spectral.scan_width_nm       = PRELIM_SCAN_WIDTH_NM
     return cfg
 
 
@@ -126,7 +136,10 @@ def run_compare_3d_field_default_vs_shift(cfg: SimulationConfig | None = None) -
     base = cfg if cfg is not None else SimulationConfig()
 
     # ── Stage 0: prelim — locate the resonance wavelength ────────────────────
-    cfg_prelim = _make_prelim_config(base)
+    # Local single-prelim variant uses the default (unshifted) device.
+    base_for_prelim = copy.deepcopy(base)
+    base_for_prelim.grating.innermost_tooth_shift_m = 0.0
+    cfg_prelim = _make_prelim_config(base_for_prelim)
     print("\n" + "=" * 60)
     print("STAGE 0 — prelim resonance scan (no 3D, no far-field, 1.8 λ domain)")
     print("=" * 60)
@@ -160,6 +173,10 @@ def run_compare_3d_field_default_vs_shift(cfg: SimulationConfig | None = None) -
     print("the two 3D-field result_*.mat files (skip the prelim one — it has no field_3d).")
     print("=" * 60)
     return [res_a, res_b]
+
+
+# Auto-discovery contract: athena_run.py looks for `run` on each runner module.
+run = run_compare_3d_field_default_vs_shift
 
 
 if __name__ == "__main__":
