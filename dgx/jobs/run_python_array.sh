@@ -14,15 +14,17 @@
 #
 # Usage (submitted by deploy_athena.sh --option3):
 #   sbatch --array=0-N-1%K \
-#          --gpus=1 --cpus-per-task=8 \
+#          --gpus=1 --cpus-per-task=16 \
 #          --export=ALL,SWEEP_KIND=shift,ATHENA_LICENSE=...,ATHENA_INTERCONNECT=... \
 #          jobs/run_python_array.sh
 #
 #SBATCH --job-name=lum_pipeline_array
 #SBATCH --nodes=1
+#SBATCH --partition=work
 #SBATCH --gpus=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=128G
+#SBATCH --time=12:00:00
 #SBATCH --mail-type=END,FAIL,ARRAY_TASKS
 #SBATCH --mail-user=evyatar10.rubin@gmail.com
 #SBATCH --output=logs/lum_array-%A_%a.out
@@ -32,7 +34,7 @@ ulimit -s unlimited
 mkdir -p logs
 
 # ── CONFIGURE ─────────────────────────────────────────────────────────────────
-WORK_DIR="/home/evyatarrubin/bragg_sim_athena"
+WORK_DIR="/home/evyatarrubin/bragg_sim_gpu"
 PROJECT_DIR="${WORK_DIR}/project"
 SCRIPTS_DIR="${WORK_DIR}/scripts"
 DATA_DIR="${WORK_DIR}/data"
@@ -42,8 +44,8 @@ LOGS_DIR="${WORK_DIR}/logs"
 CONTAINER="$HOME/containers/lumerical-2026R1.sif"
 LUM_HOME="/opt/lumerical/v261"
 
-LICENSE="${ATHENA_LICENSE:-}"
-INTERCONNECT="${ATHENA_INTERCONNECT:-}"
+LICENSE="${ATHENA_LICENSE:-11055@dgx-master}"
+INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
 
 # REQUIRE_GPU=1 makes athena_run_one.py exit non-zero if GPU resource setup
 # fails — strongly recommended for parallel sweeps so a silent CPU fallback

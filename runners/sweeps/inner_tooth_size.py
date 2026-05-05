@@ -8,7 +8,8 @@ Run locally (sequential):
     python -m runners.sweeps.inner_tooth_size
 
 Run on Athena as a parallel SLURM array (one task per cartesian point):
-    bash athena/deploy_athena.sh --option2   # choose sweep → inner_tooth_size
+    bash dgx/deploy_dgx.sh --option2   # choose sweep (legacy DGX cluster)
+    # bash dgx/deploy_dgx.sh --option2   # (or use the new Athena cluster) → inner_tooth_size
 """
 
 import os

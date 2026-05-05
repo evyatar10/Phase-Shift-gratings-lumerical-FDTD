@@ -5,7 +5,8 @@ Run locally (sequential):
     python -m runners.sweeps.innermost_shift
 
 Run on Athena as a parallel SLURM array (one task per cartesian point):
-    bash athena/deploy_athena.sh --option2   # choose sweep → innermost_shift
+    bash dgx/deploy_dgx.sh --option2   # choose sweep (legacy DGX cluster)
+    # bash dgx/deploy_dgx.sh --option2   # (or use the new Athena cluster) → innermost_shift
 """
 
 import os

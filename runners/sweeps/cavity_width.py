@@ -17,7 +17,8 @@ Run locally (sequential):
     python -m runners.sweeps.cavity_width
 
 Run on Athena as a parallel SLURM array (one task per width):
-    bash athena/deploy_athena.sh --option2   # choose sweep -> cavity_width
+    bash dgx/deploy_dgx.sh --option2   # choose sweep (legacy DGX cluster)
+    # bash dgx/deploy_dgx.sh --option2   # (or use the new Athena cluster) -> cavity_width
 """
 
 import os

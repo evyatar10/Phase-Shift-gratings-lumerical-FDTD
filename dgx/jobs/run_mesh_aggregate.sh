@@ -17,8 +17,10 @@
 #
 #SBATCH --job-name=mesh_aggregate
 #SBATCH --nodes=1
+#SBATCH --partition=work
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=4G
+#SBATCH --time=00:10:00
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=evyatar10.rubin@gmail.com
 #SBATCH --output=logs/mesh_aggregate-%j.out
@@ -26,7 +28,7 @@
 
 mkdir -p logs
 
-WORK_DIR="/home/evyatarrubin/bragg_sim_athena"
+WORK_DIR="/home/evyatarrubin/bragg_sim_gpu"
 PROJECT_DIR="${WORK_DIR}/project"
 SCRIPTS_DIR="${WORK_DIR}/scripts"
 DATA_DIR="${WORK_DIR}/data"

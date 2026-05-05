@@ -1,8 +1,7 @@
 #!/bin/bash
 #
-# Local script: upload project files to the Athena cluster and submit a SLURM GPU job.
-# Target: athena.technion.ac.il (SLURM ClusterName=athena, R570+ drivers, no trampoline needed).
-# This is SEPARATE from deploy_athena.sh which targets dgx-master.technion.ac.il.
+# Local script: upload project files to Athena and submit a SLURM GPU job.
+# This is the Athena analog of zeus/deploy.sh (Zeus/PBS). Zeus is NOT touched.
 #
 # Run from Git Bash, WSL, or VS Code tasks on your local Windows machine.
 #
@@ -22,9 +21,8 @@
 #   bash athena/deploy_athena.sh --results-full      # download everything incl. .fsp (heavy)
 #   bash athena/deploy_athena.sh --results-files     # interactive: pick subfolder, then files
 #   bash athena/deploy_athena.sh --results-files=path1,path2,...  # download specific files (rel to results/)
-#   bash athena/deploy_athena.sh --gpu=h200           # pin to a specific GPU type
 
-# ── CONFIGURE — edit athena/athena.conf, not this file ──────────────────
+# ── CONFIGURE — edit athena/athena.conf, not this file ───────────────────────
 CONF="$(cd "$(dirname "$0")" && pwd)/athena.conf"
 if [[ ! -f "${CONF}" ]]; then
     echo "ERROR: athena.conf not found at ${CONF}"
@@ -56,7 +54,6 @@ FSP_PRESET=""
 FSP_EXPLICIT=""
 SWEEP_KIND=""
 SPEC_MODULE=""
-GPU_TYPE=""
 
 for arg in "$@"; do
     case "${arg}" in
@@ -78,22 +75,8 @@ for arg in "$@"; do
         --spec=*)             OPTION="3"; SWEEP_KIND="spec"; SPEC_MODULE="${arg#--spec=}" ;;
         --max-concurrent=*)   MAX_CONCURRENT="${arg#--max-concurrent=}" ;;
         --keep-h5)            KEEP_H5=1 ;;
-        --gpu=*)              GPU_TYPE="${arg#--gpu=}" ;;
     esac
 done
-
-# ── --gpu=<type>: override ARRAY_PARTITIONS with a single partition ───────────
-# Sourced after the conf so ARRAY_PARTITIONS is defined before we override it.
-if [[ -n "${GPU_TYPE:-}" ]]; then
-    case "${GPU_TYPE}" in
-        h200)        ARRAY_PARTITIONS="h200-shared" ;;
-        a100)        ARRAY_PARTITIONS="a100-public" ;;
-        rtx6k|rtx)  ARRAY_PARTITIONS="rtx6k-shared" ;;
-        l40s)        ARRAY_PARTITIONS="l40s-public" ;;
-        *) echo "ERROR: unknown --gpu=${GPU_TYPE}; valid: h200|a100|rtx6k|l40s"; exit 1 ;;
-    esac
-    echo "[--gpu] pinned partition list to: ${ARRAY_PARTITIONS}"
-fi
 
 SSH="${ATHENA_USER}@${ATHENA_HOST}"
 
@@ -106,7 +89,7 @@ SSH="${ATHENA_USER}@${ATHENA_HOST}"
 if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${STATUS}" == "false" && "${LICENSE_PROBE}" == "false" ]]; then
     echo ""
     echo "============================================================"
-    echo "  Real Athena GPU (athena.technion.ac.il) — Choose run mode:"
+    echo "  Athena GPU — Choose run mode:"
     echo "  1) FSP job    — generate .fsp locally → run FDTD engine on GPU"
     echo ""
     echo "  2) Python job — run lumapi Python pipeline on GPU"
@@ -306,11 +289,11 @@ download_results() {
     echo ""
     mkdir -p "${LOCAL_RESULTS_DIR}"
     if [[ "${no_fsp}" == "true" ]]; then
-        echo "=== Downloading results from Athena cluster (data files only, skipping .fsp) ==="
+        echo "=== Downloading results from Athena (data files only, skipping .fsp) ==="
         ssh "${SSH}" "tar --exclude='*.fsp' -czf - -C '${REMOTE_BASE}/results' ." \
             | tar -xzf - -C "${LOCAL_RESULTS_DIR}/"
     else
-        echo "=== Downloading results from Athena cluster (full, including .fsp) ==="
+        echo "=== Downloading results from Athena (full, including .fsp) ==="
         scp -r "${SSH}:${REMOTE_BASE}/results/." "${LOCAL_RESULTS_DIR}/"
     fi
     echo "Results saved to: ${LOCAL_RESULTS_DIR}"
@@ -515,7 +498,7 @@ download_files() {
 
     mkdir -p "${LOCAL_RESULTS_DIR}"
     echo ""
-    echo "=== Downloading ${#_paths[@]} file(s) from Athena cluster ==="
+    echo "=== Downloading ${#_paths[@]} file(s) from Athena ==="
     for _p in "${_paths[@]}"; do echo "  ${_p}"; done
     local _tar_args=""
     for _p in "${_paths[@]}"; do _tar_args+=" '${_p}'"; done
@@ -527,7 +510,7 @@ download_files() {
 # ── Helper: one-shot status check ─────────────────────────────────────────────
 check_status() {
     echo ""
-    echo "=== Jobs in queue (${ATHENA_USER} @ ${ATHENA_HOST}) ==="
+    echo "=== Jobs in queue (${ATHENA_USER}) ==="
     ssh "${SSH}" "squeue -u ${ATHENA_USER} -o '%.10i %.12j %.8T %.10M %.6D %R' 2>/dev/null || echo '(no jobs in queue)'"
     echo ""
     echo "=== Last 40 lines of most recent log ==="
@@ -543,9 +526,9 @@ fi
 # ── --license-probe: report FlexLM seat counts then exit ──────────────────────
 if [[ "${LICENSE_PROBE}" == "true" ]]; then
     echo ""
-    echo "=== Probing Lumerical license seats on Athena cluster (server: ${ATHENA_LICENSE}) ==="
+    echo "=== Probing Lumerical license seats on Athena (server: ${ATHENA_LICENSE}) ==="
     # lmutil ships inside the Lumerical install on Athena. The path matches the one
-    # used in jobs/run_fsp_gpu_array.sh. Keep both in sync if Lumerical's install path moves.
+    # used in run_fsp_gpu_array.sh. Keep both in sync if Lumerical's install path moves.
     ssh "${SSH}" "
         for lmutil in /ansys_inc/v261/licensingclient/linx64/lmutil \
                       /opt/lumerical/v261/lumerical/lib/lmutil \
@@ -594,7 +577,7 @@ fi
 
 # ── Normal flow: create remote directories and upload ─────────────────────────
 echo "============================================================"
-echo "Target: ${SSH}  (Athena cluster — athena.technion.ac.il)"
+echo "Target: ${SSH}"
 echo "Remote: ${REMOTE_BASE}"
 echo "============================================================"
 
@@ -624,13 +607,27 @@ else
 fi
 
 echo ""
-echo "=== Uploading Athena job scripts and helpers ==="
-rsync -av --itemize-changes "${LOCAL_PROJECT}/athena/jobs/"*.sh "${SSH}:${REMOTE_BASE}/jobs/"
+echo "=== Uploading Athena scripts ==="
+rsync -av --itemize-changes "${LOCAL_PROJECT}/athena/jobs/"*.sh    "${SSH}:${REMOTE_BASE}/jobs/"
 rsync -av --itemize-changes "${LOCAL_PROJECT}/athena/scripts/"*.py "${SSH}:${REMOTE_BASE}/scripts/"
 ssh "${SSH}" "chmod +x ${REMOTE_BASE}/jobs/*.sh"
 ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/jobs/logs"
 
-# NVML trampoline not needed: athena cluster uses R570+ drivers.
+echo ""
+echo "=== Building NVML trampoline on Athena (R470 A100 nodes) ==="
+# The trampoline shim stubs three NVML symbols absent from R470 that Lumerical
+# 2026 R1's GPU plugin imports. On newer-driver nodes (L40S / H200, R535+) the
+# tramp directory is not bound and has no effect.
+rsync -av --itemize-changes "${LOCAL_PROJECT}/athena/container/nvml_tramp.c" \
+    "${SSH}:${REMOTE_BASE}/jobs/nvml_tramp.c"
+ssh "${SSH}" "
+    mkdir -p \${HOME}/nvml_tramp
+    gcc -O2 -shared -fPIC -Wl,-soname,libnvidia-ml.so.1 \
+        -o \${HOME}/nvml_tramp/libnvidia-ml.so.1 \
+        ${REMOTE_BASE}/jobs/nvml_tramp.c -ldl && \
+    echo '  NVML trampoline built: ~/nvml_tramp/libnvidia-ml.so.1' || \
+    echo '  WARNING: gcc failed — GPU jobs on R470 nodes will skip the trampoline'
+"
 
 echo ""
 echo "=== Upload complete ==="
@@ -667,7 +664,7 @@ if [[ "${OPTION}" == "1" ]]; then
             exit 1
         fi
 
-        echo "Uploading ${#FSP_PATHS[@]} .fsp file(s) to Athena cluster (per-stem folders)..."
+        echo "Uploading ${#FSP_PATHS[@]} .fsp file(s) to Athena (per-stem folders)..."
         for _fsp in "${FSP_PATHS[@]}"; do
             _name=$(basename "${_fsp}")
             _stem="${_name%.fsp}"
@@ -713,9 +710,6 @@ if [[ "${OPTION}" == "1" ]]; then
             "cd ${REMOTE_BASE} && sbatch \
                 --array=0-${ARRAY_END}%${K} \
                 --gpus=1 --cpus-per-task=${N_CPUS} \
-                --time=${ARRAY_TIME:-00:50:00} \
-                --qos=${ARRAY_QOS} \
-                --partition=${ARRAY_PARTITIONS} \
                 --export=ALL,ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_fsp_gpu_array.sh")
@@ -723,9 +717,6 @@ if [[ "${OPTION}" == "1" ]]; then
         JOB_ID=$(ssh "${SSH}" \
             "cd ${REMOTE_BASE} && sbatch \
                 --gpus=1 --cpus-per-task=${N_CPUS} \
-                --time=${ARRAY_TIME:-00:50:00} \
-                --qos=${ARRAY_QOS} \
-                --partition=${ARRAY_PARTITIONS} \
                 --export=ALL,FSP_FILE=\"${FSP_NAME}\",ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_fsp_gpu.sh")
@@ -736,9 +727,6 @@ elif [[ "${OPTION}" == "2" ]]; then
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
             --gpus=1 --cpus-per-task=${N_CPUS} \
-            --time=${ARRAY_TIME:-00:50:00} \
-            --qos=${ARRAY_QOS} \
-            --partition=${ARRAY_PARTITIONS} \
             --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_gpu.sh")
@@ -791,7 +779,7 @@ else
     ARRAY_END=$(( N_TASKS - 1 ))
     K="${MAX_CONCURRENT:-4}"
 
-    echo "Uploading sweep_list.txt to Athena cluster..."
+    echo "Uploading sweep_list.txt to Athena..."
     ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/data"
     scp "${LOCAL_SWEEP_LIST}" "${SSH}:${REMOTE_BASE}/data/sweep_list.txt"
 
@@ -834,7 +822,7 @@ else
             exit 1
         fi
         PRELIM_END=$(( PRELIM_N - 1 ))
-        echo "Uploading prelim_sweep_list.txt to Athena cluster..."
+        echo "Uploading prelim_sweep_list.txt to Athena..."
         scp "${LOCAL_PRELIM_LIST}" "${SSH}:${REMOTE_BASE}/data/prelim_sweep_list.txt"
         echo "Prelim array: 0-${PRELIM_END}%${K}  (${PRELIM_N} tasks)"
         echo "Submitting prelim array..."
@@ -843,8 +831,6 @@ else
                 --array=0-${PRELIM_END}%${K} \
                 --gpus=1 --cpus-per-task=${N_CPUS} \
                 --time=${PRELIM_TIME:-00:10:00} \
-                --qos=${ARRAY_QOS} \
-                --partition=${ARRAY_PARTITIONS} \
                 --export=ALL,SWEEP_KIND=spec,SWEEP_LIST=/work/data/prelim_sweep_list.txt,SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},SWEEP_IS_PRELIM=1,LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_python_array.sh")
@@ -865,8 +851,6 @@ else
             "cd ${REMOTE_BASE} && sbatch \
                 --gpus=1 --cpus-per-task=${N_CPUS} \
                 --time=${PRELIM_TIME:-00:10:00} \
-                --qos=${ARRAY_QOS} \
-                --partition=${ARRAY_PARTITIONS} \
                 --export=ALL,RUN_SCRIPT=${SWEEP_PRELIM_RUN_SCRIPT},LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_python_gpu.sh")
@@ -885,9 +869,7 @@ else
         "cd ${REMOTE_BASE} && sbatch \
             --array=0-${ARRAY_END}%${K} ${DEP_FLAG} \
             --gpus=1 --cpus-per-task=${N_CPUS} \
-            --time=${ARRAY_TIME:-00:50:00} \
-            --qos=${ARRAY_QOS} \
-            --partition=${ARRAY_PARTITIONS} \
+            --time=${ARRAY_TIME:-00:45:00} \
             --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_array.sh")
@@ -917,8 +899,6 @@ if [[ -n "${AGG_PHASE}" ]]; then
     AGG_RAW=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
             --dependency=afterok:${NUMERIC_JOB} \
-            --qos=${AGG_QOS} \
-            --partition=${AGG_PARTITION} \
             --export=ALL,PHASE=${AGG_PHASE} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_mesh_aggregate.sh")
@@ -944,7 +924,7 @@ echo ""
 echo "Check status at any time:"
 echo "  bash athena/deploy_athena.sh --status"
 echo ""
-echo "Live log on Athena cluster:"
+echo "Live log on Athena:"
 echo "  ssh ${SSH} tail -f ${REMOTE_BASE}/jobs/logs/lum_*${NUMERIC_JOB}*.out"
 echo ""
 echo "Download results after job finishes:"

@@ -35,7 +35,7 @@ Usage:
     python convergence_testing/run_mesh_convergence.py --aggregate YZ
 """
 
-# PHASES / KIND_PREFIX: read by athena/deploy_athena.sh's Convergence picker.
+# PHASES / KIND_PREFIX: read by athena/deploy_dgx.sh's Convergence picker.
 # Expands this file into one menu entry per phase ("run_mesh_convergence X" /
 # "...YZ") that submit as parallel SLURM arrays with SWEEP_KIND=mesh_conv_x /
 # mesh_conv_yz. Files in convergence_testing/ without these constants are

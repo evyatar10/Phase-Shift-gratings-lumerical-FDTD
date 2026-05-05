@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# SLURM job: run the full Python/lumapi pipeline on the real Athena cluster with GPU.
-# This is the real-Athena analog of athena/jobs/run_python_gpu.sh (dgx-master).
+# SLURM job: run the full Python/lumapi pipeline on Athena with GPU.
+# This is the Athena analog of hpc/jobs/run_python_job.sh (Zeus/PBS).
 #
 # Runtime: apptainer exec --nv (matches run_fsp_gpu.sh — single image format,
 # no Pyxis/Enroot dependence). The CUDA forward-compat shim is activated by
@@ -24,9 +24,11 @@
 #
 #SBATCH --job-name=lum_pipeline_gpu
 #SBATCH --nodes=1
+#SBATCH --partition=work
 #SBATCH --gpus=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=128G
+#SBATCH --time=12:00:00
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=evyatar10.rubin@gmail.com
 #SBATCH --output=logs/lum_pipeline_gpu-%j.out
@@ -36,7 +38,7 @@ ulimit -s unlimited
 mkdir -p logs
 
 # ── CONFIGURE ─────────────────────────────────────────────────────────────────
-WORK_DIR="/home/evyatarrubin/bragg_sim_athena"
+WORK_DIR="/home/evyatarrubin/bragg_sim_gpu"
 PROJECT_DIR="${WORK_DIR}/project"
 SCRIPTS_DIR="${WORK_DIR}/scripts"
 DATA_DIR="${WORK_DIR}/data"
@@ -48,8 +50,8 @@ LUM_HOME="/opt/lumerical/v261"
 
 # License values come from deploy_athena.sh via --export=ALL,ATHENA_LICENSE=...
 # Defaults below let the script also be invoked manually with sbatch directly.
-LICENSE="${ATHENA_LICENSE:-}"
-INTERCONNECT="${ATHENA_INTERCONNECT:-}"
+LICENSE="${ATHENA_LICENSE:-11055@dgx-master}"
+INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
 
 # RUN_SCRIPT can be set via --export at sbatch, or hardcoded here as fallback.
 # Valid values: bare module name from runners/single/ or convergence_testing/
@@ -61,7 +63,12 @@ RUN_SCRIPT="${RUN_SCRIPT:-run_simulation}"
 # is missing fdtd_gpu.
 REQUIRE_GPU="${REQUIRE_GPU:-0}"
 
-# NVML trampoline not needed: athena cluster uses R570+ drivers.
+# NVML trampoline: shim that stubs three symbols absent from Athena's R470 NVML
+# (nvmlDeviceGetPcieLinkMaxSpeed, nvmlDeviceGetBusType, nvmlDeviceGetMemoryBusWidth).
+# Without it, the dynamic linker aborts when loading liblumcudaquery.so — the
+# same failure mode that affected FSP jobs before the trampoline was added.
+# Build once with: bash ~/bragg_sim_gpu/jobs/build_nvml_tramp.sh
+# Skip (set to "") only on newer-driver nodes (R535+, e.g. L40S or H200 partition).
 NVML_TRAMP="${HOME}/nvml_tramp"
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -106,14 +113,14 @@ if [[ -n "${NVML_TRAMP}" && -d "${NVML_TRAMP}" && -f "${NVML_TRAMP}/libnvidia-ml
     TRAMP_BIND="--bind ${NVML_TRAMP}:/nvml_tramp"
     echo "NVML trampoline: ${NVML_TRAMP}"
 else
-    echo "NVML trampoline not found at ${NVML_TRAMP} — skipping (safe on R570+ nodes)"
+    echo "NVML trampoline not found at ${NVML_TRAMP} — skipping (safe on R535+ nodes)"
 fi
 
 # ── Run the Python pipeline inside the container ──────────────────────────────
 # --nv          : auto-inject NVIDIA GPU devices + host driver libs.
 #                 The container's %environment puts /usr/local/cuda/compat
 #                 first on LD_LIBRARY_PATH, so the cuda-compat-12-2 shim is
-#                 loaded ahead of the host's driver libcuda.so.1.
+#                 loaded ahead of the host's R470 libcuda.so.1.
 # --bind        : project, scripts, data, results, logs, hosts file.
 # --pwd /work   : matches the path layout athena_run.py assumes.
 #
@@ -207,9 +214,11 @@ echo "Exit code: ${EXIT_CODE}"
 if [[ "${EXIT_CODE}" -ne 0 ]]; then
     echo ""
     echo "Pipeline failed. Useful next steps:"
-    echo "  - License: check ATHENA_LICENSE is set correctly in athena.conf"
+    echo "  - License: nc -vz dgx-master 11055 (FlexLM)"
+    echo "             nc -vz dgx-master 12325 (Ansys interconnect)"
     echo "  - GPU:     check that 'nvidia-smi' inside the container reports"
-    echo "             CUDA Version 12.x or 13.x (R570+ driver expected)"
+    echo "             CUDA Version 12.x (not 11.4); if 11.4, the LD_LIBRARY_PATH"
+    echo "             prefix in lumerical.def %environment is being overridden."
     echo "  - REQUIRE_GPU=${REQUIRE_GPU}: exit code 2 from athena_run.py means"
     echo "             setresource('FDTD',1,'GPU',True) failed (no fdtd_gpu seat?)."
 fi

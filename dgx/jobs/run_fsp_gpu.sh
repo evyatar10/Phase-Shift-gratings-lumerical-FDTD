@@ -12,9 +12,11 @@
 #
 #SBATCH --job-name=lum_fdtd_gpu
 #SBATCH --nodes=1
+#SBATCH --partition=work
 #SBATCH --gpus=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=128G
+#SBATCH --time=04:00:00
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=evyatar10.rubin@gmail.com
 #SBATCH --output=logs/lum_fdtd_gpu-%j.out
@@ -26,7 +28,7 @@ mkdir -p logs
 # ── CONFIGURE ─────────────────────────────────────────────────────────────────
 # Per-run layout: each .fsp lives in its own folder ${RESULTS_ROOT}/<stem>/<stem>.fsp.
 # Engine writes its outputs (.h5 monitors, .log) into the same per-stem folder.
-RESULTS_ROOT="/home/evyatarrubin/bragg_sim_athena/results"
+RESULTS_ROOT="/home/evyatarrubin/bragg_sim_gpu/results"
 
 # FSP_FILE can be set via --export when submitting, or hardcoded here as fallback:
 FSP_FILE="${FSP_FILE:-layout_REPLACE_ME.fsp}"
@@ -38,13 +40,17 @@ LUM_HOME="/opt/lumerical/v261"
 ENGINE="${LUM_HOME}/bin/fdtd-engine-ompi-lcl"
 # License values come from deploy_athena.sh via --export=ALL,ATHENA_LICENSE=...
 # Defaults below let the script also be invoked manually with sbatch directly.
-LICENSE="${ATHENA_LICENSE:-}"
-INTERCONNECT="${ATHENA_INTERCONNECT:-}"
+LICENSE="${ATHENA_LICENSE:-11055@dgx-master}"
+INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
 
 # Threads — use all allocated CPUs (single rank).
 NTHREADS="${SLURM_CPUS_PER_TASK}"
 
-# NVML trampoline not needed: athena cluster uses R570+ drivers.
+# NVML trampoline: shim that stubs three symbols absent from Athena's R470 NVML
+# (nvmlDeviceGetPcieLinkMaxSpeed, nvmlDeviceGetBusType, nvmlDeviceGetMemoryBusWidth).
+# Without it, the dynamic linker aborts when loading liblumcudaquery.so.
+# Build once with: bash ~/bragg_sim_gpu/jobs/build_nvml_tramp.sh
+# Skip (set to "") only on newer-driver nodes (R535+, e.g. L40S or H200 partition).
 NVML_TRAMP="${HOME}/nvml_tramp"
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -96,7 +102,7 @@ if [[ -n "${NVML_TRAMP}" && -d "${NVML_TRAMP}" && -f "${NVML_TRAMP}/libnvidia-ml
     TRAMP_BIND="--bind ${NVML_TRAMP}:/nvml_tramp"
     echo "NVML trampoline: ${NVML_TRAMP}"
 else
-    echo "NVML trampoline not found at ${NVML_TRAMP} — skipping (safe on R570+ nodes)"
+    echo "NVML trampoline not found at ${NVML_TRAMP} — skipping (safe on R535+ nodes)"
 fi
 
 apptainer exec --nv \
@@ -109,7 +115,7 @@ apptainer exec --nv \
 export LANG=C
 export LC_ALL=C
 # NVML trampoline: prepend /nvml_tramp so our libnvidia-ml.so.1 is found before
-# /.singularity.d/libs (Apptainer --nv injection). On R570+ nodes the trampoline
+# /.singularity.d/libs (Apptainer --nv injection). On R535+ nodes the trampoline
 # directory won't exist, so LD_LIBRARY_PATH stays unchanged.
 if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
     export LD_LIBRARY_PATH=\"/nvml_tramp:\${LD_LIBRARY_PATH}\"

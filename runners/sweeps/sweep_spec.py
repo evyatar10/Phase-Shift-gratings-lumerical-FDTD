@@ -182,7 +182,7 @@ def run_sweep_spec(
     elif target == "athena":
         raise NotImplementedError(
             "target='athena' is invoked via the deploy script, not Python. "
-            "Run: bash athena/deploy_athena.sh --option2  (choose sweep, then pick study)"
+            "Run: bash dgx/deploy_dgx.sh --option2  (DGX) or bash dgx/deploy_dgx.sh --option2  (Athena)"
         )
     else:
         raise ValueError(f"Unknown target {target!r}. Choose 'local'|'zeus'|'athena'.")

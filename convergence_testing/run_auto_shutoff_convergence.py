@@ -23,7 +23,7 @@ Usage:
     python convergence_testing/run_auto_shutoff_convergence.py --aggregate SHUTOFF
 """
 
-# PHASES / KIND_PREFIX: read by athena/deploy_athena.sh's Convergence picker.
+# PHASES / KIND_PREFIX: read by athena/deploy_dgx.sh's Convergence picker.
 # Single phase ⇒ one menu entry, submitted as a SLURM array with
 # SWEEP_KIND=shutoff_conv_shutoff.
 PHASES      = ["SHUTOFF"]

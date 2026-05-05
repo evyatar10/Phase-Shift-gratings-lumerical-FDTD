@@ -8,7 +8,7 @@
 #
 # Usage:
 #   1. Generate .fsp files locally, collect their remote basenames in a file:
-#        bash athena/deploy_athena.sh --option1 --preset sweep_shift
+#        bash hpc_gpu/deploy_athena.sh --option1 --preset sweep_shift
 #      This creates fsp_list.txt on Athena with one filename per line.
 #
 #   2. Submit the array:
@@ -16,7 +16,7 @@
 #      where N = total number of .fsp files, K = max concurrent jobs.
 #
 #      K should not exceed the number of FDTD engine seats on your license.
-#      Run  lmutil lmstat -a -c <ATHENA_LICENSE>  to find the seat count.
+#      Run  lmutil lmstat -a -c 1055@132.68.48.51  to find the seat count.
 #      A safe default is K=4 unless you know otherwise.
 #
 # Example (50 .fsp files, max 4 running at once):
@@ -24,9 +24,11 @@
 #
 #SBATCH --job-name=lum_sweep_gpu
 #SBATCH --nodes=1
+#SBATCH --partition=work
 #SBATCH --gpus=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=128G
+#SBATCH --time=06:00:00
 #SBATCH --mail-type=BEGIN,END,FAIL,ARRAY_TASKS
 #SBATCH --mail-user=evyatar10.rubin@gmail.com
 #SBATCH --output=logs/lum_sweep_gpu-%A_%a.out
@@ -38,14 +40,14 @@ mkdir -p logs
 # ── CONFIGURE ─────────────────────────────────────────────────────────────────
 # Per-run layout: each .fsp lives in its own folder ${RESULTS_ROOT}/<stem>/<stem>.fsp.
 # fsp_list.txt at ${RESULTS_ROOT}/fsp_list.txt holds one stem per line.
-RESULTS_ROOT="/home/evyatarrubin/bragg_sim_athena/results"
+RESULTS_ROOT="/home/evyatarrubin/bragg_sim_gpu/results"
 FSP_LIST="${RESULTS_ROOT}/fsp_list.txt"
 
 CONTAINER="$HOME/containers/lumerical-2026R1.sif"
 LUM_HOME="/opt/lumerical/v261"
 ENGINE="${LUM_HOME}/bin/fdtd-engine-ompi-lcl"
-LICENSE="${ATHENA_LICENSE:-}"
-INTERCONNECT="${ATHENA_INTERCONNECT:-}"
+LICENSE="${ATHENA_LICENSE:-11055@dgx-master}"
+INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
 
 NTHREADS="${SLURM_CPUS_PER_TASK}"
 NVML_TRAMP="${HOME}/nvml_tramp"

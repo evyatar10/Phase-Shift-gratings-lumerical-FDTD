@@ -11,7 +11,8 @@ Run locally (sequential):
     python -m runners.sweeps.apod_and_shift
 
 Run on Athena as a parallel SLURM array (one task per cartesian point):
-    bash athena/deploy_athena.sh --option2   # choose sweep → apod_and_shift
+    bash dgx/deploy_dgx.sh --option2   # choose sweep (legacy DGX cluster)
+    # bash dgx/deploy_dgx.sh --option2   # (or use the new Athena cluster) → apod_and_shift
 """
 
 import os
