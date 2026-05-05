@@ -17,11 +17,13 @@ def __getattr__(name: str) -> str:
     reflect the current value instead of the value at import time.
     """
     if name in ("LAYOUTS_DIR", "RESULTS_DIR"):
+        sub = "layouts" if name == "LAYOUTS_DIR" else "results"
         run_name = os.environ.get("RUN_NAME", "")
         if run_name:
-            path = os.path.join(BASE_SAVE_DIR, run_name)
+            # Per-run folder with the same layouts/ + results/ split inside,
+            # mirroring run_mesh_convergence.py's CONV_DIR/{layouts,results}.
+            path = os.path.join(BASE_SAVE_DIR, run_name, sub)
         else:
-            sub = "layouts" if name == "LAYOUTS_DIR" else "results"
             path = os.path.join(BASE_SAVE_DIR, sub)
         os.makedirs(path, exist_ok=True)
         return path

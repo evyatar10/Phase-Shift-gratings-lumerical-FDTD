@@ -63,6 +63,7 @@ class SweepSpec:
     innermost_tooth_shift_nm:   Optional[List[float]] = None
     cavity_neg_detuning_nm:     Optional[List[float]] = None
     cavity_length_nm:           Optional[List[float]] = None
+    cavity_width_nm:            Optional[List[float]] = None
     lengthen_cavity:            Optional[List[bool]]  = None
 
     # ── Apodization ─────────────────────────────────────────────────────────

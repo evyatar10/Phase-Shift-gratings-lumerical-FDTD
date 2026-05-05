@@ -38,6 +38,7 @@ _CARD_FIELD_MAP = {
     "n_apod_periods_each_side": ("apodization.n_apod_periods_each_side", None),
     "cavity_length_nm":         ("grating.override_cavity_length_nm",    None),
     "cavity_neg_detuning_nm":   ("grating.cavity_neg_detuning_nm",       None),
+    "cavity_width_nm":          ("grating.cavity_width_m",               lambda v: v * 1e-9),
     "innermost_tooth_shift_nm": ("grating.innermost_tooth_shift_m",      lambda v: v * 1e-9),
     "lengthen_cavity":          ("grating.lengthen_cavity",              None),
     "center_wavelength_nm":     ("spectral.center_wavelength_m",         lambda v: v * 1e-9),

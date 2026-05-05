@@ -299,84 +299,147 @@ download_results() {
     echo "Results saved to: ${LOCAL_RESULTS_DIR}"
 }
 
-# ── Helper: download specific files (two-step picker or by comma-separated paths) ──
-# Step 1 (interactive): list immediate subfolders of ${REMOTE_BASE}/results/, plus a
-#                       sentinel "(files at root)" if the directory itself has files.
-# Step 2 (interactive): recursively list files inside the picked subfolder, accept
-#                       multi-select via "1,3,5", "1-3,7", or "all".
+# ── Helper: download specific files (categorized picker or by relative paths) ──
+# Three-step interactive picker:
+#   1) Category — convergence / runners/single / runners/sweeps
+#   2) Run folder — discovered remote dirs whose name matches a module under
+#                   convergence_testing/, runners/single/, or runners/sweeps/
+#   3) Files     — multi-select via "1,3,5" | "1-3,7" | "all"
+# Categories auto-update: every invocation re-scans the local source tree, so
+# new modules and new run folders appear without code changes here.
 # Non-interactive form: --results-files=path1,path2,... (paths relative to results/).
-# Transfer uses a single `tar` over SSH so multi-file selections need only one
-# round trip; the local extraction recreates parent directories automatically.
+# Transfer uses a single tar stream so multi-file selections need only one
+# round-trip; the local extraction recreates parent directories automatically.
 download_files() {
     local _paths=()
     echo ""
     if [[ -n "${DOWNLOAD_FILES_PATHS}" ]]; then
         IFS=',' read -ra _paths <<< "${DOWNLOAD_FILES_PATHS}"
     else
-        echo "=== Listing subfolders under ${REMOTE_BASE}/results/ ==="
-        # SSH returns "DIR <name>" lines for each subfolder and a single "ROOT" line
-        # if there is at least one regular file directly at results/.
-        local _step1
-        _step1=$(ssh "${SSH}" "
-            cd '${REMOTE_BASE}/results' 2>/dev/null || exit 1
-            for d in */; do [ -d \"\$d\" ] && echo \"DIR \${d%/}\"; done
-            for f in *; do [ -f \"\$f\" ] && { echo 'ROOT'; break; }; done
-        ")
-        local _dirs=() _has_root=false
-        while IFS= read -r _line; do
-            case "${_line}" in
-                'DIR '*) _dirs+=("${_line#DIR }") ;;
-                'ROOT')  _has_root=true ;;
-            esac
-        done <<< "${_step1}"
-        if [[ ${#_dirs[@]} -eq 0 && "${_has_root}" == "false" ]]; then
-            echo "ERROR: ${REMOTE_BASE}/results/ is empty."
+        # ── Auto-discover categories from the local source tree ─────────────
+        # Categories = convergence_testing/ + every subdirectory of runners/.
+        # Adding a new runners/<name>/ later (or a new module file inside any
+        # category) makes it appear automatically — no code changes here.
+        # Parallel arrays:  _cat_dirs[i] / _cat_mods[i] / _cat_runs[i]
+        local _cat_dirs=() _cat_mods=() _cat_runs=()
+        _add_category() {
+            # $1 = category label (e.g. "convergence_testing", "runners/single")
+            # $2 = absolute filesystem path to the directory holding the .py modules
+            local _label="$1" _path="$2" _mods="" _f _n
+            [[ -d "${_path}" ]] || return 0
+            for _f in "${_path}"/*.py; do
+                [[ -e "${_f}" ]] || continue
+                _n=$(basename "${_f}" .py)
+                [[ "${_n}" == _* || "${_n}" == "__init__" || "${_n}" == "sweep_spec" ]] && continue
+                _mods+=" ${_n}"
+                # Strip a "run_" prefix too: run_mesh_convergence.py writes to
+                # CONV_DIR="mesh_convergence" and run_auto_shutoff_convergence
+                # follows the same pattern.
+                [[ "${_n}" == run_* ]] && _mods+=" ${_n#run_}"
+            done
+            _cat_dirs+=("${_label}")
+            _cat_mods+=("${_mods}")
+            _cat_runs+=("")
+        }
+        _add_category "convergence_testing" "${LOCAL_PROJECT}/convergence_testing"
+        local _runner_dir
+        for _runner_dir in "${LOCAL_PROJECT}"/runners/*/; do
+            [[ -d "${_runner_dir}" ]] || continue
+            local _rname=$(basename "${_runner_dir}")
+            [[ "${_rname}" == _* || "${_rname}" == "__pycache__" ]] && continue
+            _add_category "runners/${_rname}" "${_runner_dir%/}"
+        done
+
+        echo "=== Discovering run folders under ${REMOTE_BASE}/results/ ==="
+        local _remote_dirs
+        _remote_dirs=$(ssh "${SSH}" \
+            "cd '${REMOTE_BASE}/results' 2>/dev/null && \
+             for d in */; do [ -d \"\$d\" ] && echo \"\${d%/}\"; done")
+
+        # Bucket each remote dir into the first category whose module list contains it.
+        local _d _i
+        while IFS= read -r _d; do
+            [[ -z "${_d}" ]] && continue
+            for _i in "${!_cat_dirs[@]}"; do
+                if [[ " ${_cat_mods[$_i]} " == *" ${_d} "* ]]; then
+                    _cat_runs[$_i]+=" ${_d}"
+                    break
+                fi
+            done
+        done <<< "${_remote_dirs}"
+
+        # Always show every discovered category, even if it has zero runs on the
+        # remote — this lets the user see the project structure and confirms
+        # which subdir of runners/ a future run will land in. Empty categories
+        # are flagged "(empty)" and rejected at step 2.
+        local _menu_labels=()
+        for _i in "${!_cat_dirs[@]}"; do
+            local _trim="${_cat_runs[$_i]## }"
+            local _count=0
+            [[ -n "${_trim}" ]] && _count=$(echo "${_trim}" | wc -w)
+            local _suffix
+            if (( _count == 0 )); then
+                _suffix="(empty)"
+            else
+                _suffix="(${_count} run(s))"
+            fi
+            _menu_labels+=("$(printf '%-25s %s' "${_cat_dirs[$_i]}" "${_suffix}")")
+        done
+
+        if [[ ${#_cat_dirs[@]} -eq 0 ]]; then
+            echo "ERROR: no categories discovered. convergence_testing/ and runners/ are missing locally."
             exit 1
         fi
 
-        local _options=()
-        if [[ "${_has_root}" == "true" ]]; then
-            _options+=("__ROOT__")
-        fi
-        for _d in "${_dirs[@]}"; do
-            _options+=("${_d}")
-        done
-
         echo ""
         echo "============================================================"
-        for _i in "${!_options[@]}"; do
-            if [[ "${_options[$_i]}" == "__ROOT__" ]]; then
-                printf "  %d) (files at root)\n" "$((_i+1))"
-            else
-                printf "  %d) %s/\n" "$((_i+1))" "${_options[$_i]}"
-            fi
+        echo "  Step 1: choose a category"
+        echo "============================================================"
+        for _i in "${!_menu_labels[@]}"; do
+            printf "  %d) %s\n" "$((_i+1))" "${_menu_labels[$_i]}"
         done
         echo "============================================================"
-        read -rp "Pick a subfolder (number): " _dir_choice
-        if [[ ! "${_dir_choice}" =~ ^[0-9]+$ ]] || \
-           (( _dir_choice < 1 || _dir_choice > ${#_options[@]} )); then
+        read -rp "Pick a category (number): " _cat_choice
+        if [[ ! "${_cat_choice}" =~ ^[0-9]+$ ]] || \
+           (( _cat_choice < 1 || _cat_choice > ${#_cat_dirs[@]} )); then
             echo "Invalid choice. Exiting."
             exit 1
         fi
 
-        local _picked="${_options[$((_dir_choice-1))]}"
-        local _scope_prefix="" _find_target _maxdepth_arg=""
-        if [[ "${_picked}" == "__ROOT__" ]]; then
-            _find_target="${REMOTE_BASE}/results"
-            _maxdepth_arg="-maxdepth 1"
-        else
-            _scope_prefix="${_picked}/"
-            _find_target="${REMOTE_BASE}/results/${_picked}"
+        local _cat_pick_idx=$((_cat_choice-1))
+        local _runs=()
+        read -ra _runs <<< "${_cat_runs[$_cat_pick_idx]}"
+        if [[ ${#_runs[@]} -eq 0 ]]; then
+            echo ""
+            echo "No runs in '${_cat_dirs[$_cat_pick_idx]}' yet on ${REMOTE_BASE}/results/."
+            echo "Once a script in this category runs on the server, its output folder will appear here."
+            exit 0
         fi
 
         echo ""
-        echo "=== Files under ${_picked//__ROOT__/(root)} (newest first) ==="
+        echo "============================================================"
+        echo "  Step 2: choose a run"
+        echo "============================================================"
+        for _i in "${!_runs[@]}"; do
+            printf "  %d) %s/\n" "$((_i+1))" "${_runs[$_i]}"
+        done
+        echo "============================================================"
+        read -rp "Pick a run (number): " _run_choice
+        if [[ ! "${_run_choice}" =~ ^[0-9]+$ ]] || \
+           (( _run_choice < 1 || _run_choice > ${#_runs[@]} )); then
+            echo "Invalid choice. Exiting."
+            exit 1
+        fi
+        local _picked="${_runs[$((_run_choice-1))]}"
+
+        echo ""
+        echo "=== Files under ${_picked}/ (newest first) ==="
         local _listing
         _listing=$(ssh "${SSH}" \
-            "find '${_find_target}' ${_maxdepth_arg} -type f -printf '%T@ %P\n' 2>/dev/null \
+            "find '${REMOTE_BASE}/results/${_picked}' -type f -printf '%T@ %P\n' 2>/dev/null \
                 | sort -rn | cut -d' ' -f2-")
         if [[ -z "${_listing}" ]]; then
-            echo "ERROR: no files found in selection."
+            echo "ERROR: no files in ${_picked}/."
             exit 1
         fi
         local _files=()
@@ -385,6 +448,8 @@ download_files() {
         done <<< "${_listing}"
 
         echo ""
+        echo "============================================================"
+        echo "  Step 3: pick files (multi-select)"
         echo "============================================================"
         for _i in "${!_files[@]}"; do
             printf "  %d) %s\n" "$((_i+1))" "${_files[$_i]}"
@@ -422,7 +487,7 @@ download_files() {
                 echo "Index out of range: ${_idx}. Exiting."
                 exit 1
             fi
-            _paths+=("${_scope_prefix}${_files[$((_idx-1))]}")
+            _paths+=("${_picked}/${_files[$((_idx-1))]}")
         done
     fi
 
@@ -435,7 +500,6 @@ download_files() {
     echo ""
     echo "=== Downloading ${#_paths[@]} file(s) from Athena ==="
     for _p in "${_paths[@]}"; do echo "  ${_p}"; done
-    # One tar stream over SSH; -x recreates parent dirs locally.
     local _tar_args=""
     for _p in "${_paths[@]}"; do _tar_args+=" '${_p}'"; done
     ssh "${SSH}" "tar -czf - -C '${REMOTE_BASE}/results' ${_tar_args}" \
@@ -497,11 +561,13 @@ if [[ "${DOWNLOAD_RESULTS}" == "true" ]]; then
         echo "  Choose download mode:"
         echo "  1) Data files only — .mat and logs, no .fsp  (fast)"
         echo "  2) Full results    — includes .fsp layout files (heavy)"
+        echo "  3) Specific files  — pick subfolder, then files (interactive)"
         echo "============================================================"
-        read -rp "Enter 1 or 2: " _dl_choice
+        read -rp "Enter 1, 2, or 3: " _dl_choice
         case "${_dl_choice}" in
             1) DOWNLOAD_NO_FSP=true ;;
             2) DOWNLOAD_NO_FSP=false ;;
+            3) download_files; exit 0 ;;
             *) echo "Invalid choice. Exiting."; exit 1 ;;
         esac
     fi

@@ -61,6 +61,7 @@ class PiShiftBraggFDTD:
                  farfield_y_dist_m=None,
                  farfield_z_dist_m=None,
                  cavity_width_option="narrow",
+                 cavity_width_m=None,
                  innermost_tooth_shift_m=0.0,
                  lengthen_cavity=True):
 
@@ -122,6 +123,7 @@ class PiShiftBraggFDTD:
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
 
         self.cavity_width_option = cavity_width_option
+        self.cavity_width_m = cavity_width_m
 
         if override_cavity_length_nm:
             self.cavity_length = override_cavity_length_nm * 1e-9
@@ -429,7 +431,10 @@ class PiShiftBraggFDTD:
         x += half_pitch
 
         # Cavity (lengthened by 2*shift when lengthen_cavity=True; unchanged when shift=0)
-        W_cavity = avg_width if self.cavity_width_option in ("avg", "avg_ext") else W_narrow[1]
+        if self.cavity_width_m is not None:
+            W_cavity = self.cavity_width_m
+        else:
+            W_cavity = avg_width if self.cavity_width_option in ("avg", "avg_ext") else W_narrow[1]
         add_core_segment(x, x + self.cavity_length + cavity_extra, W_cavity, name_prefix="cavity")
         x += self.cavity_length + cavity_extra
 

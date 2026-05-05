@@ -52,6 +52,7 @@ class GratingConfig:
     n_periods_each_side: int = 80              # Number of periods on each side of the pi-shift cavity
     cavity_neg_detuning_nm: float = 0.0          # shortening from pitch/2 reference; 0 = no correction
     cavity_width_option: str = "avg"          # "narrow", "avg", or "avg_ext" (avg + extends into R_narrow_1)
+    cavity_width_m: Optional[float] = None       # Numeric override for cavity-segment width; if None, falls back to cavity_width_option
     innermost_tooth_shift_m: float = 0.0         # X-shift of the tooth nearest the cavity (0 = no shift)
     lengthen_cavity: bool = True                  # When shift>0, lengthen cavity by 2*shift; else fix cavity length
 
@@ -321,6 +322,7 @@ class SimulationConfig:
             substrate_thickness=g.substrate_thickness_m,
             override_cavity_length_nm=cavity_override,
             cavity_width_option=gr.cavity_width_option,
+            cavity_width_m=gr.cavity_width_m,
             innermost_tooth_shift_m=gr.innermost_tooth_shift_m,
             lengthen_cavity=gr.lengthen_cavity,
             y_span=self.y_span,
