@@ -48,7 +48,17 @@ LICENSE="${ATHENA_LICENSE:-}"
 INTERCONNECT="${ATHENA_INTERCONNECT:-}"
 
 NTHREADS="${SLURM_CPUS_PER_TASK}"
-NVML_TRAMP="${HOME}/nvml_tramp"
+# NVML trampoline (used on dgx/R470) is intentionally NOT used here.
+# All Athena GPU partitions run R570+ drivers that already export every
+# NVML symbol Lumerical 2026R1 needs. Mounting the trampoline corrupts
+# CUDA init on the newer driver (verified empirically — job 76907,
+# 2026-05-05, all GPUs failed with cudaGetDeviceCount).
+
+# Scientific libs (libgfortran, libquadmath) needed by scipy/numpy.
+# Container's base image (CUDA devel) lacks libgfortran. We supply it via a
+# user-maintained directory bound into /scilibs and appended to LD_LIBRARY_PATH.
+# This is INDEPENDENT of the (legacy) NVML trampoline mechanism.
+SCILIBS="${HOME}/scilibs"
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Select this task's .fsp file (0-indexed)
@@ -90,23 +100,23 @@ echo "============================================================"
 
 REQUIRE_GPU="${REQUIRE_GPU:-1}"
 
-TRAMP_BIND=""
-if [[ -n "${NVML_TRAMP}" && -d "${NVML_TRAMP}" && -f "${NVML_TRAMP}/libnvidia-ml.so.1" ]]; then
-    TRAMP_BIND="--bind ${NVML_TRAMP}:/nvml_tramp"
-fi
-
 apptainer exec --nv \
     --bind "${FSP_DIR}:/work/layouts" \
     --bind "${HOSTS_FILE}:/etc/hosts" \
-    ${TRAMP_BIND} \
+    --bind "${SCILIBS}:/scilibs" \
     --pwd /work/layouts \
     "${CONTAINER}" \
     bash -c "
 export LANG=C
 export LC_ALL=C
-if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
-    export LD_LIBRARY_PATH=\"/nvml_tramp:\${LD_LIBRARY_PATH}\"
-fi
+# Strip /usr/local/cuda/compat* from LD_LIBRARY_PATH. The container ships a
+# CUDA 12.2 forward-compat shim (libcuda.so.1) intended for hosts running
+# R470 drivers. On Athena the host driver is R570/R595 — newer than the
+# compat shim — so loading the shim first causes:
+#   cudaGetDeviceCount Failed: unsupported display driver / cuda driver combination
+# With the shim removed, Apptainer's --nv injection of the host libcuda
+# (via /.singularity.d/libs) is used directly. No version skew.
+export LD_LIBRARY_PATH=\"\$(echo \"\${LD_LIBRARY_PATH}\" | tr ':' '\\n' | grep -v '^/usr/local/cuda/compat' | paste -sd: -)\"
 export ANSYSLMD_LICENSE_FILE='${LICENSE}'
 export ANSYSLI_SERVERS='${INTERCONNECT}'
 export ANSYS_APIP_DISABLE=1
@@ -117,6 +127,10 @@ export OMPI_MCA_btl=self,tcp
 export OMPI_MCA_mtl='^ofi'
 export UCX_TLS=self,sm,tcp
 export UCX_NET_DEVICES=lo
+# Append /scilibs (libgfortran + libquadmath) to LD_LIBRARY_PATH so scipy/numpy
+# imports succeed. Use SUFFIX (not prefix) so host driver libs injected by --nv
+# still win for libnvidia-ml/libcuda.
+export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}:/scilibs\"
 
 if [ \"\$REQUIRE_GPU\" = \"1\" ]; then
     LMUTIL=/ansys_inc/v261/licensingclient/linx64/lmutil

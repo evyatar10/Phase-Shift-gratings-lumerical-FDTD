@@ -12,7 +12,7 @@
 # tunings — is identical; only the dispatch (athena_run_one.py vs athena_run.py)
 # and per-task logging differ.
 #
-# Usage (submitted by deploy_athena.sh --option3):
+# Usage (submitted by deploy_dgx.sh --option3):
 #   sbatch --array=0-N-1%K \
 #          --gpus=1 --cpus-per-task=16 \
 #          --export=ALL,SWEEP_KIND=shift,ATHENA_LICENSE=...,ATHENA_INTERCONNECT=... \
@@ -44,8 +44,8 @@ LOGS_DIR="${WORK_DIR}/logs"
 CONTAINER="$HOME/containers/lumerical-2026R1.sif"
 LUM_HOME="/opt/lumerical/v261"
 
-LICENSE="${ATHENA_LICENSE:-11055@dgx-master}"
-INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
+LICENSE="${DGX_LICENSE:-11055@dgx-master}"
+INTERCONNECT="${DGX_INTERCONNECT:-12325@172.25.0.12}"
 
 # REQUIRE_GPU=1 makes athena_run_one.py exit non-zero if GPU resource setup
 # fails — strongly recommended for parallel sweeps so a silent CPU fallback

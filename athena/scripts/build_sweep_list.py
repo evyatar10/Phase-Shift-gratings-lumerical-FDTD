@@ -86,11 +86,21 @@ def _values_spec(module_name: str, prelim: bool = False):
     return [f"{i}" for i in range(len(configs))]
 
 
+def _values_inverse_design(module_name: str):
+    """Import an inverse-design study (exposes SPEC: InverseDesignSpec); one line per multi-start."""
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "SPEC"):
+        raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
+    spec = module.SPEC
+    starts = spec.get_starts()
+    return [f"{i}" for i in range(len(starts))]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--kind", required=True,
                         choices=["mesh_conv_x", "mesh_conv_yz",
-                                 "shutoff_conv_shutoff", "spec"])
+                                 "shutoff_conv_shutoff", "spec", "inverse_design"])
     parser.add_argument("--output", required=True,
                         help="Path to sweep_list.txt (one line per array task)")
     parser.add_argument("--module", default=None,
@@ -109,6 +119,12 @@ def main():
         meta["fixed_cells"] = str(fixed_cells)
     elif args.kind == "shutoff_conv_shutoff":
         lines = _values_shutoff_conv()
+    elif args.kind == "inverse_design":
+        if not args.module:
+            print("ERROR: --module is required for --kind inverse_design")
+            sys.exit(1)
+        lines = _values_inverse_design(args.module)
+        meta["spec_module"] = args.module
     elif args.kind == "spec":
         if not args.module:
             print("ERROR: --module is required for --kind spec")

@@ -63,7 +63,10 @@ class PiShiftBraggFDTD:
                  cavity_width_option="narrow",
                  cavity_width_m=None,
                  innermost_tooth_shift_m=0.0,
-                 lengthen_cavity=True):
+                 lengthen_cavity=True,
+                 n_free_inner_teeth=1,
+                 inner_dw_nm=None,
+                 inner_shift_nm=None):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -132,20 +135,54 @@ class PiShiftBraggFDTD:
 
         self.innermost_tooth_shift_m = float(innermost_tooth_shift_m)
         self.lengthen_cavity = bool(lengthen_cavity)
-        cavity_extra = 2.0 * self.innermost_tooth_shift_m if self.lengthen_cavity else 0.0
-        self.cavity_length_effective = self.cavity_length + cavity_extra
         half_pitch_val = pitch / 2.0
-        if not (0.0 <= self.innermost_tooth_shift_m < half_pitch_val):
+
+        # Generalized per-tooth DW and shift for the inverse-design path.
+        # If `inner_shift_nm` is supplied it takes precedence over the legacy
+        # scalar `innermost_tooth_shift_m`. With n_free_inner_teeth=1 and
+        # inner_shift_nm=[X], the geometry is bit-identical to the legacy path
+        # with innermost_tooth_shift_m=X*1e-9.
+        self.n_free_inner_teeth = int(n_free_inner_teeth)
+        if self.n_free_inner_teeth < 1:
+            raise ValueError(f"n_free_inner_teeth must be >= 1, got {self.n_free_inner_teeth}.")
+        if self.n_free_inner_teeth > n_periods_each_side - 1:
             raise ValueError(
-                f"innermost_tooth_shift_m must be in [0, half_pitch). "
-                f"Got {self.innermost_tooth_shift_m * 1e9:.1f} nm, "
-                f"half_pitch={half_pitch_val * 1e9:.1f} nm."
+                f"n_free_inner_teeth ({self.n_free_inner_teeth}) must be "
+                f"<= n_periods_each_side - 1 ({n_periods_each_side - 1}); "
+                f"a tooth at d+1 on the right is required to absorb the shift."
             )
-        if self.innermost_tooth_shift_m > 0.0 and n_periods_each_side < 2:
+
+        self.inner_dw_nm = list(inner_dw_nm) if inner_dw_nm is not None else None
+        if self.inner_dw_nm is not None and len(self.inner_dw_nm) != self.n_free_inner_teeth:
             raise ValueError(
-                f"innermost_tooth_shift_m > 0 requires n_periods_each_side >= 2. "
-                f"Got n_periods_each_side={n_periods_each_side}."
+                f"inner_dw_nm length ({len(self.inner_dw_nm)}) "
+                f"must equal n_free_inner_teeth ({self.n_free_inner_teeth})."
             )
+
+        if inner_shift_nm is not None:
+            self.inner_shift_nm = [float(s) for s in inner_shift_nm]
+        else:
+            # Legacy scalar path → length-1 list
+            self.inner_shift_nm = [self.innermost_tooth_shift_m * 1e9]
+            if self.n_free_inner_teeth > 1:
+                # Pad with zeros so subsequent freed teeth have no shift unless explicitly provided
+                self.inner_shift_nm += [0.0] * (self.n_free_inner_teeth - 1)
+        if len(self.inner_shift_nm) != self.n_free_inner_teeth:
+            raise ValueError(
+                f"inner_shift_nm length ({len(self.inner_shift_nm)}) "
+                f"must equal n_free_inner_teeth ({self.n_free_inner_teeth})."
+            )
+        for d, s_nm in enumerate(self.inner_shift_nm, start=1):
+            s_m = s_nm * 1e-9
+            if not (0.0 <= s_m < half_pitch_val):
+                raise ValueError(
+                    f"inner_shift_nm[{d-1}] must be in [0, half_pitch) nm. "
+                    f"Got {s_nm:.1f} nm, half_pitch={half_pitch_val * 1e9:.1f} nm."
+                )
+
+        total_shift_m = sum(s * 1e-9 for s in self.inner_shift_nm)
+        cavity_extra = 2.0 * total_shift_m if self.lengthen_cavity else 0.0
+        self.cavity_length_effective = self.cavity_length + cavity_extra
 
         self.x_grating_end = (self.n_periods_each_side * self.pitch) + (self.cavity_length / 2.0)
         self.dist_grating_to_port = n_periods_dist_to_port * self.pitch
@@ -388,11 +425,15 @@ class PiShiftBraggFDTD:
         full_depth_center = self.center_mod_depth if self.use_apodization else full_depth_edge
         n_total = self.n_periods_each_side
         n_apod = self.n_apod_periods_each_side
+        n_free = self.n_free_inner_teeth
 
         apod_method = self.apod_method
         tanh_steepness = self.tanh_steepness
 
         def get_mod_depth(d):
+            # Per-tooth DW override for the freed inner teeth (inverse-design path).
+            if d <= n_free and self.inner_dw_nm is not None:
+                return float(self.inner_dw_nm[d - 1]) * 1e-9
             if d <= n_apod and n_total > 1:
                 denom = (n_apod - 1) if (n_apod > 1 and n_apod == n_total) else n_apod
                 if denom == 0: return full_depth_center
@@ -410,27 +451,30 @@ class PiShiftBraggFDTD:
             W_narrow[d] = avg_width - delta_w
             W_wide[d] = avg_width + delta_w
 
-        shift = self.innermost_tooth_shift_m
-        cavity_extra = 2.0 * shift if self.lengthen_cavity else 0.0
+        # Per-tooth shift map (m). shift_for_tooth[d] for d ∈ [1, n_free]; zero for d > n_free.
+        # Convention (preserved from the legacy single-tooth path):
+        #   shift_for_tooth[d] shortens left  narrow_d_L by shift_for_tooth[d]
+        #   shift_for_tooth[d] shortens right narrow_{d+1}_R by shift_for_tooth[d]
+        # Total grating extent x_grating_end is preserved by absorbing 2*Σ shifts into the cavity.
+        shift_for_tooth = {d: 0.0 for d in range(0, n_total + 2)}
+        for d in range(1, n_free + 1):
+            shift_for_tooth[d] = float(self.inner_shift_nm[d - 1]) * 1e-9
+        cavity_extra = (2.0 * sum(shift_for_tooth[d] for d in range(1, n_free + 1))) if self.lengthen_cavity else 0.0
 
         x_grating_start = -self.x_grating_end
         x = x_grating_start
         add_core_segment(-self.x_sim_boundary - 1e-6, x_grating_start, self.width_port, name_prefix="wg_left_inf")
 
-        # Left grating: d = n_total ... 2 (always full half_pitch)
-        for d in range(n_total, 1, -1):
-            add_core_segment(x, x + half_pitch, W_narrow[d], name_prefix=f"L_narrow_{d}")
-            x += half_pitch
+        # Left grating: walk d = n_total ... 1 (outside → cavity).
+        # narrow_d_L is shortened by shift_for_tooth[d]; wide_d_L is always full half_pitch.
+        for d in range(n_total, 0, -1):
+            s_d = shift_for_tooth[d]
+            add_core_segment(x, x + half_pitch - s_d, W_narrow[d], name_prefix=f"L_narrow_{d}")
+            x += half_pitch - s_d
             add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"L_wide_{d}")
             x += half_pitch
 
-        # Left innermost period (d = 1): narrow gap shortened by shift (zero when shift=0)
-        add_core_segment(x, x + half_pitch - shift, W_narrow[1], name_prefix="L_narrow_1")
-        x += half_pitch - shift
-        add_core_segment(x, x + half_pitch, W_wide[1], name_prefix="L_wide_1")
-        x += half_pitch
-
-        # Cavity (lengthened by 2*shift when lengthen_cavity=True; unchanged when shift=0)
+        # Cavity (length expanded by 2*Σ shifts to keep x_grating_end constant)
         if self.cavity_width_m is not None:
             W_cavity = self.cavity_width_m
         else:
@@ -438,24 +482,18 @@ class PiShiftBraggFDTD:
         add_core_segment(x, x + self.cavity_length + cavity_extra, W_cavity, name_prefix="cavity")
         x += self.cavity_length + cavity_extra
 
-        # Right innermost period (d = 1): both segments at full half_pitch
-        w_rn1 = avg_width if self.cavity_width_option == "avg_ext" else W_narrow[1]
-        add_core_segment(x, x + half_pitch, w_rn1, name_prefix="R_narrow_1")
-        x += half_pitch
-        add_core_segment(x, x + half_pitch, W_wide[1], name_prefix="R_wide_1")
-        x += half_pitch
-
-        # Right d = 2: narrow gap shortened by shift (only when it exists)
-        if n_total >= 2:
-            add_core_segment(x, x + half_pitch - shift, W_narrow[2], name_prefix="R_narrow_2")
-            x += half_pitch - shift
-            add_core_segment(x, x + half_pitch, W_wide[2], name_prefix="R_wide_2")
-            x += half_pitch
-
-        # Right grating: d = 3 ... n_total (always full half_pitch)
-        for d in range(3, n_total + 1):
-            add_core_segment(x, x + half_pitch, W_narrow[d], name_prefix=f"R_narrow_{d}")
-            x += half_pitch
+        # Right grating: walk d = 1 ... n_total (cavity → outside).
+        # narrow_d_R is shortened by shift_for_tooth[d-1] for d>=2; full half_pitch for d=1.
+        # wide_d_R is always full half_pitch.
+        # cavity_width_option="avg_ext" widens R_narrow_1 to avg_width (legacy behavior).
+        for d in range(1, n_total + 1):
+            s_prev = shift_for_tooth[d - 1] if d >= 2 else 0.0
+            if d == 1 and self.cavity_width_option == "avg_ext":
+                w_rn = avg_width
+            else:
+                w_rn = W_narrow[d]
+            add_core_segment(x, x + half_pitch - s_prev, w_rn, name_prefix=f"R_narrow_{d}")
+            x += half_pitch - s_prev
             add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"R_wide_{d}")
             x += half_pitch
 

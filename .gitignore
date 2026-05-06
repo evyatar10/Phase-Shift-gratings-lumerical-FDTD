@@ -3,6 +3,6 @@ __pycache__/
 *.h5
 results*/
 
-# Large binary/container files
-athena/container/lumerical-2026R1.sif
-athena/container/AnsysInstaller.sh
+# Large binary/container files (shared across DGX + Athena)
+container/lumerical-2026R1.sif
+container/AnsysInstaller.sh

@@ -53,8 +53,18 @@ class GratingConfig:
     cavity_neg_detuning_nm: float = 0.0          # shortening from pitch/2 reference; 0 = no correction
     cavity_width_option: str = "avg"          # "narrow", "avg", or "avg_ext" (avg + extends into R_narrow_1)
     cavity_width_m: Optional[float] = None       # Numeric override for cavity-segment width; if None, falls back to cavity_width_option
-    innermost_tooth_shift_m: float = 0.0         # X-shift of the tooth nearest the cavity (0 = no shift)
+    innermost_tooth_shift_m: float = 0.0         # X-shift of the tooth nearest the cavity (0 = no shift). Legacy single-tooth path; superseded by inner_shift_nm when that is set.
     lengthen_cavity: bool = True                  # When shift>0, lengthen cavity by 2*shift; else fix cavity length
+
+    # ── Inverse-design freed inner teeth (mirror-symmetric per-side) ───────────
+    # When inner_dw_nm or inner_shift_nm are set, the d ∈ [1, n_free_inner_teeth]
+    # innermost teeth on each side use these per-tooth values instead of the
+    # apodization envelope / scalar shift. Total grating length is preserved
+    # by absorbing 2 * Σ(shifts) into the cavity (lengthen_cavity must be True).
+    n_free_inner_teeth: int = 1                  # Number of innermost teeth per side with independent DW / shift
+    inner_dw_nm: Optional[list] = None           # Per-tooth full corrugation depth in nm (W_wide - W_narrow). Length must equal n_free_inner_teeth. None → use apodization envelope.
+    inner_shift_nm: Optional[list] = None        # Per-tooth gap shift in nm. Length must equal n_free_inner_teeth. None → use innermost_tooth_shift_m for tooth d=1, zero for d>=2.
+    enforce_mirror_symmetry: bool = True         # Inverse-design optimizer: mirror DW and shift across left/right (always True at the bragg_device level — flagged here for future asymmetric runs).
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -325,6 +335,9 @@ class SimulationConfig:
             cavity_width_m=gr.cavity_width_m,
             innermost_tooth_shift_m=gr.innermost_tooth_shift_m,
             lengthen_cavity=gr.lengthen_cavity,
+            n_free_inner_teeth=gr.n_free_inner_teeth,
+            inner_dw_nm=gr.inner_dw_nm,
+            inner_shift_nm=gr.inner_shift_nm,
             y_span=self.y_span,
             z_span=self.z_span,
             material_db_path=config.MATERIAL_DB_PATH,

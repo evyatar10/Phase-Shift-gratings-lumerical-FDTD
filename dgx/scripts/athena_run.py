@@ -9,6 +9,7 @@ This file runs INSIDE the Lumerical container on Athena compute nodes.
 It is invoked by hpc_gpu/jobs/run_python_gpu.sh via:
     xvfb-run -a python /work/scripts/athena_run.py
 """
+import glob
 import os
 import sys
 import traceback

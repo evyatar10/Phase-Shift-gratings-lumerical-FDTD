@@ -57,6 +57,7 @@ FSP_EXPLICIT=""
 SWEEP_KIND=""
 SPEC_MODULE=""
 GPU_TYPE=""
+ARRAY_TASKS=""
 
 for arg in "$@"; do
     case "${arg}" in
@@ -76,21 +77,27 @@ for arg in "$@"; do
         --fsp=*)              FSP_EXPLICIT="${arg#--fsp=}" ;;
         --sweep=*)            SWEEP_KIND="${arg#--sweep=}" ;;
         --spec=*)             OPTION="3"; SWEEP_KIND="spec"; SPEC_MODULE="${arg#--spec=}" ;;
+        --inverse-design=*)   OPTION="3"; SWEEP_KIND="inverse_design"; SPEC_MODULE="${arg#--inverse-design=}" ;;
         --max-concurrent=*)   MAX_CONCURRENT="${arg#--max-concurrent=}" ;;
         --keep-h5)            KEEP_H5=1 ;;
         --gpu=*)              GPU_TYPE="${arg#--gpu=}" ;;
+        --gpu-status)         GPU_STATUS=true ;;
+        --array-tasks=*)      ARRAY_TASKS="${arg#--array-tasks=}" ;;
     esac
 done
 
 # ── --gpu=<type>: override ARRAY_PARTITIONS with a single partition ───────────
 # Sourced after the conf so ARRAY_PARTITIONS is defined before we override it.
 if [[ -n "${GPU_TYPE:-}" ]]; then
+    # public  = won't be preempted (use for long jobs, important runs)
+    # shared  = may be preempted by contributor jobs (cheaper, more capacity)
     case "${GPU_TYPE}" in
-        h200)        ARRAY_PARTITIONS="h200-shared" ;;
-        a100)        ARRAY_PARTITIONS="a100-public" ;;
-        rtx6k|rtx)  ARRAY_PARTITIONS="rtx6k-shared" ;;
-        l40s)        ARRAY_PARTITIONS="l40s-public" ;;
-        *) echo "ERROR: unknown --gpu=${GPU_TYPE}; valid: h200|a100|rtx6k|l40s"; exit 1 ;;
+        h200|h200-shared)   ARRAY_PARTITIONS="h200-shared" ;;     # only shared exists
+        a100|a100-public)   ARRAY_PARTITIONS="a100-public" ;;     # only public exists
+        l40s|l40s-public)   ARRAY_PARTITIONS="l40s-public" ;;
+        l40s-shared)        ARRAY_PARTITIONS="l40s-shared" ;;
+        rtx6k|rtx|rtx6k-shared) ARRAY_PARTITIONS="rtx6k-shared" ;; # only shared exists
+        *) echo "ERROR: unknown --gpu=${GPU_TYPE}; valid: h200 | a100 | l40s-public | l40s-shared | rtx6k"; exit 1 ;;
     esac
     echo "[--gpu] pinned partition list to: ${ARRAY_PARTITIONS}"
 fi
@@ -103,7 +110,7 @@ SSH="${ATHENA_USER}@${ATHENA_HOST}"
 #   2) Pipeline  → run lumapi Python pipeline on GPU (sub-prompt: single or sweep)
 # Internally OPTION is still 1/2/3 (3 = pipeline-as-array). The single→sweep flip
 # happens in the pipeline sub-prompt below.
-if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${STATUS}" == "false" && "${LICENSE_PROBE}" == "false" ]]; then
+if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${STATUS}" == "false" && "${LICENSE_PROBE}" == "false" && "${GPU_STATUS:-false}" == "false" ]]; then
     echo ""
     echo "============================================================"
     echo "  Real Athena GPU (athena.technion.ac.il) — Choose run mode:"
@@ -540,6 +547,38 @@ if [[ "${STATUS}" == "true" ]]; then
     exit 0
 fi
 
+# ── --gpu-status: show free GPU capacity per partition then exit ──────────────
+if [[ "${GPU_STATUS:-false}" == "true" ]]; then
+    echo ""
+    echo "=== Athena GPU availability (per-partition) ==="
+    echo "  public  = won't be preempted (use for long/important jobs)"
+    echo "  shared  = may be preempted by contributor jobs (more capacity)"
+    echo ""
+    ssh "${SSH}" "
+        printf '%-16s %-10s %-22s %-12s %-12s %s\n' PARTITION TYPE NODE STATE GPUS-FREE PENDING
+        printf '%-16s %-10s %-22s %-12s %-12s %s\n' --------- ---- ---- ----- --------- -------
+        for p in h200-shared a100-public l40s-public l40s-shared rtx6k-shared; do
+            ptype='shared'
+            [[ \"\$p\" == *-public ]] && ptype='public'
+            # sinfo: per-node GPU resource (allocated/total) and state
+            sinfo -h -p \"\$p\" -N -o '%P|%n|%t|%G' | while IFS='|' read part node state gres; do
+                # Parse 'gpu:type:8(S:...)' → total
+                total=\$(echo \"\$gres\" | sed -nE 's/.*:([0-9]+)\\(.*/\\1/p')
+                [[ -z \"\$total\" ]] && total=\$(echo \"\$gres\" | sed -nE 's/gpu:[^:]+:([0-9]+).*/\\1/p')
+                # Allocated GPUs on this node from scontrol
+                alloc=\$(scontrol show node \"\$node\" 2>/dev/null | grep -oE 'AllocTRES=.*gres/gpu=[0-9]+' | grep -oE 'gres/gpu=[0-9]+' | grep -oE '[0-9]+')
+                [[ -z \"\$alloc\" ]] && alloc=0
+                free=\$((total - alloc))
+                pend=\$(squeue -h -p \"\$p\" -t PD -o '%i' | wc -l)
+                printf '%-16s %-10s %-22s %-12s %-12s %s\n' \"\$part\" \"\$ptype\" \"\$node\" \"\$state\" \"\${free}/\${total}\" \"\$pend\"
+            done
+        done
+    "
+    echo ""
+    echo "Tip: pass --gpu=<h200|a100|l40s-public|l40s-shared|rtx6k> with --option2/3 to pin."
+    exit 0
+fi
+
 # ── --license-probe: report FlexLM seat counts then exit ──────────────────────
 if [[ "${LICENSE_PROBE}" == "true" ]]; then
     echo ""
@@ -760,6 +799,13 @@ else
         fi
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
             --kind spec --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
+    elif [[ "${SWEEP_KIND}" == "inverse_design" ]]; then
+        if [[ -z "${SPEC_MODULE}" ]]; then
+            echo "ERROR: --inverse-design=<module> is required for kind=inverse_design."
+            exit 1
+        fi
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+            --kind inverse_design --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
     else
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
             --kind "${SWEEP_KIND}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
@@ -790,12 +836,21 @@ else
     fi
     ARRAY_END=$(( N_TASKS - 1 ))
     K="${MAX_CONCURRENT:-4}"
+    # --array-tasks=<spec> overrides the default 0-N range. Use for smoke tests
+    # ("--array-tasks=0" runs only the first task). Concurrency suffix %K is
+    # appended automatically.
+    if [[ -n "${ARRAY_TASKS}" ]]; then
+        ARRAY_RANGE="${ARRAY_TASKS}"
+        echo "[--array-tasks] overriding array range to: ${ARRAY_RANGE}"
+    else
+        ARRAY_RANGE="0-${ARRAY_END}"
+    fi
 
     echo "Uploading sweep_list.txt to Athena cluster..."
     ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/data"
     scp "${LOCAL_SWEEP_LIST}" "${SSH}:${REMOTE_BASE}/data/sweep_list.txt"
 
-    echo "Array: 0-${ARRAY_END}%${K}  (${N_TASKS} tasks, max ${K} concurrent)"
+    echo "Array: ${ARRAY_RANGE}%${K}  (${N_TASKS} tasks total, max ${K} concurrent)"
     if [[ -n "${SWEEP_PARAM}" ]];        then echo "  SWEEP_PARAM=${SWEEP_PARAM}"; fi
     if [[ -n "${SWEEP_FIXED_DYZ_NM}" ]]; then echo "  SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM}"; fi
     if [[ -n "${SWEEP_FIXED_CELLS}" ]];  then echo "  SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS}"; fi
@@ -883,7 +938,7 @@ else
 
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
-            --array=0-${ARRAY_END}%${K} ${DEP_FLAG} \
+            --array=${ARRAY_RANGE}%${K} ${DEP_FLAG} \
             --gpus=1 --cpus-per-task=${N_CPUS} \
             --time=${ARRAY_TIME:-00:50:00} \
             --qos=${ARRAY_QOS} \

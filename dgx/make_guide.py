@@ -91,7 +91,7 @@ def tbl(rows):
 # ── Title ──────────────────────────────────────────────────────────────────────
 p = doc.add_paragraph()
 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-r = p.add_run('Athena GPU Workflow')
+r = p.add_run('DGX GPU Workflow')
 r.font.name = 'Calibri'; r.font.size = Pt(28); r.bold = True; r.font.color.rgb = BLUE_DARK
 
 p = doc.add_paragraph()
@@ -111,12 +111,12 @@ tbl([
     ['Athena account', 'Yes'],
     ['License server reachable from Athena', 'Yes  (1055@132.68.48.51)'],
     ['Local Lumerical version', '2026 R1.1  (v261)'],
-    ['Workflow code in repo', 'athena/'],
+    ['Workflow code in repo', 'dgx/'],
 ])
 
 # ── Step 0 ─────────────────────────────────────────────────────────────────────
 h1('Step 0 — One-Time Cluster Checks')
-body('SSH into Athena:')
+body('SSH into DGX:')
 code('ssh evyatarrubin@dgx-master.technion.ac.il')
 sp()
 
@@ -129,14 +129,14 @@ sp()
 h2('0b.  Find your scratch / storage path')
 code('df -h\nls /scratch/$USER 2>/dev/null || ls /raid/$USER 2>/dev/null')
 body('If a large scratch path exists, update these two values:')
-bullet('athena/deploy_athena.sh  →  REMOTE_BASE variable')
-bullet('athena/scripts/athena_run.py  →  BASE_SAVE_DIR variable')
+bullet('dgx/deploy_dgx.sh  →  REMOTE_BASE variable')
+bullet('dgx/scripts/athena_run.py  →  BASE_SAVE_DIR variable')
 body('Otherwise results go to ~/bragg_sim_gpu/  (home, usually ~100 GB quota).')
 sp()
 
 h2('0c.  Check if a billing account code is required')
 code('sbatch --wrap="echo hello"')
-body('If the command fails mentioning "--account", ask Technion CIS for your account code and add this line to all three files in athena/jobs/:')
+body('If the command fails mentioning "--account", ask Technion CIS for your account code and add this line to all three files in dgx/jobs/:')
 code('#SBATCH --account=<your_code>')
 body('Files: run_fsp_gpu.sh  |  run_fsp_gpu_array.sh  |  run_python_gpu.sh')
 sp()
@@ -159,12 +159,12 @@ h2('If Apptainer is not yet installed in WSL2:')
 code('sudo add-apt-repository ppa:apptainer/ppa\nsudo apt install -y apptainer')
 sp()
 h2('Then build and upload:')
-code('cd athena/container\nbash build.sh')
+code('cd container\nbash build.sh')
 sp()
 body('This script will automatically:')
 bullet('Build lumerical-2026R1.sif  (5–15 minutes — file copy, no download)')
 bullet('Convert to lumerical-2026R1.sqsh  (Athena\'s Enroot format)')
-bullet('Upload the .sqsh to ~/containers/ on Athena')
+bullet('Upload the .sqsh to ~/containers/ on DGX')
 sp()
 note('You only need to repeat this if you upgrade Lumerical versions.')
 sp()
@@ -177,20 +177,20 @@ body('Expected: Lumerical version string printed, no errors.')
 sp()
 body('Also check your license seat count and tier:')
 code('srun --gpus=1 \\\n  --container-image=$HOME/containers/lumerical-2026R1.sqsh \\\n  --container-env=ANSYSLMD_LICENSE_FILE=1055@132.68.48.51 \\\n  /opt/lumerical/v261/bin/lmutil lmstat -a -c 1055@132.68.48.51')
-body('Look for "fdtd_gpu" in the output. The number next to it = how many simulations can run simultaneously. Update K=4 in athena/deploy_athena.sh to match this number.')
+body('Look for "fdtd_gpu" in the output. The number next to it = how many simulations can run simultaneously. Update K=4 in dgx/deploy_dgx.sh to match this number.')
 sp()
 
 # ── Step 4 ─────────────────────────────────────────────────────────────────────
 h1('Step 4 — First Real Run  (Single Simulation, Engine-Only)')
 body('Run from your LOCAL Windows machine in Git Bash or WSL:')
-code('bash athena/deploy_athena.sh --option1 --preset single --watch')
+code('bash dgx/deploy_dgx.sh --option1 --preset single --watch')
 sp()
 body('This will:')
 bullet('Generate the .fsp file locally  (same as Zeus)')
-bullet('Upload it to Athena')
+bullet('Upload it to DGX')
 bullet('Submit the SLURM GPU job')
 bullet('Poll every 60 seconds until done')
-bullet('Download results to:  results_from_athena/')
+bullet('Download results to:  results_from_dgx/')
 sp()
 
 # ── Step 5 ─────────────────────────────────────────────────────────────────────
@@ -199,7 +199,7 @@ body('Run the SAME simulation on both clusters and compare wall times:')
 sp()
 tbl([
     ['', 'Zeus (CPU)', 'Athena (GPU)'],
-    ['Command', 'bash zeus/deploy.sh --option1 --preset single', 'bash athena/deploy_athena.sh --option1 --preset single'],
+    ['Command', 'bash zeus/deploy.sh --option1 --preset single', 'bash dgx/deploy_dgx.sh --option1 --preset single'],
     ['Scheduler', 'PBS', 'SLURM'],
     ['Hardware', '80 CPU cores', '1× A100 GPU'],
     ['Cost', 'Free', 'Billed per GPU-hour'],
@@ -217,7 +217,7 @@ sp()
 
 # ── Step 6 ─────────────────────────────────────────────────────────────────────
 h1('Step 6 — Parameter Sweep  (Job Array)')
-code('bash athena/deploy_athena.sh --option1 --preset sweep_shift --watch\nbash athena/deploy_athena.sh --option1 --preset sweep_inner_size --watch')
+code('bash dgx/deploy_dgx.sh --option1 --preset sweep_shift --watch\nbash dgx/deploy_dgx.sh --option1 --preset sweep_inner_size --watch')
 sp()
 body('When multiple .fsp files are detected, deploy_athena.sh automatically submits them as a SLURM job array — all running in parallel on separate GPUs, throttled by your license seat count.')
 sp()
@@ -227,7 +227,7 @@ sp()
 # ── Step 7 ─────────────────────────────────────────────────────────────────────
 h1('Step 7 — Full Python Pipeline  (Phase 2, Optional)')
 body('Only attempt this after Step 4 is working reliably.')
-code('bash athena/deploy_athena.sh --option2 --run single_sim --watch\nbash athena/deploy_athena.sh --option2 --run sweep_shift --watch\nbash athena/deploy_athena.sh --option2 --run sweep_inner_size --watch')
+code('bash dgx/deploy_dgx.sh --option2 --run single_sim --watch\nbash dgx/deploy_dgx.sh --option2 --run sweep_shift --watch\nbash dgx/deploy_dgx.sh --option2 --run sweep_inner_size --watch')
 sp()
 body('Runs the full lumapi Python pipeline inside the container with USE_GPU=True. GPU is enabled automatically on every FDTD session via athena_run.py — no changes needed to your simulation modules.')
 sp()
@@ -236,14 +236,14 @@ sp()
 h1('Daily Usage  (After Setup is Complete)')
 tbl([
     ['Task', 'Command'],
-    ['Single sim + wait for results', 'bash athena/deploy_athena.sh --option1 --preset single --watch'],
-    ['Sweep + wait for results', 'bash athena/deploy_athena.sh --option1 --preset sweep_shift --watch'],
-    ['Download results only', 'bash athena/deploy_athena.sh --results'],
-    ['Check running jobs', 'bash athena/deploy_athena.sh --watch-only'],
+    ['Single sim + wait for results', 'bash dgx/deploy_dgx.sh --option1 --preset single --watch'],
+    ['Sweep + wait for results', 'bash dgx/deploy_dgx.sh --option1 --preset sweep_shift --watch'],
+    ['Download results only', 'bash dgx/deploy_dgx.sh --results'],
+    ['Check running jobs', 'bash dgx/deploy_dgx.sh --watch-only'],
 ])
 
 # ── Monitoring ─────────────────────────────────────────────────────────────────
-h1('Monitoring on Athena Directly')
+h1('Monitoring on DGX Directly')
 body('SSH in:')
 code('ssh evyatarrubin@dgx-master.technion.ac.il')
 sp()
@@ -257,7 +257,7 @@ tbl([
 
 # ── Scaling ────────────────────────────────────────────────────────────────────
 h1('Scaling GPUs')
-body('Edit athena/jobs/run_fsp_gpu.sh — change #SBATCH --gpus=N and NUM_MPI_RANKS=N to match:')
+body('Edit dgx/jobs/run_fsp_gpu.sh — change #SBATCH --gpus=N and NUM_MPI_RANKS=N to match:')
 tbl([
     ['Configuration', 'Expected Speedup', 'When to Use'],
     ['--gpus=1  (1× A100)', '≈5× vs 1 Zeus node', 'Start here — benchmark first'],
@@ -270,14 +270,14 @@ tbl([
 h1('Key Files')
 tbl([
     ['File', 'Purpose'],
-    ['athena/deploy_athena.sh', 'Run locally to submit jobs to Athena'],
-    ['athena/container/build.sh', 'Run once to build and upload the container'],
-    ['athena/container/lumerical.def', 'Container recipe (shareable with colleagues)'],
-    ['athena/jobs/run_fsp_gpu.sh', 'SLURM script — single GPU run'],
-    ['athena/jobs/run_fsp_gpu_array.sh', 'SLURM script — sweep job array'],
-    ['athena/jobs/run_python_gpu.sh', 'SLURM script — full Python pipeline'],
-    ['athena/scripts/athena_run.py', 'Server-side Python dispatcher (GPU-aware)'],
-    ['results_from_athena/', 'Local folder where results are downloaded'],
+    ['dgx/deploy_dgx.sh', 'Run locally to submit jobs to DGX'],
+    ['container/build.sh', 'Run once to build and upload the container'],
+    ['container/lumerical.def', 'Container recipe (shareable with colleagues)'],
+    ['dgx/jobs/run_fsp_gpu.sh', 'SLURM script — single GPU run'],
+    ['dgx/jobs/run_fsp_gpu_array.sh', 'SLURM script — sweep job array'],
+    ['dgx/jobs/run_python_gpu.sh', 'SLURM script — full Python pipeline'],
+    ['dgx/scripts/athena_run.py', 'Server-side Python dispatcher (GPU-aware)'],
+    ['results_from_dgx/', 'Local folder where results are downloaded'],
 ])
 
 # ── Zeus untouched ─────────────────────────────────────────────────────────────
@@ -290,7 +290,7 @@ sp()
 h1('Troubleshooting')
 tbl([
     ['Symptom', 'Fix'],
-    ['"Cannot connect to display"', 'Rebuild the container: bash athena/container/build.sh'],
+    ['"Cannot connect to display"', 'Rebuild the container: bash container/build.sh'],
     ['"License server not responding"', 'Run: nc -vz 132.68.48.51 1055  from the compute node'],
     ['"fdtd-engine-ompi-lcl: not found"', 'Container did not install correctly — check build logs and rebuild'],
     ['"Out of GPU memory"', 'Reduce mesh size, or increase --gpus to spread across more A100s'],

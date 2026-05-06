@@ -38,10 +38,10 @@ FSP_DIR="${RESULTS_ROOT}/${FSP_STEM}"
 CONTAINER="$HOME/containers/lumerical-2026R1.sif"
 LUM_HOME="/opt/lumerical/v261"
 ENGINE="${LUM_HOME}/bin/fdtd-engine-ompi-lcl"
-# License values come from deploy_athena.sh via --export=ALL,ATHENA_LICENSE=...
+# License values come from deploy_dgx.sh via --export=ALL,ATHENA_LICENSE=...
 # Defaults below let the script also be invoked manually with sbatch directly.
-LICENSE="${ATHENA_LICENSE:-11055@dgx-master}"
-INTERCONNECT="${ATHENA_INTERCONNECT:-12325@172.25.0.12}"
+LICENSE="${DGX_LICENSE:-11055@dgx-master}"
+INTERCONNECT="${DGX_INTERCONNECT:-12325@172.25.0.12}"
 
 # Threads — use all allocated CPUs (single rank).
 NTHREADS="${SLURM_CPUS_PER_TASK}"

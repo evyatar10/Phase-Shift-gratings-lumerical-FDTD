@@ -2,7 +2,7 @@
 #
 # Server-side aggregator for mesh-convergence array results.
 #
-# Submitted by deploy_athena.sh with --dependency=afterok:<array_id> right
+# Submitted by deploy_dgx.sh with --dependency=afterok:<array_id> right
 # after a mesh_conv_x or mesh_conv_yz array. Runs once on a CPU core, scans
 # /work/results/mesh_convergence/array_part_ph${PHASE}_*.json, and folds them
 # into the shared checkpoint JSON. After this job completes, `--results`

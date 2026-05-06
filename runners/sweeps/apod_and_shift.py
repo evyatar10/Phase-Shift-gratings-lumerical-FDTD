@@ -25,6 +25,12 @@ from runners.sweeps.sweep_spec import SweepSpec, run_sweep_spec
 from simulation_config import SimulationConfig
 
 
+BASE = SimulationConfig()
+BASE.mesh.simulation_mode    = "optimization"
+BASE.grating.n_periods_each_side = 80
+BASE.spectral.scan_width_nm  = 20.0
+
+
 SPEC = SweepSpec(
     n_apod_periods_each_side  = [2, 3],
     innermost_tooth_shift_nm  = [0],
@@ -35,9 +41,4 @@ SPEC = SweepSpec(
 
 
 if __name__ == "__main__":
-    base = SimulationConfig()
-    base.mesh.simulation_mode    = "optimization"
-    base.grating.n_periods_each_side = 80
-    base.spectral.scan_width_nm  = 20.0
-
-    run_sweep_spec(SPEC, target="local", base=base)
+    run_sweep_spec(SPEC, target="local", base=BASE)

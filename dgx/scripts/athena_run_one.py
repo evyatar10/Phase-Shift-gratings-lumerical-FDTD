@@ -47,7 +47,7 @@ SWEEP_LIST  = os.environ.get("SWEEP_LIST", "/work/data/sweep_list.txt")
 SWEEP_INDEX = os.environ.get("SWEEP_INDEX", os.environ.get("SLURM_ARRAY_TASK_ID", ""))
 
 VALID_KINDS = {"shift", "inner_size", "generic", "mesh_conv_x", "mesh_conv_yz",
-               "shutoff_conv_shutoff", "spec"}
+               "shutoff_conv_shutoff", "spec", "inverse_design"}
 if SWEEP_KIND not in VALID_KINDS:
     print(f"ERROR: invalid SWEEP_KIND={SWEEP_KIND!r}; expected one of {sorted(VALID_KINDS)}")
     sys.exit(1)
@@ -255,11 +255,47 @@ def _run_kind_spec(line: str) -> None:
         print(f"[athena_run_one] prelim wrote λ_res = {lam_nm:.4f} nm → {locked_path}")
 
 
+def _run_kind_inverse_design(line: str) -> None:
+    """One lumopt-driver run from an InverseDesignSpec module.
+
+    The line content is unused; the array task index is the start_idx.
+
+    Required env: SWEEP_SPEC_MODULE (dotted path to module exposing SPEC: InverseDesignSpec).
+    Optional env: SWEEP_BASELINE_LAMBDA_NM (skip baseline run when supplied).
+    """
+    import importlib
+    from runners.inverse_design.peak_t_adjoint import run_inverse_design
+
+    module_name = os.environ.get("SWEEP_SPEC_MODULE", "")
+    if not module_name:
+        raise RuntimeError("SWEEP_SPEC_MODULE env var required for kind=inverse_design")
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "SPEC"):
+        raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
+    spec = module.SPEC
+    base = getattr(module, "BASE", None)
+    if base is None:
+        from simulation_config import SimulationConfig
+        base = SimulationConfig()
+    base.run.cleanup_lumerical_data = cfg.run.cleanup_lumerical_data
+
+    baseline_nm = os.environ.get("SWEEP_BASELINE_LAMBDA_NM", "").strip()
+    baseline_m = float(baseline_nm) * 1e-9 if baseline_nm else None
+
+    run_inverse_design(
+        cfg=base,
+        spec=spec,
+        start_idx=idx,
+        baseline_lambda_m=baseline_m,
+    )
+
+
 _DISPATCH = {
     "mesh_conv_x":           _run_kind_mesh_conv_x,
     "mesh_conv_yz":          _run_kind_mesh_conv_yz,
     "shutoff_conv_shutoff":  _run_kind_shutoff_conv,
     "spec":                  _run_kind_spec,
+    "inverse_design":        _run_kind_inverse_design,
 }
 
 try:

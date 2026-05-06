@@ -18,6 +18,10 @@ from runners.sweeps.sweep_spec import SweepSpec, run_sweep_spec
 from simulation_config import SimulationConfig
 
 
+BASE = SimulationConfig()
+BASE.mesh.simulation_mode = "optimization"
+
+
 SPEC = SweepSpec(
     n_periods_each_side = [80, 100, 120],
     label = "number_of_periods",
@@ -25,7 +29,4 @@ SPEC = SweepSpec(
 
 
 if __name__ == "__main__":
-    base = SimulationConfig()
-    base.mesh.simulation_mode = "optimization"
-
-    run_sweep_spec(SPEC, target="local", base=base)
+    run_sweep_spec(SPEC, target="local", base=BASE)

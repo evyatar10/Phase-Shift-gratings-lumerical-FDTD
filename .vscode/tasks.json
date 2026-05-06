@@ -8,9 +8,10 @@
     },
     "tasks": [
         {
-            "label": "Zeus: Deploy (choose mode)",
+            "label": "Athena",
             "type": "shell",
-            "command": "bash zeus/deploy.sh",
+            "command": "bash",
+            "args": ["-c", "${input:athenaAction}"],
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -20,9 +21,10 @@
             "problemMatcher": []
         },
         {
-            "label": "Zeus: Deploy — FSP job (local .fsp → engine on Zeus)",
+            "label": "DGX",
             "type": "shell",
-            "command": "bash zeus/deploy.sh --option1",
+            "command": "bash",
+            "args": ["-c", "${input:dgxAction}"],
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -32,9 +34,10 @@
             "problemMatcher": []
         },
         {
-            "label": "Zeus: Deploy — Python job (single sim)",
+            "label": "Zeus",
             "type": "shell",
-            "command": "bash zeus/deploy.sh --option2",
+            "command": "bash",
+            "args": ["-c", "${input:zeusAction}"],
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -42,210 +45,49 @@
                 "clear": true
             },
             "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "athenaAction",
+            "type": "pickString",
+            "description": "Athena — pick action:",
+            "options": [
+                {"label": "Deploy — FSP job (local .fsp → engine on Athena)",      "value": "bash athena/deploy_athena.sh --option1"},
+                {"label": "Deploy — Python pipeline (single sim or sweep)",         "value": "bash athena/deploy_athena.sh --option2"},
+                {"label": "Show GPU availability",                                  "value": "bash athena/deploy_athena.sh --gpu-status"},
+                {"label": "Watch job status (no deploy)",                           "value": "bash athena/deploy_athena.sh --watch-only"},
+                {"label": "Upload only (no submit)",                                "value": "bash athena/deploy_athena.sh --upload-only"},
+                {"label": "Download results",                                       "value": "bash athena/deploy_athena.sh --results"},
+                {"label": "SSH into Athena",                                        "value": "ssh athena"}
+            ]
         },
         {
-            "label": "Zeus: Upload Only (no submit)",
-            "type": "shell",
-            "command": "bash zeus/deploy.sh --upload-only",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
+            "id": "dgxAction",
+            "type": "pickString",
+            "description": "DGX — pick action:",
+            "options": [
+                {"label": "Deploy — FSP job (local .fsp → engine on DGX)",          "value": "bash dgx/deploy_dgx.sh --option1"},
+                {"label": "Deploy — Python pipeline",                               "value": "bash dgx/deploy_dgx.sh --option2"},
+                {"label": "Watch job status (no deploy)",                           "value": "bash dgx/deploy_dgx.sh --watch-only"},
+                {"label": "Upload only (no submit)",                                "value": "bash dgx/deploy_dgx.sh --upload-only"},
+                {"label": "Download results",                                       "value": "bash dgx/deploy_dgx.sh --results"},
+                {"label": "SSH into DGX",                                           "value": "ssh dgx"}
+            ]
         },
         {
-            "label": "Zeus: Download Results",
-            "type": "shell",
-            "command": "bash zeus/deploy.sh --results",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Zeus: SSH into Zeus",
-            "type": "shell",
-            "command": "ssh zeus",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": false
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Zeus: Watch Job Status (no deploy)",
-            "type": "shell",
-            "command": "bash zeus/deploy.sh --watch-only",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "DGX: Deploy — FSP job (local .fsp → engine on DGX)",
-            "type": "shell",
-            "command": "bash dgx/deploy_dgx.sh --option1",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "DGX: Deploy Python Job",
-            "type": "shell",
-            "command": "bash dgx/deploy_dgx.sh --option2",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "DGX: Upload Only (no submit)",
-            "type": "shell",
-            "command": "bash dgx/deploy_dgx.sh --upload-only",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "DGX: Download Results",
-            "type": "shell",
-            "command": "bash dgx/deploy_dgx.sh --results",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "DGX: SSH into DGX",
-            "type": "shell",
-            "command": "ssh dgx",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": false
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "DGX: Watch Job Status (no deploy)",
-            "type": "shell",
-            "command": "bash dgx/deploy_dgx.sh --watch-only",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Athena: Deploy — FSP job (local .fsp → engine on Athena)",
-            "type": "shell",
-            "command": "bash athena/deploy_athena.sh --option1",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Athena: Deploy Python Job",
-            "type": "shell",
-            "command": "bash athena/deploy_athena.sh --option2",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Athena: Deploy Python Job (pin GPU type)",
-            "type": "shell",
-            "command": "bash athena/deploy_athena.sh --option2 --gpu=h200",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Athena: Upload Only (no submit)",
-            "type": "shell",
-            "command": "bash athena/deploy_athena.sh --upload-only",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Athena: Download Results",
-            "type": "shell",
-            "command": "bash athena/deploy_athena.sh --results",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Athena: SSH into Athena",
-            "type": "shell",
-            "command": "ssh athena",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": false
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Athena: Watch Job Status (no deploy)",
-            "type": "shell",
-            "command": "bash athena/deploy_athena.sh --watch-only",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
+            "id": "zeusAction",
+            "type": "pickString",
+            "description": "Zeus — pick action:",
+            "options": [
+                {"label": "Deploy (interactive — choose mode)",                     "value": "bash zeus/deploy.sh"},
+                {"label": "Deploy — FSP job (local .fsp → engine on Zeus)",         "value": "bash zeus/deploy.sh --option1"},
+                {"label": "Deploy — Python job (single sim)",                       "value": "bash zeus/deploy.sh --option2"},
+                {"label": "Watch job status (no deploy)",                           "value": "bash zeus/deploy.sh --watch-only"},
+                {"label": "Upload only (no submit)",                                "value": "bash zeus/deploy.sh --upload-only"},
+                {"label": "Download results",                                       "value": "bash zeus/deploy.sh --results"},
+                {"label": "SSH into Zeus",                                          "value": "ssh zeus"}
+            ]
+        }
     ]
 }

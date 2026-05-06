@@ -44,8 +44,17 @@ INTERCONNECT="${ATHENA_INTERCONNECT:-}"
 # Threads — use all allocated CPUs (single rank).
 NTHREADS="${SLURM_CPUS_PER_TASK}"
 
-# NVML trampoline not needed: athena cluster uses R570+ drivers.
-NVML_TRAMP="${HOME}/nvml_tramp"
+# NVML trampoline (used on dgx/R470) is intentionally NOT used here.
+# All Athena GPU partitions run R570+ drivers that already export every
+# NVML symbol Lumerical 2026R1 needs. Mounting the trampoline corrupts
+# CUDA init on the newer driver (verified empirically — job 76907,
+# 2026-05-05, all GPUs failed with cudaGetDeviceCount).
+
+# Scientific libs (libgfortran, libquadmath) needed by scipy/numpy.
+# Container's base image (CUDA devel) lacks libgfortran. We supply it via a
+# user-maintained directory bound into /scilibs and appended to LD_LIBRARY_PATH.
+# This is INDEPENDENT of the (legacy) NVML trampoline mechanism.
+SCILIBS="${HOME}/scilibs"
 # ─────────────────────────────────────────────────────────────────────────────
 
 echo "============================================================"
@@ -77,7 +86,7 @@ fi
 
 # ── Run the FDTD engine via Apptainer ────────────────────────────────────────
 # --nv          : auto-inject NVIDIA GPU devices + host driver libs (libcuda.so)
-# --bind        : mount FSP directory, custom hosts file, and NVML trampoline
+# --bind        : mount FSP directory and custom hosts file
 # --pwd         : working directory inside container
 #
 # Engine flags:
@@ -90,31 +99,23 @@ fi
 # Set REQUIRE_GPU=0 only if you intentionally want a CPU run on Athena.
 REQUIRE_GPU="${REQUIRE_GPU:-1}"
 
-# Build the --bind flag for the NVML trampoline (omit if directory absent or empty).
-TRAMP_BIND=""
-if [[ -n "${NVML_TRAMP}" && -d "${NVML_TRAMP}" && -f "${NVML_TRAMP}/libnvidia-ml.so.1" ]]; then
-    TRAMP_BIND="--bind ${NVML_TRAMP}:/nvml_tramp"
-    echo "NVML trampoline: ${NVML_TRAMP}"
-else
-    echo "NVML trampoline not found at ${NVML_TRAMP} — skipping (safe on R570+ nodes)"
-fi
-
 apptainer exec --nv \
     --bind "${FSP_DIR}:/work/layouts" \
     --bind "${HOSTS_FILE}:/etc/hosts" \
-    ${TRAMP_BIND} \
+    --bind "${SCILIBS}:/scilibs" \
     --pwd /work/layouts \
     "${CONTAINER}" \
     bash -c "
 export LANG=C
 export LC_ALL=C
-# NVML trampoline: prepend /nvml_tramp so our libnvidia-ml.so.1 is found before
-# /.singularity.d/libs (Apptainer --nv injection). On R570+ nodes the trampoline
-# directory won't exist, so LD_LIBRARY_PATH stays unchanged.
-if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
-    export LD_LIBRARY_PATH=\"/nvml_tramp:\${LD_LIBRARY_PATH}\"
-    echo '[nvml_tramp] activated: /nvml_tramp prepended to LD_LIBRARY_PATH'
-fi
+# Strip /usr/local/cuda/compat* from LD_LIBRARY_PATH. The container ships a
+# CUDA 12.2 forward-compat shim (libcuda.so.1) intended for hosts running
+# R470 drivers. On Athena the host driver is R570/R595 — newer than the
+# compat shim — so loading the shim first causes:
+#   cudaGetDeviceCount Failed: unsupported display driver / cuda driver combination
+# With the shim removed, Apptainer's --nv injection of the host libcuda
+# (via /.singularity.d/libs) is used directly. No version skew.
+export LD_LIBRARY_PATH=\"\$(echo \"\${LD_LIBRARY_PATH}\" | tr ':' '\\n' | grep -v '^/usr/local/cuda/compat' | paste -sd: -)\"
 export ANSYSLMD_LICENSE_FILE='${LICENSE}'
 export ANSYSLI_SERVERS='${INTERCONNECT}'
 export ANSYS_APIP_DISABLE=1
@@ -125,6 +126,10 @@ export OMPI_MCA_btl=self,tcp
 export OMPI_MCA_mtl='^ofi'
 export UCX_TLS=self,sm,tcp
 export UCX_NET_DEVICES=lo
+# Append /scilibs (libgfortran + libquadmath) to LD_LIBRARY_PATH so scipy/numpy
+# imports succeed. Use SUFFIX (not prefix) so host driver libs injected by --nv
+# still win for libnvidia-ml/libcuda.
+export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}:/scilibs\"
 
 # Pre-flight: verify the license server is reachable and lum_fdtd_solve is licensed.
 # Note: no separate GPU FDTD feature is required — lum_fdtd_solve covers GPU runs

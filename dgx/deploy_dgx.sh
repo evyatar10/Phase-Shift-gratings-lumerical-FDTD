@@ -1,37 +1,38 @@
 #!/bin/bash
 #
-# Local script: upload project files to Athena and submit a SLURM GPU job.
-# This is the Athena analog of zeus/deploy.sh (Zeus/PBS). Zeus is NOT touched.
+# Local script: upload project files to the DGX cluster and submit a SLURM GPU job.
+# This is the DGX analog of zeus/deploy.sh (Zeus/PBS). Zeus is NOT touched.
+# Target: dgx-master.technion.ac.il (legacy cluster, R470 A100, needs nvml_tramp).
 #
 # Run from Git Bash, WSL, or VS Code tasks on your local Windows machine.
 #
 # Usage:
-#   bash athena/deploy_athena.sh                                 # interactive: engine or pipeline
-#   bash athena/deploy_athena.sh --option1 --preset single       # engine, RECOMMENDED
-#   bash athena/deploy_athena.sh --option1 --preset sweep_shift
-#   bash athena/deploy_athena.sh --option1 --preset sweep_inner_size
-#   bash athena/deploy_athena.sh --option2                       # pipeline, prompts: single or sweep
-#   bash athena/deploy_athena.sh --option2 --run=single_sim      # pipeline, single (no prompt)
-#   bash athena/deploy_athena.sh --option3 --spec=runners.sweeps.innermost_shift  # pipeline, sweep (no prompt)
-#   bash athena/deploy_athena.sh --upload-only
-#   bash athena/deploy_athena.sh --watch
-#   bash athena/deploy_athena.sh --watch-only
-#   bash athena/deploy_athena.sh --results            # prompts: data only or full (incl. .fsp)
-#   bash athena/deploy_athena.sh --results-no-fsp    # download .mat / logs only (fast)
-#   bash athena/deploy_athena.sh --results-full      # download everything incl. .fsp (heavy)
-#   bash athena/deploy_athena.sh --results-files     # interactive: pick subfolder, then files
-#   bash athena/deploy_athena.sh --results-files=path1,path2,...  # download specific files (rel to results/)
+#   bash dgx/deploy_dgx.sh                                 # interactive: engine or pipeline
+#   bash dgx/deploy_dgx.sh --option1 --preset single       # engine, RECOMMENDED
+#   bash dgx/deploy_dgx.sh --option1 --preset sweep_shift
+#   bash dgx/deploy_dgx.sh --option1 --preset sweep_inner_size
+#   bash dgx/deploy_dgx.sh --option2                       # pipeline, prompts: single or sweep
+#   bash dgx/deploy_dgx.sh --option2 --run=single_sim      # pipeline, single (no prompt)
+#   bash dgx/deploy_dgx.sh --option3 --spec=runners.sweeps.innermost_shift  # pipeline, sweep (no prompt)
+#   bash dgx/deploy_dgx.sh --upload-only
+#   bash dgx/deploy_dgx.sh --watch
+#   bash dgx/deploy_dgx.sh --watch-only
+#   bash dgx/deploy_dgx.sh --results            # prompts: data only or full (incl. .fsp)
+#   bash dgx/deploy_dgx.sh --results-no-fsp    # download .mat / logs only (fast)
+#   bash dgx/deploy_dgx.sh --results-full      # download everything incl. .fsp (heavy)
+#   bash dgx/deploy_dgx.sh --results-files     # interactive: pick subfolder, then files
+#   bash dgx/deploy_dgx.sh --results-files=path1,path2,...  # download specific files (rel to results/)
 
-# ── CONFIGURE — edit athena/athena.conf, not this file ───────────────────────
-CONF="$(cd "$(dirname "$0")" && pwd)/athena.conf"
+# ── CONFIGURE — edit dgx/dgx.conf, not this file ─────────────────────────────
+CONF="$(cd "$(dirname "$0")" && pwd)/dgx.conf"
 if [[ ! -f "${CONF}" ]]; then
-    echo "ERROR: athena.conf not found at ${CONF}"
+    echo "ERROR: dgx.conf not found at ${CONF}"
     exit 1
 fi
 source "${CONF}"
 
 LOCAL_PROJECT="$(cd "$(dirname "$0")/.." && pwd)"
-LOCAL_RESULTS_DIR="${LOCAL_PROJECT}/results_from_athena"
+LOCAL_RESULTS_DIR="${LOCAL_PROJECT}/results_from_dgx"
 LOCAL_NEFF=$(python -c "import sys; sys.path.insert(0,'${LOCAL_PROJECT}'); import config; print(config.NEFF_DATA_PATH)")
 # rsync misreads Windows-style "C:\..." as a remote "host:path"; normalize to
 # POSIX form. cygpath ships with Git Bash; on Linux/WSL the path is already POSIX.
@@ -73,12 +74,13 @@ for arg in "$@"; do
         --fsp=*)              FSP_EXPLICIT="${arg#--fsp=}" ;;
         --sweep=*)            SWEEP_KIND="${arg#--sweep=}" ;;
         --spec=*)             OPTION="3"; SWEEP_KIND="spec"; SPEC_MODULE="${arg#--spec=}" ;;
+        --inverse-design=*)   OPTION="3"; SWEEP_KIND="inverse_design"; SPEC_MODULE="${arg#--inverse-design=}" ;;
         --max-concurrent=*)   MAX_CONCURRENT="${arg#--max-concurrent=}" ;;
         --keep-h5)            KEEP_H5=1 ;;
     esac
 done
 
-SSH="${ATHENA_USER}@${ATHENA_HOST}"
+SSH="${DGX_USER}@${DGX_HOST}"
 
 # ── Prompt for top-level mode if not specified ────────────────────────────────
 # Two conceptual modes presented to the user:
@@ -89,7 +91,7 @@ SSH="${ATHENA_USER}@${ATHENA_HOST}"
 if [[ -z "${OPTION}" && "${UPLOAD_ONLY}" == "false" && "${DOWNLOAD_RESULTS}" == "false" && "${STATUS}" == "false" && "${LICENSE_PROBE}" == "false" ]]; then
     echo ""
     echo "============================================================"
-    echo "  Athena GPU — Choose run mode:"
+    echo "  DGX GPU — Choose run mode:"
     echo "  1) FSP job    — generate .fsp locally → run FDTD engine on GPU"
     echo ""
     echo "  2) Python job — run lumapi Python pipeline on GPU"
@@ -169,7 +171,7 @@ if [[ "${_PIPELINE_KIND:-}" == "single" && -z "${RUN_SCRIPT}" && "${UPLOAD_ONLY}
     fi
     echo ""
     echo "============================================================"
-    echo "  Choose which script to run on Athena (runners/single/):"
+    echo "  Choose which script to run on DGX (runners/single/):"
     for _i in "${!_RUNNERS[@]}"; do
         printf "  %d) %s\n" "$((_i+1))" "${_RUNNERS[$_i]}"
     done
@@ -289,11 +291,11 @@ download_results() {
     echo ""
     mkdir -p "${LOCAL_RESULTS_DIR}"
     if [[ "${no_fsp}" == "true" ]]; then
-        echo "=== Downloading results from Athena (data files only, skipping .fsp) ==="
+        echo "=== Downloading results from DGX (data files only, skipping .fsp) ==="
         ssh "${SSH}" "tar --exclude='*.fsp' -czf - -C '${REMOTE_BASE}/results' ." \
             | tar -xzf - -C "${LOCAL_RESULTS_DIR}/"
     else
-        echo "=== Downloading results from Athena (full, including .fsp) ==="
+        echo "=== Downloading results from DGX (full, including .fsp) ==="
         scp -r "${SSH}:${REMOTE_BASE}/results/." "${LOCAL_RESULTS_DIR}/"
     fi
     echo "Results saved to: ${LOCAL_RESULTS_DIR}"
@@ -350,7 +352,7 @@ download_files() {
             _add_category "runners/${_rname}" "${_runner_dir%/}"
         done
 
-        echo "=== Discovering run folders under ${REMOTE_BASE}/results/ ==="
+        echo "=== Discovering run folders under ${REMOTE_BASE}/results/ on DGX ==="
         local _remote_dirs
         _remote_dirs=$(ssh "${SSH}" \
             "cd '${REMOTE_BASE}/results' 2>/dev/null && \
@@ -498,7 +500,7 @@ download_files() {
 
     mkdir -p "${LOCAL_RESULTS_DIR}"
     echo ""
-    echo "=== Downloading ${#_paths[@]} file(s) from Athena ==="
+    echo "=== Downloading ${#_paths[@]} file(s) from DGX ==="
     for _p in "${_paths[@]}"; do echo "  ${_p}"; done
     local _tar_args=""
     for _p in "${_paths[@]}"; do _tar_args+=" '${_p}'"; done
@@ -510,8 +512,8 @@ download_files() {
 # ── Helper: one-shot status check ─────────────────────────────────────────────
 check_status() {
     echo ""
-    echo "=== Jobs in queue (${ATHENA_USER}) ==="
-    ssh "${SSH}" "squeue -u ${ATHENA_USER} -o '%.10i %.12j %.8T %.10M %.6D %R' 2>/dev/null || echo '(no jobs in queue)'"
+    echo "=== Jobs in queue (${DGX_USER}) ==="
+    ssh "${SSH}" "squeue -u ${DGX_USER} -o '%.10i %.12j %.8T %.10M %.6D %R' 2>/dev/null || echo '(no jobs in queue)'"
     echo ""
     echo "=== Last 40 lines of most recent log ==="
     ssh "${SSH}" "ls -t ${REMOTE_BASE}/jobs/logs/*.out 2>/dev/null | head -1 | xargs tail -40 2>/dev/null || echo '(no log found)'"
@@ -526,8 +528,8 @@ fi
 # ── --license-probe: report FlexLM seat counts then exit ──────────────────────
 if [[ "${LICENSE_PROBE}" == "true" ]]; then
     echo ""
-    echo "=== Probing Lumerical license seats on Athena (server: ${ATHENA_LICENSE}) ==="
-    # lmutil ships inside the Lumerical install on Athena. The path matches the one
+    echo "=== Probing Lumerical license seats on DGX (server: ${DGX_LICENSE}) ==="
+    # lmutil ships inside the Lumerical install on DGX. The path matches the one
     # used in run_fsp_gpu_array.sh. Keep both in sync if Lumerical's install path moves.
     ssh "${SSH}" "
         for lmutil in /ansys_inc/v261/licensingclient/linx64/lmutil \
@@ -535,17 +537,17 @@ if [[ "${LICENSE_PROBE}" == "true" ]]; then
                       /opt/lumerical/v261/bin/lmutil; do
             if [ -x \"\$lmutil\" ]; then
                 echo \"Using: \$lmutil\"
-                \"\$lmutil\" lmstat -a -c '${ATHENA_LICENSE}' \
+                \"\$lmutil\" lmstat -a -c '${DGX_LICENSE}' \
                     | grep -E 'Users of (lum_fdtd|fdtd_)' \
                     || echo '  (no FDTD features found)'
                 exit 0
             fi
         done
-        echo 'ERROR: lmutil not found on Athena. Try inside the container instead:'
-        echo '  apptainer exec ~/containers/lumerical-2026R1.sif /ansys_inc/v261/licensingclient/linx64/lmutil lmstat -a -c ${ATHENA_LICENSE}'
+        echo 'ERROR: lmutil not found on DGX. Try inside the container instead:'
+        echo '  apptainer exec ~/containers/lumerical-2026R1.sif /ansys_inc/v261/licensingclient/linx64/lmutil lmstat -a -c ${DGX_LICENSE}'
     "
     echo ""
-    echo "Set MAX_CONCURRENT in athena/athena.conf to (free seats), capped at 8."
+    echo "Set MAX_CONCURRENT in dgx/dgx.conf to (free seats), capped at 8."
     exit 0
 fi
 
@@ -577,7 +579,7 @@ fi
 
 # ── Normal flow: create remote directories and upload ─────────────────────────
 echo "============================================================"
-echo "Target: ${SSH}"
+echo "Target: ${SSH}  (DGX cluster — dgx-master.technion.ac.il)"
 echo "Remote: ${REMOTE_BASE}"
 echo "============================================================"
 
@@ -607,18 +609,18 @@ else
 fi
 
 echo ""
-echo "=== Uploading Athena scripts ==="
-rsync -av --itemize-changes "${LOCAL_PROJECT}/athena/jobs/"*.sh    "${SSH}:${REMOTE_BASE}/jobs/"
-rsync -av --itemize-changes "${LOCAL_PROJECT}/athena/scripts/"*.py "${SSH}:${REMOTE_BASE}/scripts/"
+echo "=== Uploading DGX scripts ==="
+rsync -av --itemize-changes "${LOCAL_PROJECT}/dgx/jobs/"*.sh    "${SSH}:${REMOTE_BASE}/jobs/"
+rsync -av --itemize-changes "${LOCAL_PROJECT}/dgx/scripts/"*.py "${SSH}:${REMOTE_BASE}/scripts/"
 ssh "${SSH}" "chmod +x ${REMOTE_BASE}/jobs/*.sh"
 ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/jobs/logs"
 
 echo ""
-echo "=== Building NVML trampoline on Athena (R470 A100 nodes) ==="
+echo "=== Building NVML trampoline on DGX (R470 A100 nodes) ==="
 # The trampoline shim stubs three NVML symbols absent from R470 that Lumerical
 # 2026 R1's GPU plugin imports. On newer-driver nodes (L40S / H200, R535+) the
 # tramp directory is not bound and has no effect.
-rsync -av --itemize-changes "${LOCAL_PROJECT}/athena/container/nvml_tramp.c" \
+rsync -av --itemize-changes "${LOCAL_PROJECT}/container/nvml_tramp.c" \
     "${SSH}:${REMOTE_BASE}/jobs/nvml_tramp.c"
 ssh "${SSH}" "
     mkdir -p \${HOME}/nvml_tramp
@@ -664,7 +666,7 @@ if [[ "${OPTION}" == "1" ]]; then
             exit 1
         fi
 
-        echo "Uploading ${#FSP_PATHS[@]} .fsp file(s) to Athena (per-stem folders)..."
+        echo "Uploading ${#FSP_PATHS[@]} .fsp file(s) to DGX (per-stem folders)..."
         for _fsp in "${FSP_PATHS[@]}"; do
             _name=$(basename "${_fsp}")
             _stem="${_name%.fsp}"
@@ -691,7 +693,7 @@ if [[ "${OPTION}" == "1" ]]; then
         # Build fsp_list.txt locally (one stem per line) and upload to
         # ${REMOTE_BASE}/results/fsp_list.txt. The array job reads line N and
         # derives FSP_FILE and FSP_DIR from the stem.
-        LOCAL_FSP_LIST="${LOCAL_PROJECT}/results_from_athena/_fsp_list.txt"
+        LOCAL_FSP_LIST="${LOCAL_PROJECT}/results_from_dgx/_fsp_list.txt"
         : > "${LOCAL_FSP_LIST}"
         for _fsp in "${FSP_PATHS[@]}"; do
             _name=$(basename "${_fsp}")
@@ -700,7 +702,7 @@ if [[ "${OPTION}" == "1" ]]; then
         scp "${LOCAL_FSP_LIST}" "${SSH}:${REMOTE_BASE}/results/fsp_list.txt"
         ARRAY_END=$(( FSP_COUNT - 1 ))
 
-        # K = max concurrent jobs (license throttle). Set in athena.conf; override
+        # K = max concurrent jobs (license throttle). Set in dgx.conf; override
         # for one run via --max-concurrent N. Discover the real seat count with
         # `bash athena/deploy_athena.sh --license-probe`.
         K="${MAX_CONCURRENT:-4}"
@@ -710,14 +712,14 @@ if [[ "${OPTION}" == "1" ]]; then
             "cd ${REMOTE_BASE} && sbatch \
                 --array=0-${ARRAY_END}%${K} \
                 --gpus=1 --cpus-per-task=${N_CPUS} \
-                --export=ALL,ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},NTFY_TOPIC=${NTFY_TOPIC} \
+                --export=ALL,DGX_LICENSE=${DGX_LICENSE},DGX_INTERCONNECT=${DGX_INTERCONNECT},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_fsp_gpu_array.sh")
     else
         JOB_ID=$(ssh "${SSH}" \
             "cd ${REMOTE_BASE} && sbatch \
                 --gpus=1 --cpus-per-task=${N_CPUS} \
-                --export=ALL,FSP_FILE=\"${FSP_NAME}\",ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},NTFY_TOPIC=${NTFY_TOPIC} \
+                --export=ALL,FSP_FILE=\"${FSP_NAME}\",DGX_LICENSE=${DGX_LICENSE},DGX_INTERCONNECT=${DGX_INTERCONNECT},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_fsp_gpu.sh")
     fi
@@ -727,7 +729,7 @@ elif [[ "${OPTION}" == "2" ]]; then
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch \
             --gpus=1 --cpus-per-task=${N_CPUS} \
-            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
+            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},DGX_LICENSE=${DGX_LICENSE},DGX_INTERCONNECT=${DGX_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_gpu.sh")
 
@@ -735,7 +737,7 @@ else
     # ── Option 3: Python pipeline as a SLURM job array (parallel sweep) ──────
     echo ""
     echo "Option 3: building sweep_list.txt locally for kind='${SWEEP_KIND}'..."
-    LOCAL_SWEEP_LIST="${LOCAL_PROJECT}/results_from_athena/_sweep_list.txt"
+    LOCAL_SWEEP_LIST="${LOCAL_PROJECT}/results_from_dgx/_sweep_list.txt"
     LOCAL_PYTHON=$(which python 2>/dev/null || which python3 2>/dev/null)
     if [[ -z "${LOCAL_PYTHON}" ]]; then
         echo "ERROR: no local python found on PATH."
@@ -746,10 +748,17 @@ else
             echo "ERROR: --spec=<module> is required for kind=spec."
             exit 1
         fi
-        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/dgx/scripts/build_sweep_list.py" \
             --kind spec --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
+    elif [[ "${SWEEP_KIND}" == "inverse_design" ]]; then
+        if [[ -z "${SPEC_MODULE}" ]]; then
+            echo "ERROR: --inverse-design=<module> is required for kind=inverse_design."
+            exit 1
+        fi
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/dgx/scripts/build_sweep_list.py" \
+            --kind inverse_design --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
     else
-        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/dgx/scripts/build_sweep_list.py" \
             --kind "${SWEEP_KIND}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
     fi
     echo "${BUILD_OUT}"
@@ -779,7 +788,7 @@ else
     ARRAY_END=$(( N_TASKS - 1 ))
     K="${MAX_CONCURRENT:-4}"
 
-    echo "Uploading sweep_list.txt to Athena..."
+    echo "Uploading sweep_list.txt to DGX..."
     ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/data"
     scp "${LOCAL_SWEEP_LIST}" "${SSH}:${REMOTE_BASE}/data/sweep_list.txt"
 
@@ -812,8 +821,8 @@ else
         echo ""
         echo "Module declares PRELIM_SPEC — submitting prelim array first."
         echo "  locked-lambda sidecar template: ${SWEEP_LOCKED_LAMBDA_FILE}"
-        LOCAL_PRELIM_LIST="${LOCAL_PROJECT}/results_from_athena/_prelim_sweep_list.txt"
-        PRELIM_BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+        LOCAL_PRELIM_LIST="${LOCAL_PROJECT}/results_from_dgx/_prelim_sweep_list.txt"
+        PRELIM_BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/dgx/scripts/build_sweep_list.py" \
             --kind spec --module "${SWEEP_SPEC_MODULE}" --prelim --output "${LOCAL_PRELIM_LIST}" 2>&1)
         echo "${PRELIM_BUILD_OUT}"
         PRELIM_N=$(grep -c . "${LOCAL_PRELIM_LIST}")
@@ -822,7 +831,7 @@ else
             exit 1
         fi
         PRELIM_END=$(( PRELIM_N - 1 ))
-        echo "Uploading prelim_sweep_list.txt to Athena..."
+        echo "Uploading prelim_sweep_list.txt to DGX..."
         scp "${LOCAL_PRELIM_LIST}" "${SSH}:${REMOTE_BASE}/data/prelim_sweep_list.txt"
         echo "Prelim array: 0-${PRELIM_END}%${K}  (${PRELIM_N} tasks)"
         echo "Submitting prelim array..."
@@ -831,7 +840,7 @@ else
                 --array=0-${PRELIM_END}%${K} \
                 --gpus=1 --cpus-per-task=${N_CPUS} \
                 --time=${PRELIM_TIME:-00:10:00} \
-                --export=ALL,SWEEP_KIND=spec,SWEEP_LIST=/work/data/prelim_sweep_list.txt,SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},SWEEP_IS_PRELIM=1,LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
+                --export=ALL,SWEEP_KIND=spec,SWEEP_LIST=/work/data/prelim_sweep_list.txt,SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},SWEEP_IS_PRELIM=1,LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE},DGX_LICENSE=${DGX_LICENSE},DGX_INTERCONNECT=${DGX_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_python_array.sh")
         if [[ $? -ne 0 ]]; then
@@ -851,7 +860,7 @@ else
             "cd ${REMOTE_BASE} && sbatch \
                 --gpus=1 --cpus-per-task=${N_CPUS} \
                 --time=${PRELIM_TIME:-00:10:00} \
-                --export=ALL,RUN_SCRIPT=${SWEEP_PRELIM_RUN_SCRIPT},LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
+                --export=ALL,RUN_SCRIPT=${SWEEP_PRELIM_RUN_SCRIPT},LOCKED_LAMBDA_FILE=${SWEEP_LOCKED_LAMBDA_FILE},DGX_LICENSE=${DGX_LICENSE},DGX_INTERCONNECT=${DGX_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
                 --chdir=${REMOTE_BASE}/jobs \
                 jobs/run_python_gpu.sh")
         if [[ $? -ne 0 ]]; then
@@ -870,7 +879,7 @@ else
             --array=0-${ARRAY_END}%${K} ${DEP_FLAG} \
             --gpus=1 --cpus-per-task=${N_CPUS} \
             --time=${ARRAY_TIME:-00:45:00} \
-            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
+            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},DGX_LICENSE=${DGX_LICENSE},DGX_INTERCONNECT=${DGX_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_array.sh")
 fi
@@ -922,13 +931,13 @@ echo ""
 echo "You will receive an email at job start, finish, and failure."
 echo ""
 echo "Check status at any time:"
-echo "  bash athena/deploy_athena.sh --status"
+echo "  bash dgx/deploy_dgx.sh --status"
 echo ""
-echo "Live log on Athena:"
+echo "Live log on DGX:"
 echo "  ssh ${SSH} tail -f ${REMOTE_BASE}/jobs/logs/lum_*${NUMERIC_JOB}*.out"
 echo ""
 echo "Download results after job finishes:"
-echo "  bash athena/deploy_athena.sh --results           # prompts for mode"
-echo "  bash athena/deploy_athena.sh --results-no-fsp    # data files only (fast)"
-echo "  bash athena/deploy_athena.sh --results-full      # everything incl. .fsp (heavy)"
+echo "  bash dgx/deploy_dgx.sh --results           # prompts for mode"
+echo "  bash dgx/deploy_dgx.sh --results-no-fsp    # data files only (fast)"
+echo "  bash dgx/deploy_dgx.sh --results-full      # everything incl. .fsp (heavy)"
 echo "============================================================"

@@ -110,6 +110,21 @@ def find_bragg_resonance(wl, T):
     return peaks[np.argmax(score)]
 
 
+def peak_t_diagnostic(wl, T):
+    """
+    Inverse-design diagnostic wrapper around find_bragg_resonance.
+
+    Given a transmission spectrum (wl, T), returns (lambda_peak, T_peak)
+    by locating the resonance index via the same sharpness × dip_depth
+    scorer used in production. Used by the inverse-design pipeline to
+    verify the converged design's peak transmission outside the optimizer
+    loop (the optimizer FOM is single-wavelength T at baseline λ_resonance,
+    while this wrapper finds the *actual* resonance after convergence).
+    """
+    idx = find_bragg_resonance(wl, T)
+    return float(wl[idx]), float(T[idx])
+
+
 # ── Field profile processing ─────────────────────────────────────────────────
 
 def calculate_fwhm_relative(x, y):
@@ -237,8 +252,12 @@ def generate_file_tag(sim):
             fc_tag = "_fc"
 
     mat_tag = "" if sim.use_constant_materials else "_d"
-    _cwo = getattr(sim, 'cavity_width_option', 'narrow')
-    wgd_tag = "_avgx" if _cwo == "avg_ext" else "_avg" if _cwo == "avg" else ""
+    _cw_m = getattr(sim, 'cavity_width_m', None)
+    if _cw_m is not None:
+        wgd_tag = f"_W{round(_cw_m * 1e9):.0f}"
+    else:
+        _cwo = getattr(sim, 'cavity_width_option', 'narrow')
+        wgd_tag = "_avgx" if _cwo == "avg_ext" else "_avg" if _cwo == "avg" else ""
 
     if use_apod:
         tanh_tag = "_th" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""

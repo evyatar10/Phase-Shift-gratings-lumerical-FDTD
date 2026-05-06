@@ -61,8 +61,17 @@ RUN_SCRIPT="${RUN_SCRIPT:-run_simulation}"
 # is missing fdtd_gpu.
 REQUIRE_GPU="${REQUIRE_GPU:-0}"
 
-# NVML trampoline not needed: athena cluster uses R570+ drivers.
-NVML_TRAMP="${HOME}/nvml_tramp"
+# NVML trampoline (used on dgx/R470) is intentionally NOT used here.
+# All Athena GPU partitions run R570+ drivers that already export every
+# NVML symbol Lumerical 2026R1 needs. Mounting the trampoline corrupts
+# CUDA init on the newer driver (verified empirically — job 76907,
+# 2026-05-05, all GPUs failed with cudaGetDeviceCount).
+
+# Scientific libs (libgfortran, libquadmath) needed by scipy/numpy.
+# Container's base image (CUDA devel) lacks libgfortran. We supply it via a
+# user-maintained directory bound into /scilibs and appended to LD_LIBRARY_PATH.
+# This is INDEPENDENT of the (legacy) NVML trampoline mechanism.
+SCILIBS="${HOME}/scilibs"
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Make sure remote scratch dirs exist
@@ -100,15 +109,6 @@ if [[ ! -f "${HOSTS_FILE}" ]]; then
     echo "132.68.48.51 lumerical-lm.ece.technion.ac.il lumerical-lm" >> "${HOSTS_FILE}"
 fi
 
-# Build the --bind flag for the NVML trampoline (omit if directory absent or empty).
-TRAMP_BIND=""
-if [[ -n "${NVML_TRAMP}" && -d "${NVML_TRAMP}" && -f "${NVML_TRAMP}/libnvidia-ml.so.1" ]]; then
-    TRAMP_BIND="--bind ${NVML_TRAMP}:/nvml_tramp"
-    echo "NVML trampoline: ${NVML_TRAMP}"
-else
-    echo "NVML trampoline not found at ${NVML_TRAMP} — skipping (safe on R570+ nodes)"
-fi
-
 # ── Run the Python pipeline inside the container ──────────────────────────────
 # --nv          : auto-inject NVIDIA GPU devices + host driver libs.
 #                 The container's %environment puts /usr/local/cuda/compat
@@ -133,16 +133,20 @@ apptainer exec --nv \
     --bind "${RESULTS_DIR}:/work/results" \
     --bind "${LOGS_DIR}:/work/logs" \
     --bind "${HOSTS_FILE}:/etc/hosts" \
-    ${TRAMP_BIND} \
+    --bind "${SCILIBS}:/scilibs" \
     --pwd /work \
     "${CONTAINER}" \
     bash -c "
 export LANG=C
 export LC_ALL=C
-if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
-    export LD_LIBRARY_PATH=\"/nvml_tramp:\${LD_LIBRARY_PATH}\"
-    echo '[nvml_tramp] activated: /nvml_tramp prepended to LD_LIBRARY_PATH'
-fi
+# Strip /usr/local/cuda/compat* from LD_LIBRARY_PATH. The container ships a
+# CUDA 12.2 forward-compat shim (libcuda.so.1) intended for hosts running
+# R470 drivers. On Athena the host driver is R570/R595 — newer than the
+# compat shim — so loading the shim first causes:
+#   cudaGetDeviceCount Failed: unsupported display driver / cuda driver combination
+# With the shim removed, Apptainer's --nv injection of the host libcuda
+# (via /.singularity.d/libs) is used directly. No version skew.
+export LD_LIBRARY_PATH=\"\$(echo \"\${LD_LIBRARY_PATH}\" | tr ':' '\\n' | grep -v '^/usr/local/cuda/compat' | paste -sd: -)\"
 # fdtd-solutions resets LD_LIBRARY_PATH to \$FDTD_LD_LIBRARY_PATH:\$LUMERICAL_LD_LIBRARY_PATH.
 # Both are empty in the container, wiping all Apptainer-injected paths (NVML trampoline,
 # CUDA compat shim, /.singularity.d/libs with host libcuda.so.1, Lumerical libs).
@@ -156,16 +160,7 @@ export LUMERICAL_LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}\"
 # (e.g. /bin/bash for fdtd-solutions) with an environment where /opt/lumerical/v261/lib
 # is not on LD_LIBRARY_PATH at process-start time, so ld.so can't resolve the
 # tbbmalloc_proxy -> tbbmalloc DT_NEEDED dependency by name alone.
-# NVML trampoline must also be on LD_PRELOAD: lumapi spawns fdtd-solutions, which
-# spawns fdtd-engine. Each spawn drops /nvml_tramp from LD_LIBRARY_PATH (only
-# LUMERICAL_LD_LIBRARY_PATH is honored by fdtd-solutions, not by fdtd-engine).
-# LD_PRELOAD survives exec(), so the trampoline gets loaded by every descendant
-# process and satisfies the engine's libnvidia-ml.so.1 dlopen by soname.
-LD_PRELOAD_NVML=\"\"
-if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
-    LD_PRELOAD_NVML=\"/nvml_tramp/libnvidia-ml.so.1:\"
-fi
-export LD_PRELOAD=\"\${LD_PRELOAD_NVML}/opt/lumerical/v261/lib/libtbbmalloc.so.2:/opt/lumerical/v261/lib/libtbbmalloc_proxy.so.2\"
+export LD_PRELOAD=\"/opt/lumerical/v261/lib/libtbbmalloc.so.2:/opt/lumerical/v261/lib/libtbbmalloc_proxy.so.2\"
 export ANSYSLMD_LICENSE_FILE='${LICENSE}'
 export ANSYSLI_SERVERS='${INTERCONNECT}'
 export ANSYS_APIP_DISABLE=1
@@ -180,6 +175,10 @@ export RUN_SCRIPT='${RUN_SCRIPT}'
 export REQUIRE_GPU='${REQUIRE_GPU}'
 # KEEP_H5=1 disables the per-iteration .h5 scratch cleanup (default: cleanup on).
 export KEEP_H5=\"\${KEEP_H5:-0}\"
+# Append /scilibs (libgfortran + libquadmath) to LD_LIBRARY_PATH so scipy/numpy
+# imports succeed. Use SUFFIX (not prefix) so host driver libs injected by --nv
+# still win for libnvidia-ml/libcuda.
+export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}:/scilibs\"
 # LOCKED_LAMBDA_FILE — used by RUN_SCRIPT=compare_3d_field_prelim (writes the
 # resonance λ here for the array half to read). Empty for unrelated runs.
 export LOCKED_LAMBDA_FILE='${LOCKED_LAMBDA_FILE:-}'

@@ -8,8 +8,8 @@
 # athena/scripts/build_sweep_list.py and uploaded to /work/data/sweep_list.txt.
 #
 # Companion to run_python_gpu.sh (single sequential job). All container
-# plumbing — Xvfb, NVML trampoline, LD_PRELOAD, license env, OpenMPI/UCX
-# tunings — is identical; only the dispatch (athena_run_one.py vs athena_run.py)
+# plumbing — Xvfb, LD_PRELOAD, license env, OpenMPI/UCX tunings — is
+# identical; only the dispatch (athena_run_one.py vs athena_run.py)
 # and per-task logging differ.
 #
 # Usage (submitted by deploy_athena.sh --option3):
@@ -50,7 +50,17 @@ INTERCONNECT="${ATHENA_INTERCONNECT:-}"
 # doesn't waste GPU-task allocations.
 REQUIRE_GPU="${REQUIRE_GPU:-1}"
 
-NVML_TRAMP="${HOME}/nvml_tramp"
+# NVML trampoline (used on dgx/R470) is intentionally NOT used here.
+# All Athena GPU partitions run R570+ drivers that already export every
+# NVML symbol Lumerical 2026R1 needs. Mounting the trampoline corrupts
+# CUDA init on the newer driver (verified empirically — job 76907,
+# 2026-05-05, all GPUs failed with cudaGetDeviceCount).
+
+# Scientific libs (libgfortran, libquadmath) needed by scipy/numpy.
+# Container's base image (CUDA devel) lacks libgfortran. We supply it via a
+# user-maintained directory bound into /scilibs and appended to LD_LIBRARY_PATH.
+# This is INDEPENDENT of the (legacy) NVML trampoline mechanism.
+SCILIBS="${HOME}/scilibs"
 
 # Sweep dispatch — these env vars must be passed via sbatch --export by deploy_athena.sh.
 SWEEP_KIND="${SWEEP_KIND:-}"
@@ -90,11 +100,6 @@ if [[ ! -f "${HOSTS_FILE}" ]]; then
     echo "132.68.48.51 lumerical-lm.ece.technion.ac.il lumerical-lm" >> "${HOSTS_FILE}"
 fi
 
-TRAMP_BIND=""
-if [[ -n "${NVML_TRAMP}" && -d "${NVML_TRAMP}" && -f "${NVML_TRAMP}/libnvidia-ml.so.1" ]]; then
-    TRAMP_BIND="--bind ${NVML_TRAMP}:/nvml_tramp"
-fi
-
 apptainer exec --nv \
     --bind "${PROJECT_DIR}:/work/project" \
     --bind "${SCRIPTS_DIR}:/work/scripts" \
@@ -102,21 +107,22 @@ apptainer exec --nv \
     --bind "${RESULTS_DIR}:/work/results" \
     --bind "${LOGS_DIR}:/work/logs" \
     --bind "${HOSTS_FILE}:/etc/hosts" \
-    ${TRAMP_BIND} \
+    --bind "${SCILIBS}:/scilibs" \
     --pwd /work \
     "${CONTAINER}" \
     bash -c "
 export LANG=C
 export LC_ALL=C
-if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
-    export LD_LIBRARY_PATH=\"/nvml_tramp:\${LD_LIBRARY_PATH}\"
-fi
+# Strip /usr/local/cuda/compat* from LD_LIBRARY_PATH. The container ships a
+# CUDA 12.2 forward-compat shim (libcuda.so.1) intended for hosts running
+# R470 drivers. On Athena the host driver is R570/R595 — newer than the
+# compat shim — so loading the shim first causes:
+#   cudaGetDeviceCount Failed: unsupported display driver / cuda driver combination
+# With the shim removed, Apptainer's --nv injection of the host libcuda
+# (via /.singularity.d/libs) is used directly. No version skew.
+export LD_LIBRARY_PATH=\"\$(echo \"\${LD_LIBRARY_PATH}\" | tr ':' '\\n' | grep -v '^/usr/local/cuda/compat' | paste -sd: -)\"
 export LUMERICAL_LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}\"
-LD_PRELOAD_NVML=\"\"
-if [ -f /nvml_tramp/libnvidia-ml.so.1 ]; then
-    LD_PRELOAD_NVML=\"/nvml_tramp/libnvidia-ml.so.1:\"
-fi
-export LD_PRELOAD=\"\${LD_PRELOAD_NVML}/opt/lumerical/v261/lib/libtbbmalloc.so.2:/opt/lumerical/v261/lib/libtbbmalloc_proxy.so.2\"
+export LD_PRELOAD=\"/opt/lumerical/v261/lib/libtbbmalloc.so.2:/opt/lumerical/v261/lib/libtbbmalloc_proxy.so.2\"
 export ANSYSLMD_LICENSE_FILE='${LICENSE}'
 export ANSYSLI_SERVERS='${INTERCONNECT}'
 export ANSYS_APIP_DISABLE=1
@@ -136,6 +142,10 @@ export SWEEP_FIXED_CELLS='${SWEEP_FIXED_CELLS}'
 export SWEEP_SPEC_MODULE='${SWEEP_SPEC_MODULE}'
 export REQUIRE_GPU='${REQUIRE_GPU}'
 export KEEP_H5=\"\${KEEP_H5:-0}\"
+# Append /scilibs (libgfortran + libquadmath) to LD_LIBRARY_PATH so scipy/numpy
+# imports succeed. Use SUFFIX (not prefix) so host driver libs injected by --nv
+# still win for libnvidia-ml/libcuda.
+export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}:/scilibs\"
 # LOCKED_LAMBDA_FILE — when set by deploy_athena.sh (chained-prelim sweeps),
 # athena_run_one._run_kind_spec reads this JSON sidecar and overrides
 # cfg.spectral.center_wavelength_m before running the per-task sim.

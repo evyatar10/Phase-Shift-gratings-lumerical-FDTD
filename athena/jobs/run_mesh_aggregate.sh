@@ -35,6 +35,12 @@ LOGS_DIR="${WORK_DIR}/logs"
 
 CONTAINER="$HOME/containers/lumerical-2026R1.sif"
 
+# Scientific libs (libgfortran, libquadmath) needed by scipy/numpy.
+# Container's base image (CUDA devel) lacks libgfortran. We supply it via a
+# user-maintained directory bound into /scilibs and appended to LD_LIBRARY_PATH.
+# This is INDEPENDENT of the (legacy) NVML trampoline mechanism.
+SCILIBS="${HOME}/scilibs"
+
 PHASE="${PHASE:?PHASE env var required (X or YZ)}"
 
 echo "============================================================"
@@ -58,9 +64,22 @@ apptainer exec \
     --bind "${DATA_DIR}:/work/data" \
     --bind "${RESULTS_DIR}:/work/results" \
     --bind "${LOGS_DIR}:/work/logs" \
+    --bind "${SCILIBS}:/scilibs" \
     --pwd /work \
     "${CONTAINER}" \
-    /opt/lumerical/v261/python/bin/python -c "
+    bash -c "
+export LANG=C
+export LC_ALL=C
+# Strip /usr/local/cuda/compat* from LD_LIBRARY_PATH. The container ships a
+# CUDA 12.2 forward-compat shim (libcuda.so.1) intended for hosts running
+# R470 drivers. On Athena the host driver is R570/R595 — newer than the
+# compat shim — so loading the shim first causes:
+#   cudaGetDeviceCount Failed: unsupported display driver / cuda driver combination
+# With the shim removed, Apptainer's --nv injection of the host libcuda
+# (via /.singularity.d/libs) is used directly. No version skew.
+export LD_LIBRARY_PATH=\"\$(echo \"\${LD_LIBRARY_PATH}\" | tr ':' '\\n' | grep -v '^/usr/local/cuda/compat' | paste -sd: -)\"
+export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}:/scilibs\"
+/opt/lumerical/v261/python/bin/python - <<PYEOF
 import sys, runpy
 sys.path.insert(0, '/work/project')
 import config
@@ -69,6 +88,7 @@ config.NEFF_DATA_PATH = '/work/data/FDE_sweep_results.mat'
 sys.argv = ['run_mesh_convergence.py', '--aggregate', '${PHASE}']
 runpy.run_path('/work/project/convergence_testing/run_mesh_convergence.py',
                run_name='__main__')
+PYEOF
 "
 
 EXIT_CODE=$?

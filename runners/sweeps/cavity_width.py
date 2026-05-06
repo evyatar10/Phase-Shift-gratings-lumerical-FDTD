@@ -30,17 +30,18 @@ from runners.sweeps.sweep_spec import SweepSpec, run_sweep_spec
 from simulation_config import SimulationConfig
 
 
+BASE = SimulationConfig()
+BASE.grating.n_periods_each_side = 150
+BASE.mesh.simulation_mode        = "optimization"
+BASE.spectral.scan_width_nm      = 16.0
+
+
 SPEC = SweepSpec(
-    cavity_width_nm        = [700, 750, 790, 800, 810, 850, 900],
+    cavity_width_nm        = [650,800,950,1000,1100],
     cavity_neg_detuning_nm = [0.0],
     label = "cavity_width",
 )
 
 
 if __name__ == "__main__":
-    base = SimulationConfig()
-    base.grating.n_periods_each_side = 80
-    base.mesh.simulation_mode        = "optimization"
-    base.spectral.scan_width_nm      = 16.0
-
-    run_sweep_spec(SPEC, target="local", base=base)
+    run_sweep_spec(SPEC, target="local", base=BASE)
