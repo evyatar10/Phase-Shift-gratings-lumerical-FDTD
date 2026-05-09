@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 import numpy as np
 
-from runners.inverse_design.geometry_builder import (
+from runners.inverse_design.inverse_design import (
     freed_region_segments,
     freed_region_x_bounds,
     polygon_vertices,

@@ -264,7 +264,7 @@ def _run_kind_inverse_design(line: str) -> None:
     Optional env: SWEEP_BASELINE_LAMBDA_NM (skip baseline run when supplied).
     """
     import importlib
-    from runners.inverse_design.peak_t_adjoint import run_inverse_design
+    from runners.inverse_design.inverse_design import run_inverse_design
 
     module_name = os.environ.get("SWEEP_SPEC_MODULE", "")
     if not module_name:
