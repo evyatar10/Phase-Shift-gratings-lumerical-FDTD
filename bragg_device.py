@@ -467,9 +467,14 @@ class PiShiftBraggFDTD:
 
         # Left grating: walk d = n_total ... 1 (outside → cavity).
         # narrow_d_L is shortened by shift_for_tooth[d]; wide_d_L is always full half_pitch.
+        # cavity_width_option="avg_ext" widens L_narrow_1 to avg_width (mirror of R_narrow_1).
         for d in range(n_total, 0, -1):
             s_d = shift_for_tooth[d]
-            add_core_segment(x, x + half_pitch - s_d, W_narrow[d], name_prefix=f"L_narrow_{d}")
+            if d == 1 and self.cavity_width_option == "avg_ext":
+                w_ln = avg_width
+            else:
+                w_ln = W_narrow[d]
+            add_core_segment(x, x + half_pitch - s_d, w_ln, name_prefix=f"L_narrow_{d}")
             x += half_pitch - s_d
             add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"L_wide_{d}")
             x += half_pitch

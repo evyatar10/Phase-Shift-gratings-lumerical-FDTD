@@ -148,12 +148,34 @@ def _values_gradient_free_design(module_name: str):
     return [f"{i}" for i in range(len(starts))]
 
 
+def _values_lumerical_native_optimization(module_name: str):
+    """Import a Lumerical-native-optimization study (exposes SPEC: LumericalNativeSpec)."""
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "SPEC"):
+        raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
+    spec = module.SPEC
+    starts = spec.get_starts()
+    return [f"{i}" for i in range(len(starts))]
+
+
+def _values_fd_gradient_design(module_name: str):
+    """Import an FD-gradient study (exposes SPEC: FDGradientSpec)."""
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "SPEC"):
+        raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
+    spec = module.SPEC
+    starts = spec.get_starts()
+    return [f"{i}" for i in range(len(starts))]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--kind", required=True,
                         choices=["mesh_conv_x", "mesh_conv_yz",
                                  "shutoff_conv_shutoff", "spec", "cards",
-                                 "inverse_design", "gradient_free_design"])
+                                 "inverse_design", "gradient_free_design",
+                                 "lumerical_native_optimization",
+                                 "fd_gradient_design"])
     parser.add_argument("--output", required=True,
                         help="Path to sweep_list.txt (one line per array task)")
     parser.add_argument("--module", default=None,
@@ -185,6 +207,18 @@ def main():
             print("ERROR: --module is required for --kind gradient_free_design")
             sys.exit(1)
         lines = _values_gradient_free_design(args.module)
+        meta["spec_module"] = args.module
+    elif args.kind == "lumerical_native_optimization":
+        if not args.module:
+            print("ERROR: --module is required for --kind lumerical_native_optimization")
+            sys.exit(1)
+        lines = _values_lumerical_native_optimization(args.module)
+        meta["spec_module"] = args.module
+    elif args.kind == "fd_gradient_design":
+        if not args.module:
+            print("ERROR: --module is required for --kind fd_gradient_design")
+            sys.exit(1)
+        lines = _values_fd_gradient_design(args.module)
         meta["spec_module"] = args.module
     elif args.kind == "cards":
         if not args.module:

@@ -80,6 +80,8 @@ for arg in "$@"; do
         --cards=*)            OPTION="3"; SWEEP_KIND="cards"; SPEC_MODULE="${arg#--cards=}" ;;
         --inverse-design=*)   OPTION="3"; SWEEP_KIND="inverse_design"; SPEC_MODULE="${arg#--inverse-design=}" ;;
         --gradient-free-design=*) OPTION="3"; SWEEP_KIND="gradient_free_design"; SPEC_MODULE="${arg#--gradient-free-design=}" ;;
+        --lumerical-native=*) OPTION="3"; SWEEP_KIND="lumerical_native_optimization"; SPEC_MODULE="${arg#--lumerical-native=}" ;;
+        --fd-gradient-design=*) OPTION="3"; SWEEP_KIND="fd_gradient_design"; SPEC_MODULE="${arg#--fd-gradient-design=}" ;;
         --max-concurrent=*)   MAX_CONCURRENT="${arg#--max-concurrent=}" ;;
         --keep-h5)            KEEP_H5=1 ;;
         --gpu=*)              GPU_TYPE="${arg#--gpu=}" ;;
@@ -163,15 +165,19 @@ if [[ "${OPTION}" == "2" && -z "${RUN_SCRIPT}" && -z "${SWEEP_KIND}" && "${UPLOA
     echo "  2) Sweep                  (parallel SLURM job array — runners/sweeps/)"
     echo "  3) Inverse design         (lumopt adjoint — runners/inverse_design/)"
     echo "  4) Gradient-free design   (Lumerical PSO — runners/gradient_free_design/)"
-    echo "  5) Convergence            (convergence_testing/ — incl. mesh_conv X/YZ)"
+    echo "  5) Lumerical-native opt   (addsweep('Optimization') — runners/lumerical_native_optimization/)"
+    echo "  6) FD-gradient design     (scipy L-BFGS-B + central-diff jac — runners/fd_gradient_design/)"
+    echo "  7) Convergence            (convergence_testing/ — incl. mesh_conv X/YZ)"
     echo "============================================================"
-    read -rp "Enter 1, 2, 3, 4, or 5: " _pipeline_choice
+    read -rp "Enter 1, 2, 3, 4, 5, 6, or 7: " _pipeline_choice
     case "${_pipeline_choice}" in
         1) _PIPELINE_KIND="single" ;;
         2) OPTION="3"; _PIPELINE_KIND="sweep" ;;
         3) OPTION="3"; _PIPELINE_KIND="inverse_design" ;;
         4) OPTION="3"; _PIPELINE_KIND="gradient_free_design" ;;
-        5) _PIPELINE_KIND="convergence" ;;
+        5) OPTION="3"; _PIPELINE_KIND="lumerical_native_optimization" ;;
+        6) OPTION="3"; _PIPELINE_KIND="fd_gradient_design" ;;
+        7) _PIPELINE_KIND="convergence" ;;
         *) echo "Invalid choice. Exiting."; exit 1 ;;
     esac
 fi
@@ -304,6 +310,68 @@ if [[ "${_PIPELINE_KIND:-}" == "gradient_free_design" && -z "${SPEC_MODULE}" && 
     read -rp "Enter number: " _gfd_choice
     if [[ "${_gfd_choice}" =~ ^[0-9]+$ ]] && (( _gfd_choice >= 1 && _gfd_choice <= ${#_GFD_STUDIES[@]} )); then
         SPEC_MODULE="runners.gradient_free_design.${_GFD_STUDIES[$((_gfd_choice-1))]}"
+        echo "Selected: ${SPEC_MODULE}"
+    else
+        echo "Invalid choice. Exiting."; exit 1
+    fi
+fi
+
+# ── Lumerical-native optimization picker (mode=lumerical_native_optimization) ─
+# Auto-discovers any module under runners/lumerical_native_optimization/ that
+# defines a top-level SPEC: LumericalNativeSpec.
+if [[ "${_PIPELINE_KIND:-}" == "lumerical_native_optimization" && -z "${SPEC_MODULE}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    SWEEP_KIND="lumerical_native_optimization"
+    mapfile -t _LNO_STUDIES < <(
+        for _f in $(grep -rl '[[:space:]]*SPEC[[:space:]]*=' "${LOCAL_PROJECT}/runners/lumerical_native_optimization/"*.py 2>/dev/null \
+                        | grep -v 'lumerical_native_optimization\.py'); do
+            basename "${_f}" .py
+        done | sort
+    )
+    if [[ ${#_LNO_STUDIES[@]} -eq 0 ]]; then
+        echo "ERROR: no lumerical-native studies found in runners/lumerical_native_optimization/ (need top-level SPEC = LumericalNativeSpec(...))"
+        exit 1
+    fi
+    echo ""
+    echo "============================================================"
+    echo "  Choose lumerical-native study (runners/lumerical_native_optimization/<name>.py):"
+    for _i in "${!_LNO_STUDIES[@]}"; do
+        printf "  %d) %s\n" "$((_i+1))" "${_LNO_STUDIES[$_i]}"
+    done
+    echo "============================================================"
+    read -rp "Enter number: " _lno_choice
+    if [[ "${_lno_choice}" =~ ^[0-9]+$ ]] && (( _lno_choice >= 1 && _lno_choice <= ${#_LNO_STUDIES[@]} )); then
+        SPEC_MODULE="runners.lumerical_native_optimization.${_LNO_STUDIES[$((_lno_choice-1))]}"
+        echo "Selected: ${SPEC_MODULE}"
+    else
+        echo "Invalid choice. Exiting."; exit 1
+    fi
+fi
+
+# ── FD-gradient-design study picker (mode=fd_gradient_design) ───────────────
+# Auto-discovers any module under runners/fd_gradient_design/ that defines
+# a top-level SPEC: FDGradientSpec.
+if [[ "${_PIPELINE_KIND:-}" == "fd_gradient_design" && -z "${SPEC_MODULE}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    SWEEP_KIND="fd_gradient_design"
+    mapfile -t _FDG_STUDIES < <(
+        for _f in $(grep -rl '[[:space:]]*SPEC[[:space:]]*=' "${LOCAL_PROJECT}/runners/fd_gradient_design/"*.py 2>/dev/null \
+                        | grep -v 'fd_gradient_design\.py'); do
+            basename "${_f}" .py
+        done | sort
+    )
+    if [[ ${#_FDG_STUDIES[@]} -eq 0 ]]; then
+        echo "ERROR: no fd-gradient-design studies found in runners/fd_gradient_design/ (need top-level SPEC = FDGradientSpec(...))"
+        exit 1
+    fi
+    echo ""
+    echo "============================================================"
+    echo "  Choose fd-gradient-design study (runners/fd_gradient_design/<name>.py):"
+    for _i in "${!_FDG_STUDIES[@]}"; do
+        printf "  %d) %s\n" "$((_i+1))" "${_FDG_STUDIES[$_i]}"
+    done
+    echo "============================================================"
+    read -rp "Enter number: " _fdg_choice
+    if [[ "${_fdg_choice}" =~ ^[0-9]+$ ]] && (( _fdg_choice >= 1 && _fdg_choice <= ${#_FDG_STUDIES[@]} )); then
+        SPEC_MODULE="runners.fd_gradient_design.${_FDG_STUDIES[$((_fdg_choice-1))]}"
         echo "Selected: ${SPEC_MODULE}"
     else
         echo "Invalid choice. Exiting."; exit 1
@@ -894,6 +962,20 @@ else
         fi
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
             --kind gradient_free_design --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
+    elif [[ "${SWEEP_KIND}" == "lumerical_native_optimization" ]]; then
+        if [[ -z "${SPEC_MODULE}" ]]; then
+            echo "ERROR: --lumerical-native=<module> is required for kind=lumerical_native_optimization."
+            exit 1
+        fi
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+            --kind lumerical_native_optimization --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
+    elif [[ "${SWEEP_KIND}" == "fd_gradient_design" ]]; then
+        if [[ -z "${SPEC_MODULE}" ]]; then
+            echo "ERROR: --fd-gradient-design=<module> is required for kind=fd_gradient_design."
+            exit 1
+        fi
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+            --kind fd_gradient_design --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
     else
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
             --kind "${SWEEP_KIND}" --output "${LOCAL_SWEEP_LIST}" 2>&1)

@@ -164,6 +164,17 @@ _module = importlib.import_module(_module_name)
 _run_func = getattr(_module, _func_name)
 print(f"[athena_run] Running: {_run_script} ({_module_name}.{_func_name})")
 
+# Optional per-runner override hook. If the runner module defines
+# `build_cfg(cfg) -> cfg`, apply it here so local (__main__) and cluster
+# runs share one source of truth for parameter overrides. Without this hook
+# any setup inside a runner's `if __name__ == "__main__":` is silently
+# ignored on the cluster (the dispatcher imports the module and calls run()
+# directly, never executing __main__).
+_build_cfg = getattr(_module, "build_cfg", None)
+if callable(_build_cfg):
+    print(f"[athena_run] Applying {_run_script}.build_cfg(cfg) overrides")
+    cfg = _build_cfg(cfg)
+
 # ── 7. Enable GPU on the FDTD resource before running ────────────────────────
 #    Patch lumapi.FDTD.__init__ (the method), NOT the class itself.
 #    Replacing the class object breaks lumapi's own super(FDTD, self) call

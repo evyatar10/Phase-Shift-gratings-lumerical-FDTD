@@ -107,24 +107,36 @@ def cleanup_lumerical_temp_files(layout_path: str) -> None:
 # Entry point
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Auto-discovery contract: athena_run.py looks for `run` on each runner module.
-run = run_single_sim
+def build_cfg(cfg: SimulationConfig) -> SimulationConfig:
+    """Per-runner overrides applied to the base cfg.
 
-
-if __name__ == "__main__":
-    # Create config with defaults from simulation_config.py.
-    # Override any parameters below before running:
-    cfg = SimulationConfig()
-
+    Single source of truth for *this* runner's parameters. The cluster
+    dispatchers (athena/dgx scripts/athena_run.py) call this hook after
+    constructing the base cfg, so local and cluster runs apply the same
+    overrides. Edits placed only in `__main__` are local-only — put them
+    here instead.
+    """
     # Simulation mode: "accurate" (dx≈35nm, cells=7) or "optimization" (dx=50nm, cells=5)
-    cfg.mesh.simulation_mode = "optimization"
+    cfg.mesh.simulation_mode = "accurate"
+
+    # Override core refractive index for this run (default in simulation_config.py is 1.977)
+    cfg.material.n_core_const = 1.93024
+    cfg.spectral.center_wavelength_m = 1535.92e-9
 
     # Example overrides (uncomment to use):
     # cfg.grating.n_periods_each_side = 120
     # cfg.apodization.enabled = False
     # cfg.apodization.center_mod_depth_nm = 20.0
-    # cfg.spectral.center_wavelength_m = 1.560e-6
     # cfg.monitors.record_3d_fields = True
     # cfg.farfield.enabled = False
+    return cfg
 
+
+# Auto-discovery contract: athena_run.py looks for `run` on each runner module.
+# Optional contract: a `build_cfg(cfg)` callable, applied by the dispatcher.
+run = run_single_sim
+
+
+if __name__ == "__main__":
+    cfg = build_cfg(SimulationConfig())
     run_single_sim(cfg)

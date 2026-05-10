@@ -48,9 +48,12 @@ SPEC = InverseDesignSpec(
     optimizer_pgtol    = 1e-6,
     optimizer_ftol     = 1e-6,
 
+    # σ=2 nm matches production. With patched adjoint (target_T_fwd_weights
+    # now correctly applied to the kernel), FD and adjoint should agree to
+    # vec_error < 0.1. Pre-patch: ~12-44 across all tests.
     fom_window_nm        = 10.0,
     fom_n_points         = 51,
-    fom_weight_sigma_nm  = 1000.0,    # diagnostic: σ >> window → uniform weight
+    fom_weight_sigma_nm  = 2.0,
 
     mesh_override_dxyz_nm= 0,
     param_dx_nm          = 50.0,

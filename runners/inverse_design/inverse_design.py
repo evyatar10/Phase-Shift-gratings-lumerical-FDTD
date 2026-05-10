@@ -99,6 +99,16 @@ class InverseDesignSpec:
     check_gradient_dx_nm: float = 50.0
     scan_n_points: int = 9
 
+    # ── Outer-loop active-set re-centering (lumopt only) ────────────────────
+    # When n_outer_iters > 1, run_inverse_design_outer_loop alternates inner
+    # adjoint optimization (single-λ FOM, GPU-correct) with re-measuring the
+    # resonance λ between outer iters. This is the GPU-friendly fix for the
+    # broadband-port-profile bug: at fom_n_points=1 the adjoint is
+    # mathematically consistent with `frequency_dependent_profile=0`.
+    # Each outer iter: max_iter inner iters → re-measure λ → restart.
+    # Total inner iterations = n_outer_iters * max_iter.
+    n_outer_iters: int = 1
+
     # ── Study metadata ──────────────────────────────────────────────────────
     label: str = ""
 
@@ -600,15 +610,19 @@ def make_base_script(cfg: SimulationConfig, n_free: int, target_lambda_m: float,
         # opt_fields y/z spans matching the FDTD region (cfg.z_span ≈ 3.1 µm,
         # cfg.y_span ≈ 3.6 µm). Truncating the mode tail under-counts the field
         # integral and biases adjoint gradients high.
+        # Phase-3 fix: was 0.9× — now 0.99× (just inside FDTD region to avoid
+        # PML overlap warnings). The 0.9× truncation may have contributed to
+        # the residual FD-vs-adjoint mismatch after the target_T_fwd_weights
+        # patch (vec_error 11.79 → 11.40 → ?).
         fdtd.addpower()
         fdtd.set("name", "opt_fields")
         fdtd.set("monitor type", "3D")
         fdtd.set("x min", x_lo)
         fdtd.set("x max", x_hi)
         fdtd.set("y", 0.0)
-        fdtd.set("y span", cfg.y_span * 0.9)
+        fdtd.set("y span", cfg.y_span * 0.99)
         fdtd.set("z", 0.0)
-        fdtd.set("z span", cfg.z_span * 0.9)
+        fdtd.set("z span", cfg.z_span * 0.99)
         fdtd.set("override global monitor settings", 1)
         fdtd.set("use source limits", 1)
         fdtd.set("frequency points", int(fom_n_points))
@@ -639,6 +653,125 @@ def make_base_script(cfg: SimulationConfig, n_free: int, target_lambda_m: float,
             fdtd.set("dz", mesh_dx)
 
     return _callback
+
+
+def _patch_porttransmission_weights():
+    """Monkey-patch lumopt's `porttransmission` to fix the dropped Gaussian
+    weight in the adjoint integral kernel.
+
+    Bug (verified by check_gradient diagnostics 78712, 78715, fine_mesh, smalldx
+    — all gave vec_error 12-44 vs healthy <0.1):
+
+        Forward FOM:    error_term = (∫ w(λ)·|T-target|^p / range)^{1/p}
+        ∂/∂T(λ):        ∂error_term/∂T(λ) = error_term^{1-p} · w(λ)·|err|^{p-1}·sign(err) / range
+
+    The current lumopt code pre-multiplies the error by w (`T_fwd_error =
+    w·(T-target)`) then takes `|T_fwd_error|^{p-1}·sign(T_fwd_error)`. For p=1
+    (our case) this collapses to `sign(T-target)` and the w(λ) factor is lost
+    entirely. Result: the adjoint sees a uniformly weighted gradient (over the
+    full 10 nm scan) while the forward FOM is Gaussian-weighted (σ=1 nm) —
+    explains the observed 10-100× gradient inflation.
+
+    This patch replaces both gradient methods (`fom_gradient_wavelength_integral_on_cad`
+    and the static `fom_gradient_wavelength_integral_impl`) with versions that
+    keep the weight inside the kernel for any p ≥ 1.
+    """
+    from lumopt.figures_of_merit.PortTransmission import porttransmission  # type: ignore
+    import lumapi  # type: ignore
+
+    if getattr(porttransmission, "_weights_patch_applied", False):
+        return  # idempotent
+
+    def fom_gradient_wavelength_integral_on_cad(self, sim, grad_var_name, wl):
+        assert np.allclose(wl, self.wavelengths)
+
+        target_T_fwd_vs_wavelength = self.target_T_fwd(wl).flatten()
+        weights_vs_wavelength = self.target_T_fwd_weights(wl).flatten()
+        # NB: do NOT pre-multiply T_fwd_error by weights — keep error pure
+        # so that |err|^{p-1}·sign(err) carries the right magnitude, then
+        # multiply by w(λ) explicitly in the kernel.
+        T_fwd_error = self.T_fwd_vs_wavelength - target_T_fwd_vs_wavelength
+
+        if wl.size > 1:
+            wavelength_range = wl.max() - wl.min()
+            # Forward error_term integrand (matches forward FOM, NOT |w·err|^p):
+            T_fwd_error_integrand = np.multiply(
+                weights_vs_wavelength, np.power(np.abs(T_fwd_error), self.norm_p)
+            ) / wavelength_range
+            const_factor = -1.0 * np.power(
+                np.trapz(y=T_fwd_error_integrand, x=wl), 1.0 / self.norm_p - 1.0
+            )
+            # Per-wavelength derivative: w(λ) · |err|^{p-1} · sign(err) / range
+            integral_kernel = (
+                weights_vs_wavelength
+                * np.power(np.abs(T_fwd_error), self.norm_p - 1)
+                * np.sign(T_fwd_error)
+                / wavelength_range
+            )
+
+            d = np.diff(wl)
+            quad_weight = np.append(np.append(d[0], d[0:-1] + d[1:]), d[-1]) / 2
+            v = const_factor * integral_kernel * quad_weight
+
+            lumapi.putMatrix(sim.fdtd.handle, "wl_scaled_integral_kernel", v)
+            sim.fdtd.eval((
+                "dF_dp_s=size({0});"
+                "dF_dp2 = reshape(permute({0},[3,2,1]),[dF_dp_s(3),dF_dp_s(2)*dF_dp_s(1)]);"
+                "T_fwd_partial_derivs=real(mult(transpose(wl_scaled_integral_kernel),dF_dp2));"
+            ).format(grad_var_name))
+            T_fwd_partial_derivs_on_cad = sim.fdtd.getv("T_fwd_partial_derivs")
+        else:
+            sim.fdtd.eval(("T_fwd_partial_derivs=real({0});").format(grad_var_name))
+            T_fwd_partial_derivs_on_cad = sim.fdtd.getv("T_fwd_partial_derivs")
+            T_fwd_partial_derivs_on_cad *= -1.0 * weights_vs_wavelength * np.sign(T_fwd_error)
+
+        return T_fwd_partial_derivs_on_cad.flatten()
+
+    @staticmethod
+    def fom_gradient_wavelength_integral_impl(
+        T_fwd_vs_wavelength, T_fwd_partial_derivs_vs_wl, target_T_fwd_vs_wavelength,
+        wl, norm_p, target_T_fwd_weights,
+    ):
+        if wl.size > 1:
+            assert T_fwd_partial_derivs_vs_wl.shape[1] == wl.size
+            wavelength_range = wl.max() - wl.min()
+            T_fwd_error = T_fwd_vs_wavelength - target_T_fwd_vs_wavelength
+            T_fwd_error_integrand = np.multiply(
+                target_T_fwd_weights, np.power(np.abs(T_fwd_error), norm_p)
+            ) / wavelength_range
+            const_factor = -1.0 * np.power(
+                np.trapz(y=T_fwd_error_integrand, x=wl), 1.0 / norm_p - 1.0
+            )
+            integral_kernel = (
+                target_T_fwd_weights
+                * np.power(np.abs(T_fwd_error), norm_p - 1)
+                * np.sign(T_fwd_error)
+                / wavelength_range
+            )
+
+            num_opt_param = T_fwd_partial_derivs_vs_wl.shape[0]
+            T_fwd_partial_derivs = np.zeros(num_opt_param, dtype="complex")
+            for i in range(num_opt_param):
+                T_fwd_partial_derivs[i] = const_factor * np.trapz(
+                    y=integral_kernel * T_fwd_partial_derivs_vs_wl[i], x=wl
+                )
+        else:
+            T_fwd_partial_derivs = (
+                -1.0 * target_T_fwd_weights
+                * np.sign(T_fwd_vs_wavelength - target_T_fwd_vs_wavelength)
+                * T_fwd_partial_derivs_vs_wl.flatten()
+            )
+
+        return T_fwd_partial_derivs.real, T_fwd_partial_derivs_vs_wl.real
+
+    porttransmission.fom_gradient_wavelength_integral_on_cad = (
+        fom_gradient_wavelength_integral_on_cad
+    )
+    porttransmission.fom_gradient_wavelength_integral_impl = (
+        fom_gradient_wavelength_integral_impl
+    )
+    porttransmission._weights_patch_applied = True
+    print("[inverse_design] applied target_T_fwd_weights adjoint patch to porttransmission.")
 
 
 def _gaussian_weight_fn(lam_target_m: float, sigma_nm: float):
@@ -683,6 +816,10 @@ def run_inverse_design(
     from lumopt.figures_of_merit.PortTransmission import porttransmission  # type: ignore
     from lumopt.optimizers.generic_optimizers import ScipyOptimizers        # type: ignore
     from runners.single.run_simulation import run_single_sim
+
+    # Apply the target_T_fwd_weights adjoint patch BEFORE constructing any
+    # porttransmission instance. Idempotent — safe to call multiple times.
+    _patch_porttransmission_weights()
 
     spec.validate()
     starts = spec.get_starts() if spec.initial_points or spec.n_starts > 1 else [
@@ -852,6 +989,166 @@ def run_inverse_design(
     else:
         print(f"[inverse_design] done. true peak T = {T_peak:.4f} at λ = {lam_peak * 1e9:.3f} nm "
               f"(initial peak T not available — baseline was pre-supplied)")
+    return summary
+
+
+def run_inverse_design_outer_loop(
+    cfg: SimulationConfig,
+    spec: InverseDesignSpec,
+    start_idx: int = 0,
+    output_root: Optional[str] = None,
+    baseline_lambda_m: Optional[float] = None,
+) -> dict:
+    """Active-set outer loop: alternate inner adjoint optimization with
+    re-centering of the FOM wavelength on the resonance.
+
+    Why this exists: lumopt's adjoint pipeline silently relies on
+    `frequency_dependent_profile=1` on the fom port to produce per-wavelength
+    correct mode shapes. GPU FDTD does NOT support that setting, and our
+    inverse_design path explicitly disables it (line 583-584). The result:
+    the broadband-FOM adjoint computes E_adj at the wrong spatial shape for
+    every λ ≠ λ_center, contaminating the gradient (vec_error 11.40 at
+    fom_n_points=201).
+
+    Workaround: at fom_n_points=1, single-frequency adjoint is mathematically
+    consistent regardless of frequency_dependent_profile, so GPU stays valid.
+    But single-λ FOM has no drift handling (resonance moves out of band as
+    parameters change). The outer loop adds drift handling: every K=max_iter
+    inner iters, re-measure the resonance via run_single_sim (broadband, GPU),
+    update the FOM wavelength, restart the inner adjoint optimization from
+    the current best params.
+
+    Cost: K × n_outer_iters total inner iters; plus n_outer_iters baseline
+    re-measurements (~3 min each on n_periods=80 GPU).
+    """
+    if spec.n_outer_iters <= 1:
+        raise ValueError(
+            "run_inverse_design_outer_loop requires spec.n_outer_iters > 1; "
+            "for n_outer_iters=1 use the standard run_inverse_design directly."
+        )
+
+    n_outer = int(spec.n_outer_iters)
+    base_inner_iters = int(spec.max_iter)
+
+    # Get the starting params.
+    starts = spec.get_starts()
+    if not (0 <= start_idx < len(starts)):
+        raise IndexError(f"start_idx {start_idx} out of range (have {len(starts)} starts).")
+    p_curr = list(starts[start_idx])
+
+    # Set up output dir.
+    if output_root is None:
+        output_root = os.path.join(_cfg.BASE_SAVE_DIR, "inverse_design", spec.label or "study")
+    out_dir_outer = os.path.join(output_root, f"start{start_idx}")
+    os.makedirs(out_dir_outer, exist_ok=True)
+
+    outer_history: List[dict] = []
+    lam_target_m = baseline_lambda_m
+
+    for outer_i in range(n_outer):
+        print(f"\n{'='*60}")
+        print(f"[outer_loop] outer iter {outer_i + 1}/{n_outer}")
+        print(f"[outer_loop] starting params: {p_curr}")
+
+        # 1. Re-measure resonance at current params (skip first iter if
+        #    baseline_lambda_m was pre-supplied; otherwise always measure).
+        cfg_curr = copy.deepcopy(cfg)
+        cfg_curr.grating.n_free_inner_teeth = spec.n_free_inner_teeth
+        cfg_curr.grating.lengthen_cavity = spec.lengthen_cavity
+        kw = params_to_kwargs(p_curr, spec.n_free_inner_teeth)
+        cfg_curr.grating.inner_dw_nm = list(kw["inner_dw_nm"])
+        cfg_curr.grating.inner_shift_nm = list(kw["inner_shift_nm"])
+        cfg_curr.grating.cavity_width_m = kw["cavity_width_m"]
+
+        if outer_i > 0 or lam_target_m is None:
+            print(f"[outer_loop] re-measuring resonance at current geometry ...")
+            lam_target_m, peak_T_at_p = measure_baseline(cfg_curr)
+            print(f"[outer_loop] λ_target = {lam_target_m * 1e9:.3f} nm  (T = {peak_T_at_p:.4f})")
+
+        # 2. Build inner spec: single-λ FOM at current λ_target, p_curr as start.
+        inner_spec = copy.deepcopy(spec)
+        inner_spec.fom_n_points = 1                 # ← key: single λ → GPU adjoint correct
+        inner_spec.fom_window_nm = 0.0              # 0 width is OK for single point
+        inner_spec.max_iter = base_inner_iters
+        inner_spec.n_outer_iters = 1                # don't recurse
+        inner_spec.initial_points = [list(p_curr)]
+        inner_spec.n_starts = 1
+        inner_spec.label = f"{spec.label or 'outer'}_inner{outer_i}"
+
+        # 3. Run inner adjoint optimization.
+        inner_out_dir = os.path.join(out_dir_outer, f"inner{outer_i}")
+        try:
+            result = run_inverse_design(
+                cfg=cfg, spec=inner_spec, start_idx=0,
+                output_root=inner_out_dir,
+                baseline_lambda_m=lam_target_m,
+            )
+            # Defensive float coercion — result fields may be numpy scalars
+            # (np.float64) or 1-element arrays from various code paths.
+            def _to_py_float(x, default=float("nan")):
+                try:
+                    return float(np.asarray(x).item()) if x is not None else default
+                except (TypeError, ValueError):
+                    return default
+
+            def _to_py_list(x):
+                try:
+                    return list(map(float, np.asarray(x).flatten()))
+                except (TypeError, ValueError):
+                    return list(x) if x is not None else []
+
+            p_curr = _to_py_list(result.get("p_final", p_curr))
+            true_peak_T = _to_py_float(result.get("true_peak_T"))
+            true_peak_lambda_m = _to_py_float(result.get("true_peak_lambda_m"))
+            fom_final_inner = _to_py_float(result.get("fom_final"))
+
+            outer_history.append({
+                "outer_iter": outer_i,
+                "lam_target_nm": float(lam_target_m * 1e9),
+                "p_start": _to_py_list(result.get("p_initial", [])),
+                "p_final": list(p_curr),
+                "fom_final": fom_final_inner,
+                "true_peak_T": true_peak_T,
+                "true_peak_lambda_nm": float(true_peak_lambda_m * 1e9) if not np.isnan(true_peak_lambda_m) else None,
+            })
+            print(f"[outer_loop] iter {outer_i + 1} done: peak_T = "
+                  f"{true_peak_T:.4f}  →  p = {[round(v, 2) for v in p_curr]}")
+
+            # Update lam_target for next outer iter using the actual measured
+            # resonance from this iter's verification (better than re-measuring).
+            if not np.isnan(true_peak_lambda_m) and true_peak_lambda_m > 0:
+                lam_target_m = true_peak_lambda_m
+        except Exception as exc:
+            import traceback
+            print(f"[outer_loop] iter {outer_i + 1} FAILED: {exc}")
+            traceback.print_exc()
+            outer_history.append({
+                "outer_iter": outer_i,
+                "lam_target_nm": (float(lam_target_m * 1e9) if lam_target_m else None),
+                "error": str(exc),
+            })
+            break
+
+    # Final summary.
+    summary = {
+        "label": spec.label,
+        "start_idx": int(start_idx),
+        "n_outer_iters": n_outer,
+        "max_inner_iter": base_inner_iters,
+        "p_initial": list(map(float, starts[start_idx])),
+        "p_final": list(map(float, p_curr)),
+        "outer_history": outer_history,
+        "final_lam_target_nm": (lam_target_m * 1e9) if lam_target_m else None,
+    }
+    with open(os.path.join(out_dir_outer, "outer_loop_summary.json"), "w") as fp:
+        json.dump(summary, fp, indent=2)
+
+    print(f"\n[outer_loop] DONE. {n_outer} outer iters × {base_inner_iters} inner iters.")
+    print(f"  p_final = {p_curr}")
+    if outer_history:
+        last = outer_history[-1]
+        if "true_peak_T" in last:
+            print(f"  final peak T = {last.get('true_peak_T'):.4f}")
     return summary
 
 

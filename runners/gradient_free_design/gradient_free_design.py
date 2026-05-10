@@ -272,6 +272,11 @@ def _make_fom_analysis_script(transmission_monitor_path: str = "FDTD::ports::Por
 
     Sets a result `peak_T` accessible via `getsweepresult` paths after each
     FDTD run.
+
+    TODO (future runs): port sim_helpers.find_bragg_resonance into .lsf so the
+    FOM is the cavity-resonance peak (rejecting sidelobe ripple and band-edge
+    artifacts) rather than max(T). Keep raw-max here for backward compatibility
+    with histories from existing runs.
     """
     return f"""# fom_extractor analysis script: peak modal T from the transmission monitor.
 T_struct = getresult("{transmission_monitor_path}", "T");
@@ -397,13 +402,26 @@ def _set_freed_group_params(fdtd, params_nm) -> None:
 
 
 def _evaluate_particle(fdtd, params_nm) -> float:
-    """Update the geometry to params_nm, run FDTD, return peak T."""
+    """Update the geometry to params_nm, run FDTD, return modal cavity peak T.
+
+    Reads |S21|^2 from the port's modal expansion (NOT the port's flux-based
+    "T" output, which includes cladding radiation crossing the port plane —
+    that earlier path made PSO climb a hill of scattering loss instead of
+    cavity Q). Then scores the cavity resonance with find_bragg_resonance
+    (sharpness × dip-depth) so sidelobe ripple is rejected too.
+    """
+    from sim_helpers import find_bragg_resonance
+
     _set_freed_group_params(fdtd, params_nm)
     fdtd.run()
-    # Read the transmission monitor's modal T(λ) and take max.
-    res = fdtd.getresult("FDTD::ports::Port_2", "T")
-    T = np.asarray(np.squeeze(res["T"])).flatten()
-    peak_T = float(np.max(np.abs(T)))
+    # Modal S21 → |S21|^2 = TE0-projected forward transmission (NOT flux).
+    res = fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
+    S21 = np.squeeze(res["S"])
+    wl  = np.squeeze(res["lambda"]).flatten()
+    T_modal = np.abs(np.asarray(S21).flatten()) ** 2
+    # find_bragg_resonance returns the index of the cavity peak.
+    idx = find_bragg_resonance(wl, T_modal)
+    peak_T = float(T_modal[idx])
     fdtd.switchtolayout()
     return peak_T
 

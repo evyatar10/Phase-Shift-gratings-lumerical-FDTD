@@ -47,10 +47,23 @@ from simulation_config import GeometryConfig, GratingConfig, MaterialConfig  # n
 # Calibration target
 # ═══════════════════════════════════════════════════════════════════════════════
 
-LAMBDA_EXP_M = 1536e-9      # Measured Bragg wavelength of the left grating
-LAMBDA_PROBE_M = 1536e-9    # Wavelength at which FDE evaluates n_eff
+# Desired FDTD Bragg wavelength.  We calibrate n_core such that the *next*
+# FDTD run lands on this wavelength — not the FDE-predicted Bragg.
+LAMBDA_TARGET_M = 1535.92e-9
+LAMBDA_PROBE_M  = LAMBDA_TARGET_M    # Wavelength at which FDE evaluates n_eff
+
+# ── FDTD benchmark mode ─────────────────────────────────────────────────────
+# When True, the calibration uses a measured FDTD peak (λ_FDTD at n_core_FDTD)
+# to estimate the FDE↔FDTD bias and shifts the bisection target accordingly.
+# When False, it falls back to the legacy behavior (target = LAMBDA_EXP_M /
+# (2·pitch); good only when FDE is assumed to match FDTD).
+USE_FDTD_BENCHMARK = True
+LAMBDA_FDTD_M      = 1536.342e-9     # Measured FDTD peak in benchmark run (iter 2)
+N_CORE_FDTD        = 1.93089         # n_core used in benchmark run (iter 2)
+LAMBDA_EXP_M       = LAMBDA_TARGET_M # Legacy fallback when benchmark mode off
+
 N_CORE_BRACKET = (1.85, 1.99)
-N_EFF_TOLERANCE = 1e-4      # Stop bisection when |avg_neff - target| < this
+N_EFF_TOLERANCE = 1e-4               # Stop bisection when |avg_neff - target| < this
 MAX_ITERATIONS = 8
 
 OUTPUT_DIR = r"C:\Users\evyat\Lumerical\pi_shifts_FDTD_results\neff_calibration"
@@ -66,9 +79,14 @@ class CalibInputs:
     lambda_probe_m: float
     n_clad: float
     n_core_initial: float
+    # FDTD benchmark (None ⇒ legacy / no-bias mode)
+    lambda_fdtd_m: float | None = None
+    lambda_target_m: float | None = None
 
     @property
     def target_avg_neff(self) -> float:
+        # Used only in legacy (no-benchmark) mode. The benchmark path computes
+        # the bias-corrected target inside calibrate() and overrides this.
         return self.lambda_exp_m / (2.0 * self.pitch_m)
 
 
@@ -93,16 +111,17 @@ class NeffCalibrator:
         # frequency-independent — equivalent to FDTD's flat sampled-data path).
         script = f'''
         switchtolayout;
-        if (materialexists("{self.CORE_MAT}")) {{ deletematerial("{self.CORE_MAT}"); }}
-        if (materialexists("{self.CLAD_MAT}")) {{ deletematerial("{self.CLAD_MAT}"); }}
+        if (!materialexists("{self.CORE_MAT}")) {{
+            mcore = addmaterial("Dielectric");
+            setmaterial(mcore, "name", "{self.CORE_MAT}");
+        }}
+        setmaterial("{self.CORE_MAT}", "Refractive Index", {n_core});
 
-        addmaterial("Dielectric");
-        set("name", "{self.CORE_MAT}");
-        set("Refractive Index", {n_core});
-
-        addmaterial("Dielectric");
-        set("name", "{self.CLAD_MAT}");
-        set("Refractive Index", {n_clad});
+        if (!materialexists("{self.CLAD_MAT}")) {{
+            mclad = addmaterial("Dielectric");
+            setmaterial(mclad, "name", "{self.CLAD_MAT}");
+        }}
+        setmaterial("{self.CLAD_MAT}", "Refractive Index", {n_clad});
         '''
         self.mode.eval(script)
 
@@ -167,11 +186,14 @@ class NeffCalibrator:
 
 def calibrate(inp: CalibInputs) -> dict:
     cal = NeffCalibrator(inp.height_m, inp.lambda_probe_m)
-    log = {"inputs": inp.__dict__.copy(), "target_avg_neff": inp.target_avg_neff,
-           "iterations": []}
+    log = {"inputs": inp.__dict__.copy(), "iterations": []}
 
     try:
-        # Sanity: current n_core
+        # ── Sanity / bias step ────────────────────────────────────────────
+        # Probe FDE at the benchmark n_core. In benchmark mode this is
+        # n_core_FDTD (the value used in the FDTD run), so the FDE-predicted
+        # Bragg lambda from this evaluation is directly comparable to the
+        # measured FDTD peak — their difference is the FDE↔FDTD bias.
         avg0, w0, nw0 = cal.avg_neff(
             inp.n_core_initial, inp.n_clad, inp.width_wide_m, inp.width_narrow_m,
         )
@@ -183,7 +205,37 @@ def calibrate(inp: CalibInputs) -> dict:
         }
         print(f"[sanity] n_core={inp.n_core_initial:.4f} -> "
               f"avg n_eff={avg0:.4f} (wide={w0:.4f}, narrow={nw0:.4f}) -> "
-              f"lambda_B={sim_lambda_B*1e9:.2f} nm")
+              f"FDE lambda_B={sim_lambda_B*1e9:.4f} nm")
+
+        # ── Bias-corrected target ────────────────────────────────────────
+        # If we have an FDTD benchmark, redirect the bisection target so that
+        # the calibrated n_core makes FDTD (not FDE) land on lambda_target.
+        # Assumption: FDE↔FDTD bias is locally constant in n_core. Valid for
+        # small calibration swings (Δn_core ≲ 0.01) verified empirically; if
+        # large swings are needed, iterate (run a second FDTD at the new
+        # n_core and re-derive bias).
+        if inp.lambda_fdtd_m is not None and inp.lambda_target_m is not None:
+            bias_m = inp.lambda_fdtd_m - sim_lambda_B          # FDTD − FDE_pred
+            lambda_fde_target_m = inp.lambda_target_m - bias_m
+            target = lambda_fde_target_m / (2.0 * inp.pitch_m)
+            log["fdtd_benchmark"] = {
+                "lambda_fdtd_m": inp.lambda_fdtd_m,
+                "lambda_fde_pred_at_n_core_fdtd_m": sim_lambda_B,
+                "bias_m": bias_m,
+                "lambda_target_m": inp.lambda_target_m,
+                "lambda_fde_target_m": lambda_fde_target_m,
+                "target_avg_neff": target,
+            }
+            print(f"[bias]    lambda_FDTD={inp.lambda_fdtd_m*1e9:.4f} nm  "
+                  f"lambda_FDE={sim_lambda_B*1e9:.4f} nm  "
+                  f"bias={bias_m*1e9:+.4f} nm")
+            print(f"[target]  lambda_target_FDTD={inp.lambda_target_m*1e9:.4f} nm  "
+                  f"-> bisect-to lambda_FDE={lambda_fde_target_m*1e9:.4f} nm  "
+                  f"(avg n_eff = {target:.5f})")
+        else:
+            target = inp.target_avg_neff
+            log["target_avg_neff"] = target
+            print(f"[target]  legacy mode: avg n_eff target = {target:.5f}")
 
         # Bisection over n_core. Higher n_core -> higher n_eff (monotonic).
         lo, hi = N_CORE_BRACKET
@@ -194,7 +246,6 @@ def calibrate(inp: CalibInputs) -> dict:
         print(f"[bracket] lo: n_core={lo} -> avg={avg_lo:.4f} | "
               f"hi: n_core={hi} -> avg={avg_hi:.4f}")
 
-        target = inp.target_avg_neff
         if not (min(avg_lo, avg_hi) <= target <= max(avg_lo, avg_hi)):
             raise RuntimeError(
                 f"Target avg n_eff {target:.4f} outside bracket "
@@ -235,16 +286,32 @@ def calibrate(inp: CalibInputs) -> dict:
                     hi, avg_hi = mid, avg_mid
                 n_core_best, avg_best = mid, avg_mid
 
+        implied_lambda_B_FDE_m = 2 * avg_best * inp.pitch_m
         log["result"] = {
             "n_core_calibrated": n_core_best,
             "avg_neff_at_calibrated": avg_best,
             "residual_neff": avg_best - target,
-            "implied_lambda_B_m": 2 * avg_best * inp.pitch_m,
+            "implied_lambda_B_FDE_m": implied_lambda_B_FDE_m,
         }
-        print(f"\n[result] n_core_calibrated = {n_core_best:.4f} "
-              f"(avg n_eff = {avg_best:.4f}, target = {target:.4f})")
-        print(f"         implied lambda_B = "
-              f"{log['result']['implied_lambda_B_m']*1e9:.2f} nm")
+        if "fdtd_benchmark" in log:
+            # Apply the same bias (assumed constant locally in n_core) to
+            # predict where the *next* FDTD run will land at this n_core.
+            bias_m = log["fdtd_benchmark"]["bias_m"]
+            predicted_lambda_FDTD_m = implied_lambda_B_FDE_m + bias_m
+            log["result"]["predicted_lambda_FDTD_m"] = predicted_lambda_FDTD_m
+            log["result"]["predicted_lambda_FDTD_residual_m"] = (
+                predicted_lambda_FDTD_m - inp.lambda_target_m
+            )
+
+        print(f"\n[result] n_core_calibrated = {n_core_best:.5f} "
+              f"(avg n_eff = {avg_best:.5f}, target = {target:.5f})")
+        print(f"         FDE-implied lambda_B  = {implied_lambda_B_FDE_m*1e9:.4f} nm")
+        if "fdtd_benchmark" in log:
+            print(f"         predicted FDTD lambda = "
+                  f"{log['result']['predicted_lambda_FDTD_m']*1e9:.4f} nm "
+                  f"(target = {inp.lambda_target_m*1e9:.4f} nm, "
+                  f"residual = "
+                  f"{log['result']['predicted_lambda_FDTD_residual_m']*1e12:+.1f} pm)")
     finally:
         cal.close()
 
@@ -259,6 +326,10 @@ def _build_inputs() -> CalibInputs:
     geo = GeometryConfig()
     grat = GratingConfig()
     mat = MaterialConfig()
+    # In benchmark mode, the sanity FDE evaluation must run at the SAME
+    # n_core that produced the FDTD benchmark — otherwise the derived bias
+    # is meaningless. We therefore override n_core_initial to N_CORE_FDTD.
+    n_core_initial = N_CORE_FDTD if USE_FDTD_BENCHMARK else mat.n_core_const
     return CalibInputs(
         width_wide_m=geo.width_wide_m,
         width_narrow_m=geo.width_narrow_m,
@@ -267,7 +338,9 @@ def _build_inputs() -> CalibInputs:
         lambda_exp_m=LAMBDA_EXP_M,
         lambda_probe_m=LAMBDA_PROBE_M,
         n_clad=mat.n_clad_const,
-        n_core_initial=mat.n_core_const,
+        n_core_initial=n_core_initial,
+        lambda_fdtd_m=LAMBDA_FDTD_M if USE_FDTD_BENCHMARK else None,
+        lambda_target_m=LAMBDA_TARGET_M if USE_FDTD_BENCHMARK else None,
     )
 
 
@@ -280,10 +353,18 @@ def main() -> None:
     print(f"  width_narrow = {inp.width_narrow_m*1e9:.0f} nm")
     print(f"  height       = {inp.height_m*1e9:.0f} nm")
     print(f"  pitch        = {inp.pitch_m*1e9:.0f} nm")
-    print(f"  lambda_exp   = {inp.lambda_exp_m*1e9:.2f} nm")
-    print(f"  target avg n_eff = {inp.target_avg_neff:.4f}")
+    print(f"  lambda_probe = {inp.lambda_probe_m*1e9:.2f} nm")
     print(f"  n_clad (fixed)   = {inp.n_clad}")
-    print(f"  n_core (initial) = {inp.n_core_initial}")
+    if inp.lambda_fdtd_m is not None:
+        print(f"  mode             = FDTD-benchmark (bias-corrected)")
+        print(f"  lambda_FDTD      = {inp.lambda_fdtd_m*1e9:.4f} nm  "
+              f"(at n_core = {inp.n_core_initial})")
+        print(f"  lambda_target    = {inp.lambda_target_m*1e9:.4f} nm  (for FDTD)")
+    else:
+        print(f"  mode             = legacy (no FDTD benchmark)")
+        print(f"  lambda_exp       = {inp.lambda_exp_m*1e9:.4f} nm")
+        print(f"  target avg n_eff = {inp.target_avg_neff:.5f}")
+        print(f"  n_core (initial) = {inp.n_core_initial}")
     print()
 
     log = calibrate(inp)

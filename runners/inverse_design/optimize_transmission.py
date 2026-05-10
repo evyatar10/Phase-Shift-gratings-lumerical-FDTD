@@ -80,11 +80,16 @@ SPEC = InverseDesignSpec(
     optimizer_pgtol    = 1e-6,
     optimizer_ftol     = 1e-6,
 
-    # FOM: Gaussian-weighted T over the 10 nm bandgap window. σ=1 nm is wide
-    # enough to keep the resonance in the FOM band even with ±2 nm drift.
+    # FOM: Gaussian-weighted T over the 10 nm bandgap window.
+    # σ chosen against MEASURED spectral FWHM_T ≈ 1.05 nm (production N=80,
+    # Q ≈ 1485, source: result_N80_W800.mat). With σ=2 nm, FWHM_Gaussian =
+    # 2.355·σ = 4.7 nm = 4.5× FWHM_T → robust to 2-3 nm resonance drift.
+    # σ=1 nm collapses the gradient signal at 2 nm drift (weight → exp(-2) ≈ 0.14).
+    # NB: this is the spectral FWHM of T(λ), NOT the spatial energy-envelope
+    # FWHM (~7.7 µm), which is irrelevant for a wavelength-axis weight.
     fom_window_nm        = 10.0,
     fom_n_points         = 201,
-    fom_weight_sigma_nm  = 1.0,
+    fom_weight_sigma_nm  = 2.0,
 
     # No fine override mesh — device-wide periodic-aligned 50 nm mesh is the
     # right thing for periodic structures. dx_param=50 nm matches the mesh

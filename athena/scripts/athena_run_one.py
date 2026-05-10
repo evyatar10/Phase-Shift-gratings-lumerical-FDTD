@@ -48,7 +48,9 @@ SWEEP_INDEX = os.environ.get("SWEEP_INDEX", os.environ.get("SLURM_ARRAY_TASK_ID"
 
 VALID_KINDS = {"shift", "inner_size", "generic", "mesh_conv_x", "mesh_conv_yz",
                "shutoff_conv_shutoff", "spec", "cards",
-               "inverse_design", "gradient_free_design"}
+               "inverse_design", "gradient_free_design",
+               "lumerical_native_optimization",
+               "fd_gradient_design"}
 if SWEEP_KIND not in VALID_KINDS:
     print(f"ERROR: invalid SWEEP_KIND={SWEEP_KIND!r}; expected one of {sorted(VALID_KINDS)}")
     sys.exit(1)
@@ -306,9 +308,15 @@ def _run_kind_inverse_design(line: str) -> None:
 
     Required env: SWEEP_SPEC_MODULE (dotted path to module exposing SPEC: InverseDesignSpec).
     Optional env: SWEEP_BASELINE_LAMBDA_NM (skip baseline run when supplied).
+
+    If the spec has n_outer_iters > 1, dispatches to the active-set outer-loop
+    driver instead of the single-shot lumopt run.
     """
     import importlib
-    from runners.inverse_design.inverse_design import run_inverse_design
+    from runners.inverse_design.inverse_design import (
+        run_inverse_design,
+        run_inverse_design_outer_loop,
+    )
 
     module_name = os.environ.get("SWEEP_SPEC_MODULE", "")
     if not module_name:
@@ -327,12 +335,15 @@ def _run_kind_inverse_design(line: str) -> None:
     baseline_nm = os.environ.get("SWEEP_BASELINE_LAMBDA_NM", "").strip()
     baseline_m = float(baseline_nm) * 1e-9 if baseline_nm else None
 
-    run_inverse_design(
-        cfg=base,
-        spec=spec,
-        start_idx=idx,
-        baseline_lambda_m=baseline_m,
-    )
+    n_outer = getattr(spec, "n_outer_iters", 1)
+    if n_outer > 1:
+        run_inverse_design_outer_loop(
+            cfg=base, spec=spec, start_idx=idx, baseline_lambda_m=baseline_m,
+        )
+    else:
+        run_inverse_design(
+            cfg=base, spec=spec, start_idx=idx, baseline_lambda_m=baseline_m,
+        )
 
 
 def _run_kind_gradient_free_design(line: str) -> None:
@@ -364,14 +375,78 @@ def _run_kind_gradient_free_design(line: str) -> None:
     )
 
 
+def _run_kind_fd_gradient_design(line: str) -> None:
+    """One scipy L-BFGS-B (central-diff jac) run from an FDGradientSpec module."""
+    import importlib
+    from runners.fd_gradient_design.fd_gradient_design import run_fd_gradient_design
+
+    module_name = os.environ.get("SWEEP_SPEC_MODULE", "")
+    if not module_name:
+        raise RuntimeError("SWEEP_SPEC_MODULE env var required for kind=fd_gradient_design")
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "SPEC"):
+        raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
+    spec = module.SPEC
+    base = getattr(module, "BASE", None)
+    if base is None:
+        from simulation_config import SimulationConfig
+        base = SimulationConfig()
+    base.run.cleanup_lumerical_data = cfg.run.cleanup_lumerical_data
+
+    baseline_nm = os.environ.get("SWEEP_BASELINE_LAMBDA_NM", "").strip()
+    baseline_m = float(baseline_nm) * 1e-9 if baseline_nm else None
+
+    run_fd_gradient_design(
+        cfg=base,
+        spec=spec,
+        start_idx=idx,
+        baseline_lambda_m=baseline_m,
+    )
+
+
+def _run_kind_lumerical_native_optimization(line: str) -> None:
+    """One Lumerical-native (addsweep('Optimization')) run from a
+    LumericalNativeSpec module."""
+    import importlib
+    from runners.lumerical_native_optimization.lumerical_native_optimization import (
+        run_lumerical_native,
+    )
+
+    module_name = os.environ.get("SWEEP_SPEC_MODULE", "")
+    if not module_name:
+        raise RuntimeError(
+            "SWEEP_SPEC_MODULE env var required for kind=lumerical_native_optimization")
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "SPEC"):
+        raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
+    spec = module.SPEC
+    base = getattr(module, "BASE", None)
+    if base is None:
+        from simulation_config import SimulationConfig
+        base = SimulationConfig()
+    base.run.cleanup_lumerical_data = cfg.run.cleanup_lumerical_data
+
+    baseline_nm = os.environ.get("SWEEP_BASELINE_LAMBDA_NM", "").strip()
+    baseline_m = float(baseline_nm) * 1e-9 if baseline_nm else None
+
+    run_lumerical_native(
+        cfg=base,
+        spec=spec,
+        start_idx=idx,
+        baseline_lambda_m=baseline_m,
+    )
+
+
 _DISPATCH = {
-    "mesh_conv_x":            _run_kind_mesh_conv_x,
-    "mesh_conv_yz":           _run_kind_mesh_conv_yz,
-    "shutoff_conv_shutoff":   _run_kind_shutoff_conv,
-    "spec":                   _run_kind_spec,
-    "cards":                  _run_kind_cards,
-    "inverse_design":         _run_kind_inverse_design,
-    "gradient_free_design":   _run_kind_gradient_free_design,
+    "mesh_conv_x":                    _run_kind_mesh_conv_x,
+    "mesh_conv_yz":                   _run_kind_mesh_conv_yz,
+    "shutoff_conv_shutoff":           _run_kind_shutoff_conv,
+    "spec":                           _run_kind_spec,
+    "cards":                          _run_kind_cards,
+    "inverse_design":                 _run_kind_inverse_design,
+    "gradient_free_design":           _run_kind_gradient_free_design,
+    "lumerical_native_optimization":  _run_kind_lumerical_native_optimization,
+    "fd_gradient_design":             _run_kind_fd_gradient_design,
 }
 
 try:
