@@ -65,15 +65,39 @@ class InverseDesignSpec:
     seed: int = 0
 
     # ── Optimizer ───────────────────────────────────────────────────────────
-    max_iter: int = 30
+    max_iter: int = 16
     optimizer_method: str = "L-BFGS-B"
     optimizer_pgtol: float = 1e-6
     optimizer_ftol: float = 1e-6
     use_concurrent_adjoint_solves: bool = True
 
+    # ── FOM (Gaussian-weighted modal transmission across the bandgap) ───────
+    # The Gaussian weight σ=1 nm is wide enough that the resonance stays in
+    # the FOM band even with ±2 nm drift. No outer-loop recentering needed.
+    fom_window_nm: float = 10.0
+    fom_n_points: int = 201
+    fom_weight_sigma_nm: float = 1.0
+
+    # ── Mesh & adjoint perturbation knobs ──────────────────────────────────
+    # Set mesh_override_dxyz_nm = 0 to skip the fine override and use the
+    # device-wide periodic-aligned 50 nm mesh. param_dx_nm should be ≥ mesh
+    # cell so finite-difference perturbations actually change the discretised
+    # eps (gradient nonzero).
+    mesh_override_dxyz_nm: float = 0.0
+    param_dx_nm: float = 50.0
+
     # ── Geometry constraints ────────────────────────────────────────────────
     enforce_mirror_symmetry: bool = True
     lengthen_cavity: bool = True
+
+    # ── Run mode ────────────────────────────────────────────────────────────
+    # "optimize"        : standard L-BFGS-B optimization (default)
+    # "check_gradient"  : compare adjoint vs FD gradient at p0 (no optimization)
+    # "scan_landscape"  : evaluate FOM along cavity_width across its bounds
+    #                     (other params held at p0); diagnoses local plateaus
+    mode: str = "optimize"
+    check_gradient_dx_nm: float = 50.0
+    scan_n_points: int = 9
 
     # ── Study metadata ──────────────────────────────────────────────────────
     label: str = ""
@@ -277,7 +301,14 @@ def freed_region_segments(cfg: SimulationConfig, p) -> List[Tuple[float, float, 
 
 
 def polygon_vertices(cfg: SimulationConfig, p) -> np.ndarray:
-    """Closed polygon vertex array (CCW) for the freed region, mirror-symmetric about y=0."""
+    """Closed polygon vertex array (CCW) for the freed region, mirror-symmetric about y=0.
+
+    Retained for `test_geometry.py` and visualization. The optimizer no longer
+    consumes this — it uses `render_freed_rectangles` via ParameterizedGeometry
+    (Phase-2 fix #1: polygons and rectangles render to different Yee meshes;
+    the official Ansys grating-coupler example was migrated to
+    ParameterizedGeometry for exactly this reason).
+    """
     segs = freed_region_segments(cfg, p)
     top: List[Tuple[float, float]] = []
     for (x0, x1, w) in segs:
@@ -294,33 +325,107 @@ def polygon_vertices(cfg: SimulationConfig, p) -> np.ndarray:
     return np.array(top + bot, dtype=float)
 
 
+def freed_region_named_rects(cfg: SimulationConfig, p) -> List[Tuple[str, float, float, float]]:
+    """Return the freed-region rectangles as `(name, x_center, x_span, y_span)` tuples.
+
+    Names are stable across iterations (positional index) so lumopt's
+    `only_update=True` path can `setnamed(name, "x", ...)` without rebuilding.
+    """
+    segs = freed_region_segments(cfg, p)
+    out: List[Tuple[str, float, float, float]] = []
+    for i, (x0, x1, w) in enumerate(segs):
+        x_center = 0.5 * (x0 + x1)
+        x_span = x1 - x0
+        out.append((f"freed_seg_{i:02d}", float(x_center), float(x_span), float(w)))
+    return out
+
+
+def make_render_callback(cfg: SimulationConfig, n_free: int):
+    """Closure for lumopt's ParameterizedGeometry `func` argument.
+
+    Signature is `(params, fdtd, only_update)` — lumopt enforces this via
+    `inspect.signature`. On the first call (only_update=False), each rectangle
+    is created via `addrect`. Subsequent calls (only_update=True) just update
+    x, x span, y span via `setnamed`.
+
+    Each freed segment is a separate named `addrect`. With n_free=2:
+      Left:  freed_seg_00 (narrow_2_outer), freed_seg_01 (wide_2),
+             freed_seg_02 (narrow_2_inner), freed_seg_03 (wide_1),
+             freed_seg_04 (narrow_1)
+      Cavity: freed_seg_05
+      Right: freed_seg_06 (narrow_1), freed_seg_07 (wide_1),
+             freed_seg_08 (narrow_2_inner), freed_seg_09 (wide_2),
+             freed_seg_10 (narrow_2_outer)
+    """
+    core_material = None  # captured lazily on first call from the live FDTD object
+    core_height = float(cfg.geometry.core_height_m)
+    z_center = 0.0
+
+    def _resolve_core_material(fdtd) -> str:
+        """Find the core material name as it was registered by _setup_materials."""
+        # bragg_device.py:_setup_materials may install a custom Si3N4 dispersion;
+        # `core_material` on the device gets a name like 'const_sin' or
+        # 'custom_sin'. The static skeleton is built before this callback runs,
+        # so we can read the material name from one of the existing static rects.
+        try:
+            return str(fdtd.getnamed("wg_left_inf_1", "material"))
+        except Exception:
+            # Fall back to the const-index core material.
+            return cfg.material.core_material if hasattr(cfg.material, "core_material") else "Si3N4 (Silicon Nitride) - Luke"
+
+    def _render(params, fdtd, only_update: bool):
+        nonlocal core_material
+        rects = freed_region_named_rects(cfg, params)
+        if not only_update:
+            fdtd.switchtolayout()
+            if core_material is None:
+                core_material = _resolve_core_material(fdtd)
+        for name, xc, xs, ys in rects:
+            if not only_update:
+                fdtd.addrect()
+                fdtd.set("name", name)
+                fdtd.set("material", core_material)
+                fdtd.set("z", z_center)
+                fdtd.set("z span", core_height)
+            fdtd.setnamed(name, "x",      xc)
+            fdtd.setnamed(name, "x span", xs)
+            fdtd.setnamed(name, "y",      0.0)
+            fdtd.setnamed(name, "y span", ys)
+
+    return _render
+
+
 def make_polygon_callback(cfg: SimulationConfig):
-    """Closure for lumopt's FunctionDefinedPolygon `func` argument."""
+    """Closure for lumopt's FunctionDefinedPolygon `func` argument (legacy path)."""
     def _callback(p):
         return polygon_vertices(cfg, p)
     return _callback
 
 
 def make_lumopt_geometry(cfg: SimulationConfig, spec: InverseDesignSpec, initial_p):
-    """Construct a lumopt FunctionDefinedPolygon for the freed region.
+    """Construct a lumopt ParameterizedGeometry for the freed region.
 
-    Lazy-imports lumopt — this module can be inspected/tested without a Lumerical install.
+    Phase-2 fix #1: rectangles instead of one polygon — eliminates the
+    polygon-vs-rectangle Yee-mesh staircasing discrepancy that was causing
+    the polygon-rendered geometry to give T=0.752 vs baseline T=0.866 at
+    the same wavelength, and the corresponding zero-gradient stall.
+
+    ParameterizedGeometry uses finite-difference gradients (no analytic shape
+    derivative). `dx` here is the parameter perturbation in nm — must be
+    larger than the override mesh cell size so the perturbation actually
+    changes the discretised eps. With mesh_override_dxyz_nm=10 nm, dx=1 nm
+    is the canonical choice (mesh/10).
+
+    Lazy-imports lumopt — this module can be inspected/tested without a
+    Lumerical install.
     """
-    from lumopt.geometries.polygon import FunctionDefinedPolygon  # type: ignore
+    from lumopt.geometries.parameterized_geometry import ParameterizedGeometry  # type: ignore
 
-    eps_in = cfg.material.n_core_const ** 2
-    eps_out = cfg.material.n_clad_const ** 2
-
-    return FunctionDefinedPolygon(
-        func=make_polygon_callback(cfg),
+    return ParameterizedGeometry(
+        func=make_render_callback(cfg, spec.n_free_inner_teeth),
         initial_params=np.array(initial_p, dtype=float),
         bounds=spec.all_bounds_nm(),
-        z=0.0,
-        depth=cfg.geometry.core_height_m,
-        eps_out=eps_out,
-        eps_in=eps_in,
-        edge_precision=5,
-        dx=1.0,   # FD step for jacobian, in nm (parameter units)
+        dx=float(spec.param_dx_nm),
     )
 
 
@@ -421,13 +526,25 @@ def _build_static_skeleton(sim, cfg: SimulationConfig, n_free: int) -> None:
     add_seg(x, sim.x_sim_boundary + 1e-6, sim.width_port, "wg_right_inf")
 
 
-def make_base_script(cfg: SimulationConfig, n_free: int):
+def make_base_script(cfg: SimulationConfig, n_free: int, target_lambda_m: float,
+                     fom_window_nm: float = 10.0, fom_n_points: int = 601,
+                     mesh_override_dxyz_nm: float = 10.0):
     """Callback that builds the static portion of the FDTD simulation.
 
     Builds the FDTD region, mesh override, materials, ports/source, and
     transmission monitor, plus all STATIC core rectangles. The freed region
-    is intentionally NOT built here — lumopt's FunctionDefinedPolygon fills
+    is intentionally NOT built here — lumopt's ParameterizedGeometry fills
     it in each iteration with the current parameter vector.
+
+    Wavelength sampling (Phase-2 fix #4): `fom_window_nm`=10 nm (full bandgap)
+    sampled at `fom_n_points`=601 (≥18 samples per resonance FWHM). The FOM
+    weight is centered on `target_lambda_m` with σ=fom_weight_sigma_nm
+    (Phase-2 fix #5) so the weight has support even if the resonance drifts.
+
+    Override-mesh box (Phase-2 fix #2,#3): a fine mesh of cell size
+    `mesh_override_dxyz_nm` (default 10 nm) is added over the freed region
+    plus a 2-cell margin. This is on top of the device-wide override and
+    is what lets parameter perturbations actually change the discretised eps.
     """
     from bragg_device import PiShiftBraggFDTD
 
@@ -445,13 +562,100 @@ def make_base_script(cfg: SimulationConfig, n_free: int):
         sim._add_aligned_mesh_override()
         _build_static_skeleton(sim, cfg, n_free)
         sim._add_source_and_monitors()
+        # Wide scan over the entire bandgap; the FOM weight (set elsewhere via
+        # target_T_fwd_weights) restricts the integral to the resonance
+        # neighbourhood while keeping the simulation band wide enough that
+        # the resonance never escapes during optimization.
         sim.update_scan(
-            cfg.spectral.center_wavelength_m,
-            cfg.spectral.scan_width_nm,
-            cfg.spectral.n_wl_points,
+            target_lambda_m,
+            fom_window_nm,
+            fom_n_points,
         )
+        # Rename ports to match lumopt's PortTransmission convention
+        # (it looks specifically for ports named "source" and "fom").
+        fdtd.setnamed("FDTD::ports::Port_1", "name", "source")
+        fdtd.setnamed("FDTD::ports::Port_2", "name", "fom")
+
+        # GPU FDTD does not support frequency-dependent profiles. bragg_device
+        # turns this on by default (needed for some non-GPU paths), but with
+        # GPU + lumopt the simulation hangs/aborts. Explicitly disable on both
+        # ports for the inverse-design path.
+        fdtd.setnamed("FDTD::ports::source", "frequency dependent profile", 0)
+        fdtd.setnamed("FDTD::ports::fom", "frequency dependent profile", 0)
+
+        # opt_fields monitor: covers the freed region. Lumopt records E,H here
+        # on every iteration to compute dFOM/dε for adjoint. The adjoint
+        # integration in lumopt's `spatial_gradient_integral_on_cad` performs
+        # `integrate2(integrand, [1,2,3], x, y, z)` — a real 3D volume integral
+        # weighted per-wavelength. The monitor MUST be 3D (z-axis must have
+        # multiple sample points covering the core slab) and MUST have
+        # frequency points matching the FOM sampling, otherwise lumopt
+        # silently produces wildly mis-scaled gradients (off by ~10⁸ in our
+        # 5-DOF Bragg case — confirmed via check_gradient diagnostic 78914
+        # against finite-difference). z span = core_height × 3 covers the
+        # mode profile (core + ~core-height of evanescent tail in cladding).
+        x_lo, x_hi = freed_region_x_bounds(cfg, n_free)
+        # SiN-on-SiO2 is weakly guiding (n_core=1.977, n_clad=1.44 → 1/e mode-tail
+        # decay length ~180 nm at 1560 nm). Capturing the full mode requires
+        # opt_fields y/z spans matching the FDTD region (cfg.z_span ≈ 3.1 µm,
+        # cfg.y_span ≈ 3.6 µm). Truncating the mode tail under-counts the field
+        # integral and biases adjoint gradients high.
+        fdtd.addpower()
+        fdtd.set("name", "opt_fields")
+        fdtd.set("monitor type", "3D")
+        fdtd.set("x min", x_lo)
+        fdtd.set("x max", x_hi)
+        fdtd.set("y", 0.0)
+        fdtd.set("y span", cfg.y_span * 0.9)
+        fdtd.set("z", 0.0)
+        fdtd.set("z span", cfg.z_span * 0.9)
+        fdtd.set("override global monitor settings", 1)
+        fdtd.set("use source limits", 1)
+        fdtd.set("frequency points", int(fom_n_points))
+
+        # Phase-2 fix #2,#3: fine override mesh over the freed region + margin.
+        # Per the Y-splitter canonical pattern the mesh box must be LARGER
+        # than opt_fields by 2·mesh_x so adjoint integration sees a clean
+        # mesh at the boundary.
+        # Skip if mesh_override_dxyz_nm <= 0 — at n_periods=80, fine override
+        # makes FDTD 8x slower and doesn't fit in walltime. Use the device-
+        # wide 50 nm mesh + dx_param=50 nm instead.
+        if mesh_override_dxyz_nm and mesh_override_dxyz_nm > 0:
+            mesh_dx = mesh_override_dxyz_nm * 1e-9
+            margin = 2.0 * mesh_dx
+            fdtd.addmesh()
+            fdtd.set("name", "mesh_override_freed")
+            fdtd.set("x min", x_lo - margin)
+            fdtd.set("x max", x_hi + margin)
+            fdtd.set("y", 0.0)
+            fdtd.set("y span", cfg.geometry.width_wide_m * 1.4 + 2 * margin)
+            fdtd.set("z", 0.0)
+            fdtd.set("z span", cfg.geometry.core_height_m * 1.4 + 2 * margin)
+            fdtd.set("override x mesh", 1)
+            fdtd.set("override y mesh", 1)
+            fdtd.set("override z mesh", 1)
+            fdtd.set("dx", mesh_dx)
+            fdtd.set("dy", mesh_dx)
+            fdtd.set("dz", mesh_dx)
 
     return _callback
+
+
+def _gaussian_weight_fn(lam_target_m: float, sigma_nm: float):
+    """Wide Gaussian weight on T(λ), centered on `lam_target_m`.
+
+    Phase-2 fix #5: replaces the prior Lorentzian HWHM=0.15 nm. With
+    sigma_nm=1.0 the weight has significant support out to ~3 nm so the
+    optimizer still gets gradient signal even when the resonance drifts
+    by up to a few FWHM during inner-loop iterations.
+    """
+    sigma_m = sigma_nm * 1e-9
+
+    def _w(wl):
+        wl = np.asarray(wl).flatten()
+        return np.exp(-0.5 * ((wl - lam_target_m) / sigma_m) ** 2)
+
+    return _w
 
 
 def run_inverse_design(
@@ -461,23 +665,23 @@ def run_inverse_design(
     output_root: Optional[str] = None,
     baseline_lambda_m: Optional[float] = None,
 ) -> dict:
-    """Run the lumopt continuous-adjoint optimization for one starting point.
+    """Run lumopt's continuous-adjoint optimization for one starting point.
 
-    With n_starts = 1 (the recommended default), start_idx = 0 picks the
-    regular-grating starting point.
+    Single-loop L-BFGS-B with `spec.max_iter` iterations. The Gaussian-weighted
+    PortTransmission FOM is centered on the BASELINE λ_resonance — wide enough
+    (σ=1 nm) that the moving resonance stays inside its support throughout.
+    Post-opt verification re-simulates the converged geometry at a finer mesh
+    (`simulation_mode='accurate'`) for a physics-precise true_peak_T.
     """
-    # lumopt lives next to lumapi.py inside the Lumerical install. Plain `import
-    # lumopt` doesn't find it unless that directory is on sys.path. Mirror the
-    # bragg_device.py / athena_run_one.py pattern that already sets up lumapi.
+    # lumopt lives next to lumapi.py inside the Lumerical install.
     import sys as _sys
     _lum_dir = os.path.dirname(_cfg.LUMAPI_PATH)
     if _lum_dir and _lum_dir not in _sys.path:
         _sys.path.insert(0, _lum_dir)
 
-    from lumopt.optimization import Optimization                          # type: ignore
-    from lumopt.figures_of_merit.PortTransmission import porttransmission # type: ignore
-    from lumopt.optimizers.generic_optimizers import ScipyOptimizers       # type: ignore
-    from sim_helpers import peak_t_diagnostic
+    from lumopt.optimization import Optimization                           # type: ignore
+    from lumopt.figures_of_merit.PortTransmission import porttransmission  # type: ignore
+    from lumopt.optimizers.generic_optimizers import ScipyOptimizers        # type: ignore
     from runners.single.run_simulation import run_single_sim
 
     spec.validate()
@@ -497,46 +701,50 @@ def run_inverse_design(
     cfg.grating.inner_shift_nm = list(init_kwargs["inner_shift_nm"])
     cfg.grating.cavity_width_m = init_kwargs["cavity_width_m"]
 
-    # Output directory
     if output_root is None:
         output_root = os.path.join(_cfg.BASE_SAVE_DIR, "inverse_design", spec.label or "study")
     out_dir = os.path.join(output_root, f"start{start_idx}")
     os.makedirs(out_dir, exist_ok=True)
 
-    # Baseline λ_resonance + peak T at the initial (regular-grating) geometry.
-    # Both numbers come from the same FDTD run — λ feeds the optimizer's FOM
-    # wavelength, T_peak is kept for the final initial-vs-optimum comparison.
     initial_peak_T: Optional[float] = None
     if baseline_lambda_m is None:
         baseline_lambda_m, initial_peak_T = measure_baseline(cfg)
+    lam_target_m = float(baseline_lambda_m)
 
-    # FOM: single-wavelength PortTransmission on Port_2.
-    # This is the modal-overlap transmission (= |S21|²), evaluated at the
-    # baseline λ_resonance — same number as your existing T(λ) curves, but
-    # adjoint-differentiable and read directly from the FDTD port object.
+    # Build the lumopt optimization.
     fom = porttransmission(
-        monitor_port="Port_2",
+        monitor_port="fom",
         mode_number=1,
         direction="Forward",
-        target_T_fwd=lambda wl: np.ones_like(wl),
+        target_T_fwd=lambda wl: np.ones_like(np.asarray(wl).flatten()),
+        target_T_fwd_weights=_gaussian_weight_fn(lam_target_m, spec.fom_weight_sigma_nm),
         norm_p=1,
         target_fom=0.0,
     )
-
     geometry = make_lumopt_geometry(cfg, spec, p0)
-
     optimizer = ScipyOptimizers(
-        max_iter=spec.max_iter,
+        max_iter=int(spec.max_iter),
         method=spec.optimizer_method,
-        scaling_factor=1.0,
         pgtol=spec.optimizer_pgtol,
         ftol=spec.optimizer_ftol,
     )
-
-    base_script = make_base_script(cfg, spec.n_free_inner_teeth)
+    half_w_m = 0.5 * spec.fom_window_nm * 1e-9
+    fom_wavelengths = np.linspace(
+        lam_target_m - half_w_m,
+        lam_target_m + half_w_m,
+        int(spec.fom_n_points),
+    )
+    base_script = make_base_script(
+        cfg,
+        spec.n_free_inner_teeth,
+        lam_target_m,
+        fom_window_nm=spec.fom_window_nm,
+        fom_n_points=spec.fom_n_points,
+        mesh_override_dxyz_nm=spec.mesh_override_dxyz_nm,
+    )
     opt = Optimization(
         base_script=base_script,
-        wavelengths=np.array([baseline_lambda_m]),
+        wavelengths=fom_wavelengths,
         fom=fom,
         geometry=geometry,
         optimizer=optimizer,
@@ -549,14 +757,70 @@ def run_inverse_design(
         source_name="source",
     )
 
-    print(f"[inverse_design] running lumopt for start{start_idx}, p0={p0} ...")
-    fom_final, params_final = opt.run(working_dir=out_dir)
+    # ── Diagnostic modes (no optimization) ────────────────────────────────
+    if spec.mode == "check_gradient":
+        print(f"[inverse_design] check_gradient mode: dx={spec.check_gradient_dx_nm} nm "
+              f"at p0={p0}")
+        p0_arr = np.array(p0, dtype=float)
+        fd_grad, adj_grad, vec_err = opt.check_gradient(
+            test_params=p0_arr,
+            dx=float(spec.check_gradient_dx_nm),
+            working_dir=out_dir,
+        )
+        print(f"[check_gradient] vec_error = {vec_err:.4f}")
+        summary = {
+            "mode": "check_gradient",
+            "p0": list(map(float, p0)),
+            "dx_nm": float(spec.check_gradient_dx_nm),
+            "fd_grad": fd_grad.tolist(),
+            "adj_grad": adj_grad.tolist(),
+            "vec_error": float(vec_err),
+            "baseline_lambda_m": float(baseline_lambda_m),
+            "initial_peak_T": (None if initial_peak_T is None else float(initial_peak_T)),
+        }
+        with open(os.path.join(out_dir, "check_gradient.json"), "w") as fp:
+            json.dump(summary, fp, indent=2)
+        return summary
 
-    # Post-optimization: re-simulate optimum and read the resonance scalars
-    # that run_single_sim's post_processing pipeline already computes.
-    print(f"[inverse_design] post-opt verification at converged params ...")
+    if spec.mode == "scan_landscape":
+        print(f"[inverse_design] scan_landscape mode: scanning cavity_width "
+              f"across {spec.cavity_width_bounds_nm} at {spec.scan_n_points} points")
+        opt.initialize(out_dir)
+        cw_lo, cw_hi = spec.cavity_width_bounds_nm
+        cw_values = np.linspace(cw_lo, cw_hi, int(spec.scan_n_points))
+        fom_values: List[float] = []
+        for cw in cw_values:
+            p_test = list(p0)
+            p_test[-1] = float(cw)
+            fom_here = float(opt.callable_fom(np.array(p_test, dtype=float)))
+            print(f"[scan] cavity_width = {cw:7.2f} nm  →  FOM = {fom_here:.6e}")
+            fom_values.append(fom_here)
+        summary = {
+            "mode": "scan_landscape",
+            "p0": list(map(float, p0)),
+            "scanned_param": "cavity_width_nm",
+            "scan_values_nm": cw_values.tolist(),
+            "fom_values": fom_values,
+            "baseline_lambda_m": float(baseline_lambda_m),
+            "initial_peak_T": (None if initial_peak_T is None else float(initial_peak_T)),
+        }
+        with open(os.path.join(out_dir, "scan_landscape.json"), "w") as fp:
+            json.dump(summary, fp, indent=2)
+        return summary
+
+    # ── Default: optimize ────────────────────────────────────────────────
+    print(f"[inverse_design] running L-BFGS-B (max_iter={spec.max_iter}) "
+          f"at λ_target={lam_target_m*1e9:.4f} nm, p0={p0}")
+    fom_final, params_final = opt.run(working_dir=out_dir)
+    p_final = list(map(float, params_final))
+    print(f"[inverse_design] optimizer done. fom={fom_final:.4f} | "
+          f"p={['%.2f' % v for v in p_final]}")
+
+    # Post-opt verification at higher mesh accuracy.
+    print(f"[inverse_design] post-opt verification at converged params (accurate mesh) ...")
     cfg_final = copy.deepcopy(cfg)
-    fk = params_to_kwargs(list(params_final), spec.n_free_inner_teeth)
+    cfg_final.mesh.simulation_mode = "accurate"
+    fk = params_to_kwargs(p_final, spec.n_free_inner_teeth)
     cfg_final.grating.inner_dw_nm = list(fk["inner_dw_nm"])
     cfg_final.grating.inner_shift_nm = list(fk["inner_shift_nm"])
     cfg_final.grating.cavity_width_m = fk["cavity_width_m"]
@@ -568,7 +832,7 @@ def run_inverse_design(
         "start_idx": int(start_idx),
         "label": spec.label,
         "p_initial": list(map(float, p0)),
-        "p_final": list(map(float, params_final)),
+        "p_final": p_final,
         "fom_final": float(fom_final),
         "baseline_lambda_m": float(baseline_lambda_m),
         "initial_peak_T":     (None if initial_peak_T is None else float(initial_peak_T)),
@@ -576,6 +840,7 @@ def run_inverse_design(
         "true_peak_T":        float(T_peak),
         "delta_peak_T":       (None if initial_peak_T is None else float(T_peak - initial_peak_T)),
         "n_free_inner_teeth": spec.n_free_inner_teeth,
+        "max_iter":           int(spec.max_iter),
     }
     with open(os.path.join(out_dir, "final_params.json"), "w") as fp:
         json.dump(summary, fp, indent=2)

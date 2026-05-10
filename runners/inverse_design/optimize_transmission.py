@@ -27,8 +27,13 @@ BASE.grating.n_periods_each_side = 80
 BASE.grating.lengthen_cavity     = True             # NOT optimizing cavity length;
                                                     # this absorbs Σ(shifts) so total
                                                     # device length stays constant.
-BASE.mesh.simulation_mode        = "optimization"   # dx=50 nm
-BASE.spectral.scan_width_nm      = 10.0             # narrow window per the plan
+BASE.mesh.simulation_mode        = "optimization"   # device-wide dx=50 nm; the
+                                                    # freed region gets a finer
+                                                    # 10 nm override (Phase-2 fix
+                                                    # #2) wired in inverse_design.
+BASE.spectral.scan_width_nm      = 10.0             # full bandgap window; FOM
+                                                    # weight (σ=1 nm Gaussian)
+                                                    # restricts the integral.
 # Apodization stays at its default (off); freed inner teeth carry their own DW.
 
 # ── Optional field profile monitors (default OFF for inverse design) ────────
@@ -48,19 +53,46 @@ BASE.farfield.enabled          = False   # side + top far-field monitors
 # disabled here since the regular grating is a known-good convergent baseline.
 
 N_FREE = 2
-INITIAL_P = regular_grating_start(BASE, n_free_inner_teeth=N_FREE, cavity_width_nm=800.0)
+
+# Empirically-informed starting point. The regular grating ([300,300,0,0,800])
+# is a known LOCAL plateau of the FOM landscape — gradient nearly zero, L-BFGS-B
+# stalls. Per the user's prior sweep work (innermost_shift, apod_and_shift),
+# improvement comes from APODIZING the inner teeth (smaller DW) and adding
+# a TOOTH SHIFT. Starting near a known-good empirical region gives the
+# optimizer a meaningful initial gradient and avoids the regular-grating
+# saddle.
+INITIAL_P = [250.0, 280.0, 50.0, 30.0, 800.0]   # apodized + slightly shifted
 
 SPEC = InverseDesignSpec(
     n_free_inner_teeth = N_FREE,
-    # Bounds widened from the plan defaults to keep the regular-grating
-    # baseline (full corrugation depth = 300 nm) strictly inside dw_bounds.
     dw_bounds_nm       = [(60.0, 400.0), (60.0, 400.0)],
+    # half_pitch = 250 nm, so 200 nm shift leaves 50 nm narrow-tooth min.
     shift_bounds_nm    = [(0.0, 200.0),  (0.0, 200.0)],
     cavity_width_bounds_nm = (500.0, 1100.0),
     initial_points     = [INITIAL_P],
     n_starts           = 1,
-    max_iter           = 30,
+
+    # Single L-BFGS-B with 16 iterations. Each iter ≈ 7 FDTDs × ~3 min = 21
+    # min, plus line search → ~5 hours total. ARRAY_TIME=23:30 has plenty of
+    # headroom.
+    max_iter           = 16,
     optimizer_method   = "L-BFGS-B",
+    optimizer_pgtol    = 1e-6,
+    optimizer_ftol     = 1e-6,
+
+    # FOM: Gaussian-weighted T over the 10 nm bandgap window. σ=1 nm is wide
+    # enough to keep the resonance in the FOM band even with ±2 nm drift.
+    fom_window_nm        = 10.0,
+    fom_n_points         = 201,
+    fom_weight_sigma_nm  = 1.0,
+
+    # No fine override mesh — device-wide periodic-aligned 50 nm mesh is the
+    # right thing for periodic structures. dx_param=50 nm matches the mesh
+    # so finite-difference perturbations actually move at least one cell
+    # boundary.
+    mesh_override_dxyz_nm= 0,
+    param_dx_nm          = 50.0,
+
     use_concurrent_adjoint_solves = True,
     enforce_mirror_symmetry = True,
     lengthen_cavity    = True,

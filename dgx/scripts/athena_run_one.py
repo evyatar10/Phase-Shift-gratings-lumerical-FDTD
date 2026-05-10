@@ -47,7 +47,8 @@ SWEEP_LIST  = os.environ.get("SWEEP_LIST", "/work/data/sweep_list.txt")
 SWEEP_INDEX = os.environ.get("SWEEP_INDEX", os.environ.get("SLURM_ARRAY_TASK_ID", ""))
 
 VALID_KINDS = {"shift", "inner_size", "generic", "mesh_conv_x", "mesh_conv_yz",
-               "shutoff_conv_shutoff", "spec", "inverse_design"}
+               "shutoff_conv_shutoff", "spec", "cards",
+               "inverse_design", "gradient_free_design"}
 if SWEEP_KIND not in VALID_KINDS:
     print(f"ERROR: invalid SWEEP_KIND={SWEEP_KIND!r}; expected one of {sorted(VALID_KINDS)}")
     sys.exit(1)
@@ -255,6 +256,49 @@ def _run_kind_spec(line: str) -> None:
         print(f"[athena_run_one] prelim wrote λ_res = {lam_nm:.4f} nm → {locked_path}")
 
 
+def _run_kind_cards(line: str) -> None:
+    """One sim from a module's CARDS list (explicit per-device card list).
+
+    Required env: SWEEP_SPEC_MODULE (dotted path to module exposing
+    CARDS: list[ExperimentCard], optionally with BASE: SimulationConfig
+    and RECORDS: list[DeviceRecord] parallel to CARDS).
+
+    Each task gets its own RUN_NAME = "<module_short>/<card.label>" so that
+    layouts/results from different devices land in separate folders and never
+    collide on the auto-generated tag.
+    """
+    import importlib
+    from runners.single.run_simulation import run_single_sim
+    module_name = os.environ.get("SWEEP_SPEC_MODULE", "")
+    if not module_name:
+        raise RuntimeError("SWEEP_SPEC_MODULE env var required for kind=cards")
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "CARDS"):
+        raise RuntimeError(f"Module {module_name!r} has no top-level CARDS attribute")
+    cards = module.CARDS
+    if idx < 0 or idx >= len(cards):
+        raise IndexError(f"SWEEP_INDEX={idx} out of range (CARDS has {len(cards)} entries)")
+
+    card = cards[idx]
+    base = getattr(module, "BASE", None)
+    cfg_for_task = card.to_config(base=base)
+
+    # Per-task RUN_NAME nests this device's output under the sweep label.
+    # config.RESULTS_DIR / LAYOUTS_DIR are computed dynamically each access,
+    # so changing RUN_NAME here propagates to run_single_sim's path resolution.
+    module_short = module_name.rsplit(".", 1)[-1]
+    label = (card.label or f"task_{idx:04d}").replace("/", "_").replace("\\", "_")
+    os.environ["RUN_NAME"] = f"{module_short}/{label}"
+
+    # Apply runtime override (license / disk-cleanup) on top of the card's cfg.
+    # Do NOT override cavity_neg_detuning_nm — the card encodes the geometry
+    # exactly as fabricated.
+    cfg_for_task.run.cleanup_lumerical_data = cfg.run.cleanup_lumerical_data
+    print(f"[athena_run_one] cards: idx={idx} label={label!r} "
+          f"RUN_NAME={os.environ['RUN_NAME']!r}")
+    run_single_sim(cfg_for_task)
+
+
 def _run_kind_inverse_design(line: str) -> None:
     """One lumopt-driver run from an InverseDesignSpec module.
 
@@ -290,12 +334,43 @@ def _run_kind_inverse_design(line: str) -> None:
     )
 
 
+def _run_kind_gradient_free_design(line: str) -> None:
+    """One Lumerical-PSO run from a GradientFreeDesignSpec module."""
+    import importlib
+    from runners.gradient_free_design.gradient_free_design import run_gradient_free_design
+
+    module_name = os.environ.get("SWEEP_SPEC_MODULE", "")
+    if not module_name:
+        raise RuntimeError("SWEEP_SPEC_MODULE env var required for kind=gradient_free_design")
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "SPEC"):
+        raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
+    spec = module.SPEC
+    base = getattr(module, "BASE", None)
+    if base is None:
+        from simulation_config import SimulationConfig
+        base = SimulationConfig()
+    base.run.cleanup_lumerical_data = cfg.run.cleanup_lumerical_data
+
+    baseline_nm = os.environ.get("SWEEP_BASELINE_LAMBDA_NM", "").strip()
+    baseline_m = float(baseline_nm) * 1e-9 if baseline_nm else None
+
+    run_gradient_free_design(
+        cfg=base,
+        spec=spec,
+        start_idx=idx,
+        baseline_lambda_m=baseline_m,
+    )
+
+
 _DISPATCH = {
-    "mesh_conv_x":           _run_kind_mesh_conv_x,
-    "mesh_conv_yz":          _run_kind_mesh_conv_yz,
-    "shutoff_conv_shutoff":  _run_kind_shutoff_conv,
-    "spec":                  _run_kind_spec,
-    "inverse_design":        _run_kind_inverse_design,
+    "mesh_conv_x":            _run_kind_mesh_conv_x,
+    "mesh_conv_yz":           _run_kind_mesh_conv_yz,
+    "shutoff_conv_shutoff":   _run_kind_shutoff_conv,
+    "spec":                   _run_kind_spec,
+    "cards":                  _run_kind_cards,
+    "inverse_design":         _run_kind_inverse_design,
+    "gradient_free_design":   _run_kind_gradient_free_design,
 }
 
 try:

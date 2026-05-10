@@ -22,7 +22,7 @@
 #SBATCH --nodes=1
 #SBATCH --gpus=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+#SBATCH --mem=128G
 #SBATCH --mail-type=END,FAIL,ARRAY_TASKS
 #SBATCH --mail-user=evyatar10.rubin@gmail.com
 #SBATCH --output=logs/lum_array-%A_%a.out
@@ -157,7 +157,7 @@ trap 'kill \$XVFB_PID 2>/dev/null; wait \$XVFB_PID 2>/dev/null' EXIT
 export DISPLAY=:99
 sleep 1
 
-/opt/lumerical/v261/python/bin/python /work/scripts/athena_run_one.py
+/opt/lumerical/v261/python/bin/python -u /work/scripts/athena_run_one.py
 PY_RC=\$?
 echo \"[wrapper] python exit code: \$PY_RC\"
 exit \$PY_RC"

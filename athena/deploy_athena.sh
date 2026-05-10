@@ -77,7 +77,9 @@ for arg in "$@"; do
         --fsp=*)              FSP_EXPLICIT="${arg#--fsp=}" ;;
         --sweep=*)            SWEEP_KIND="${arg#--sweep=}" ;;
         --spec=*)             OPTION="3"; SWEEP_KIND="spec"; SPEC_MODULE="${arg#--spec=}" ;;
+        --cards=*)            OPTION="3"; SWEEP_KIND="cards"; SPEC_MODULE="${arg#--cards=}" ;;
         --inverse-design=*)   OPTION="3"; SWEEP_KIND="inverse_design"; SPEC_MODULE="${arg#--inverse-design=}" ;;
+        --gradient-free-design=*) OPTION="3"; SWEEP_KIND="gradient_free_design"; SPEC_MODULE="${arg#--gradient-free-design=}" ;;
         --max-concurrent=*)   MAX_CONCURRENT="${arg#--max-concurrent=}" ;;
         --keep-h5)            KEEP_H5=1 ;;
         --gpu=*)              GPU_TYPE="${arg#--gpu=}" ;;
@@ -157,17 +159,19 @@ if [[ "${OPTION}" == "2" && -z "${RUN_SCRIPT}" && -z "${SWEEP_KIND}" && "${UPLOA
     echo ""
     echo "============================================================"
     echo "  Python pipeline mode:"
-    echo "  1) Single          (one node, sequential — runners/single/)"
-    echo "  2) Sweep           (parallel SLURM job array — runners/sweeps/)"
-    echo "  3) Inverse design  (lumopt adjoint — runners/inverse_design/)"
-    echo "  4) Convergence     (convergence_testing/ — incl. mesh_conv X/YZ)"
+    echo "  1) Single                 (one node, sequential — runners/single/)"
+    echo "  2) Sweep                  (parallel SLURM job array — runners/sweeps/)"
+    echo "  3) Inverse design         (lumopt adjoint — runners/inverse_design/)"
+    echo "  4) Gradient-free design   (Lumerical PSO — runners/gradient_free_design/)"
+    echo "  5) Convergence            (convergence_testing/ — incl. mesh_conv X/YZ)"
     echo "============================================================"
-    read -rp "Enter 1, 2, 3, or 4: " _pipeline_choice
+    read -rp "Enter 1, 2, 3, 4, or 5: " _pipeline_choice
     case "${_pipeline_choice}" in
         1) _PIPELINE_KIND="single" ;;
         2) OPTION="3"; _PIPELINE_KIND="sweep" ;;
         3) OPTION="3"; _PIPELINE_KIND="inverse_design" ;;
-        4) _PIPELINE_KIND="convergence" ;;
+        4) OPTION="3"; _PIPELINE_KIND="gradient_free_design" ;;
+        5) _PIPELINE_KIND="convergence" ;;
         *) echo "Invalid choice. Exiting."; exit 1 ;;
     esac
 fi
@@ -268,6 +272,38 @@ if [[ "${_PIPELINE_KIND:-}" == "inverse_design" && -z "${SPEC_MODULE}" && "${UPL
     read -rp "Enter number: " _id_choice
     if [[ "${_id_choice}" =~ ^[0-9]+$ ]] && (( _id_choice >= 1 && _id_choice <= ${#_ID_STUDIES[@]} )); then
         SPEC_MODULE="runners.inverse_design.${_ID_STUDIES[$((_id_choice-1))]}"
+        echo "Selected: ${SPEC_MODULE}"
+    else
+        echo "Invalid choice. Exiting."; exit 1
+    fi
+fi
+
+# ── Gradient-free-design study picker (mode=gradient_free_design) ───────────
+# Auto-discovers any module under runners/gradient_free_design/ that defines
+# a top-level SPEC: GradientFreeDesignSpec.
+if [[ "${_PIPELINE_KIND:-}" == "gradient_free_design" && -z "${SPEC_MODULE}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    SWEEP_KIND="gradient_free_design"
+    mapfile -t _GFD_STUDIES < <(
+        for _f in $(grep -rl '[[:space:]]*SPEC[[:space:]]*=' "${LOCAL_PROJECT}/runners/gradient_free_design/"*.py 2>/dev/null \
+                        | grep -v 'gradient_free_design\.py' \
+                        | grep -v 'test_geometry\.py'); do
+            basename "${_f}" .py
+        done | sort
+    )
+    if [[ ${#_GFD_STUDIES[@]} -eq 0 ]]; then
+        echo "ERROR: no gradient-free-design studies found in runners/gradient_free_design/ (need top-level SPEC = GradientFreeDesignSpec(...))"
+        exit 1
+    fi
+    echo ""
+    echo "============================================================"
+    echo "  Choose gradient-free-design study (runners/gradient_free_design/<name>.py):"
+    for _i in "${!_GFD_STUDIES[@]}"; do
+        printf "  %d) %s\n" "$((_i+1))" "${_GFD_STUDIES[$_i]}"
+    done
+    echo "============================================================"
+    read -rp "Enter number: " _gfd_choice
+    if [[ "${_gfd_choice}" =~ ^[0-9]+$ ]] && (( _gfd_choice >= 1 && _gfd_choice <= ${#_GFD_STUDIES[@]} )); then
+        SPEC_MODULE="runners.gradient_free_design.${_GFD_STUDIES[$((_gfd_choice-1))]}"
         echo "Selected: ${SPEC_MODULE}"
     else
         echo "Invalid choice. Exiting."; exit 1
@@ -834,6 +870,16 @@ else
         fi
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
             --kind spec --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
+    elif [[ "${SWEEP_KIND}" == "cards" ]]; then
+        if [[ -z "${SPEC_MODULE}" ]]; then
+            echo "ERROR: --cards=<module> is required for kind=cards."
+            exit 1
+        fi
+        LOCAL_CARDS_MANIFEST="${LOCAL_PROJECT}/results_from_athena/_cards_manifest.json"
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+            --kind cards --module "${SPEC_MODULE}" \
+            --cards-manifest "${LOCAL_CARDS_MANIFEST}" \
+            --output "${LOCAL_SWEEP_LIST}" 2>&1)
     elif [[ "${SWEEP_KIND}" == "inverse_design" ]]; then
         if [[ -z "${SPEC_MODULE}" ]]; then
             echo "ERROR: --inverse-design=<module> is required for kind=inverse_design."
@@ -841,6 +887,13 @@ else
         fi
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
             --kind inverse_design --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
+    elif [[ "${SWEEP_KIND}" == "gradient_free_design" ]]; then
+        if [[ -z "${SPEC_MODULE}" ]]; then
+            echo "ERROR: --gradient-free-design=<module> is required for kind=gradient_free_design."
+            exit 1
+        fi
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
+            --kind gradient_free_design --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
     else
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
             --kind "${SWEEP_KIND}" --output "${LOCAL_SWEEP_LIST}" 2>&1)

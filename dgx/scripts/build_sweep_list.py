@@ -86,8 +86,60 @@ def _values_spec(module_name: str, prelim: bool = False):
     return [f"{i}" for i in range(len(configs))]
 
 
+def _values_cards(module_name: str, manifest_path: str | None = None):
+    """Import a module exposing CARDS: list[ExperimentCard] (and optional RECORDS).
+
+    Writes one line per card index to sweep_list.txt. If RECORDS is present
+    and manifest_path is supplied, also dumps a JSON manifest with the device
+    metadata for downstream comparison tooling. Returns the lines list.
+    """
+    import dataclasses
+    import json
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "CARDS"):
+        raise RuntimeError(f"Module {module_name!r} has no top-level CARDS attribute")
+    cards = module.CARDS
+    if not isinstance(cards, list) or not cards:
+        raise RuntimeError(f"Module {module_name!r}.CARDS must be a non-empty list")
+    lines = [f"{i}" for i in range(len(cards))]
+
+    records = getattr(module, "RECORDS", None)
+    if manifest_path and records is not None:
+        if len(records) != len(cards):
+            raise RuntimeError(
+                f"Module {module_name!r}: len(RECORDS)={len(records)} != "
+                f"len(CARDS)={len(cards)} — they must be parallel lists.")
+        manifest = []
+        for rec in records:
+            if dataclasses.is_dataclass(rec):
+                manifest.append(dataclasses.asdict(rec))
+            elif isinstance(rec, dict):
+                manifest.append(rec)
+            elif hasattr(rec, "to_dict"):
+                manifest.append(rec.to_dict())
+            else:
+                manifest.append({"label": getattr(rec, "label", str(rec))})
+        os.makedirs(os.path.dirname(os.path.abspath(manifest_path)) or ".", exist_ok=True)
+        with open(manifest_path, "w") as f:
+            json.dump({"module": module_name, "n_cards": len(cards),
+                       "records": manifest}, f, indent=2)
+        print(f"Wrote {len(manifest)} device records to: {manifest_path}")
+
+    return lines
+
+
 def _values_inverse_design(module_name: str):
     """Import an inverse-design study (exposes SPEC: InverseDesignSpec); one line per multi-start."""
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "SPEC"):
+        raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
+    spec = module.SPEC
+    starts = spec.get_starts()
+    return [f"{i}" for i in range(len(starts))]
+
+
+def _values_gradient_free_design(module_name: str):
+    """Import a gradient-free-design study (exposes SPEC: GradientFreeDesignSpec)."""
     module = importlib.import_module(module_name)
     if not hasattr(module, "SPEC"):
         raise RuntimeError(f"Module {module_name!r} has no top-level SPEC attribute")
@@ -100,14 +152,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--kind", required=True,
                         choices=["mesh_conv_x", "mesh_conv_yz",
-                                 "shutoff_conv_shutoff", "spec", "inverse_design"])
+                                 "shutoff_conv_shutoff", "spec", "cards",
+                                 "inverse_design", "gradient_free_design"])
     parser.add_argument("--output", required=True,
                         help="Path to sweep_list.txt (one line per array task)")
     parser.add_argument("--module", default=None,
-                        help="(kind=spec only) dotted module path of a study file "
-                             "exposing top-level SPEC: SweepSpec")
+                        help="(kind=spec/cards only) dotted module path of a study file "
+                             "exposing top-level SPEC: SweepSpec or CARDS: list[ExperimentCard]")
     parser.add_argument("--prelim", action="store_true",
                         help="(kind=spec only) build list from PRELIM_SPEC instead of SPEC")
+    parser.add_argument("--cards-manifest", default=None,
+                        help="(kind=cards only) path to write RECORDS as JSON sidecar")
     args = parser.parse_args()
 
     meta = {"kind": args.kind}
@@ -125,6 +180,20 @@ def main():
             sys.exit(1)
         lines = _values_inverse_design(args.module)
         meta["spec_module"] = args.module
+    elif args.kind == "gradient_free_design":
+        if not args.module:
+            print("ERROR: --module is required for --kind gradient_free_design")
+            sys.exit(1)
+        lines = _values_gradient_free_design(args.module)
+        meta["spec_module"] = args.module
+    elif args.kind == "cards":
+        if not args.module:
+            print("ERROR: --module is required for --kind cards")
+            sys.exit(1)
+        lines = _values_cards(args.module, manifest_path=args.cards_manifest)
+        meta["spec_module"] = args.module
+        if args.cards_manifest:
+            meta["cards_manifest"] = args.cards_manifest
     elif args.kind == "spec":
         if not args.module:
             print("ERROR: --module is required for --kind spec")

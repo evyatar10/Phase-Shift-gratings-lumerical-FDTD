@@ -39,6 +39,7 @@ _CARD_FIELD_MAP = {
     "cavity_length_nm":         ("grating.override_cavity_length_nm",    None),
     "cavity_neg_detuning_nm":   ("grating.cavity_neg_detuning_nm",       None),
     "cavity_width_nm":          ("grating.cavity_width_m",               lambda v: v * 1e-9),
+    "cavity_width_option":      ("grating.cavity_width_option",          None),
     "innermost_tooth_shift_nm": ("grating.innermost_tooth_shift_m",      lambda v: v * 1e-9),
     "lengthen_cavity":          ("grating.lengthen_cavity",              None),
     "center_wavelength_nm":     ("spectral.center_wavelength_m",         lambda v: v * 1e-9),
@@ -63,6 +64,9 @@ class ExperimentCard:
     corrugation_depth_nm: Optional[float] = None
     pitch_nm: Optional[float] = None
     cavity_length_nm: Optional[float] = None       # None = default (pitch / 2)
+    cavity_width_option: Optional[str] = None      # 'narrow' | 'avg' | 'avg_ext'
+    innermost_tooth_shift_nm: Optional[float] = None
+    lengthen_cavity: Optional[bool] = None
     n_apod_periods_each_side: Optional[int] = None
     center_wavelength_nm: Optional[float] = None
     scan_width_nm: Optional[float] = None
@@ -91,6 +95,12 @@ class ExperimentCard:
             cfg.apodization.tanh_steepness = self.tanh_steepness
         if self.cavity_length_nm is not None:
             cfg.grating.override_cavity_length_nm = self.cavity_length_nm
+        if self.cavity_width_option is not None:
+            cfg.grating.cavity_width_option = self.cavity_width_option
+        if self.innermost_tooth_shift_nm is not None:
+            cfg.grating.innermost_tooth_shift_m = self.innermost_tooth_shift_nm * 1e-9
+        if self.lengthen_cavity is not None:
+            cfg.grating.lengthen_cavity = self.lengthen_cavity
         if self.n_apod_periods_each_side is not None:
             cfg.apodization.n_apod_periods_each_side = self.n_apod_periods_each_side
         if self.center_wavelength_nm is not None:
@@ -109,6 +119,10 @@ class ExperimentCard:
                 if (self.center_mod_depth_nm is not None
                         and self.center_mod_depth_nm < cfg.geometry.corrugation_depth_m * 1e9):
                     cfg.apodization.enabled = True
+
+        # Mirror SweepSpec.expand invariant: n_apod_periods_each_side=0 disables apod.
+        if cfg.apodization.n_apod_periods_each_side == 0:
+            cfg.apodization.enabled = False
 
         return cfg
 
