@@ -444,20 +444,37 @@ def make_lumopt_geometry(cfg: SimulationConfig, spec: InverseDesignSpec, initial
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def measure_baseline(cfg: SimulationConfig) -> Tuple[float, float]:
+def measure_baseline(cfg: SimulationConfig, max_retries: int = 5) -> Tuple[float, float]:
     """Run a single FDTD at the cfg's baseline geometry; return (λ_resonance, peak_T).
 
     Uses the resonance scalars that run_single_sim's post_processing pipeline
     already computes — no need to re-run the peak finder here.
+
+    Retries up to `max_retries` times on transient lumapi failures (license
+    contention, "Can not find result" race conditions). Each retry waits
+    30s before re-trying. Job 79379 died in 18 s during baseline because
+    of one such race; retries make this robust.
     """
     from runners.single.run_simulation import run_single_sim
+    import time
 
     print("[inverse_design] measuring baseline λ_resonance and peak T ...")
-    result = run_single_sim(cfg)
-    lam_peak = float(result["resonance_wavelength_nm"]) * 1e-9
-    T_peak   = float(result["resonance_transmission"])
-    print(f"[inverse_design] baseline λ_resonance = {lam_peak * 1e9:.3f} nm  (T = {T_peak:.4f})")
-    return lam_peak, T_peak
+    last_err = None
+    for attempt in range(max_retries):
+        try:
+            result = run_single_sim(cfg)
+            lam_peak = float(result["resonance_wavelength_nm"]) * 1e-9
+            T_peak   = float(result["resonance_transmission"])
+            print(f"[inverse_design] baseline λ_resonance = {lam_peak * 1e9:.3f} nm  (T = {T_peak:.4f})")
+            return lam_peak, T_peak
+        except Exception as exc:
+            last_err = exc
+            print(f"[inverse_design] baseline attempt {attempt + 1}/{max_retries} failed: {exc}")
+            if attempt < max_retries - 1:
+                wait_s = 60 * (attempt + 1)   # 60, 120, 180, 240 s
+                print(f"[inverse_design] sleeping {wait_s}s before retry (exponential backoff) ...")
+                time.sleep(wait_s)
+    raise RuntimeError(f"baseline measurement failed after {max_retries} attempts: {last_err}")
 
 
 def _build_static_skeleton(sim, cfg: SimulationConfig, n_free: int) -> None:
@@ -586,12 +603,20 @@ def make_base_script(cfg: SimulationConfig, n_free: int, target_lambda_m: float,
         fdtd.setnamed("FDTD::ports::Port_1", "name", "source")
         fdtd.setnamed("FDTD::ports::Port_2", "name", "fom")
 
-        # GPU FDTD does not support frequency-dependent profiles. bragg_device
-        # turns this on by default (needed for some non-GPU paths), but with
-        # GPU + lumopt the simulation hangs/aborts. Explicitly disable on both
-        # ports for the inverse-design path.
-        fdtd.setnamed("FDTD::ports::source", "frequency dependent profile", 0)
-        fdtd.setnamed("FDTD::ports::fom", "frequency dependent profile", 0)
+        # PHASE-3 EXPERIMENT (2026-05-11): the previous comment said GPU FDTD
+        # doesn't support frequency-dependent profiles — but production
+        # `bragg_device.py:524,536` uses `frequency dependent profile = 1`
+        # with GPU FDTD without issue. Comment was likely stale (older v).
+        # The previous sub-agent diagnosed `frequency_dependent_profile=0`
+        # on the `fom` port as the root cause of the broken adjoint
+        # (vec_error 11.40). Without per-λ port profiles, the adjoint
+        # source has the wrong spatial shape at every λ ≠ λ_center, which
+        # contaminates E_adj(x;λ) and hence the gradient.
+        # Test hypothesis: enable broadband profile on both ports. If
+        # GPU FDTD now hangs/aborts (older bug returns), we'll know;
+        # otherwise this should drop vec_error dramatically.
+        fdtd.setnamed("FDTD::ports::source", "frequency dependent profile", 1)
+        fdtd.setnamed("FDTD::ports::fom",    "frequency dependent profile", 1)
 
         # opt_fields monitor: covers the freed region. Lumopt records E,H here
         # on every iteration to compute dFOM/dε for adjoint. The adjoint
@@ -711,7 +736,30 @@ def _patch_porttransmission_weights():
 
             d = np.diff(wl)
             quad_weight = np.append(np.append(d[0], d[0:-1] + d[1:]), d[-1]) / 2
-            v = const_factor * integral_kernel * quad_weight
+            # PHASE-3 EMPIRICAL FIX: 79501 (vec_error 0.94) showed adj ≈ 2.3×
+            # FD UNIFORMLY across all 5 components (mean ratio 2.28, std ~0.5).
+            # Same sign throughout. Pure scaling error → halve the kernel to
+            # match. Likely an extra factor of 2 in lumopt's
+            # 2*eps0*E_fwd*E_adj*Δε formula vs the correct adjoint derivation
+            # (which gives ε₀, not 2·ε₀, when the FOM is T = |t|²/P with the
+            # phase_prefactors = t/(4·P) convention used here).
+            v = 0.5 * const_factor * integral_kernel * quad_weight
+
+            # PHASE-3 DIAGNOSTIC: dump per-wavelength factors. Helps verify
+            # (a) the Gaussian weight peaks at λ_target, (b) const_factor
+            # is sensible, (c) the FOM error is in expected range.
+            try:
+                idx_peak = int(np.argmax(np.abs(v)))
+                idx_max_w = int(np.argmax(weights_vs_wavelength))
+                print(f"[adjoint patch] N_wl={wl.size}, range_nm={(wl.max()-wl.min())*1e9:.3f}")
+                print(f"[adjoint patch]   λ array: {wl[0]*1e9:.3f} ... {wl[-1]*1e9:.3f} nm")
+                print(f"[adjoint patch]   weights peak at λ={wl[idx_max_w]*1e9:.3f} nm, val={weights_vs_wavelength[idx_max_w]:.3e}")
+                print(f"[adjoint patch]   T_fwd peak T={np.max(self.T_fwd_vs_wavelength):.4f} at λ={wl[np.argmax(self.T_fwd_vs_wavelength)]*1e9:.3f} nm")
+                print(f"[adjoint patch]   T_fwd_error min/max = {T_fwd_error.min():.3e}/{T_fwd_error.max():.3e}")
+                print(f"[adjoint patch]   const_factor={const_factor:.3e}")
+                print(f"[adjoint patch]   |v| peak at λ={wl[idx_peak]*1e9:.3f} nm, val={v[idx_peak]:.3e}, mean|v|={np.mean(np.abs(v)):.3e}")
+            except Exception as exc:
+                print(f"[adjoint patch] diagnostic print failed: {exc}")
 
             lumapi.putMatrix(sim.fdtd.handle, "wl_scaled_integral_kernel", v)
             sim.fdtd.eval((
@@ -752,7 +800,8 @@ def _patch_porttransmission_weights():
             num_opt_param = T_fwd_partial_derivs_vs_wl.shape[0]
             T_fwd_partial_derivs = np.zeros(num_opt_param, dtype="complex")
             for i in range(num_opt_param):
-                T_fwd_partial_derivs[i] = const_factor * np.trapz(
+                # PHASE-3 EMPIRICAL FIX: halve the kernel (see _on_cad above).
+                T_fwd_partial_derivs[i] = 0.5 * const_factor * np.trapz(
                     y=integral_kernel * T_fwd_partial_derivs_vs_wl[i], x=wl
                 )
         else:
@@ -763,6 +812,41 @@ def _patch_porttransmission_weights():
             )
 
         return T_fwd_partial_derivs.real, T_fwd_partial_derivs_vs_wl.real
+
+    # Also patch callable_fom and callable_jac to retry on transient
+    # LumApiError (typically the license-token-shortage error from
+    # concurrent jobs eating the FlexLM pool). 79516 made 2 full L-BFGS-B
+    # iterations before crashing on iter 3 with this error.
+    from lumopt.optimization import Optimization  # type: ignore
+    import time as _time
+
+    def _make_retry_wrapper(orig_method, name):
+        def wrapped(self, *args, **kwargs):
+            last_err = None
+            for attempt in range(5):
+                try:
+                    return orig_method(self, *args, **kwargs)
+                except Exception as exc:
+                    msg = str(exc)
+                    last_err = exc
+                    if "Insufficient FlexNet" in msg or "license" in msg.lower():
+                        wait_s = 60 * (attempt + 1)   # 60, 120, 180, 240 s
+                        print(f"[lumopt retry] {name} attempt {attempt + 1}/5 hit license issue; "
+                              f"sleeping {wait_s}s before retry.")
+                        _time.sleep(wait_s)
+                    else:
+                        # Non-license error — re-raise immediately
+                        raise
+            raise RuntimeError(
+                f"{name} failed after 5 attempts due to license contention: {last_err}"
+            )
+        return wrapped
+
+    if not getattr(Optimization, "_retry_patch_applied", False):
+        Optimization.callable_fom = _make_retry_wrapper(Optimization.callable_fom, "callable_fom")
+        Optimization.callable_jac = _make_retry_wrapper(Optimization.callable_jac, "callable_jac")
+        Optimization._retry_patch_applied = True
+        print("[inverse_design] applied license-retry patch to Optimization.callable_fom/jac.")
 
     porttransmission.fom_gradient_wavelength_integral_on_cad = (
         fom_gradient_wavelength_integral_on_cad
@@ -806,21 +890,13 @@ def run_inverse_design(
     Post-opt verification re-simulates the converged geometry at a finer mesh
     (`simulation_mode='accurate'`) for a physics-precise true_peak_T.
     """
-    # lumopt lives next to lumapi.py inside the Lumerical install.
-    import sys as _sys
-    _lum_dir = os.path.dirname(_cfg.LUMAPI_PATH)
-    if _lum_dir and _lum_dir not in _sys.path:
-        _sys.path.insert(0, _lum_dir)
-
-    from lumopt.optimization import Optimization                           # type: ignore
-    from lumopt.figures_of_merit.PortTransmission import porttransmission  # type: ignore
-    from lumopt.optimizers.generic_optimizers import ScipyOptimizers        # type: ignore
-    from runners.single.run_simulation import run_single_sim
-
-    # Apply the target_T_fwd_weights adjoint patch BEFORE constructing any
-    # porttransmission instance. Idempotent — safe to call multiple times.
-    _patch_porttransmission_weights()
-
+    # IMPORTANT: defer lumopt imports until AFTER baseline measurement.
+    # In job 79424, importing lumopt + applying the patch BEFORE
+    # measure_baseline caused subsequent run_single_sim calls to fail
+    # silently (FDTD ran for 1 s, no port-expansion result). Suspected
+    # cause: lumopt's import or patching initializes lumapi state in a
+    # way that conflicts with the fresh lumapi.FDTD() call inside
+    # run_single_sim.
     spec.validate()
     starts = spec.get_starts() if spec.initial_points or spec.n_starts > 1 else [
         regular_grating_start(cfg, spec.n_free_inner_teeth)
@@ -848,11 +924,30 @@ def run_inverse_design(
         baseline_lambda_m, initial_peak_T = measure_baseline(cfg)
     lam_target_m = float(baseline_lambda_m)
 
+    # NOW import lumopt — after baseline measurement so any global state
+    # initialization doesn't poison the run_single_sim FDTD calls.
+    import sys as _sys
+    _lum_dir = os.path.dirname(_cfg.LUMAPI_PATH)
+    if _lum_dir and _lum_dir not in _sys.path:
+        _sys.path.insert(0, _lum_dir)
+    from lumopt.optimization import Optimization                           # type: ignore
+    from lumopt.figures_of_merit.PortTransmission import porttransmission  # type: ignore
+    from lumopt.optimizers.generic_optimizers import ScipyOptimizers        # type: ignore
+    from runners.single.run_simulation import run_single_sim
+    _patch_porttransmission_weights()
+
     # Build the lumopt optimization.
     fom = porttransmission(
         monitor_port="fom",
         mode_number=1,
         direction="Forward",
+        # PHASE-3 EXPERIMENT: enable multi-frequency adjoint source
+        # calculation. With frequency_dependent_profile=1 on both ports
+        # (set in make_base_script) AND multi_freq_src=True here, lumopt
+        # tells Lumerical to compute mode profiles at every FOM wavelength
+        # (instead of using a single λ_center profile for the whole pulse).
+        # This is required for correct broadband adjoint gradients.
+        multi_freq_src=True,
         target_T_fwd=lambda wl: np.ones_like(np.asarray(wl).flatten()),
         target_T_fwd_weights=_gaussian_weight_fn(lam_target_m, spec.fom_weight_sigma_nm),
         norm_p=1,

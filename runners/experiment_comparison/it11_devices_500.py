@@ -22,7 +22,8 @@ from simulation_config import SimulationConfig
 
 
 BASE = SimulationConfig()
-BASE.mesh.simulation_mode         = "optimization"
+BASE.mesh.simulation_mode         = "accurate"
+BASE.material.n_core_const        = 1.93024   # Calibrated against IT11 experimental Bragg λ (2026-05-11)
 BASE.spectral.scan_width_nm       = 30.0
 BASE.spectral.center_wavelength_m = 1.538e-6  # 500 nm pitch ⇒ resonance ~1538 nm
 

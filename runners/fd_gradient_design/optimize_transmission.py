@@ -48,13 +48,19 @@ SPEC = FDGradientSpec(
     dw_bounds_nm       = [(60.0, 400.0), (60.0, 400.0)],
     shift_bounds_nm    = [(0.0, 200.0),  (0.0, 200.0)],
     cavity_width_bounds_nm = (500.0, 1100.0),
-    initial_points     = None,        # → uniform pi-shift Bragg grating
+    # Warm-start from job 79145's best partial-run point (peak_T = 0.9474 at
+    # eval 24/137 before cancellation). The cancelled run had only swept dw_1
+    # and dw_2 — shift_1, shift_2, cavity_width still at defaults. Restarting
+    # here lets Powell skip the dw exploration and go straight to probing
+    # shift+cavity dimensions, where most remaining T headroom lives.
+    initial_points     = [[189.87, 176.22, 25.0, 25.0, 800.0]],
     cavity_width_start_nm = 800.0,
     n_starts           = 1,
 
-    # L-BFGS-B budget. Each iter ≈ 11 FDTDs × ~3 min = 33 min; max_iter=12 →
-    # ~6.6 hours core, plus baseline + verification (~10 min total).
-    max_iter           = 12,
+    # Powell budget. With max_iter=8 (rounds of N=5 directional searches),
+    # eval_budget = max_iter * N * 15 = 600 evals = ~10 hours at 1 min/eval.
+    # Fits Athena ARRAY_TIME=23:30 with margin.
+    max_iter           = 8,
     ftol               = 1e-5,
     gtol               = 1e-5,
 

@@ -402,26 +402,42 @@ def _set_freed_group_params(fdtd, params_nm) -> None:
 
 
 def _evaluate_particle(fdtd, params_nm) -> float:
-    """Update the geometry to params_nm, run FDTD, return modal cavity peak T.
+    """Update the geometry to params_nm, run FDTD, return cavity peak T.
 
-    Reads |S21|^2 from the port's modal expansion (NOT the port's flux-based
-    "T" output, which includes cladding radiation crossing the port plane —
-    that earlier path made PSO climb a hill of scattering loss instead of
-    cavity Q). Then scores the cavity resonance with find_bragg_resonance
-    (sharpness × dip-depth) so sidelobe ripple is rejected too.
+    Preferred path: modal |S21|^2 from the port's mode expansion. Port "T"
+    is flux-based (includes cladding radiation crossing the port plane) and
+    overestimates cavity transmission, so we avoid it as primary FOM.
+
+    Fallback path: if the modal-expansion result isn't available (Lumerical
+    sometimes doesn't populate it for certain geometries), we still apply
+    find_bragg_resonance to port "T" — sidelobe and band-edge artifacts
+    are rejected, but cladding radiation may still contribute. We log the
+    fallback so we can audit later.
     """
     from sim_helpers import find_bragg_resonance
 
     _set_freed_group_params(fdtd, params_nm)
     fdtd.run()
-    # Modal S21 → |S21|^2 = TE0-projected forward transmission (NOT flux).
-    res = fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
-    S21 = np.squeeze(res["S"])
-    wl  = np.squeeze(res["lambda"]).flatten()
-    T_modal = np.abs(np.asarray(S21).flatten()) ** 2
-    # find_bragg_resonance returns the index of the cavity peak.
-    idx = find_bragg_resonance(wl, T_modal)
-    peak_T = float(T_modal[idx])
+
+    try:
+        # Primary: modal |S21|^2 (TE0-projected forward transmission).
+        res = fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
+        S21 = np.squeeze(res["S"])
+        wl  = np.squeeze(res["lambda"]).flatten()
+        T = np.abs(np.asarray(S21).flatten()) ** 2
+        source = "modal"
+    except Exception as exc:
+        # Fallback: port "T" is always available. find_bragg_resonance still
+        # rejects out-of-band and sidelobe artifacts.
+        print(f"[pso] modal expansion unavailable ({exc}); falling back to port T.")
+        res = fdtd.getresult("FDTD::ports::Port_2", "T")
+        T  = np.asarray(np.squeeze(res["T"])).flatten()
+        wl_m = np.asarray(np.squeeze(res["lambda"])).flatten()
+        wl = wl_m * 1e9 if wl_m.max() < 1e-3 else wl_m
+        source = "flux"
+
+    idx = find_bragg_resonance(wl, T)
+    peak_T = float(T[idx])
     fdtd.switchtolayout()
     return peak_T
 

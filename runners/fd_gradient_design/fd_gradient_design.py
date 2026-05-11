@@ -69,43 +69,59 @@ def _smoothed_peak_T(fdtd, params_nm, k_around: int = 1) -> float:
     index. With fom_n_points=201 over 10 nm, k_around=1 gives a 3-sample
     window of ~0.15 nm.
 
-    NO retry on failure: production run 79298 showed that retrying after a
-    transient lumapi error CORRUPTS the freed_group structure (subsequent
-    setnamed calls fail with "no items matching the name 'freed_group'
-    can be found"), making every subsequent eval return NaN. Better to
-    return NaN once and let Powell treat that point as worse than any
-    finite value (it'll explore another direction).
+    Smart retry: if `getresult` fails (Lumerical didn't store the T result —
+    typically because the FDTD run was interrupted by a license/race issue),
+    re-run `fdtd.run() + getresult()` ONLY. We never re-call
+    `_set_freed_group_params()` because in production run 79298 that
+    second call somehow corrupted the freed_group structure (subsequent
+    setnamed calls failed with "no items matching the name 'freed_group'").
+    Re-running the simulation alone is safe — the geometry inside
+    freed_group is unchanged from the first attempt.
     """
     from sim_helpers import find_bragg_resonance
+    import time
 
-    if True:
+    # Set the geometry ONCE — never retry this part.
+    try:
+        _set_freed_group_params(fdtd, params_nm)
+    except Exception as exc:
+        print(f"[smoothed_peak_T] geometry set failed: {exc} — returning NaN.")
+        return float("nan")
+
+    # Retry only the run + getresult cycle. 3 attempts (1 + 2 retries),
+    # 5s sleep between to let any contention clear.
+    last_err = None
+    for run_attempt in range(3):
         try:
-            _set_freed_group_params(fdtd, params_nm)
             fdtd.run()
-            # Use getresult(port, "T") which on a Lumerical port monitor
-            # returns the MODAL transmission |S21|² for the source mode
-            # (NOT integrated flux). Production code uses
-            # getresult(port, "expansion for port monitor")["S"] then
-            # |S|², but on our parametric-freed_group .fsp that result
-            # wasn't available on the first call after fdtd.run() (job
-            # 79298 failed every eval with "Can not find result
-            # 'expansion for port monitor'"). The `T` result is the same
-            # modal |S21|² but more robustly available immediately.
-            res = fdtd.getresult("FDTD::ports::Port_2", "T")
-            T = np.asarray(np.squeeze(res["T"])).flatten()
-            if T.size == 0 or not np.all(np.isfinite(T)):
-                raise RuntimeError(f"empty or non-finite T result (size={T.size})")
-            T_abs = np.abs(T)
-            # Get the wavelength array — port `T` result carries it under
-            # "lambda"; fall back to reconstructing from the global monitor.
+            # PRIMARY: modal |S21|² from 'expansion for port monitor'.
+            # Mirrors the PSO path (gradient_free_design._evaluate_particle).
+            # NOT getresult(port, "T") — that's the integrated FLUX through
+            # the port plane, includes cladding radiation, overestimates
+            # cavity transmission. Mode-projected |S21|² is the physically
+            # correct cavity-resonance transmission.
+            # Fallback to flux-T only if the modal-expansion result isn't
+            # populated (rare — happens on certain geometries/concurrent
+            # license contention).
             try:
-                wl = np.asarray(np.squeeze(res.get("lambda"))).flatten()
-                if wl.size != T_abs.size:
-                    raise ValueError("wl/T size mismatch")
-            except Exception:
-                wl_min = float(fdtd.getnamed("FDTD", "global monitor minimum wavelength"))
-                wl_max = float(fdtd.getnamed("FDTD", "global monitor maximum wavelength"))
-                wl = np.linspace(wl_min, wl_max, T_abs.size)
+                res = fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
+                S21 = np.squeeze(res["S"])
+                T_abs = np.abs(np.asarray(S21).flatten()) ** 2
+                wl = np.asarray(np.squeeze(res["lambda"])).flatten()
+                source = "modal"
+            except Exception as exc_modal:
+                print(f"[smoothed_peak_T] modal expansion unavailable "
+                      f"({exc_modal}); falling back to port T (flux-based).")
+                res = fdtd.getresult("FDTD::ports::Port_2", "T")
+                T_abs = np.asarray(np.squeeze(res["T"])).flatten()
+                wl = np.asarray(np.squeeze(res["lambda"])).flatten()
+                source = "flux"
+            if T_abs.size == 0 or not np.all(np.isfinite(T_abs)):
+                raise RuntimeError(f"empty or non-finite T result (size={T_abs.size})")
+            # wl in meters → nm for find_bragg_resonance compatibility (it
+            # only cares about ordering, but consistent units help).
+            if wl.size > 0 and wl.max() < 1e-3:
+                wl = wl * 1e9
             # Find the cavity-resonance index via the production scorer.
             idx = int(find_bragg_resonance(wl, T_abs))
             # ±k_around smoothing window.
@@ -115,13 +131,21 @@ def _smoothed_peak_T(fdtd, params_nm, k_around: int = 1) -> float:
             fdtd.switchtolayout()
             return peak
         except Exception as exc:
-            print(f"[smoothed_peak_T] FOM failed: {exc} — returning NaN (no retry; "
-                  f"job 79298 showed retries corrupt the freed_group state).")
+            last_err = exc
+            print(f"[smoothed_peak_T] run/getresult attempt {run_attempt + 1}/3 failed: "
+                  f"{exc}")
+            # Switch back to layout mode so the next fdtd.run() starts cleanly,
+            # but DO NOT touch freed_group — the geometry inside it is still
+            # valid from the initial _set_freed_group_params() call.
             try:
                 fdtd.switchtolayout()
             except Exception:
                 pass
-            return float("nan")
+            if run_attempt < 2:
+                time.sleep(5)   # let any license/race contention clear
+    print(f"[smoothed_peak_T] all 3 run/getresult attempts failed; returning NaN. "
+          f"Last error: {last_err}")
+    return float("nan")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -445,9 +469,18 @@ def run_fd_gradient_design(
 
         bounds_nm = np.asarray(spec.all_bounds_nm(), dtype=float)
         n = spec.n_params()
-        # Hard cap on FDTD evaluations: max_iter * (1 base + 2N perturbed) plus
-        # a small slack for line-search reruns. Prevents L-BFGS-B from spiraling.
-        eval_budget = int(spec.max_iter * (1 + 2 * n) + 5)
+        # Hard cap on FDTD evaluations.
+        # - L-BFGS-B: max_iter iterations × (1 base + 2N perturbed) = (2N+1) × max_iter
+        # - Powell: max_iter rounds × N 1D directional searches × ~15 evals/search.
+        #   1D search uses Brent's bracketing + golden section, typically 5-20 evals
+        #   depending on noise. 15 is a generous estimate. With N=5 and max_iter=8
+        #   this gives 5*8*15 = 600 evals = ~10 hours at 1 min/eval — fits in
+        #   Athena's ARRAY_TIME=23:30.
+        method = getattr(spec, "method", "Powell")
+        if method == "Powell":
+            eval_budget = int(spec.max_iter * n * 15 + 20)
+        else:
+            eval_budget = int(spec.max_iter * (1 + 2 * n) + 5)
 
         fun, jac = _make_objective_and_grad(
             fdtd, spec, bounds_nm, history, incremental_path, eval_budget

@@ -3,40 +3,158 @@
 clear all;
 close all;
 clc;
-addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MATLAB path
+addpath(fileparts(mfilename('fullpath')));              % Add matlab_plotting to path
+addpath(fileparts(fileparts(mfilename('fullpath'))));   % Add project root to MATLAB path
 
-% --- USER CONFIGURATION ---
-base_dir = "C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\leaky_modes_v4\results\comparison";
+% --- USER OPTIONS ---
+CALC_KAPPA = true;   % Set to false to skip the exponential-decay fit
 
-file_list = {
-    fullfile(base_dir, 'result_80_periods_CONST.mat'), ...
-    fullfile(base_dir, 'result_80_periods_10_apod_CONST.mat'), ...
-    fullfile(base_dir, 'result_80_periods_CONST_shift_100nm.mat'), ...
-    fullfile(base_dir, 'result_80_periods_CONST_shift_100.0nm_innersize_100nm.mat'), ...
-};
+% --- File selection (start in last-used folder if available) ---
+prefs_file = fullfile(fileparts(mfilename('fullpath')), 'plot_prefs.mat');
+start_path = '*.mat';
+if exist(prefs_file, 'file')
+    p = load(prefs_file);
+    if isfield(p, 'profile_last_folder') && isfolder(p.profile_last_folder)
+        start_path = fullfile(p.profile_last_folder, '*.mat');
+    end
+end
 
-% Human-readable label for each file (shown as subplot title)
-% Must match file_list order and length
-labels = {
-    '80 Periods', ...
-    '80 Periods, 10 Apodizations', ...
-    '80 Periods, 100 nm Shift', ...
-    '80 Periods, 100 nm Shift, Inner Size 100 nm', ...
-};
+[files, folder] = uigetfile(start_path, 'Select .mat files', 'MultiSelect', 'on');
+if isequal(files, 0)
+    disp('No files selected.');
+    return;
+end
+
+profile_last_folder = folder;
+profile_last_files  = files;
+if exist(prefs_file, 'file')
+    save(prefs_file, 'profile_last_folder', 'profile_last_files', '-append');
+else
+    save(prefs_file, 'profile_last_folder', 'profile_last_files');
+end
+
+if ischar(files), files = {files}; end
+
+% Build full paths + derive labels from filenames
+file_list = cell(1, numel(files));
+labels    = cell(1, numel(files));
+order_key = zeros(1, numel(files));
+for k = 1:numel(files)
+    file_list{k} = fullfile(folder, files{k});
+    labels{k}    = make_label(files{k});
+    order_key(k) = device_order(files{k});
+end
+
+% Sort: regular (N80, no A/W) → optimized (W) → tanh (A*_th) → linear (A*)
+[~, idx] = sort(order_key);
+file_list = file_list(idx);
+labels    = labels(idx);
 
 % Run Analysis
-compare_profiles(file_list, labels);
+compare_profiles(file_list, labels, CALC_KAPPA);
+
+
+% ---------------------------------------------------------
+% LABEL LOGIC: derive a human-readable label from filename
+% ---------------------------------------------------------
+function k = device_order(filename)
+% Sort key: 1=regular, 2=optimized (W), 3=tanh (A*_th), 4=linear (A*)
+if ~isempty(regexpi(filename, 'A\d+_th', 'once'))
+    k = 3;
+elseif ~isempty(regexpi(filename, 'A\d+', 'once'))
+    k = 4;
+elseif ~isempty(regexpi(filename, 'W\d', 'once'))
+    k = 2;
+else
+    k = 1;
+end
+end
+
+
+function label = make_label(filename)
+% Tokens recognized (case-insensitive):
+%   N<n>           -> "<n> periods"
+%   A<n>_th        -> "<n> tanh apodizations"    (must come before bare A<n>)
+%   A<n>           -> "<n> linear apodizations"
+%   W<n>           -> "optimized (W = <n> nm)"
+%   shift_<x>nm    -> "<x> nm shift"
+%   innersize_<x>nm-> "inner size <x> nm"
+% Unrecognized junk tokens (CONST, M4, avg, optimization_mesh, accurate_mesh,
+% result, .mat) are stripped.
+name = erase(filename, '.mat');
+name = regexprep(name, '^result_', '');
+
+parts = {};
+
+% Tanh apodization must be matched before linear A<n>
+tok = regexpi(name, 'A(\d+)_th', 'tokens', 'once');
+if ~isempty(tok)
+    parts{end+1} = sprintf('%s tanh apodizations', tok{1});
+    name = regexprep(name, 'A\d+_th', '', 'ignorecase');
+end
+
+tok = regexpi(name, 'A(\d+)', 'tokens', 'once');
+if ~isempty(tok)
+    parts{end+1} = sprintf('%s linear apodizations', tok{1});
+    name = regexprep(name, 'A\d+', '', 'ignorecase');
+end
+
+% Optimized cavity width
+tok = regexpi(name, 'W(\d+(?:\.\d+)?)', 'tokens', 'once');
+if ~isempty(tok)
+    parts{end+1} = sprintf('optimized (W = %s nm)', tok{1});
+    name = regexprep(name, 'W\d+(\.\d+)?', '', 'ignorecase');
+end
+
+% Shifts and inner-size (legacy CONST format)
+tok = regexpi(name, 'shift_(\d+(?:\.\d+)?)nm', 'tokens', 'once');
+if ~isempty(tok)
+    parts{end+1} = sprintf('%s nm shift', tok{1});
+    name = regexprep(name, 'shift_\d+(\.\d+)?nm', '', 'ignorecase');
+end
+
+tok = regexpi(name, 'innersize_(\d+(?:\.\d+)?)nm', 'tokens', 'once');
+if ~isempty(tok)
+    parts{end+1} = sprintf('inner size %s nm', tok{1});
+    name = regexprep(name, 'innersize_\d+(\.\d+)?nm', '', 'ignorecase');
+end
+
+% Period count (N<n>) — placed first in the final label
+tok = regexpi(name, 'N(\d+)', 'tokens', 'once');
+periods_str = '';
+if ~isempty(tok)
+    periods_str = sprintf('%s periods', tok{1});
+else
+    % Fall back to "<n> periods" prefix used in the older CONST filenames
+    tok = regexpi(name, '(\d+)_periods', 'tokens', 'once');
+    if ~isempty(tok)
+        periods_str = sprintf('%s periods', tok{1});
+    end
+end
+
+if ~isempty(periods_str)
+    parts = [{periods_str}, parts];
+end
+
+if isempty(parts)
+    % Fallback: just clean up the raw name
+    label = strrep(name, '_', ' ');
+else
+    label = strjoin(parts, ', ');
+end
+end
 
 
 % ---------------------------------------------------------
 % MAIN: Load each file, extract 2D profile, plot side by side
 % ---------------------------------------------------------
-function compare_profiles(file_list, labels)
+function compare_profiles(file_list, labels, calc_kappa)
 n = numel(file_list);
 if n == 0, error('file_list is empty. Please provide at least one file path.'); end
 if nargin < 2 || isempty(labels)
     labels = repmat({''}, 1, n);  % no labels if omitted
 end
+if nargin < 3, calc_kappa = true; end
 
 % Layout: 2x2 for 4 files, single row for <=3, 3-column grid for more
 if n <= 3
@@ -60,7 +178,7 @@ for i = 1:n
     [x, I_x_2d, I_env_2d, fwhm, xL, xR, yHM, wl_res, T_peak] = extract_2d_profile(filepath);
 
     ax = subplot(nrows, ncols, i);
-    plot_profile(ax, x, I_x_2d, I_env_2d, fwhm, xL, xR, yHM, wl_res, labels{i}, T_peak);
+    plot_profile(ax, x, I_x_2d, I_env_2d, fwhm, xL, xR, yHM, wl_res, labels{i}, T_peak, calc_kappa);
 end
 end
 
@@ -141,7 +259,8 @@ end
 % ---------------------------------------------------------
 % PLOT A SINGLE PROFILE (reference-image style)
 % ---------------------------------------------------------
-function plot_profile(ax, x, I_x_2d, I_env_2d, fwhm, xL, xR, yHM, wl_res, label, T_peak)
+function plot_profile(ax, x, I_x_2d, I_env_2d, fwhm, xL, xR, yHM, wl_res, label, T_peak, calc_kappa)
+if nargin < 12, calc_kappa = true; end
 axes(ax);
 hold on;
 
@@ -166,6 +285,22 @@ area(x * 1e6, I_x_2d * scale, ...
 plot(x * 1e6, I_env_2d * scale, ...
     'r-', 'LineWidth', 2, ...
     'DisplayName', 'Field Envelope');
+
+% --- Kappa fit: log(envelope) = log(peak) - 2*kappa*|x - x_center| ---
+if calc_kappa
+    [kappa_per_m, x_c, r_max, env_peak_fit] = fit_kappa(x, I_env_2d);
+else
+    kappa_per_m = NaN;
+end
+
+if ~isnan(kappa_per_m)
+    rr = linspace(0, r_max, 200);
+    y_fit_curve = env_peak_fit * exp(-2 * kappa_per_m * rr);
+    plot((x_c + rr) * 1e6, y_fit_curve * scale, 'k:', ...
+        'LineWidth', 1.5, 'DisplayName', sprintf('Fit: \\kappa = %.3f /\\mum', kappa_per_m * 1e-6));
+    plot((x_c - rr) * 1e6, y_fit_curve * scale, 'k:', ...
+        'LineWidth', 1.5, 'HandleVisibility', 'off');
+end
 
 % --- FWHM annotation ---
 if fwhm > 0
@@ -195,6 +330,11 @@ if isnan(T_peak)
 else
     t_str = sprintf('Mode Profile @ %.2f nm  |  \\bf\\color[rgb]{0.85,0.40,0.00}T_{peak} = %.4f\\rm\\color{black}', wl_res * 1e9, T_peak);
 end
+if ~isnan(kappa_per_m)
+    t_str = sprintf('%s  |  \\bf\\color[rgb]{0,0.4,0}\\kappa = %.3f /\\mum\\rm\\color{black}', ...
+        t_str, kappa_per_m * 1e-6);
+    fprintf('Kappa: %.4f /um  (%.1f /cm)\n', kappa_per_m * 1e-6, kappa_per_m * 1e-2);
+end
 if ~isempty(label)
     title({label, t_str}, 'FontSize', 11, 'Interpreter', 'tex');
 else
@@ -206,6 +346,43 @@ xlim([min(x) * 1e6, max(x) * 1e6]);
 set(ax, 'Box', 'on', 'Color', 'w', 'GridColor', [0.8 0.8 0.8], ...
     'GridAlpha', 0.7, 'LineWidth', 0.8);
 hold off;
+end
+
+
+% ---------------------------------------------------------
+% HELPER: FIT KAPPA from envelope
+% ---------------------------------------------------------
+% Mode-energy envelope of a Bragg cavity decays as exp(-2*kappa*|x - x_c|).
+% Fits log(env) vs |x - x_c| on the strong-signal flank (5%..90% of peak)
+% combining both sides. Returns kappa in 1/m.
+function [kappa, x_c, r_max, env_peak_fit] = fit_kappa(x, env)
+x   = double(x(:));
+env = double(env(:));
+
+[env_max, idx_c] = max(env);
+x_c = x(idx_c);
+
+r = abs(x - x_c);
+y = log(max(env, eps));
+
+% Use values between 5% and 90% of peak (avoid noise floor and rounded top)
+mask = (env >= 0.05 * env_max) & (env <= 0.90 * env_max);
+
+if nnz(mask) < 5
+    kappa = NaN; r_max = 0; env_peak_fit = env_max; return;
+end
+
+coeffs = polyfit(r(mask), y(mask), 1);
+slope  = coeffs(1);
+inter  = coeffs(2);
+
+if slope >= 0
+    kappa = NaN; r_max = 0; env_peak_fit = env_max; return;
+end
+
+kappa        = -slope / 2;
+r_max        = max(r(mask));
+env_peak_fit = exp(inter);
 end
 
 

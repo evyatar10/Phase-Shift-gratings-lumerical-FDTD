@@ -66,7 +66,11 @@ SPEC = InverseDesignSpec(
     mesh_override_dxyz_nm= 0,
     param_dx_nm          = 50.0,
 
-    use_concurrent_adjoint_solves = True,
+    # Serial adjoint solves only. concurrent=True requested 9 license tokens
+    # in job 79135 and FlexLM only had 1 free → run aborted with
+    # 'Insufficient FlexNet Publisher (FNP) license count' before completing
+    # the first inner iteration. Serial avoids that contention.
+    use_concurrent_adjoint_solves = False,
     enforce_mirror_symmetry = True,
     lengthen_cavity    = True,
     label              = "transmission_outer",

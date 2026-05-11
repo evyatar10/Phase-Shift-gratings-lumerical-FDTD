@@ -100,6 +100,18 @@ def _patched_FDTD_init(self, *args, **kwargs):
             sys.exit(2)
         print(f"[athena_run_one] WARNING: {msg}; will run on CPU.")
         return
+    # TEMP DISABLED — setting processes=1 on DGX caused FDTD to abort after
+    # ~2 s without computing modal port expansion (jobs 470748..470826). Default
+    # processes setting is already capped at 1 on this cluster's FlexLM, so
+    # this explicit set is redundant AND breaks the simulation. Re-enable only
+    # if license contention with concurrent jobs becomes a problem.
+    #
+    # for prop, val in (("processes", 1), ("capacity", 1)):
+    #     try:
+    #         self.setresource("FDTD", 1, prop, val)
+    #         print(f"[athena_run_one] FDTD resource '{prop}' set to {val}.")
+    #     except Exception as _e:
+    #         print(f"[athena_run_one] WARNING: could not set FDTD '{prop}'={val}: {_e}")
     try:
         device_type = self.getresource("FDTD", 1, "device type")
         print(f"[athena_run_one] device type readback = {device_type!r}")

@@ -121,7 +121,14 @@ def build_cfg(cfg: SimulationConfig) -> SimulationConfig:
 
     # Override core refractive index for this run (default in simulation_config.py is 1.977)
     cfg.material.n_core_const = 1.93024
-    cfg.spectral.center_wavelength_m = 1535.92e-9
+
+    # Pitch sweep: switch to 516 nm device.
+    # cavity_neg_detuning_nm keeps the cavity narrow-tooth at 244.24 nm regardless
+    # of pitch (formula: pitch/2 − 244.24 nm). For pitch=516 -> 258 − 244.24 = 13.76.
+    # Overrides Athena dispatcher's hardcoded 5.76 (for pitch=500).
+    cfg.grating.pitch_m = 516e-9
+    cfg.grating.cavity_neg_detuning_nm = 13.76
+    cfg.spectral.center_wavelength_m = 1575e-9       # experimental peak ≈ 1575.2–1575.5 nm
 
     # Example overrides (uncomment to use):
     # cfg.grating.n_periods_each_side = 120

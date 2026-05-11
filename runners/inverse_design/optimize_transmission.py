@@ -72,10 +72,10 @@ SPEC = InverseDesignSpec(
     initial_points     = [INITIAL_P],
     n_starts           = 1,
 
-    # Single L-BFGS-B with 16 iterations. Each iter ≈ 7 FDTDs × ~3 min = 21
-    # min, plus line search → ~5 hours total. ARRAY_TIME=23:30 has plenty of
-    # headroom.
-    max_iter           = 16,
+    # PHASE-3: lumopt adjoint now works (vec_error 0.144 in job 79505 after
+    # the 4-fix stack). 8 iterations is enough to verify it actually steps;
+    # bump to 16+ once we see real improvement.
+    max_iter           = 8,
     optimizer_method   = "L-BFGS-B",
     optimizer_pgtol    = 1e-6,
     optimizer_ftol     = 1e-6,
@@ -91,14 +91,16 @@ SPEC = InverseDesignSpec(
     fom_n_points         = 201,
     fom_weight_sigma_nm  = 2.0,
 
-    # No fine override mesh — device-wide periodic-aligned 50 nm mesh is the
-    # right thing for periodic structures. dx_param=50 nm matches the mesh
-    # so finite-difference perturbations actually move at least one cell
-    # boundary.
-    mesh_override_dxyz_nm= 0,
+    # PHASE-3 FIX: 25 nm override mesh on freed region.
+    # check_gradient diagnostic 79501 explored this; tightens d_eps for
+    # cavity-shape perturbations (cavity_width was the worst residual at
+    # 50 nm device mesh).
+    mesh_override_dxyz_nm= 25,
     param_dx_nm          = 50.0,
 
-    use_concurrent_adjoint_solves = True,
+    # Serial adjoint solves (concurrent=True needs >1 license token at
+    # once → fails with concurrent jobs eating the FlexLM pool).
+    use_concurrent_adjoint_solves = False,
     enforce_mirror_symmetry = True,
     lengthen_cavity    = True,
     label              = "transmission",

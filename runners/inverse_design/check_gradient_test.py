@@ -55,7 +55,12 @@ SPEC = InverseDesignSpec(
     fom_n_points         = 51,
     fom_weight_sigma_nm  = 2.0,
 
-    mesh_override_dxyz_nm= 0,
+    # PHASE-3 EXPERIMENT: add a 25 nm mesh override on the freed region.
+    # 79441 with multi-freq fix dropped vec_error 11.40 → 1.69, but
+    # cavity_width remained 16× off (vs ~2-3× for shifts/dws). The 50 nm
+    # device mesh may give imprecise d_eps for perturbations smaller than
+    # one cell. Halving the mesh on the freed region should help.
+    mesh_override_dxyz_nm = 25,
     param_dx_nm          = 50.0,
 
     use_concurrent_adjoint_solves = False,    # serial: 1 license seat at a time

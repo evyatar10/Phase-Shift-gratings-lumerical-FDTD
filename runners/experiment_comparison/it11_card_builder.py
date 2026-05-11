@@ -40,7 +40,14 @@ from experiment_card import ExperimentCard
 
 
 EXPERIMENT_ROOT = r"C:\Users\evyat\MATLAB\bragg_resonator_codes\new_experiment_analysis"
-EXPERIMENT_CSV  = os.path.join(EXPERIMENT_ROOT, "device_names.csv")
+# Prefer the Windows experiment-analysis copy; fall back to a sibling copy
+# bundled with this package so the builder works on remote clusters (Athena)
+# where the MATLAB folder isn't mounted. Keep the two in sync — re-run
+# `cp <experiment-analysis>/device_names.csv runners/experiment_comparison/` if
+# devices are added.
+_WIN_CSV     = os.path.join(EXPERIMENT_ROOT, "device_names.csv")
+_LOCAL_CSV   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "device_names.csv")
+EXPERIMENT_CSV = _WIN_CSV if os.path.exists(_WIN_CSV) else _LOCAL_CSV
 MAT_ROOT        = os.path.join(EXPERIMENT_ROOT, "2026_04_27_IT11")
 
 # Folder short -> long-name mapping (mirrors analyze_IT11.m:11-15).

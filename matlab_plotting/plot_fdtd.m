@@ -19,8 +19,12 @@ LAMBDA_MAX_NM = 1000.0 * LAMBDA_MAX_UM;
 
 HIGHLIGHT_PEAKS     = true; % Only applies to Combined Loss plot
 CALC_Q_FACTOR       = true; % Toggle calculating Q-factor on Transmission plot
+PLOT_IN_DB          = false; % Plot T and R in dB (10*log10) on Combined Transmission and Individual plots
+DB_FLOOR            = -60;  % Lower y-axis limit when PLOT_IN_DB is true
 FONT_SIZE           = 13;  % Font size for xlabel, ylabel, title
 LEGEND_FONT_SIZE    = 11;  % Font size for legend
+
+to_db = @(x) 10*log10(max(x, 10^(DB_FLOOR/10)));
 
 %% Select .mat files
 prefs_file = fullfile(fileparts(mfilename('fullpath')), 'plot_prefs.mat');
@@ -390,18 +394,27 @@ if PLOT_COMBINED_TRANS
                 displayName = sprintf('%s (Q ~ %.2f x 10^%d)', ds.name, mantissa, exponent);
 
                 % Plot resonance peak marker
-                plot(lambda_res, T_max, 'v', 'Color', colors(k,:), ...
+                T_peak_marker = T_max;
+                if PLOT_IN_DB, T_peak_marker = to_db(T_max); end
+                plot(lambda_res, T_peak_marker, 'v', 'Color', colors(k,:), ...
                     'HandleVisibility', 'off', 'MarkerFaceColor', colors(k,:));
             end
         end
 
         % Main line (Zoomed T)
-        plot(ds.wl_loss, ds.T_f, 'DisplayName', displayName, ...
+        T_plot = ds.T_f;
+        if PLOT_IN_DB, T_plot = to_db(T_plot); end
+        plot(ds.wl_loss, T_plot, 'DisplayName', displayName, ...
             'Color', colors(k,:), 'LineWidth', 1.5);
     end
     hold off;
     xlabel('Wavelength [nm]', 'FontSize', FONT_SIZE);
-    ylabel('Transmission (T)', 'FontSize', FONT_SIZE);
+    if PLOT_IN_DB
+        ylabel('Transmission (T) [dB]', 'FontSize', FONT_SIZE);
+        ylim([DB_FLOOR 0]);
+    else
+        ylabel('Transmission (T)', 'FontSize', FONT_SIZE);
+    end
     title('Combined Transmission (Zoomed)', 'FontSize', FONT_SIZE);
     grid on;
     legend('show', 'Location', 'best', 'Interpreter', 'none', 'FontSize', LEGEND_FONT_SIZE);
@@ -415,17 +428,28 @@ if PLOT_INDIVIDUAL
         figure;
         hold on;
 
-        plot(ds.wl_nm, ds.T,   'DisplayName', 'T',    'LineWidth', 1.5);
-        plot(ds.wl_nm, ds.R,   'DisplayName', 'R',    'LineWidth', 1.5);
-        plot(ds.wl_nm, ds.loss,'DisplayName', 'Loss', 'LineWidth', 1.5);
+        if PLOT_IN_DB
+            plot(ds.wl_nm, to_db(ds.T),    'DisplayName', 'T',    'LineWidth', 1.5);
+            plot(ds.wl_nm, to_db(ds.R),    'DisplayName', 'R',    'LineWidth', 1.5);
+            plot(ds.wl_nm, to_db(ds.loss), 'DisplayName', 'Loss', 'LineWidth', 1.5);
+        else
+            plot(ds.wl_nm, ds.T,   'DisplayName', 'T',    'LineWidth', 1.5);
+            plot(ds.wl_nm, ds.R,   'DisplayName', 'R',    'LineWidth', 1.5);
+            plot(ds.wl_nm, ds.loss,'DisplayName', 'Loss', 'LineWidth', 1.5);
+        end
 
         hold off;
         xlabel('Wavelength [nm]', 'FontSize', FONT_SIZE);
-        ylabel('Normalized Power', 'FontSize', FONT_SIZE);
+        if PLOT_IN_DB
+            ylabel('Normalized Power [dB]', 'FontSize', FONT_SIZE);
+            ylim([DB_FLOOR 0]);
+        else
+            ylabel('Normalized Power', 'FontSize', FONT_SIZE);
+            ylim([-0.1 1.1]);
+        end
         title(sprintf('%s : Power (T, R)', ds.name), 'Interpreter', 'none', 'FontSize', FONT_SIZE);
         grid on;
         legend('show', 'FontSize', LEGEND_FONT_SIZE);
-        ylim([-0.1 1.1]);
         set(gcf, 'Name', sprintf('%s_Power', ds.name));
     end
 end

@@ -34,7 +34,10 @@ BASE.farfield.enabled          = False
 
 
 N_FREE = 2
-INITIAL_P = [250.0, 280.0, 50.0, 30.0, 800.0]   # apodized + shifted; modal T to be measured
+# Seed at the prior PSO's gen-5 best — re-verified modal T = 0.972 (vs
+# regular-grating baseline 0.9419 and apodized seed 0.9409). PSO's LHS-style
+# random init then spreads particles around this known-good point.
+INITIAL_P = [69.09, 218.45, 120.45, 62.05, 774.58]
 
 SPEC = GradientFreeDesignSpec(
     n_free_inner_teeth = N_FREE,
