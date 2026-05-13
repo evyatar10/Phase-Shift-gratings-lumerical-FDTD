@@ -472,17 +472,31 @@ def _extract_peak_T_history(out_dir: str) -> List[float]:
     except Exception:
         find_bragg_resonance = None  # type: ignore
 
-    # Lumopt saves forward_<iter>.fsp inside out_dir/outer_*/ (one outer
-    # subdir per L-BFGS-B iteration). Look at both possible layouts so the
-    # function also works if lumopt changes the structure in a future
-    # release.
-    patterns = [
-        os.path.join(out_dir, "forward_*.fsp"),
-        os.path.join(out_dir, "outer_*", "forward_*.fsp"),
-    ]
+    # Lumopt's Optimization.run renames working_dir to `out_dir_N` when the
+    # original `out_dir` already exists (lumopt/optimization.py line 490+),
+    # so the forward_*.fsp files end up in a sibling directory. Also some
+    # lumopt versions nest them in outer_*/ subdirs. Probe all possible
+    # layouts and aggregate. Job 80429 was the first to hit this — running
+    # under start0 but writing to start0_2.
+    out_dir_base = out_dir.rstrip("/\\")
+    siblings = [out_dir_base] + sorted(glob.glob(out_dir_base + "_*"))
+    patterns: List[str] = []
+    for d in siblings:
+        patterns.append(os.path.join(d, "forward_*.fsp"))
+        patterns.append(os.path.join(d, "outer_*", "forward_*.fsp"))
     files: List[str] = []
     for pat in patterns:
         files.extend(glob.glob(pat))
+    # Prefer the most-recently-modified set: if multiple sibling dirs match,
+    # use only the latest one (the one this job just wrote to).
+    if files:
+        by_dir: dict = {}
+        for f in files:
+            d = os.path.dirname(f)
+            by_dir.setdefault(d, []).append(f)
+        latest_dir = max(by_dir.keys(), key=lambda d: os.path.getmtime(d))
+        files = by_dir[latest_dir]
+        print(f"[inverse_design] using forward_*.fsp from {latest_dir}")
     # Sort by (outer_idx, forward_idx) so the trace is in time order.
     def _sort_key(path: str):
         out = re.search(r"outer_(\d+)", path)
