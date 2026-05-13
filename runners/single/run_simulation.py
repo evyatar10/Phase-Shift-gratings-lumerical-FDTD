@@ -78,6 +78,10 @@ def run_single_sim(cfg: SimulationConfig) -> dict:
     # ── 4. Post-simulation analysis (extraction → processing → saving) ────
     try:
         results = post_processing.analyze_simulation(sim, cfg, results_path, tag)
+        # Expose the on-disk paths so callers (e.g. optimization plot_run
+        # scripts) can locate the .mat without re-deriving the tag.
+        results["results_path"] = results_path
+        results["layout_path"] = layout_path
     finally:
         # ── 5. Cleanup temp files ─────────────────────────────────────────
         if cfg.run.cleanup_lumerical_data:

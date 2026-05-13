@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 *.h5
 results*/
+fsp_samples/
 
 # Large binary/container files (shared across DGX + Athena)
 container/lumerical-2026R1.sif

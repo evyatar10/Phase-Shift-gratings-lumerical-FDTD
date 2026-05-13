@@ -40,16 +40,21 @@ SPEC = InverseDesignSpec(
     initial_points     = [INITIAL_P],
     n_starts           = 1,
 
-    max_iter           = 2,
+    max_iter           = 4,                   # need >= 2 successful iters to verify
     optimizer_method   = "L-BFGS-B",
     optimizer_pgtol    = 1e-6,
     optimizer_ftol     = 1e-6,
+    # Force first L-BFGS-B step to be 25% of bound range — see
+    # InverseDesignSpec docstring. Without this the raw gradient (~1e-4 in
+    # scaled [0,1] space) translates to sub-Angstrom physical steps and the
+    # optimizer terminates after one iteration with no real movement.
+    scale_initial_gradient_to = 0.25,
 
     fom_window_nm        = 10.0,
     fom_n_points         = 51,
-    fom_weight_sigma_nm  = 1.0,
+    fom_weight_sigma_nm  = 2.0,                # match production / check_gradient
 
-    mesh_override_dxyz_nm= 0,
+    mesh_override_dxyz_nm= 15,                 # user-requested 15 nm freed-region mesh
     param_dx_nm          = 50.0,
 
     use_concurrent_adjoint_solves = True,

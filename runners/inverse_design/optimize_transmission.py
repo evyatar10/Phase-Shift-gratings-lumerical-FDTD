@@ -79,6 +79,12 @@ SPEC = InverseDesignSpec(
     optimizer_method   = "L-BFGS-B",
     optimizer_pgtol    = 1e-6,
     optimizer_ftol     = 1e-6,
+    # Force first L-BFGS-B step to be 25% of bound range. Without this the
+    # raw gradient (~1e-4 in scaled [0,1] space) translates to sub-Angstrom
+    # physical steps, the line search rejects all candidates, and the
+    # optimizer terminates after one iteration with no real movement
+    # (smoke job 80222 saw exactly this: FOM 0.250 → 0.250 in 1 iter).
+    scale_initial_gradient_to = 0.25,
 
     # FOM: Gaussian-weighted T over the 10 nm bandgap window.
     # σ chosen against MEASURED spectral FWHM_T ≈ 1.05 nm (production N=80,
@@ -91,11 +97,12 @@ SPEC = InverseDesignSpec(
     fom_n_points         = 201,
     fom_weight_sigma_nm  = 2.0,
 
-    # PHASE-3 FIX: 25 nm override mesh on freed region.
-    # check_gradient diagnostic 79501 explored this; tightens d_eps for
-    # cavity-shape perturbations (cavity_width was the worst residual at
-    # 50 nm device mesh).
-    mesh_override_dxyz_nm= 25,
+    # Freed-region mesh override at 15 nm (user-requested 2026-05-13).
+    # Tighter than the prior 25 nm default; gives more accurate d_eps for
+    # cavity-shape and tooth-edge perturbations. param_dx_nm (50 nm) is
+    # comfortably > 3× cell, so finite-difference perturbations stay
+    # well-resolved on the discretized grid.
+    mesh_override_dxyz_nm= 15,
     param_dx_nm          = 50.0,
 
     # Serial adjoint solves (concurrent=True needs >1 license token at

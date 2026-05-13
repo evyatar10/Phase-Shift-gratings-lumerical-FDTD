@@ -231,31 +231,15 @@ def _configure_optimization_sweep(fdtd, spec: LumericalNativeSpec, p0_nm: List[f
     bounds_nm = spec.all_bounds_nm()
     p0_nm = list(p0_nm)
 
-    # 1. Register the sweep node.
-    fdtd.addsweep()
-    fdtd.setsweep("sweep", "name", _SWEEP_NAME)
-    # NB: 'type' here is the sweep KIND (Ranges / Values / Optimization / GA).
-    fdtd.setsweep(_SWEEP_NAME, "type", "Optimization")
-
-    # 2. Optimizer-level options. Naming follows the Lumerical KB
-    #    "Creating optimization tasks using a script" (article 360034922973).
-    fdtd.setsweep(_SWEEP_NAME, "optimizer type", spec.algorithm)
-    fdtd.setsweep(_SWEEP_NAME, "maximize", 1)                 # 1 = maximize FOM
-    fdtd.setsweep(_SWEEP_NAME, "tolerance", float(spec.tolerance))
-    fdtd.setsweep(_SWEEP_NAME, "maximum generations", int(spec.max_generations))
-    fdtd.setsweep(_SWEEP_NAME, "generation size", int(spec.population_size))
-
-    # 3. Concurrent dispatch — explicit so the sweep doesn't fall back to a
-    #    default that no-ops on headless lumapi sessions.
-    try:
-        fdtd.setsweep(_SWEEP_NAME, "Run mode", "Concurrent")
-        fdtd.setsweep(_SWEEP_NAME, "Concurrent simulations", int(spec.n_concurrent))
-    except Exception as exc:
-        # Older Lumerical builds may not expose these; fall back silently.
-        print(f"[lumerical_native] WARN: could not set concurrency on sweep "
-              f"({exc}); Lumerical default applies.")
-
-    # 4. Parameters (5 freed_group user properties).
+    # Build the entire sweep config as one LSF script and run it through
+    # ``fdtd.eval`` rather than calling ``fdtd.addsweep/setsweep/...`` from
+    # Python. The Python wrapper has version-sensitive quirks that have
+    # cost us several failing jobs (80223/80289/80300/80331/80346/80358):
+    # ``setsweep('sweep','type','Optimization')`` is silently dropped, and
+    # ``addsweep(1)`` either renames inconsistently or leaves
+    # ``addsweepparameter`` unable to find the renamed sweep. The single-
+    # script ``eval`` path matches the Lumerical KB example verbatim and
+    # is the canonical Lumerical idiom for optimization sweeps.
     param_specs = [
         ("dw_inner_1_nm",    bounds_nm[0][0], bounds_nm[0][1], p0_nm[0]),
         ("dw_inner_2_nm",    bounds_nm[1][0], bounds_nm[1][1], p0_nm[1]),
@@ -263,27 +247,67 @@ def _configure_optimization_sweep(fdtd, spec: LumericalNativeSpec, p0_nm: List[f
         ("shift_inner_2_nm", bounds_nm[3][0], bounds_nm[3][1], p0_nm[3]),
         ("cavity_width_nm",  bounds_nm[4][0], bounds_nm[4][1], p0_nm[4]),
     ]
-    for prop_name, lo_nm, hi_nm, start_nm in param_specs:
-        # The 5th positional arg of addsweepparameter is a struct describing
-        # the parameter. 'Name' must be a fully qualified model path to the
-        # user property; 'Type' = 'Length' tells Lumerical to interpret
-        # Min/Max/Start as meters.
-        param_struct = {
-            "Name":  f"::model::freed_group::{prop_name}",
-            "Type":  "Length",
-            "Min":   float(lo_nm)    * 1e-9,
-            "Max":   float(hi_nm)    * 1e-9,
-            "Start": float(start_nm) * 1e-9,
-        }
-        fdtd.addsweepparameter(_SWEEP_NAME, param_struct)
 
-    # 5. FOM result. The Result path must resolve in the analysis tree AFTER a
-    #    fresh run. The analysis group's `?peak_T;` makes it visible.
-    result_struct = {
-        "Name":   _FOM_SCALAR_NAME,
-        "Result": f"::model::{_ANALYSIS_GROUP_NAME}::{_FOM_SCALAR_NAME}",
-    }
-    fdtd.addsweepresult(_SWEEP_NAME, result_struct)
+    def _param_lsf(name: str, lo: float, hi: float, start: float) -> str:
+        # Build the addsweepparameter call inline. ``Type='Number'`` matches
+        # the script's `prop_nm * 1e-9` convention (the user property is a
+        # raw scalar that the structure script interprets as nm; using
+        # Type='Length' with Min/Max in meters would route through
+        # Lumerical's unit-aware setter and yield a meters-vs-nm scale
+        # mismatch — observed in early debug rounds).
+        return (
+            f'addsweepparameter("{_SWEEP_NAME}", struct('
+            f'"Name", "::model::freed_group::{name}", '
+            f'"Type", "Number", '
+            f'"Min", {float(lo):.6f}, '
+            f'"Max", {float(hi):.6f}, '
+            f'"Start", {float(start):.6f}'
+            f'));'
+        )
+
+    addparam_lines = "\n".join(_param_lsf(n, lo, hi, s)
+                               for (n, lo, hi, s) in param_specs)
+
+    sweep_script = f"""# === Lumerical native PSO sweep setup ===
+# Create an Optimization-type sweep in one step; type cannot be changed
+# after creation in 2026R1 (silent drop).
+addsweep(1);
+setsweep("sweep", "name", "{_SWEEP_NAME}");
+
+setsweep("{_SWEEP_NAME}", "optimizer type", "{spec.algorithm}");
+setsweep("{_SWEEP_NAME}", "maximize", 1);
+setsweep("{_SWEEP_NAME}", "tolerance", {float(spec.tolerance):.3e});
+setsweep("{_SWEEP_NAME}", "maximum generations", {int(spec.max_generations)});
+setsweep("{_SWEEP_NAME}", "generation size", {int(spec.population_size)});
+
+# Run mode — "Local computer" is the headless-script-friendly value;
+# "Concurrent" is silently rejected by 2026R1 (observed in job 80223).
+setsweep("{_SWEEP_NAME}", "Run mode", "Local computer");
+setsweep("{_SWEEP_NAME}", "concurrent simulations", {int(spec.n_concurrent)});
+
+# Parameters (5 user-properties on freed_group)
+{addparam_lines}
+
+# FOM result — peak_T scalar from the analysis group.
+addsweepresult("{_SWEEP_NAME}", struct(
+    "Name", "{_FOM_SCALAR_NAME}",
+    "Result", "::model::{_ANALYSIS_GROUP_NAME}::{_FOM_SCALAR_NAME}"
+));
+
+# Readback for diagnostic logging.
+?"=== sweep config readback ===";
+?"name = " + getsweep("{_SWEEP_NAME}", "name");
+?"type = " + getsweep("{_SWEEP_NAME}", "type");
+?"optimizer type = " + getsweep("{_SWEEP_NAME}", "optimizer type");
+?"maximize = " + num2str(getsweep("{_SWEEP_NAME}", "maximize"));
+?"tolerance = " + num2str(getsweep("{_SWEEP_NAME}", "tolerance"));
+?"maximum generations = " + num2str(getsweep("{_SWEEP_NAME}", "maximum generations"));
+?"generation size = " + num2str(getsweep("{_SWEEP_NAME}", "generation size"));
+"""
+
+    print(f"[lumerical_native] applying sweep LSF script via eval ({len(sweep_script)} chars):")
+    print(sweep_script)
+    fdtd.eval(sweep_script)
 
 
 def _read_optimization_result(fdtd) -> Tuple[List[float], float, List[dict]]:
@@ -486,6 +510,8 @@ def run_lumerical_native(
     final_result = run_single_sim(cfg_final)
     lam_peak = float(final_result["resonance_wavelength_nm"]) * 1e-9
     T_peak   = float(final_result["resonance_transmission"])
+    final_results_path = final_result.get("results_path", "")
+    initial_results_path = getattr(measure_baseline, "last_results_path", "")
 
     summary = {
         "start_idx":          int(start_idx),
@@ -504,6 +530,10 @@ def run_lumerical_native(
         "max_generations":    spec.max_generations,
         "n_concurrent":       spec.n_concurrent,
         "pso_history":        history,
+        # Paths to the initial-geometry and final-geometry result .mat files,
+        # used by plot_run.py to overlay T(λ) initial vs optimized.
+        "initial_results_path": initial_results_path,
+        "final_results_path":   final_results_path,
     }
     with open(os.path.join(out_dir, "final_params.json"), "w") as fp:
         json.dump(summary, fp, indent=2)

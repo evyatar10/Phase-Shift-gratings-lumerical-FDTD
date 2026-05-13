@@ -69,6 +69,14 @@ class InverseDesignSpec:
     optimizer_method: str = "L-BFGS-B"
     optimizer_pgtol: float = 1e-6
     optimizer_ftol: float = 1e-6
+    # Lumopt rescales params to [0,1] using bounds, but leaves the gradient at
+    # its raw magnitude. For Bragg-grating FOMs the raw gradient is O(1e-4),
+    # which translates to sub-Angstrom physical steps — the optimizer takes
+    # one no-op step and terminates. `scale_initial_gradient_to` forces the
+    # first step magnitude to be this fraction of the (scaled) bound range,
+    # so e.g. 0.25 → shift gets up to 50 nm, cavity gets up to 150 nm on the
+    # first iteration. Set 0 to disable.
+    scale_initial_gradient_to: float = 0.25
     use_concurrent_adjoint_solves: bool = True
 
     # ── FOM (Gaussian-weighted modal transmission across the bandgap) ───────
@@ -444,6 +452,94 @@ def make_lumopt_geometry(cfg: SimulationConfig, spec: InverseDesignSpec, initial
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def _extract_peak_T_history(out_dir: str) -> List[float]:
+    """Scan ``out_dir`` for lumopt's per-iteration forward_<i>.fsp files and
+    return peak modal transmission at each iteration.
+
+    Lumopt with ``store_all_simulations=True`` saves one ``forward_<iter>.fsp``
+    per accepted iteration in the working directory. Open each, read Port_2
+    expansion-monitor T, find the Bragg-cavity peak with the same routine the
+    post-opt verification uses (``post_processing.find_bragg_resonance``), and
+    return the list of peak T values ordered by iteration.
+
+    Failures are non-fatal — a single bad .fsp returns NaN for that iter; the
+    history list is still returned so plot_run.py can draw what's available.
+    """
+    import re
+    import glob
+    try:
+        from sim_helpers import find_bragg_resonance
+    except Exception:
+        find_bragg_resonance = None  # type: ignore
+
+    # Lumopt saves forward_<iter>.fsp inside out_dir/outer_*/ (one outer
+    # subdir per L-BFGS-B iteration). Look at both possible layouts so the
+    # function also works if lumopt changes the structure in a future
+    # release.
+    patterns = [
+        os.path.join(out_dir, "forward_*.fsp"),
+        os.path.join(out_dir, "outer_*", "forward_*.fsp"),
+    ]
+    files: List[str] = []
+    for pat in patterns:
+        files.extend(glob.glob(pat))
+    # Sort by (outer_idx, forward_idx) so the trace is in time order.
+    def _sort_key(path: str):
+        out = re.search(r"outer_(\d+)", path)
+        fwd = re.search(r"forward_(\d+)\.fsp$", os.path.basename(path))
+        return (int(out.group(1)) if out else 0,
+                int(fwd.group(1)) if fwd else 0)
+    files = sorted(files, key=_sort_key)
+    if not files:
+        print(f"[inverse_design] no forward_*.fsp found in {out_dir} — "
+              f"peak_T_history will be empty.")
+        return []
+
+    print(f"[inverse_design] extracting peak T from {len(files)} saved iters "
+          f"({os.path.basename(files[0])} .. {os.path.basename(files[-1])}) ...")
+
+    import sys as _sys
+    _lum_dir = os.path.dirname(_cfg.LUMAPI_PATH)
+    if _lum_dir and _lum_dir not in _sys.path:
+        _sys.path.insert(0, _lum_dir)
+    import lumapi  # type: ignore
+
+    peak_T_history: List[float] = []
+    fdtd = lumapi.FDTD(hide=True)
+    try:
+        for fpath in files:
+            try:
+                fdtd.load(fpath)
+                # Lumopt's forward sim has port "fom" (renamed from Port_2).
+                # Probe both names to be robust to base-script changes.
+                T = None
+                wl = None
+                for monitor_path in ("FDTD::ports::fom", "FDTD::ports::Port_2"):
+                    try:
+                        T_struct = fdtd.getresult(monitor_path, "T")
+                        T = np.abs(np.asarray(T_struct["T"]).flatten())
+                        wl = np.asarray(T_struct["lambda"]).flatten()
+                        break
+                    except Exception:
+                        continue
+                if T is None or wl is None:
+                    raise RuntimeError("no T result on either fom/Port_2")
+                if find_bragg_resonance is not None:
+                    idx = find_bragg_resonance(wl, T)
+                    peak = float(T[idx])
+                else:
+                    peak = float(np.max(T))
+                peak_T_history.append(peak)
+                print(f"[inverse_design]   {os.path.basename(fpath)}: peak T = {peak:.4f}")
+            except Exception as exc:
+                print(f"[inverse_design]   {os.path.basename(fpath)}: failed ({exc}); using NaN")
+                peak_T_history.append(float("nan"))
+    finally:
+        fdtd.close()
+
+    return peak_T_history
+
+
 def measure_baseline(cfg: SimulationConfig, max_retries: int = 5) -> Tuple[float, float]:
     """Run a single FDTD at the cfg's baseline geometry; return (λ_resonance, peak_T).
 
@@ -454,6 +550,12 @@ def measure_baseline(cfg: SimulationConfig, max_retries: int = 5) -> Tuple[float
     contention, "Can not find result" race conditions). Each retry waits
     30s before re-trying. Job 79379 died in 18 s during baseline because
     of one such race; retries make this robust.
+
+    Side effect: stashes the baseline .mat path in
+    ``measure_baseline.last_results_path`` so the caller can locate the
+    spectrum file later (used by the optimization plot_run.py scripts to
+    overlay initial vs final T(λ)). Cheap, opt-in, doesn't change the
+    return signature.
     """
     from runners.single.run_simulation import run_single_sim
     import time
@@ -465,6 +567,7 @@ def measure_baseline(cfg: SimulationConfig, max_retries: int = 5) -> Tuple[float
             result = run_single_sim(cfg)
             lam_peak = float(result["resonance_wavelength_nm"]) * 1e-9
             T_peak   = float(result["resonance_transmission"])
+            measure_baseline.last_results_path = result.get("results_path", "")
             print(f"[inverse_design] baseline λ_resonance = {lam_peak * 1e9:.3f} nm  (T = {T_peak:.4f})")
             return lam_peak, T_peak
         except Exception as exc:
@@ -959,6 +1062,7 @@ def run_inverse_design(
         method=spec.optimizer_method,
         pgtol=spec.optimizer_pgtol,
         ftol=spec.optimizer_ftol,
+        scale_initial_gradient_to=float(spec.scale_initial_gradient_to),
     )
     half_w_m = 0.5 * spec.fom_window_nm * 1e-9
     fom_wavelengths = np.linspace(
@@ -1044,7 +1148,23 @@ def run_inverse_design(
     print(f"[inverse_design] running L-BFGS-B (max_iter={spec.max_iter}) "
           f"at λ_target={lam_target_m*1e9:.4f} nm, p0={p0}")
     fom_final, params_final = opt.run(working_dir=out_dir)
-    p_final = list(map(float, params_final))
+    # lumopt's Optimization.params_hist (what `opt.run()` returns) is appended
+    # via `plotting_function(args[0]/self.scaling_factor)` in optimization.py.
+    # That value is `args[0]/scaling_factor` where args[0] is scipy's scaled
+    # parameter vector. Algebraically that's "physical-minus-offset" — NOT
+    # the scaled [0,1] value. So to get physical nm we add scaling_offset
+    # only; we do NOT divide by scaling_factor (that would double-rescale).
+    # Bug from job 80266: the old `/ scaling_factor + offset` formula
+    # produced [77177, 86467, ...] for a real geometry of [286.8, 314.1, ...]
+    # and crashed params_to_kwargs out-of-bounds.
+    scaling_factor = np.asarray(opt.optimizer.scaling_factor).flatten()
+    scaling_offset_attr = getattr(opt.optimizer, "scaling_offset", 0.0)
+    if np.isscalar(scaling_offset_attr):
+        scaling_offset = np.zeros_like(scaling_factor) + float(scaling_offset_attr)
+    else:
+        scaling_offset = np.asarray(scaling_offset_attr).flatten()
+    params_phys = np.asarray(params_final).flatten() + scaling_offset
+    p_final = list(map(float, params_phys))
     print(f"[inverse_design] optimizer done. fom={fom_final:.4f} | "
           f"p={['%.2f' % v for v in p_final]}")
 
@@ -1059,6 +1179,28 @@ def run_inverse_design(
     final_result = run_single_sim(cfg_final)
     lam_peak = float(final_result["resonance_wavelength_nm"]) * 1e-9
     T_peak   = float(final_result["resonance_transmission"])
+    final_results_path = final_result.get("results_path", "")
+    initial_results_path = getattr(measure_baseline, "last_results_path", "")
+
+    # lumopt's Optimization stores per-iteration FOM and (scaled) params.
+    # Un-scale params to nm for downstream plotting / inspection.
+    fom_history = [float(np.abs(f)) for f in getattr(opt, "fom_hist", [])]
+    params_history = []
+    for params_iter in getattr(opt, "params_hist", []):
+        try:
+            p_iter_phys = np.asarray(params_iter).flatten() / scaling_factor + scaling_offset
+            params_history.append(list(map(float, p_iter_phys)))
+        except Exception:
+            params_history.append(list(map(float, np.asarray(params_iter).flatten())))
+
+    # Per-iteration peak transmission. Lumopt saved each forward FDTD as
+    # `forward_<iter>.fsp` (store_all_simulations=True at line 986). Open
+    # each one, read Port_2 T, and find the resonance peak via the same
+    # post_processing.find_bragg_resonance the verification step uses.
+    # Note: T is reported at the OPTIMIZATION mesh (mesh_override_dxyz_nm
+    # nm), so it may differ slightly from the final true_peak_T which is
+    # measured at the "accurate" mesh.
+    peak_T_history = _extract_peak_T_history(out_dir)
 
     summary = {
         "start_idx": int(start_idx),
@@ -1066,6 +1208,14 @@ def run_inverse_design(
         "p_initial": list(map(float, p0)),
         "p_final": p_final,
         "fom_final": float(fom_final),
+        "fom_history": fom_history,         # per-iter |FOM|, for convergence plot
+        "params_history": params_history,   # per-iter params (nm), for inspection
+        # Per-iteration peak modal T extracted from saved forward_*.fsp files.
+        # Different from `fom_history` (which is the Gaussian-weighted ⟨T⟩
+        # the optimizer actually minimizes) — peak_T tells you the headline
+        # number a researcher cares about, even though it's not the cost
+        # function. Use plot_run.py to overlay both vs iteration.
+        "peak_T_history": peak_T_history,
         "baseline_lambda_m": float(baseline_lambda_m),
         "initial_peak_T":     (None if initial_peak_T is None else float(initial_peak_T)),
         "true_peak_lambda_m": float(lam_peak),
@@ -1073,6 +1223,10 @@ def run_inverse_design(
         "delta_peak_T":       (None if initial_peak_T is None else float(T_peak - initial_peak_T)),
         "n_free_inner_teeth": spec.n_free_inner_teeth,
         "max_iter":           int(spec.max_iter),
+        # Paths to the initial-geometry and final-geometry result .mat files.
+        # plot_run.py uses these to overlay T(λ) initial vs optimized.
+        "initial_results_path": initial_results_path,
+        "final_results_path":   final_results_path,
     }
     with open(os.path.join(out_dir, "final_params.json"), "w") as fp:
         json.dump(summary, fp, indent=2)

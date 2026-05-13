@@ -282,6 +282,10 @@ def _make_fom_analysis_script(transmission_monitor_path: str = "FDTD::ports::Por
 T_struct = getresult("{transmission_monitor_path}", "T");
 T_array = abs(T_struct.T);
 peak_T = max(T_array);
+# In Lumerical 2026R1, the trailing `?` operator just prints; it does NOT
+# guarantee `peak_T` appears as a queryable analysis-group result for
+# getsweepresult / addsweepresult. addresult() makes the result explicit.
+addresult("peak_T", peak_T);
 ?peak_T;
 """
 

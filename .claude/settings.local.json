@@ -3,7 +3,10 @@
     "allow": [
       "WebSearch",
       "Bash(find /c/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes -maxdepth 1 -type f -name .*)",
-      "Bash(ls -la /c/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes/*.py)"
+      "Bash(ls -la /c/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes/*.py)",
+      "Monitor",
+      "TaskStop",
+      "TaskOutput"
     ]
   }
 }
