@@ -12,6 +12,15 @@ Layout of the parameter vector p (length 2*N+1, same convention as Option A):
     p = [dw_1, ..., dw_N,           # full corrugation depth (W_wide-W_narrow), nm
          shift_1, ..., shift_N,      # gap shift, nm
          cavity_width_nm]
+
+Shared-API note: the underscore helpers `_build_parametric_fsp`,
+`_set_freed_group_params`, and `_make_fom_analysis_script` are intentionally
+imported by runners/fd_gradient_design/fd_gradient_design.py,
+runners/lumerical_native_optimization/lumerical_native_optimization.py, and
+runners/gradient_free_design/test_geometry.py. Treat them as semi-public API:
+do not rename, move, or change their signatures without updating those
+importers (public non-underscore aliases are exported at the bottom of this
+file for new code).
 """
 
 from __future__ import annotations
@@ -697,6 +706,13 @@ def main(argv=None) -> None:
         output_root=args.output_root,
         baseline_lambda_m=base_lambda_m,
     )
+
+
+# Public aliases for the cross-imported helpers (see module docstring).
+# Existing importers use the underscore names; new code should prefer these.
+build_parametric_fsp = _build_parametric_fsp
+set_freed_group_params = _set_freed_group_params
+make_fom_analysis_script = _make_fom_analysis_script
 
 
 if __name__ == "__main__":
