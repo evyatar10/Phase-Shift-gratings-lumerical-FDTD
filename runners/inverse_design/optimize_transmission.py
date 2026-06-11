@@ -17,33 +17,20 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from runners.inverse_design.inverse_design import InverseDesignSpec, regular_grating_start
-from simulation_config import SimulationConfig
+from runners.optimization_common import make_optimization_base
 
 
 # ── Base simulation config (matches the inverse-design plan) ─────────────────
-
-BASE = SimulationConfig()
-BASE.grating.n_periods_each_side = 80
-BASE.grating.lengthen_cavity     = True             # NOT optimizing cavity length;
-                                                    # this absorbs Σ(shifts) so total
-                                                    # device length stays constant.
-BASE.mesh.simulation_mode        = "optimization"   # device-wide dx=50 nm; the
-                                                    # freed region gets a finer
-                                                    # 10 nm override (Phase-2 fix
-                                                    # #2) wired in inverse_design.
-BASE.spectral.scan_width_nm      = 10.0             # full bandgap window; FOM
-                                                    # weight (σ=1 nm Gaussian)
-                                                    # restricts the integral.
+# Shared block (lengthen_cavity, optimization mesh, 10 nm scan, monitors off)
+# lives in runners/optimization_common.py.
 # Apodization stays at its default (off); freed inner teeth carry their own DW.
+# To record field profiles during the run (e.g. for post-mortem visualization
+# of the optimized geometry's mode shape), flip the monitors back on here:
+#   BASE.monitors.record_2d_fields = True   # XY top, YZ cross, XZ side profiles
+#   BASE.monitors.record_3d_fields = True   # full 3D field volume
+#   BASE.farfield.enabled          = True   # side + top far-field monitors
 
-# ── Optional field profile monitors (default OFF for inverse design) ────────
-# Optimization only needs T(λ) at Port_2 (PortTransmission FOM); profile
-# monitors are pure overhead during the 60+ FDTD runs.
-# Flip any of these to True if you want field profiles recorded during the run
-# (e.g. for post-mortem visualization of the optimized geometry's mode shape).
-BASE.monitors.record_2d_fields = False   # XY top, YZ cross, XZ side profiles
-BASE.monitors.record_3d_fields = False   # full 3D field volume
-BASE.farfield.enabled          = False   # side + top far-field monitors
+BASE = make_optimization_base(n_periods=80)
 
 
 # ── Inverse-design spec ──────────────────────────────────────────────────────

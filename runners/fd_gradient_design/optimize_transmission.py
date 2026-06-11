@@ -22,20 +22,14 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from runners.fd_gradient_design.fd_gradient_design import FDGradientSpec
-from simulation_config import SimulationConfig
+from runners.optimization_common import make_optimization_base
 
 
 # ── Base simulation config ───────────────────────────────────────────────────
+# Shared optimization base (see runners/optimization_common.py); FD-gradient
+# runs 100+ FDTDs, so field-profile monitors stay off.
 
-BASE = SimulationConfig()
-BASE.grating.n_periods_each_side = 80
-BASE.grating.lengthen_cavity     = True             # cavity absorbs Σ(shifts)
-BASE.mesh.simulation_mode        = "optimization"   # device-wide dx=50 nm
-BASE.spectral.scan_width_nm      = 10.0             # bandgap window for T(λ)
-
-BASE.monitors.record_2d_fields = False              # FD-gradient runs 100+ FDTDs;
-BASE.monitors.record_3d_fields = False              # field profiles are pure overhead.
-BASE.farfield.enabled          = False
+BASE = make_optimization_base(n_periods=80)
 
 
 # ── FD-gradient spec ─────────────────────────────────────────────────────────

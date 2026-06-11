@@ -22,17 +22,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from runners.fd_gradient_design.fd_gradient_design import FDGradientSpec
-from simulation_config import SimulationConfig
+from runners.optimization_common import make_optimization_base
 
 
-BASE = SimulationConfig()
-BASE.grating.n_periods_each_side = 20            # ← smoke: small device
-BASE.grating.lengthen_cavity     = True
-BASE.mesh.simulation_mode        = "optimization"
-BASE.spectral.scan_width_nm      = 10.0
-BASE.monitors.record_2d_fields = False
-BASE.monitors.record_3d_fields = False
-BASE.farfield.enabled          = False
+BASE = make_optimization_base(n_periods=20)   # ← smoke: small device
 
 
 SPEC = FDGradientSpec(
