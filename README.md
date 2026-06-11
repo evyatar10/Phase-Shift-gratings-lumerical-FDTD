@@ -19,18 +19,26 @@
 ├── analysis.py                  # Phase correction & S-parameter processing
 ├── post_processing.py           # Full post-simulation analysis pipeline
 ├── sim_helpers.py               # Shared helper functions
-├── runners/
+├── runners/                     # All studies — see runners/README.md for the full guide
+│   ├── README.md                # The two study patterns + deploy-menu contract
+│   ├── optimization_common.py   # Shared base config for the optimization studies
 │   ├── single/
 │   │   ├── run_simulation.py            # Core simulation pipeline
 │   │   ├── run_experiment.py            # Experiment card runner (examples)
-│   │   └── run_simple_bragg.py          # Simple uniform grating (no cavity)
-│   └── sweeps/
-│       ├── sweep_spec.py                  # SweepSpec engine + run_sweep_spec dispatcher
-│       ├── number_of_periods.py           # Sweep over n_periods_each_side
-│       ├── innermost_shift.py             # Sweep over innermost tooth shift
-│       ├── inner_tooth_size.py            # 2D sweep: inner tooth size × shift
-│       ├── apod_and_shift.py              # 2D sweep: n_apod_periods × shift
-│       └── optimize_innermost_shift.py    # Brent's method optimizer for shift
+│   │   └── run_simple_bragg.py          # [legacy] Simple uniform grating (no cavity)
+│   ├── sweeps/
+│   │   ├── sweep_spec.py                  # SweepSpec engine + run_sweep_spec dispatcher
+│   │   ├── number_of_periods.py           # Sweep over n_periods_each_side
+│   │   ├── innermost_shift.py             # Sweep over innermost tooth shift
+│   │   ├── inner_tooth_size.py            # 2D sweep: inner tooth size × shift
+│   │   ├── apod_and_shift.py              # 2D sweep: n_apod_periods × shift
+│   │   └── optimize_innermost_shift.py    # [legacy] Brent's method optimizer for shift
+│   ├── inverse_design/          # Optimization: lumopt adjoint (L-BFGS-B)
+│   ├── gradient_free_design/    # Optimization: Python-driven Lumerical PSO
+│   ├── fd_gradient_design/      # Optimization: scipy + finite-difference gradients
+│   ├── lumerical_native_optimization/  # Optimization: native addsweep("Optimization")
+│   ├── experiment_comparison/   # Simulation vs fabricated IT11 devices
+│   └── visualization/           # Shared optimization-run plotting helpers
 ├── python_tools/
 │   ├── calc_neff_vs_wl.py       # FDE mode solver for neff data
 │   ├── plot_loss_spectra.py     # Plot radiation loss spectra
@@ -41,7 +49,15 @@
 │   └── p8RC1_tanh.py            # Example experiment card (tanh apodization)
 ├── convergence_testing/
 │   ├── run_convergence.py       # Far-field convergence test
-│   └── run_mesh_convergence.py  # Coordinate-descent mesh convergence test
+│   ├── run_mesh_convergence.py  # Coordinate-descent mesh convergence test
+│   └── run_auto_shutoff_convergence.py  # Auto-shutoff threshold convergence
+├── athena/                      # PRIMARY HPC target — SLURM GPU cluster
+│   ├── deploy_athena.sh         # Upload / submit / download orchestrator (interactive + flags)
+│   ├── athena.conf              # Host, remote paths, partitions, license
+│   ├── jobs/                    # SLURM job scripts (single, array, aggregate)
+│   └── scripts/                 # Server-side entry points (athena_run.py, ...)
+├── dgx/                         # Legacy A100 cluster (R470 driver; needs NVML shim)
+├── container/                   # Apptainer container build for Athena/DGX
 ├── zeus/
 │   ├── deploy.sh                # Upload project to Zeus and submit PBS job
 │   ├── scripts/
@@ -98,15 +114,33 @@
    field lists. The same file runs locally (sequential) or on Athena as a
    parallel SLURM array via `bash athena/deploy_athena.sh --option3 --spec=runners.sweeps.<study>`.
 
-5. **Optimize the innermost tooth shift automatically:**
+5. **Run an optimization study.** Four methods live under `runners/`
+   (inverse_design, gradient_free_design, fd_gradient_design,
+   lumerical_native_optimization), each with the same layout: an engine file,
+   a production `optimize_transmission.py`, and a fast `smoke_test.py`.
+   Always smoke-test on Athena before a production run:
    ```bash
-   python -m runners.sweeps.optimize_innermost_shift
+   bash athena/deploy_athena.sh --gradient-free-design=runners.gradient_free_design.smoke_test
+   bash athena/deploy_athena.sh --gradient-free-design=runners.gradient_free_design.optimize_transmission
+   # other families: --inverse-design= / --lumerical-native= / --fd-gradient-design=
    ```
+   See [runners/README.md](runners/README.md) for the full guide, including
+   the deploy-menu discovery contract (what makes a file appear in the
+   Athena menus) and the shared-module map.
+
+   (The older `python -m runners.sweeps.optimize_innermost_shift` Brent's-method
+   shift optimizer still works but is superseded by these.)
 
 6. **Run with an experiment card:**
    ```bash
    python -m runners.single.run_experiment
    ```
+
+> **Where things actually run:** local Python is used for building scenes and
+> quick checks; production FDTD runs are dispatched to the Athena GPU cluster
+> via `athena/deploy_athena.sh` (interactive menu, or the flags shown above).
+> `--status` shows the queue, `--results-no-fsp` downloads data, and
+> `--license-probe` checks FlexLM seats before submitting.
 
 ## Configuration
 
