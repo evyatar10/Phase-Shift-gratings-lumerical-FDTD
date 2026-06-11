@@ -66,6 +66,15 @@ class GratingConfig:
     inner_shift_nm: Optional[list] = None        # Per-tooth gap shift in nm. Length must equal n_free_inner_teeth. None → use innermost_tooth_shift_m for tooth d=1, zero for d>=2.
     enforce_mirror_symmetry: bool = True         # Inverse-design optimizer: mirror DW and shift across left/right (always True at the bragg_device level — flagged here for future asymmetric runs).
 
+    # ── Explicit per-tooth width arrays (mirror-symmetric per-side) ────────────
+    # When both are set, W_narrow[d]/W_wide[d] are taken verbatim for the innermost
+    # d ∈ [1, len] teeth (index 0 = innermost). Teeth beyond the array length fall
+    # back to the apodization envelope / uniform corrugation. Unlike inner_dw_nm
+    # (depth only, around a fixed avg width), these let the average width vary
+    # per tooth. Both arrays must have equal length ≤ n_periods_each_side.
+    width_narrow_per_tooth_m: Optional[list] = None  # Per-tooth narrow width in m, innermost first.
+    width_wide_per_tooth_m: Optional[list] = None    # Per-tooth wide width in m, innermost first.
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Apodization
@@ -338,6 +347,8 @@ class SimulationConfig:
             n_free_inner_teeth=gr.n_free_inner_teeth,
             inner_dw_nm=gr.inner_dw_nm,
             inner_shift_nm=gr.inner_shift_nm,
+            width_narrow_per_tooth_m=gr.width_narrow_per_tooth_m,
+            width_wide_per_tooth_m=gr.width_wide_per_tooth_m,
             y_span=self.y_span,
             z_span=self.z_span,
             material_db_path=config.MATERIAL_DB_PATH,

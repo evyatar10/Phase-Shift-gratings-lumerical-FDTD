@@ -66,7 +66,9 @@ class PiShiftBraggFDTD:
                  lengthen_cavity=True,
                  n_free_inner_teeth=1,
                  inner_dw_nm=None,
-                 inner_shift_nm=None):
+                 inner_shift_nm=None,
+                 width_narrow_per_tooth_m=None,
+                 width_wide_per_tooth_m=None):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -183,6 +185,36 @@ class PiShiftBraggFDTD:
         total_shift_m = sum(s * 1e-9 for s in self.inner_shift_nm)
         cavity_extra = 2.0 * total_shift_m if self.lengthen_cavity else 0.0
         self.cavity_length_effective = self.cavity_length + cavity_extra
+
+        # Explicit per-tooth width arrays (m), indexed d=1..len = innermost → outermost.
+        # When supplied, W_narrow[d]/W_wide[d] are taken verbatim for d <= len; teeth
+        # beyond the array length fall back to the apodization-envelope / uniform path.
+        # Unlike inner_dw_nm (per-tooth depth around a fixed avg_width), these allow the
+        # average width to vary per tooth (needed for designs whose cavity-side average
+        # tapers toward a narrower cavity).
+        self.width_narrow_per_tooth_m = (
+            list(width_narrow_per_tooth_m) if width_narrow_per_tooth_m is not None else None
+        )
+        self.width_wide_per_tooth_m = (
+            list(width_wide_per_tooth_m) if width_wide_per_tooth_m is not None else None
+        )
+        if (self.width_narrow_per_tooth_m is None) != (self.width_wide_per_tooth_m is None):
+            raise ValueError(
+                "width_narrow_per_tooth_m and width_wide_per_tooth_m must both be set or "
+                "both be None."
+            )
+        if self.width_narrow_per_tooth_m is not None:
+            if len(self.width_narrow_per_tooth_m) != len(self.width_wide_per_tooth_m):
+                raise ValueError(
+                    f"width_narrow_per_tooth_m ({len(self.width_narrow_per_tooth_m)}) and "
+                    f"width_wide_per_tooth_m ({len(self.width_wide_per_tooth_m)}) must have "
+                    f"equal length."
+                )
+            if len(self.width_narrow_per_tooth_m) > n_periods_each_side:
+                raise ValueError(
+                    f"per-tooth width arrays length ({len(self.width_narrow_per_tooth_m)}) "
+                    f"must be <= n_periods_each_side ({n_periods_each_side})."
+                )
 
         self.x_grating_end = (self.n_periods_each_side * self.pitch) + (self.cavity_length / 2.0)
         self.dist_grating_to_port = n_periods_dist_to_port * self.pitch
@@ -445,11 +477,17 @@ class PiShiftBraggFDTD:
                 return full_depth_edge
 
         W_narrow, W_wide = {}, {}
+        n_explicit = len(self.width_narrow_per_tooth_m) if self.width_narrow_per_tooth_m is not None else 0
         for d in range(1, n_total + 1):
-            mod_depth = get_mod_depth(d)
-            delta_w = mod_depth / 2.0
-            W_narrow[d] = avg_width - delta_w
-            W_wide[d] = avg_width + delta_w
+            if d <= n_explicit:
+                # Explicit per-tooth widths take precedence over the envelope.
+                W_narrow[d] = self.width_narrow_per_tooth_m[d - 1]
+                W_wide[d] = self.width_wide_per_tooth_m[d - 1]
+            else:
+                mod_depth = get_mod_depth(d)
+                delta_w = mod_depth / 2.0
+                W_narrow[d] = avg_width - delta_w
+                W_wide[d] = avg_width + delta_w
 
         # Per-tooth shift map (m). shift_for_tooth[d] for d ∈ [1, n_free]; zero for d > n_free.
         # Convention (preserved from the legacy single-tooth path):

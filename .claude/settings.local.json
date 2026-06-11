@@ -6,7 +6,21 @@
       "Bash(ls -la /c/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes/*.py)",
       "Monitor",
       "TaskStop",
-      "TaskOutput"
+      "TaskOutput",
+      "Write",
+      "NotebookEdit",
+      "Glob",
+      "Grep",
+      "TodoWrite",
+      "AskUserQuestion",
+      "WebFetch",
+      "ScheduleWakeup",
+      "ToolSearch",
+      "Skill",
+      "Agent",
+      "PowerShell($f = \"C:\\\\Users\\\\evyat\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-evyat-Lumerical-phase-shift-grating-FTDT-codes\\\\2e4e0b1b-5c5f-465e-980f-1e01d5c58a82\\\\tasks\\\\b8ioe3pqx.output\"; \\(Get-Item $f\\).Length; Get-Content $f -Raw)",
+      "PowerShell(Stop-Process -Id 34588 -Force)",
+      "PowerShell(Get-Process | Where-Object {$_.ProcessName -match 'fdtd|lumerical'} | Select-Object ProcessName,Id,CPU,WorkingSet,StartTime | Format-Table)"
     ]
   }
 }

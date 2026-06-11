@@ -63,14 +63,19 @@ class ExperimentCard:
     tanh_steepness: Optional[float] = None
     corrugation_depth_nm: Optional[float] = None
     pitch_nm: Optional[float] = None
-    cavity_length_nm: Optional[float] = None       # None = default (pitch / 2)
+    cavity_length_nm: Optional[float] = None       # None = default (pitch / 2). NOTE: maps to an attr to_device_kwargs ignores; use cavity_neg_detuning_nm to set cavity length.
+    cavity_neg_detuning_nm: Optional[float] = None  # Cavity shortening from pitch/2 (nm). Working cavity-length control: cavity_length = pitch/2 − this.
     cavity_width_option: Optional[str] = None      # 'narrow' | 'avg' | 'avg_ext'
+    cavity_width_nm: Optional[float] = None         # Numeric cavity-segment width override (nm); takes precedence over cavity_width_option.
     innermost_tooth_shift_nm: Optional[float] = None
     lengthen_cavity: Optional[bool] = None
     n_apod_periods_each_side: Optional[int] = None
     center_wavelength_nm: Optional[float] = None
     scan_width_nm: Optional[float] = None
     farfield: Optional[bool] = None
+    # Explicit per-tooth width arrays in nm, ordered innermost → outermost (index 0 = tooth nearest cavity).
+    width_narrow_per_tooth_nm: Optional[list] = None
+    width_wide_per_tooth_nm: Optional[list] = None
     label: str = ''
 
     def to_config(self, base: Optional[SimulationConfig] = None) -> SimulationConfig:
@@ -95,8 +100,16 @@ class ExperimentCard:
             cfg.apodization.tanh_steepness = self.tanh_steepness
         if self.cavity_length_nm is not None:
             cfg.grating.override_cavity_length_nm = self.cavity_length_nm
+        if self.cavity_neg_detuning_nm is not None:
+            cfg.grating.cavity_neg_detuning_nm = self.cavity_neg_detuning_nm
         if self.cavity_width_option is not None:
             cfg.grating.cavity_width_option = self.cavity_width_option
+        if self.cavity_width_nm is not None:
+            cfg.grating.cavity_width_m = self.cavity_width_nm * 1e-9
+        if self.width_narrow_per_tooth_nm is not None:
+            cfg.grating.width_narrow_per_tooth_m = [w * 1e-9 for w in self.width_narrow_per_tooth_nm]
+        if self.width_wide_per_tooth_nm is not None:
+            cfg.grating.width_wide_per_tooth_m = [w * 1e-9 for w in self.width_wide_per_tooth_nm]
         if self.innermost_tooth_shift_nm is not None:
             cfg.grating.innermost_tooth_shift_m = self.innermost_tooth_shift_nm * 1e-9
         if self.lengthen_cavity is not None:
