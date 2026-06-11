@@ -7,3 +7,6 @@ fsp_samples/
 # Large binary/container files (shared across DGX + Athena)
 container/lumerical-2026R1.sif
 container/AnsysInstaller.sh
+
+# Stray Windows temp-path artifacts (mangled "C:\Users\...\Temp\..." filenames)
+C*UsersevyatAppDataLocalTemp*
