@@ -55,6 +55,8 @@
             "options": [
                 {"label": "Deploy — FSP job (local .fsp → engine on Athena)",      "value": "bash athena/deploy_athena.sh --option1"},
                 {"label": "Deploy — Python pipeline (single sim or sweep)",         "value": "bash athena/deploy_athena.sh --option2"},
+                {"label": "TM only — run + analyze (no TE comparison)",             "value": "bash athena/deploy_athena.sh --option2 --run=run_tm"},
+                {"label": "TM vs TE — comparison + pitch correction",               "value": "bash athena/deploy_athena.sh --option2 --run=run_tm_vs_te"},
                 {"label": "Show GPU availability",                                  "value": "bash athena/deploy_athena.sh --gpu-status"},
                 {"label": "Watch job status (no deploy)",                           "value": "bash athena/deploy_athena.sh --watch-only"},
                 {"label": "Upload only (no submit)",                                "value": "bash athena/deploy_athena.sh --upload-only"},

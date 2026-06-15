@@ -12,6 +12,32 @@ One small file per study, driven by the shared core modules.
   `run` callable (typically `run = run_single_sim`) appears in the Athena
   deploy "Single" menu. `run_simulation.py` is the canonical pipeline;
   `run_experiment.py` runs `ExperimentCard` lists.
+- **`tm/`** — TM-polarization single-run studies, kept separate from `single/`
+  so the growing TM work doesn't crowd it. Same contract as `single/` (top-level
+  `run` callable, `_`-prefixed/`IS_HELPER=True` files skipped) and dispatched
+  the same way (sequential OPTION=2 job), but it has its own deploy-menu entry
+  ("8) TM studies") and its own auto-discovery dir in `athena_run.py`. The
+  runners share one single-scan step in `_tm_vs_te_common.py` (one predefined
+  wide window per polarization — no scout/refine two-step):
+  - **`run_te.py`** / **`run_tm.py`** — a single wide scan for one polarization,
+    so you can run TE and TM separately.
+  - **`run_tm_vs_te.py`** — TE-vs-TM comparison: one wide scan per polarization
+    (2 sims) + a comparison summary. Run sequentially in one job, or in parallel
+    as a 2-task GPU array with `--pol-array` (task 0 = TE, task 1 = TM); for the
+    array path, stitch the summary after download with
+    `python -m runners.tm.run_tm_vs_te --stitch <results_dir>`.
+  - **`calibrate_neff.py`** (`IS_HELPER`, local-only) — FDE n_eff(λ) for TE & TM
+    (grating-averaged, constant indices), anchored to the FDTD result, to compute
+    the TM pitch that re-centers TM on λ_TE. Run locally (needs a MODE license).
+
+  All runners write to the study's standard `layouts/` (`.fsp`) + `results/`
+  (`.mat`) folders and nothing else — the comparison summary is
+  `result_tm_vs_te_summary_N<n>.mat` in `results/`. No plots are written; plot the
+  spectra in MATLAB from the `result_*.mat`.
+
+  Polarization itself is a one-line `cfg.source.polarization = "TM"`; a plain TM
+  single run can also go through `single/`'s `run_simulation` — `tm/` is for the
+  TM-specific studies.
 - **`sweeps/`** — declarative parameter sweeps. Each file defines a top-level
   `SPEC = SweepSpec(...)` listing only the varying fields; the engine in
   [`sweep_spec.py`](sweeps/sweep_spec.py) expands the cartesian (or zipped)
@@ -83,9 +109,13 @@ intentional; only the 8 standard spec files use `make_optimization_base`.
 scanning this tree. The rules, verified against the scripts:
 
 1. **Directory names are hardcoded** in the deploy menus. Never rename
-   `single/`, `sweeps/`, or the four optimization directories.
-2. **Single menu** = every `runners/single/*.py` with a top-level `run`
-   callable (`def run(` or `run = ...` at column 0).
+   `single/`, `tm/`, `sweeps/`, or the four optimization directories. A new
+   single-run-style category (like `tm/`) needs three edits: the picker block +
+   menu entry in `deploy_athena.sh`, and a `_AUTO_DIRS` entry in BOTH
+   `athena/scripts/athena_run.py` and `dgx/scripts/athena_run.py`.
+2. **Single / TM menus** = every `runners/single/*.py` (resp. `runners/tm/*.py`)
+   with a top-level `run` callable (`def run(` or `run = ...` at column 0);
+   `_`-prefixed files and `IS_HELPER=True` modules are skipped.
 3. **Study menus** = every file in the family directory containing the
    literal text `SPEC =` anywhere — it is an unanchored grep, so even a
    docstring or comment containing `SPEC =` puts a file in the menu. The

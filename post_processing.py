@@ -92,8 +92,12 @@ def extract_s_parameters(sim, cfg) -> SParameters:
 
     Requires: sim.fdtd session open and simulation complete.
     """
+    # The FDE neff sweep file is TE-only; for TM pass None so the
+    # de-embedding falls back to the live port neff (polarization-correct).
+    pol = getattr(sim, "polarization", "TE")
+    neff_file = config.NEFF_DATA_PATH if pol == "TE" else None
     wl, R, T, Loss, T_mat, S11, S21 = sim.get_s_and_t_matrix(
-        neff_mat_file=config.NEFF_DATA_PATH,
+        neff_mat_file=neff_file,
         correct_length=cfg.phase_correction.do_length_correction,
         correct_envelope_and_t_phase=cfg.phase_correction.do_envelope_correction,
     )

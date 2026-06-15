@@ -39,11 +39,19 @@ from sim_helpers import apply_monitor_overrides, generate_file_tag
 from simulation_config import SimulationConfig
 
 
-def run_single_sim(cfg: SimulationConfig) -> dict:
+def run_single_sim(cfg: SimulationConfig, *, show_plots: bool = True,
+                   tag_suffix: str = "", save_figs: bool = True) -> dict:
     """
     Build, run, and analyze a single FDTD simulation.
 
     Returns the assembled results dict (also saved to disk as a .mat file).
+
+    show_plots=False saves the diagnostic figures as PNGs instead of opening
+    blocking windows — used when chaining several runs (e.g. run_tm_vs_te).
+    save_figs=False (only meaningful when show_plots=False) skips writing those
+    PNGs entirely, keeping results/ to just the .mat files — used by the TM
+    runners, which are viewed in MATLAB.
+    tag_suffix disambiguates runs that share the same geometry tag.
     """
 
     # ── 1. Create device and resolve file paths ───────────────────────────
@@ -54,6 +62,7 @@ def run_single_sim(cfg: SimulationConfig) -> dict:
         tag += "_3D"
     if cfg.farfield.enabled:
         tag += "_ff"
+    tag += tag_suffix
 
     layout_path  = os.path.join(config.LAYOUTS_DIR, f"layout_{tag}.fsp")
     results_path = os.path.join(config.RESULTS_DIR,  f"result_{tag}.mat")
@@ -87,7 +96,12 @@ def run_single_sim(cfg: SimulationConfig) -> dict:
         if cfg.run.cleanup_lumerical_data:
             cleanup_lumerical_temp_files(layout_path)
 
-        plt.show()        # display figures when running locally
+        if show_plots:
+            plt.show()    # display figures when running locally
+        elif save_figs:
+            for num in plt.get_fignums():
+                fig_path = os.path.join(config.RESULTS_DIR, f"fig_{tag}_{num}.png")
+                plt.figure(num).savefig(fig_path, dpi=150, bbox_inches="tight")
         plt.close("all")
         sim.close()       # free Lumerical session memory
 

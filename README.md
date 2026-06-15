@@ -66,7 +66,7 @@
 │       ├── run_python_job.sh    # PBS job script for Python pipeline
 │       └── run_fsp_job.sh       # PBS job script for .fsp file
 ├── matlab_plotting/
-│   ├── plot_fdtd.m              # T/R/Loss/Phase spectra
+│   ├── plot_transmission.m     # T/R/Loss/Phase spectra + cavity Q-factor
 │   ├── plot_farfield.m          # Near-field + far-field visualization
 │   ├── plot_convergence.m       # Far-field vs monitor distance
 │   ├── plot_field_poynting.m    # Field + Poynting vector plots
@@ -383,7 +383,7 @@ Each stage is a standalone function and can be called independently (e.g., to re
 
 ### Plotting (`matlab_plotting/`)
 
-- **plot_fdtd.m** — Transmission, reflection, loss, and phase from .mat result files
+- **plot_transmission.m** — Transmission, reflection, loss, and phase from .mat result files; finds the cavity resonance (sharpness × dip-depth scorer) and reports the Q-factor
 - **plot_farfield.m** — Near-field monitor surface and far-field radiation patterns
 - **plot_convergence.m** — Far-field convergence with monitor distance
 - **plot_field_poynting.m** — Field intensity and Poynting vector visualization

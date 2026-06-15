@@ -93,6 +93,7 @@ import importlib
 
 _AUTO_DIRS = [
     ("runners.single",       os.path.join(PROJECT_DIR, "runners", "single")),
+    ("runners.tm",           os.path.join(PROJECT_DIR, "runners", "tm")),
     ("convergence_testing",  os.path.join(PROJECT_DIR, "convergence_testing")),
 ]
 

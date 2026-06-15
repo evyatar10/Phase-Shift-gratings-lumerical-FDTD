@@ -43,6 +43,7 @@ class PiShiftBraggFDTD:
                  simulation_mode="accurate",
                  use_symmetry=True,
                  use_z_symmetry=True,
+                 polarization="TE",
                  use_constant_materials=False,
                  n_core_const=1.977,
                  n_clad_const=1.44,
@@ -94,6 +95,9 @@ class PiShiftBraggFDTD:
 
         self.use_symmetry = use_symmetry
         self.use_z_symmetry = use_z_symmetry
+        if polarization not in ("TE", "TM"):
+            raise ValueError(f"polarization must be 'TE' or 'TM', got {polarization!r}")
+        self.polarization = polarization
         self.use_constant_materials = use_constant_materials
         self.n_core_const = n_core_const
         self.n_clad_const = n_clad_const
@@ -355,12 +359,16 @@ class PiShiftBraggFDTD:
         for bc in ["x min bc", "x max bc", "y min bc", "y max bc", "z min bc", "z max bc"]:
             fdtd.set(bc, "PML")
 
+        # Symmetry-plane parity follows polarization: the BC must match the
+        # parity of the injected mode's E field or the mode is filtered out.
+        #   TE (E along y): y=0 Anti-Symmetric, z=0 Symmetric
+        #   TM (E along z): y=0 Symmetric,      z=0 Anti-Symmetric
         if self.use_symmetry:
-            fdtd.set("y min bc", "Anti-Symmetric")
+            fdtd.set("y min bc", "Anti-Symmetric" if self.polarization == "TE" else "Symmetric")
             fdtd.set("force symmetric y mesh", 1)
 
         if self.use_z_symmetry:
-            fdtd.set("z min bc", "Symmetric")
+            fdtd.set("z min bc", "Symmetric" if self.polarization == "TE" else "Anti-Symmetric")
             fdtd.set("force symmetric z mesh", 1)
 
         fdtd.set("dimension", "3D")
@@ -558,7 +566,7 @@ class PiShiftBraggFDTD:
         fdtd.set("z", 0)
         fdtd.set("z span", 1.2 * self.z_span)
         fdtd.set("direction", "forward")
-        fdtd.set("mode selection", "fundamental TE mode")
+        fdtd.set("mode selection", f"fundamental {self.polarization} mode")
         fdtd.set("frequency dependent profile", 1)
 
         fdtd.addport()
@@ -570,7 +578,7 @@ class PiShiftBraggFDTD:
         fdtd.set("z", 0)
         fdtd.set("z span", 1.2 * self.z_span)
         fdtd.set("direction", "backward")
-        fdtd.set("mode selection", "fundamental TE mode")
+        fdtd.set("mode selection", f"fundamental {self.polarization} mode")
         fdtd.set("frequency dependent profile", 1)
 
         # --- Monitor: Central Mode Tracking (1D X-axis) ---

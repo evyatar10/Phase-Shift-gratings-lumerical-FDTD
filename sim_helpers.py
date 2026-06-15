@@ -251,6 +251,10 @@ def generate_file_tag(sim):
         if not bool(getattr(sim, 'lengthen_cavity', True)):
             fc_tag = "_fc"
 
+    # Polarization (only annotated for TM — keeps all existing TE file names
+    # unchanged, and prevents a TM run from overwriting its TE reference).
+    pol_tag = "" if getattr(sim, 'polarization', 'TE') == 'TE' else f"_{sim.polarization}"
+
     mat_tag = "" if sim.use_constant_materials else "_d"
     _cw_m = getattr(sim, 'cavity_width_m', None)
     if _cw_m is not None:
@@ -265,9 +269,9 @@ def generate_file_tag(sim):
         # historical default (100 nm) — keeps pre-sweep filenames stable.
         mod_depth_nm = float(getattr(sim, 'center_mod_depth', 100e-9)) * 1e9
         mod_tag = f"_M{round(mod_depth_nm):.0f}" if abs(mod_depth_nm - 100.0) > 0.5 else ""
-        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{mat_tag}{wgd_tag}"
+        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}"
     else:
-        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{mat_tag}{wgd_tag}"
+        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}"
 
 
 def apply_monitor_overrides(sim, cfg):

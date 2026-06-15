@@ -1,14 +1,18 @@
-%% Plot T, R, Loss, Phase, and Phase Derivatives
-% This script loads .mat files containing complex S-parameters.
-% It calculates T and R from them, and plots Loss, Phase, and Phase Derivatives.
+%% Plot Transmission (T, R, Loss, Phase, Q-factor)
+% Loads .mat files with complex S-parameters (or T/R) and plots Transmission /
+% Reflection / Loss / Phase. On the Combined Transmission plot it locates the
+% cavity resonance with a dedicated sharpness x dip-depth scorer (the sharp peak
+% inside the stopband, NOT the global passband maximum) and reports the Q-factor.
+% Resonance finder requires the Signal Processing Toolbox (findpeaks); falls back
+% to the global max if no interior peaks are found.
 addpath(fileparts(mfilename('fullpath')));              % Add matlab_plotting to path
 addpath(fileparts(fileparts(mfilename('fullpath'))));   % Add project root to path
 clear; clc;
 %close all;
 %% User settings
 % Filter range in microns for the combined loss and transmission plots5
-LAMBDA_MIN_UM = 1.54;
-LAMBDA_MAX_UM = 1.65;
+LAMBDA_MIN_UM = 1.475;
+LAMBDA_MAX_UM = 1.625;
 
 % LAMBDA_MIN_UM = 1.5;
 % LAMBDA_MAX_UM = 1.8;
@@ -349,8 +353,23 @@ if PLOT_COMBINED_TRANS
         displayName = ds.name;
 
         if CALC_Q_FACTOR && ~isempty(ds.T_f)
-            % Find resonance peak (max transmission)
-            [T_max, idx_max] = max(ds.T_f);
+            % --- Resonance finding: dedicated sharpness x dip-depth scorer ---
+            % Ported from sim_helpers.find_bragg_resonance. The cavity resonance
+            % is the sharpest peak (high prominence / narrow width) that ALSO sits
+            % in the deepest dip (stopband floor ~ 0) — NOT the global maximum,
+            % which for a pi-shift grating is just a passband ripple at T ~ 1.
+            % score = (prominence / (width+1)) * (1 - base_level),  base ~ pk - prom.
+            Tf = ds.T_f(:);
+            [pks, locs, w, p] = findpeaks(Tf, 'WidthReference', 'halfprom');
+            if isempty(pks)
+                [T_max, idx_max] = max(Tf);   % fallback: no interior peaks
+            else
+                base_level = pks - p;
+                score = (p ./ (w + 1)) .* (1 - base_level);
+                [~, ibest] = max(score);
+                idx_max = locs(ibest);
+                T_max   = Tf(idx_max);
+            end
             lambda_res = ds.wl_loss(idx_max);
 
             % Half max value

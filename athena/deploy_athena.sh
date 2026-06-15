@@ -43,6 +43,7 @@ fi
 # ─────────────────────────────────────────────────────────────────────────────
 
 UPLOAD_ONLY=false
+POL_ARRAY=false
 DOWNLOAD_RESULTS=false
 DOWNLOAD_NO_FSP=false
 DOWNLOAD_MODE_SET=false
@@ -64,6 +65,7 @@ for arg in "$@"; do
         --option1)            OPTION="1" ;;
         --option2)            OPTION="2" ;;
         --option3)            OPTION="3" ;;
+        --pol-array)          POL_ARRAY=true ;;
         --upload-only)        UPLOAD_ONLY=true ;;
         --results)            DOWNLOAD_RESULTS=true ;;
         --results-no-fsp)     DOWNLOAD_RESULTS=true; DOWNLOAD_NO_FSP=true; DOWNLOAD_MODE_SET=true ;;
@@ -168,8 +170,9 @@ if [[ "${OPTION}" == "2" && -z "${RUN_SCRIPT}" && -z "${SWEEP_KIND}" && "${UPLOA
     echo "  5) Lumerical-native opt   (addsweep('Optimization') — runners/lumerical_native_optimization/)"
     echo "  6) FD-gradient design     (scipy L-BFGS-B + central-diff jac — runners/fd_gradient_design/)"
     echo "  7) Convergence            (convergence_testing/ — incl. mesh_conv X/YZ)"
+    echo "  8) TM studies             (TM single-run studies — runners/tm/)"
     echo "============================================================"
-    read -rp "Enter 1, 2, 3, 4, 5, 6, or 7: " _pipeline_choice
+    read -rp "Enter 1, 2, 3, 4, 5, 6, 7, or 8: " _pipeline_choice
     case "${_pipeline_choice}" in
         1) _PIPELINE_KIND="single" ;;
         2) OPTION="3"; _PIPELINE_KIND="sweep" ;;
@@ -178,6 +181,7 @@ if [[ "${OPTION}" == "2" && -z "${RUN_SCRIPT}" && -z "${SWEEP_KIND}" && "${UPLOA
         5) OPTION="3"; _PIPELINE_KIND="lumerical_native_optimization" ;;
         6) OPTION="3"; _PIPELINE_KIND="fd_gradient_design" ;;
         7) _PIPELINE_KIND="convergence" ;;
+        8) _PIPELINE_KIND="tm" ;;
         *) echo "Invalid choice. Exiting."; exit 1 ;;
     esac
 fi
@@ -206,6 +210,43 @@ if [[ "${_PIPELINE_KIND:-}" == "single" && -z "${RUN_SCRIPT}" && "${UPLOAD_ONLY}
     echo ""
     echo "============================================================"
     echo "  Choose which script to run on Athena (runners/single/):"
+    for _i in "${!_RUNNERS[@]}"; do
+        printf "  %d) %s\n" "$((_i+1))" "${_RUNNERS[$_i]}"
+    done
+    echo "============================================================"
+    read -rp "Enter number: " _script_choice
+    if [[ "${_script_choice}" =~ ^[0-9]+$ ]] && (( _script_choice >= 1 && _script_choice <= ${#_RUNNERS[@]} )); then
+        RUN_SCRIPT="${_RUNNERS[$((_script_choice-1))]}"
+        echo "Selected: ${RUN_SCRIPT}"
+    else
+        echo "Invalid choice. Exiting."; exit 1
+    fi
+fi
+
+# ── TM-studies picker (mode=tm) — AUTO-DISCOVERED ────────────────────────────
+# Same contract as the Single picker, but scans runners/tm/*.py. TM single-run
+# studies (polarization=TM) live here so they don't crowd runners/single/.
+# Dispatched as an OPTION=2 sequential job; athena_run.py resolves the bare
+# module name via its runners.tm auto-discovery dir.
+if [[ "${_PIPELINE_KIND:-}" == "tm" && -z "${RUN_SCRIPT}" && "${UPLOAD_ONLY}" == "false" ]]; then
+    mapfile -t _RUNNERS < <(
+        for _f in "${LOCAL_PROJECT}/runners/tm"/*.py; do
+            [[ -e "${_f}" ]] || continue
+            _name=$(basename "${_f}" .py)
+            [[ "${_name}" == _* || "${_name}" == "__init__" ]] && continue
+            grep -qE '^(def[[:space:]]+run[[:space:]]*\(|run[[:space:]]*=)' "${_f}" 2>/dev/null || continue
+            grep -qE '^IS_HELPER[[:space:]]*=[[:space:]]*True' "${_f}" 2>/dev/null && continue
+            echo "${_name}"
+        done | sort
+    )
+    if [[ ${#_RUNNERS[@]} -eq 0 ]]; then
+        echo "ERROR: no runners discovered in runners/tm/."
+        echo "       Each module needs a top-level callable 'run'."
+        exit 1
+    fi
+    echo ""
+    echo "============================================================"
+    echo "  Choose which script to run on Athena (runners/tm/):"
     for _i in "${!_RUNNERS[@]}"; do
         printf "  %d) %s\n" "$((_i+1))" "${_RUNNERS[$_i]}"
     done
@@ -910,14 +951,22 @@ if [[ "${OPTION}" == "1" ]]; then
     fi
 
 elif [[ "${OPTION}" == "2" ]]; then
-    # ── Option 2: full Python pipeline (single sequential job) ───────────────
+    # ── Option 2: full Python pipeline ───────────────────────────────────────
+    # Default: one sequential job. With --pol-array: a 2-task GPU array — task 0
+    # and task 1 run on separate GPUs in parallel. The runner reads
+    # SLURM_ARRAY_TASK_ID to pick its unit of work (e.g. run_tm_vs_te: 0=TE, 1=TM).
+    POL_ARRAY_OPT=""
+    if [[ "${POL_ARRAY}" == "true" ]]; then
+        POL_ARRAY_OPT="--array=0-1%2"
+        echo "--pol-array: submitting ${RUN_SCRIPT} as a 2-task GPU array (task 0 + task 1 in parallel)."
+    fi
     JOB_ID=$(ssh "${SSH}" \
-        "cd ${REMOTE_BASE} && sbatch \
+        "cd ${REMOTE_BASE} && sbatch ${POL_ARRAY_OPT} \
             --gpus=1 --cpus-per-task=${N_CPUS} \
             --time=${ARRAY_TIME:-00:50:00} \
             --qos=${ARRAY_QOS} \
             --partition=${ARRAY_PARTITIONS} \
-            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC} \
+            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},TM_PITCH_NM=${TM_PITCH_NM:-500},TM_MESH=${TM_MESH:-optimization},TM_FARFIELD=${TM_FARFIELD:-0},NTFY_TOPIC=${NTFY_TOPIC} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_gpu.sh")
 

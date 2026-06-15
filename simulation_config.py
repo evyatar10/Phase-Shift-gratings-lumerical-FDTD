@@ -160,14 +160,34 @@ class MaterialConfig:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Source
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class SourceConfig:
+    """Injected mode settings.
+
+    polarization selects the fundamental mode at the ports AND the matching
+    symmetry-plane parity (see bragg_device._add_fdtd_region):
+      "TE": E dominantly along y  -> y min Anti-Symmetric, z min Symmetric
+      "TM": E dominantly along z  -> y min Symmetric,      z min Anti-Symmetric
+    """
+    polarization: str = "TE"                    # "TE" or "TM"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Symmetry
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @dataclass
 class SymmetryConfig:
-    """Boundary condition symmetry settings."""
-    use_y_symmetry: bool = True                 # Anti-symmetric BC in Y (TE mode)
-    use_z_symmetry: bool = True                 # Symmetric BC in Z
+    """Boundary condition symmetry settings.
+
+    The symmetric/anti-symmetric parity of each plane is chosen by
+    SourceConfig.polarization; these flags only enable/disable the planes.
+    """
+    use_y_symmetry: bool = True                 # Use a symmetry plane at y=0
+    use_z_symmetry: bool = True                 # Use a symmetry plane at z=0
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -269,6 +289,7 @@ class SimulationConfig:
     spectral: SpectralConfig = field(default_factory=SpectralConfig)
     mesh: MeshConfig = field(default_factory=MeshConfig)
     material: MaterialConfig = field(default_factory=MaterialConfig)
+    source: SourceConfig = field(default_factory=SourceConfig)
     symmetry: SymmetryConfig = field(default_factory=SymmetryConfig)
     monitors: MonitorConfig = field(default_factory=MonitorConfig)
     farfield: FarFieldConfig = field(default_factory=FarFieldConfig)
@@ -364,6 +385,7 @@ class SimulationConfig:
             simulation_mode=me.simulation_mode,
             use_symmetry=sy.use_y_symmetry,
             use_z_symmetry=sy.use_z_symmetry,
+            polarization=self.source.polarization,
             use_constant_materials=ma.use_constant_materials,
             n_core_const=ma.n_core_const,
             n_clad_const=ma.n_clad_const,
