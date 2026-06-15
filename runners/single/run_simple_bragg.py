@@ -64,7 +64,8 @@ class SimpleBraggFDTD:
                  use_z_symmetry=True,
                  use_constant_materials=False,
                  n_core_const=1.977,
-                 n_clad_const=1.44):
+                 n_clad_const=1.44,
+                 const_material_mode="sampled"):
 
         self.pitch = pitch
         self.n_periods = n_periods
@@ -83,6 +84,10 @@ class SimpleBraggFDTD:
         self.use_constant_materials = use_constant_materials
         self.n_core_const = n_core_const
         self.n_clad_const = n_clad_const
+        self.const_material_mode = const_material_mode
+        # True only for the "object" constant-index backend; gates the per-object
+        # set("index", n) and set("background index", n) calls below.
+        self._object_index_mode = False
 
         # Simulation settings
         self.use_symmetry = use_symmetry
@@ -112,6 +117,17 @@ class SimpleBraggFDTD:
         self._setup_materials()
 
     def _setup_materials(self):
+        if self.use_constant_materials and self.const_material_mode == "object":
+            # Direct index: assign "<Object defined dielectric>" to each object and
+            # set its index explicitly (done in geometry / background setup). No DB
+            # material is created — this bypasses Lumerical's material fitting.
+            print(f"Using CONSTANT Materials (object-defined dielectric): "
+                  f"SiN={self.n_core_const}, SiO2={self.n_clad_const}")
+            self._object_index_mode = True
+            self.core_material = "<Object defined dielectric>"
+            self.clad_material = "<Object defined dielectric>"
+            return
+
         if self.use_constant_materials:
             print(f"Using CONSTANT Materials: SiN={self.n_core_const}, SiO2={self.n_clad_const}")
             const_sin = "SiN_Const_Custom"
@@ -239,6 +255,8 @@ class SimpleBraggFDTD:
         if config.USE_GPU:
             fdtd.setdevice("GPU")
         fdtd.set("background material", self.clad_material)
+        if self._object_index_mode:
+            fdtd.set("background index", self.n_clad_const)
         fdtd.set("simulation time", 2000e-12)
         fdtd.set("auto shutoff min", 1e-7)
 
@@ -296,6 +314,8 @@ class SimpleBraggFDTD:
             fdtd.addrect()
             fdtd.set("name", f"{name_prefix}_{seg_id:d}")
             fdtd.set("material", self.core_material)
+            if self._object_index_mode:
+                fdtd.set("index", self.n_core_const)
             fdtd.set("y", 0)
             fdtd.set("y span", width)
             fdtd.set("z", z_core_center)

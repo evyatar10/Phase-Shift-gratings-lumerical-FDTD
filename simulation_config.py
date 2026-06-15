@@ -157,6 +157,13 @@ class MaterialConfig:
     n_core_const: float = 1.977                 # Constant core index (Si3N4)
     n_clad_const: float = 1.44                  # Constant cladding index (SiO2)
     n_eff_guess: float = 1.55                   # Estimated effective index for Bragg wavelength calc
+    # Backend for constant-index mode (only used when use_constant_materials=True):
+    #   "object"  — direct "<Object defined dielectric>" + set("index", n) per object
+    #               (bypasses Lumerical's material fitting; a cleaner constant)
+    #   "sampled" — flat 2-point "Sampled data" DB material (legacy)
+    # Default is "object": validated equivalent to "sampled" on Athena (TM-study
+    # geometry, TE+TM) to sub-fm resonance λ and ~1e-6 max|ΔT|/|ΔR| (2026-06-15).
+    const_material_mode: str = "object"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -389,6 +396,7 @@ class SimulationConfig:
             use_constant_materials=ma.use_constant_materials,
             n_core_const=ma.n_core_const,
             n_clad_const=ma.n_clad_const,
+            const_material_mode=ma.const_material_mode,
             # 2D monitors
             record_2d_fields_top_and_cross=mo.record_2d_fields,
             field_2d_x_span_m=mo.field_2d_x_span_m,
@@ -440,6 +448,7 @@ class SimulationConfig:
             use_constant_materials=ma.use_constant_materials,
             n_core_const=ma.n_core_const,
             n_clad_const=ma.n_clad_const,
+            const_material_mode=ma.const_material_mode,
         )
 
 

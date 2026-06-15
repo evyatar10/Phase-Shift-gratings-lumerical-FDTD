@@ -47,6 +47,7 @@ class PiShiftBraggFDTD:
                  use_constant_materials=False,
                  n_core_const=1.977,
                  n_clad_const=1.44,
+                 const_material_mode="sampled",
                  # --- NEW OPTIONAL 2D PARAMS ---
                  record_2d_fields_top_and_cross=False,
                  field_2d_x_span_m=None,  # If None, records full device. If set, crops X span for XY.
@@ -101,6 +102,10 @@ class PiShiftBraggFDTD:
         self.use_constant_materials = use_constant_materials
         self.n_core_const = n_core_const
         self.n_clad_const = n_clad_const
+        self.const_material_mode = const_material_mode
+        # True only for the "object" constant-index backend; gates the per-object
+        # set("index", n) and set("background index", n) calls below.
+        self._object_index_mode = False
 
         self.n_eff_guess = n_eff_guess
         self.n_wl_points = n_wl_points
@@ -236,6 +241,17 @@ class PiShiftBraggFDTD:
         self._setup_materials()
 
     def _setup_materials(self):
+        if self.use_constant_materials and self.const_material_mode == "object":
+            # Direct index: assign "<Object defined dielectric>" to each object and
+            # set its index explicitly (done in _add_bragg_core / _add_fdtd_region).
+            # No DB material is created — this bypasses Lumerical's material fitting.
+            print(f"Using CONSTANT Materials (object-defined dielectric): "
+                  f"SiN={self.n_core_const}, SiO2={self.n_clad_const}")
+            self._object_index_mode = True
+            self.core_material = "<Object defined dielectric>"
+            self.clad_material = "<Object defined dielectric>"
+            return
+
         if self.use_constant_materials:
             print(f"Using CONSTANT Materials: SiN={self.n_core_const}, SiO2={self.n_clad_const}")
             const_sin = "SiN_Const_Custom"
@@ -375,6 +391,8 @@ class PiShiftBraggFDTD:
         if _cfg.USE_GPU:
             fdtd.setdevice("GPU")
         fdtd.set("background material", self.clad_material)
+        if self._object_index_mode:
+            fdtd.set("background index", self.n_clad_const)
         fdtd.set("simulation time", 2000e-12)
         fdtd.set("auto shutoff min", 1e-7)
 
@@ -453,6 +471,8 @@ class PiShiftBraggFDTD:
             fdtd.addrect()
             fdtd.set("name", f"{name_prefix}_{seg_id:d}")
             fdtd.set("material", self.core_material)
+            if self._object_index_mode:
+                fdtd.set("index", self.n_core_const)
             fdtd.set("y", 0)
             fdtd.set("y span", width)
             fdtd.set("z", z_core_center)

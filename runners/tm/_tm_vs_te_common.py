@@ -61,6 +61,11 @@ def build_base_cfg(cfg: SimulationConfig) -> SimulationConfig:
     cfg.material.use_constant_materials = True
     cfg.material.n_core_const = 1.9963
     cfg.material.n_clad_const = 1.444
+    # Constant-index backend A/B: TM_CONST_MODE=sampled|object overrides the
+    # repo default. Unset -> inherit the MaterialConfig default (so a later
+    # default-flip to "object" is honored automatically).
+    cfg.material.const_material_mode = os.environ.get(
+        "TM_CONST_MODE", cfg.material.const_material_mode)
     # Mesh: "optimization" (dx=50 nm) by default; TM_MESH=accurate -> dx~35 nm
     # (for convergence checks). Recorded in the result filename (run_one_scan).
     cfg.mesh.simulation_mode = os.environ.get("TM_MESH", "optimization")
@@ -119,6 +124,11 @@ def run_one_scan(base_cfg, polarization,
         suffix += f"_P{pitch_nm:.1f}".replace(".", "p")   # 0.1 nm res, e.g. _P518p3
     if base_cfg.mesh.simulation_mode == "accurate":
         suffix += "_acc"                                  # don't clobber optimization results
+    # Constant-index backend A/B: only when TM_CONST_MODE is explicitly set, tag the
+    # result with the backend (_smp / _obj) so the two runs get distinct filenames and
+    # never overwrite the existing un-tagged TM-study results. Normal runs are untouched.
+    if os.environ.get("TM_CONST_MODE"):
+        suffix += "_obj" if base_cfg.material.const_material_mode == "object" else "_smp"
     res = run_single_sim(cfg, show_plots=False, tag_suffix=suffix, save_figs=False)
     lam_nm = float(res["resonance_wavelength_nm"])
     pitch_m = base_cfg.grating.pitch_m
