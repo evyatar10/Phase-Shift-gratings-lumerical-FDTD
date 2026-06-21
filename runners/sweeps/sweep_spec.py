@@ -75,6 +75,9 @@ class SweepSpec:
     scan_width_nm:              Optional[List[float]] = None
     farfield:                   Optional[List[bool]]  = None
 
+    # ── Source / polarization ───────────────────────────────────────────────
+    polarization:               Optional[List[str]]   = None     # ["TE"], ["TM"], or ["TE","TM"]
+
     # ── Behavior ────────────────────────────────────────────────────────────
     mode: Literal["cartesian", "zipped"] = "cartesian"
     label: str = ""

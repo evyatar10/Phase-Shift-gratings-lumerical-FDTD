@@ -69,14 +69,13 @@
 │   ├── plot_transmission.m     # T/R/Loss/Phase spectra + cavity Q-factor
 │   ├── plot_farfield.m          # Near-field + far-field visualization
 │   ├── plot_convergence.m       # Far-field vs monitor distance
-│   ├── plot_field_poynting.m    # Field + Poynting vector plots
-│   ├── plot_field_poynting_overlay.m  # Overlaid field/Poynting visualization
-│   ├── plot_field_poynting_zoom.m     # Zoomed field/Poynting view
+│   ├── plot_field_poynting_zoom.m     # Zoomed field/Poynting view (single or TE/TM compare)
 │   ├── plot_mode_profile.m            # Mode profile (|E|² envelope + FWHM) comparison
 │   ├── plot_mode_profile_xz.m         # Mode profile from XZ side-view monitor
 │   ├── plot_transmission_compare.m    # Transmission spectra multi-file comparison
 │   ├── plot_resonance_vs_param.m      # Resonance / peak T vs shift or inner tooth size
-│   └── save_figures_interactive.m     # Interactive figure export helper
+│   ├── save_figures_interactive.m     # Interactive figure export helper
+│   └── legacy/                        # Superseded scripts (plot_field_poynting[_overlay].m)
 └── matlab_analysis/
     ├── analyze_farfield_radiation.m   # 3D spherical radiation patterns
     ├── analyze_core_k_space.m         # FFT k-space analysis
@@ -386,9 +385,8 @@ Each stage is a standalone function and can be called independently (e.g., to re
 - **plot_transmission.m** — Transmission, reflection, loss, and phase from .mat result files; finds the cavity resonance (sharpness × dip-depth scorer) and reports the Q-factor
 - **plot_farfield.m** — Near-field monitor surface and far-field radiation patterns
 - **plot_convergence.m** — Far-field convergence with monitor distance
-- **plot_field_poynting.m** — Field intensity and Poynting vector visualization
-- **plot_field_poynting_overlay.m** — Overlaid field and Poynting vector plots
-- **plot_field_poynting_zoom.m** — Zoomed-in field/Poynting view
+- **plot_field_poynting_zoom.m** — Zoomed-in field/Poynting view; supports single-file or two-file (e.g. TE vs TM) side-by-side comparison. Superset of the two legacy scripts below
+- **legacy/plot_field_poynting.m**, **legacy/plot_field_poynting_overlay.m** — superseded by `plot_field_poynting_zoom.m` (kept for reference)
 - **plot_mode_profile.m** — Side-by-side comparison of |E|² envelope + FWHM across simulations
 - **plot_mode_profile_xz.m** — Mode profile from the XZ side-view 2D monitor (integrates |E|² over z)
 - **plot_transmission_compare.m** — Overlay transmission spectra from multiple .mat result files

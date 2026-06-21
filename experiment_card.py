@@ -45,6 +45,7 @@ _CARD_FIELD_MAP = {
     "center_wavelength_nm":     ("spectral.center_wavelength_m",         lambda v: v * 1e-9),
     "scan_width_nm":            ("spectral.scan_width_nm",               None),
     "farfield":                 ("farfield.enabled",                     None),
+    "polarization":             ("source.polarization",                  None),  # "TE" | "TM"
 }
 
 

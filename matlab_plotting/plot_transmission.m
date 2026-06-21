@@ -11,8 +11,8 @@ clear; clc;
 %close all;
 %% User settings
 % Filter range in microns for the combined loss and transmission plots5
-LAMBDA_MIN_UM = 1.475;
-LAMBDA_MAX_UM = 1.625;
+LAMBDA_MIN_UM = 1.553;
+LAMBDA_MAX_UM = 1.590;
 
 % LAMBDA_MIN_UM = 1.5;
 % LAMBDA_MAX_UM = 1.8;
@@ -375,28 +375,40 @@ if PLOT_COMBINED_TRANS
             % Half max value
             half_max = T_max / 2;
 
-            % Find FWHM by interpolating left and right edges
-            idx_left_under = find(ds.T_f(1:idx_max) <= half_max, 1, 'last');
-            idx_left_over  = find(ds.T_f(1:idx_max) > half_max, 1, 'first');
-
+            % Find FWHM: walk OUTWARD from the peak to the FIRST half-max
+            % crossing on each side (local crossings only), then interpolate
+            % linearly between the two bracketing samples for sub-grid accuracy.
+            %
+            % BUGFIX: the previous version searched the WHOLE zoom window for the
+            % half-max crossing (find(... ,1,'first'/'last')). For a sharp cavity
+            % peak the window ends sit in the passband (T > half_max), so those
+            % finds latched onto window-edge points and the interpolation grossly
+            % inflated the FWHM (TE 0.96 -> 7.5 nm), collapsing Q (1640 -> 208)
+            % and even flipping the TE/TM ordering. Walking outward from the peak
+            % uses only the local crossing, matching the Python find_resonance.
             lambda_left = NaN;
-            if ~isempty(idx_left_under) && ~isempty(idx_left_over)
-                x1 = ds.wl_loss(idx_left_under); y1 = ds.T_f(idx_left_under);
-                x2 = ds.wl_loss(idx_left_over);  y2 = ds.T_f(idx_left_over);
+            iL = idx_max;
+            while iL > 1 && ds.T_f(iL) > half_max
+                iL = iL - 1;
+            end
+            if iL < idx_max          % ds.T_f(iL) <= half_max < ds.T_f(iL+1)
+                x1 = ds.wl_loss(iL);   y1 = ds.T_f(iL);
+                x2 = ds.wl_loss(iL+1); y2 = ds.T_f(iL+1);
                 if y1 ~= y2
                     lambda_left = x1 + (half_max - y1) * (x2 - x1) / (y2 - y1);
                 else
-                    lambda_left = x1;
+                    lambda_left = x2;
                 end
             end
 
-            idx_right_over  = idx_max - 1 + find(ds.T_f(idx_max:end) > half_max, 1, 'last');
-            idx_right_under = idx_max - 1 + find(ds.T_f(idx_max:end) <= half_max, 1, 'first');
-
             lambda_right = NaN;
-            if ~isempty(idx_right_under) && ~isempty(idx_right_over)
-                x1 = ds.wl_loss(idx_right_over);  y1 = ds.T_f(idx_right_over);
-                x2 = ds.wl_loss(idx_right_under); y2 = ds.T_f(idx_right_under);
+            iR = idx_max;
+            while iR < numel(ds.T_f) && ds.T_f(iR) > half_max
+                iR = iR + 1;
+            end
+            if iR > idx_max          % ds.T_f(iR) <= half_max < ds.T_f(iR-1)
+                x1 = ds.wl_loss(iR-1); y1 = ds.T_f(iR-1);
+                x2 = ds.wl_loss(iR);   y2 = ds.T_f(iR);
                 if y1 ~= y2
                     lambda_right = x1 + (half_max - y1) * (x2 - x1) / (y2 - y1);
                 else

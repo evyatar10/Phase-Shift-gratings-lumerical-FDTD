@@ -27,9 +27,73 @@ N_STEPS = 6         # number of monitor distances to test
 CONVERGENCE_SPAN_MULT = 6  # Extra-large domain: more room for far monitors than standard (5×)
 
 
+# ── Polarization ──────────────────────────────────────────────────────────
+# CONV_POL selects the polarization, mirroring convergence_testing/
+# run_mesh_convergence.py. The default "TE" reproduces the original far-field
+# convergence byte-for-byte — nothing in `_apply_polarization`'s TM branch runs
+# unless CONV_POL=TM (so the existing TE layout/.mat filenames are untouched).
+#
+# CONV_POL=TM switches to the TM-study device (calibrated pitch + constant
+# indices, see runners/tm/ and project_tm_convergence_study) and re-centers the
+# source on the TM cavity resonance, so the single-frequency far-field monitors
+# ("use source limits" + 1 frequency point) sample the radiating TM mode. TM
+# artifacts get a "_tm" filename tag so the TE results are never overwritten.
+POLARIZATION = (os.environ.get("CONV_POL") or "TE").upper()   # unset OR empty → TE
+_POL_TAG     = "" if POLARIZATION == "TE" else f"_{POLARIZATION.lower()}"
+
+# TM-study device parameters (used ONLY when POLARIZATION == "TM").
+# Mirrors convergence_testing/run_mesh_convergence.py — see that file and
+# runners/tm/PITCH_ALIGNMENT.md for the pitch-calibration rationale.
+TM_PITCH_NM      = 518.3      # calibrated pitch that re-centers TM near the TE wavelength
+TM_N_CORE        = 1.9963     # Si3N4 "Luke" @ 1.55 µm
+TM_N_CLAD        = 1.444      # SiO2 "Palik" @ 1.55 µm
+# Source center → the single-point far-field is sampled here. 1571.4 nm is the
+# TM cavity resonance on the production mesh (cells=5 / dy=dz=50 nm, which this
+# runner uses) from the mesh study's Phase-X table — so the monitors capture the
+# on-resonance radiating cavity mode (NOT the mesh study's 1567 nm scan center,
+# which is a wide-window center, not the peak).
+TM_CENTER_M      = 1.5714e-6
+TM_SCAN_WIDTH_NM = 40.0
+TM_N_POINTS      = 2001
+
+
+def _apply_polarization(cfg: SimulationConfig) -> None:
+    """Mutate `cfg` in place for the selected polarization.
+
+    For TE (default) this is a no-op — the caller's cfg (incl. the Athena
+    dispatcher's detuning/mesh tweaks) is left untouched. For TM we switch to the
+    canonical TM-study device (calibrated pitch, constant indices, zero detuning)
+    and re-center the scan on the TM resonance, matching the TM mesh-convergence
+    study so the recommended far-field monitor distance applies to the same TM
+    device being analyzed.
+    """
+    if POLARIZATION != "TM":
+        return
+    cfg.source.polarization            = "TM"
+    cfg.grating.pitch_m                = TM_PITCH_NM * 1e-9
+    cfg.grating.cavity_neg_detuning_nm = 0.0   # canonical TM device — drop the TE-tuned detuning
+    cfg.material.use_constant_materials = True
+    cfg.material.n_core_const          = TM_N_CORE
+    cfg.material.n_clad_const          = TM_N_CLAD
+    cfg.spectral.center_wavelength_m   = TM_CENTER_M
+    cfg.spectral.scan_width_nm         = TM_SCAN_WIDTH_NM
+    cfg.spectral.n_wl_points           = TM_N_POINTS
+    # Seed the mode solver near the Bragg n_eff (λ = 2·n_eff·Λ).
+    cfg.material.n_eff_guess = (
+        cfg.spectral.center_wavelength_m / (2.0 * cfg.grating.pitch_m))
+
+
 def run_convergence(cfg: SimulationConfig = None):
     if cfg is None:
         cfg = SimulationConfig()
+
+    _apply_polarization(cfg)
+    print(f"\n{'=' * 62}")
+    print(f"  FAR-FIELD MONITOR-DISTANCE CONVERGENCE  [polarization = {POLARIZATION}]")
+    if POLARIZATION == "TM":
+        print(f"  TM device: pitch={TM_PITCH_NM} nm, n_core={TM_N_CORE}, "
+              f"n_clad={TM_N_CLAD}, source center={TM_CENTER_M * 1e9:.1f} nm")
+    print(f"{'=' * 62}")
 
     lam = cfg.spectral.center_wavelength_m
     core_h = cfg.geometry.core_height_m
@@ -118,7 +182,7 @@ def run_convergence(cfg: SimulationConfig = None):
         print(f"  {name}: y = {y_pos*1e6:.3f} um  ({(y_pos - w_wide/2)/lam:.2f} lambda from edge)")
 
     # ── Save layout and run ───────────────────────────────────────────────
-    layout_path = os.path.join(config.LAYOUTS_DIR, "layout_convergence_farfield.fsp")
+    layout_path = os.path.join(config.LAYOUTS_DIR, f"layout_convergence_farfield{_POL_TAG}.fsp")
     sim.fdtd.save(layout_path)
     print(f"\nLayout saved: {layout_path}")
 
@@ -186,10 +250,14 @@ def run_convergence(cfg: SimulationConfig = None):
             side_nf_z = np.squeeze(nf["z"])
 
     # ── Save to .mat ──────────────────────────────────────────────────────
-    results_path = os.path.join(config.RESULTS_DIR, "convergence_farfield.mat")
+    results_path = os.path.join(config.RESULTS_DIR, f"convergence_farfield{_POL_TAG}.mat")
 
     mat_data = {
         "n_steps": N_STEPS,
+        "polarization": POLARIZATION,
+        "pitch_m": cfg.grating.pitch_m,
+        "n_core": cfg.material.n_core_const,
+        "n_clad": cfg.material.n_clad_const,
         "lambda_res": lam,
         "ff_res": ff_res,
         "core_h": core_h,

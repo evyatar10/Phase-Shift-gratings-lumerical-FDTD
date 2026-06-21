@@ -103,6 +103,12 @@ _AUTO_DIRS = [
 _ALIAS_SCRIPTS = {
     "compare_3d_field_prelim": ("runners.single.compare_3d_field_default_vs_shift",
                                 "run_compare_3d_field_prelim"),
+    # Run the full mesh-convergence sweep (Phase X then YZ, in-process true
+    # coordinate descent) as ONE sequential Option-2 GPU job. The module sets
+    # IS_HELPER=True (so it's hidden from the Single picker) and is therefore not
+    # auto-discovered; this alias makes `--option2 --run=run_mesh_convergence`
+    # dispatch its top-level run(). Polarization is selected via CONV_POL env.
+    "run_mesh_convergence": ("convergence_testing.run_mesh_convergence", "run"),
     # Back-compat for old picker labels — will be removed once docs/scripts
     # are updated to use bare module names.
     "single_sim":   ("runners.single.run_simulation",   "run_single_sim"),
@@ -164,6 +170,17 @@ else:
 _module = importlib.import_module(_module_name)
 _run_func = getattr(_module, _func_name)
 print(f"[athena_run] Running: {_run_script} ({_module_name}.{_func_name})")
+
+# Optional per-runner results-folder override. By default the output folder is the
+# runner's own name (RUN_NAME=RUN_SCRIPT, set near the top). A runner can instead
+# declare a shared STUDY_DIR_NAME so a family of runners writes into ONE study
+# folder — e.g. run_te / run_tm / run_tm_vs_te all land in results/tm_te/ rather
+# than three separate per-runner folders. config.RESULTS_DIR reads RUN_NAME lazily,
+# so updating it here (before run()) is honored.
+_study_dir = getattr(_module, "STUDY_DIR_NAME", None)
+if _study_dir:
+    os.environ["RUN_NAME"] = _study_dir
+    print(f"[athena_run] {_run_script} declares STUDY_DIR_NAME={_study_dir!r} -> results/{_study_dir}/")
 
 # Optional per-runner override hook. If the runner module defines
 # `build_cfg(cfg) -> cfg`, apply it here so local (__main__) and cluster

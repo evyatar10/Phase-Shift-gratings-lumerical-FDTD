@@ -37,11 +37,19 @@ from simulation_config import SimulationConfig
 
 IS_HELPER = True  # not a dispatchable runner (athena_run.py auto-discovery)
 
+# Shared results folder for the whole TM/TE study. All three runners (run_te,
+# run_tm, run_tm_vs_te) write here instead of into a per-runner folder named after
+# the script. athena_run.py reads STUDY_DIR_NAME off the dispatched runner module
+# and sets RUN_NAME, so every TM/TE run lands in results/<STUDY_DIR_NAME>/
+# (config.RESULTS_DIR). Result filenames already encode polarization / pitch /
+# far-field / fields, so the two polarizations never collide in one folder.
+STUDY_DIR_NAME = "tm_te"
+
 # Single wide scan window (all runners). One window per polarization, wide enough
 # to contain both resonances for this device (TE ≈ 1571, TM ≈ 1524 nm).
-COMPARE_CENTER_M = 1.550e-6
-COMPARE_WIDTH_NM = 150.0
-COMPARE_N_POINTS = 6001       # ~25 pm spacing across the 150 nm window
+COMPARE_CENTER_M = 1.571e-6
+COMPARE_WIDTH_NM = 10
+COMPARE_N_POINTS = 2001       # ~25 pm spacing across the 150 nm window
 
 
 def build_base_cfg(cfg: SimulationConfig) -> SimulationConfig:
@@ -113,8 +121,20 @@ def run_one_scan(base_cfg, polarization,
     cfg = copy.deepcopy(base_cfg)
     cfg.source.polarization = polarization
     cfg.material.n_eff_guess = center_m / (2.0 * cfg.grating.pitch_m)
-    cfg.monitors.record_2d_fields = False   # comparison is about the spectra
+    # Field-profile capture: spectra-only by default (comparison is about the
+    # spectra). TM_RECORD_2D=1 turns on the XY/YZ/XZ 2D profile monitors so the
+    # cavity cross-section (+ top/side views) can be viewed in MATLAB
+    # (matlab_plotting/plot_field_poynting.m). The wide scan band places a 2D
+    # monitor frequency point within ~1 nm of the resonance, enough to render
+    # the (dB-normalized) mode pattern.
+    record_2d = os.environ.get("TM_RECORD_2D", "0") == "1"
+    cfg.monitors.record_2d_fields = record_2d
     cfg.farfield.enabled = _farfield_enabled()
+    # Manual domain-size override for one-off checks: SPAN_MULT (× λ_center).
+    # Inert unless set; the default box is unchanged (1.8, or 5.0 with far-field).
+    span_mult = os.environ.get("SPAN_MULT")
+    if span_mult:
+        cfg.span_multiplier_override = float(span_mult)
     _spectral(cfg, center_m, width_nm, n_points)
     # Tag with the polarization, plus the pitch when it differs from the 500 nm
     # default — so a pitch-corrected rerun doesn't overwrite the original.
@@ -124,6 +144,10 @@ def run_one_scan(base_cfg, polarization,
         suffix += f"_P{pitch_nm:.1f}".replace(".", "p")   # 0.1 nm res, e.g. _P518p3
     if base_cfg.mesh.simulation_mode == "accurate":
         suffix += "_acc"                                  # don't clobber optimization results
+    if cfg.span_multiplier_override is not None:
+        suffix += f"_M{cfg.span_multiplier_override:.1f}".replace(".", "p")  # domain check, e.g. _M1p5
+    if record_2d:
+        suffix += "_fields"                               # spectra+field run; distinct .mat
     # Constant-index backend A/B: only when TM_CONST_MODE is explicitly set, tag the
     # result with the backend (_smp / _obj) so the two runs get distinct filenames and
     # never overwrite the existing un-tagged TM-study results. Normal runs are untouched.

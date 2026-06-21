@@ -3,58 +3,33 @@
 % restricted to specific spatial regions around the grating center.
 %
 % Regions:
-%   XZ plane — X: [-10, 10] um, Z: [0, max]   (upper half, near defect)
-%   YZ plane — full range                       (no restriction)
-%   XY plane — X: [-10, 10] um, Y: [-10, 10] um
+%   XZ plane — X: [-crop, crop] um, Z: full    (side view, near defect)
+%   YZ plane — full range                      (cross section)
+%   XY plane — X/Y: [-crop, crop] um           (top view)
+%
+% Single- or two-file mode:
+%   compare_mode = false → one result, one figure per plane (original behaviour).
+%   compare_mode = true  → two results (e.g. TE vs TM) shown as side-by-side
+%                          subplots in every figure.
 
 addpath(fileparts(fileparts(mfilename('fullpath'))));
 clear; clc;
 %close all;
 %% --- Configuration ---
 prefs_file = fullfile(fileparts(mfilename('fullpath')), 'plot_prefs.mat');
-result_filepath = '';
-if exist(prefs_file, 'file')
-    p = load(prefs_file);
-    if isfield(p, 'field_last_filepath') && exist(p.field_last_filepath, 'file')
-        [~, fname, fext] = fileparts(p.field_last_filepath);
-        answer = questdlg( ...
-            ['Use last file?' newline fname fext], ...
-            'Select File', 'Yes', 'Browse...', 'Yes');
-        if strcmp(answer, 'Yes')
-            result_filepath = p.field_last_filepath;
-        end
-    end
-end
 
-if isempty(result_filepath)
-    start_path = '*.mat';
-    if exist(prefs_file, 'file')
-        p = load(prefs_file);
-        if isfield(p, 'field_last_filepath')
-            last_dir = fileparts(p.field_last_filepath);
-            if isfolder(last_dir)
-                start_path = fullfile(last_dir, '*.mat');
-            end
-        end
-    end
-    [file, folder] = uigetfile(start_path, 'Select result .mat file');
-    if isequal(file, 0)
-        disp('No file selected.');
-        return;
-    end
-    result_filepath = fullfile(folder, file);
-end
-
-% Save last filepath
-field_last_filepath = result_filepath;
-if exist(prefs_file, 'file')
-    save(prefs_file, 'field_last_filepath', '-append');
-else
-    save(prefs_file, 'field_last_filepath');
-end
+% --- Comparison mode ---------------------------------------------------------
+% compare_mode = true  → load TWO results and show them as side-by-side
+%                        subplots in every figure (e.g. TE vs TM).
+% compare_mode = false → single result (original behaviour).
+compare_mode      = true;
+compare_labels    = {'TE', 'TM'};   % subplot title prefix, one per file (in pick order)
+% Optional: hardcode the .mat paths to skip the file dialogs. Leave {} to pick
+% interactively. In single mode only the first entry is used.
+compare_filepaths = {};             % e.g. {'C:\...\result_TE.mat', 'C:\...\result_TM.mat'}
 
 % Crop bounds [um]
-crop_val = 12;
+crop_val = 25;
 x_range_xz = [-crop_val, crop_val];
 z_range_xz = [-inf, Inf];       % 0 to max available
 x_range_xy = [-crop_val, crop_val];
@@ -68,6 +43,11 @@ dB_limit              = 60; %60
 % true  → smoothed overlay (spatial averaging, staggered grid, cleaner on zoomed views)
 % false → grid-based with coherence + convergence filters (shows raw Poynting structure)
 use_smooth_algorithm  = false;
+
+% --- Poynting overlay toggles (per view) ---
+% Enable/disable the Poynting vector arrows independently per figure.
+plot_poynting_yz      = true;   % YZ cross section
+plot_poynting_xz_xy   = false;  % XZ side view + XY top view
 
 % Poynting arrows — shared params
 arrow_color           = 'c';
@@ -99,7 +79,12 @@ smooth_opts.base_size       = 0.6;
 avg_corrugation_width = 800e-9;   % average corrugation width [m] (used for XY / YZ views)
 corrugation_depth     = 300e-9;   % full corrugation depth [m] (= wide - narrow)
 core_height           = 350e-9;   % waveguide slab height [m]
-pitch                 = 500e-9;   % grating pitch [m]
+pitch                 = 500e-9;   % grating pitch [m] — default for all datasets
+% Per-dataset grating pitch [nm] for the geometry overlay (compare mode). One
+% entry per file, in pick/label order — lets each panel draw at its own pitch
+% when the devices differ (e.g. a pitch-matched TM run at a longer pitch than TE).
+% Leave [] to use `pitch` for every dataset (the usual case, both the same).
+compare_pitch_nm      = [500, 518.3];   % e.g. TE=500, TM=518.3; [] = all use `pitch`
 % derived widths:
 width_narrow = avg_corrugation_width - corrugation_depth / 2;
 width_wide   = avg_corrugation_width + corrugation_depth / 2;
@@ -133,66 +118,229 @@ n_apod_override        = [];  % e.g. 10  (ignored when geom_mode = 'uniform')
 cavity_length_override = [];  % [m] e.g. 250e-9  (default: pitch/2)
 
 % --- Monitor location overlay ---
+% Applied to every dataset. Leave [] to auto-detect each file's own monitors.
 top_monitor_z_um   = [];   % [µm] z-position of top near-field monitor; [] = auto-detect
 side_monitor_y_um  = [];   % [µm] y-position of side near-field monitor; [] = auto-detect
 top_monitor_x_um   = [];   % [xmin xmax µm] x-extent of top monitor; [] = auto-detect
 side_monitor_x_um  = [];   % [xmin xmax µm] x-extent of side monitor; [] = auto-detect
 
-%% --- 1. Load Data ---
-fprintf('Loading data...\n');
-if ~exist(result_filepath, 'file')
-    error('File not found! Please check result_filepath.');
-end
-data = load(result_filepath);
-
-wl_res = double(data.resonance_wavelength_nm) * 1e-9;
-fprintf('Resonance wavelength: %.3f nm\n', wl_res*1e9);
-
-% Auto-detect monitor positions and extents from data
-if isempty(top_monitor_z_um) && isfield(data, 'nearfield_top') && isfield(data.nearfield_top, 'z')
-    top_monitor_z_um = mean(real(double(data.nearfield_top.z(:)))) * 1e6;
-    fprintf('Auto-detected top monitor z = %.2f µm\n', top_monitor_z_um);
-end
-if isempty(top_monitor_x_um) && isfield(data, 'nearfield_top') && isfield(data.nearfield_top, 'x')
-    x_arr = real(double(data.nearfield_top.x(:)));
-    top_monitor_x_um = [min(x_arr) max(x_arr)] * 1e6;
-end
-if isempty(side_monitor_y_um) && isfield(data, 'nearfield_side') && isfield(data.nearfield_side, 'y')
-    side_monitor_y_um = mean(real(double(data.nearfield_side.y(:)))) * 1e6;
-    fprintf('Auto-detected side monitor y = %.2f µm\n', side_monitor_y_um);
-end
-if isempty(side_monitor_x_um) && isfield(data, 'nearfield_side') && isfield(data.nearfield_side, 'x')
-    x_arr = real(double(data.nearfield_side.x(:)));
-    side_monitor_x_um = [min(x_arr) max(x_arr)] * 1e6;
-end
-
-%% --- 2. Resolve Geometry Parameters ---
-% Priority: manual override > data file fields > filename parsing > L_device inference
-[n_periods_r, n_apod_r, cavity_length_r, tooth_shift_r] = resolve_geometry_params( ...
-    result_filepath, data, pitch, n_periods_override, n_apod_override, ...
-    cavity_length_override, tooth_shift_override);
-
-if n_apod_r > 0
-    geom_str = sprintf('N=%d periods, %d apodized', n_periods_r, n_apod_r);
+%% --- 1. Resolve which file(s) to plot ---
+if compare_mode
+    if numel(compare_filepaths) >= 2 && ~isempty(compare_filepaths{1}) && ~isempty(compare_filepaths{2})
+        filepaths = compare_filepaths(1:2);
+    else
+        % offer_last=false for BOTH: in compare mode the "use last file?" shortcut
+        % is confusing (which polarization is "last"?) and would pre-empt the
+        % labeled "Select the TE/TM file" dialogs. Both still open in the last folder.
+        fp1 = pick_file(prefs_file, sprintf('Select the %s result .mat file', compare_labels{1}), false);
+        if isempty(fp1); disp('No file selected.'); return; end
+        fp2 = pick_file(prefs_file, sprintf('Select the %s result .mat file', compare_labels{2}), false);
+        if isempty(fp2); disp('No second file selected.'); return; end
+        filepaths = {fp1, fp2};
+    end
+    labels = compare_labels;
 else
-    geom_str = sprintf('N=%d periods', n_periods_r);
+    fp1 = pick_file(prefs_file, 'Select result .mat file', true);   %#ok<UNRCH>
+    if isempty(fp1); disp('No file selected.'); return; end
+    filepaths = {fp1};
+    labels    = {''};   % single mode: no polarization prefix in titles
 end
 
-%% --- 3. Plot XZ Plane (Side View) ---
-if isfield(data, 'field_xz_side')
-    fprintf('\n--- XZ Plane (Zoomed Side View) ---\n');
-    d = data.field_xz_side;
+% Remember the first file for next time
+save_last_filepath(prefs_file, filepaths{1});
+
+%% --- 2. Pack config + load datasets ---
+cfg = struct();
+cfg.x_range_xz = x_range_xz;  cfg.z_range_xz = z_range_xz;
+cfg.x_range_xy = x_range_xy;  cfg.y_range_xy = y_range_xy;
+cfg.field_colormap = field_colormap;  cfg.dB_limit = dB_limit;
+cfg.use_smooth_algorithm = use_smooth_algorithm;
+cfg.plot_poynting_yz = plot_poynting_yz;  cfg.plot_poynting_xz_xy = plot_poynting_xz_xy;
+cfg.arrow_color = arrow_color;  cfg.arrow_linewidth = arrow_linewidth;
+cfg.poynting_threshold_dB = poynting_threshold_dB;
+cfg.arrows_per_axis = arrows_per_axis;  cfg.min_skip = min_skip;
+cfg.arrow_scale = arrow_scale;  cfg.log_compress_k = log_compress_k;
+cfg.arrow_min_frac = arrow_min_frac;  cfg.smooth_opts = smooth_opts;
+cfg.avg_corrugation_width = avg_corrugation_width;
+cfg.corrugation_depth = corrugation_depth;  cfg.core_height = core_height;
+cfg.pitch = pitch;  cfg.compare_pitch_nm = compare_pitch_nm;
+cfg.width_narrow = width_narrow;  cfg.width_wide = width_wide;
+cfg.geom_color = geom_color;  cfg.geom_lw = geom_lw;  cfg.geom_mode = geom_mode;
+cfg.center_mod_depth_nm = center_mod_depth_nm;  cfg.apod_method = apod_method;
+cfg.tanh_steepness = tanh_steepness;  cfg.lengthen_cavity = lengthen_cavity;
+cfg.tooth_shift_override = tooth_shift_override;
+cfg.n_periods_override = n_periods_override;  cfg.n_apod_override = n_apod_override;
+cfg.cavity_length_override = cavity_length_override;
+cfg.top_monitor_z_um = top_monitor_z_um;   cfg.side_monitor_y_um = side_monitor_y_um;
+cfg.top_monitor_x_um = top_monitor_x_um;   cfg.side_monitor_x_um = side_monitor_x_um;
+
+fprintf('Loading %d dataset(s)...\n', numel(filepaths));
+for i = 1:numel(filepaths)
+    if ~exist(filepaths{i}, 'file')
+        error('File not found: %s', filepaths{i});
+    end
+    ds_i = prepare_dataset(filepaths{i}, labels{i}, cfg, i);
+    if i == 1
+        datasets = ds_i;
+    else
+        datasets(i) = ds_i;
+    end
+end
+
+%% --- 3. Plot each plane (one figure, one subplot per dataset) ---
+make_plane_figure('XZ Zoomed Side View', datasets, cfg, @plot_xz_plane, 'field_xz_side', [850 500]);
+make_plane_figure('YZ Cross Section',    datasets, cfg, @plot_yz_plane, 'field_yz_cross', [700 500]);
+make_plane_figure('XY Zoomed Top View',  datasets, cfg, @plot_xy_plane, 'field_xy',       [750 650]);
+
+fprintf('\nDone.\n');
+
+
+%% === Local Functions ===
+
+function fp = pick_file(prefs_file, dlg_title, offer_last)
+% Pick a .mat result file via dialog, remembering the last folder/file.
+%   offer_last = true → first offer the previously-used file (Yes/Browse).
+    if nargin < 3; offer_last = true; end
+    last_fp = '';
+    if exist(prefs_file, 'file')
+        p = load(prefs_file);
+        if isfield(p, 'field_last_filepath'); last_fp = p.field_last_filepath; end
+    end
+    if offer_last && ~isempty(last_fp) && exist(last_fp, 'file')
+        [~, fn, fe] = fileparts(last_fp);
+        answer = questdlg(['Use last file?' newline fn fe], 'Select File', 'Yes', 'Browse...', 'Yes');
+        if strcmp(answer, 'Yes'); fp = last_fp; return; end
+    end
+    start_path = '*.mat';
+    if ~isempty(last_fp)
+        ld = fileparts(last_fp);
+        if isfolder(ld); start_path = fullfile(ld, '*.mat'); end
+    end
+    [file, folder] = uigetfile(start_path, dlg_title);
+    if isequal(file, 0); fp = ''; return; end
+    fp = fullfile(folder, file);
+end
+
+
+function save_last_filepath(prefs_file, fp)
+% Persist the last-used file path to the prefs .mat.
+    field_last_filepath = fp;
+    if exist(prefs_file, 'file')
+        save(prefs_file, 'field_last_filepath', '-append');
+    else
+        save(prefs_file, 'field_last_filepath');
+    end
+end
+
+
+function ds = prepare_dataset(filepath, label, cfg, idx)
+% Load one result file and resolve its wavelength, monitor positions, and
+% geometry parameters into a single struct consumed by the plane plotters.
+% idx is the dataset's position (1-based) — used to pick a per-dataset pitch.
+    [~, fn, fe] = fileparts(filepath);
+    fprintf('Loading %s%s  [%s]\n', fn, fe, label);
+    data = load(filepath);
+
+    ds = struct();
+    ds.label = label;
+    ds.data  = data;
+    ds.wl_res = double(data.resonance_wavelength_nm) * 1e-9;
+    fprintf('  Resonance wavelength: %.3f nm\n', ds.wl_res * 1e9);
+
+    % Monitor positions: manual override (cfg) else auto-detect from this file
+    ds.top_monitor_z_um  = cfg.top_monitor_z_um;
+    ds.top_monitor_x_um  = cfg.top_monitor_x_um;
+    ds.side_monitor_y_um = cfg.side_monitor_y_um;
+    ds.side_monitor_x_um = cfg.side_monitor_x_um;
+    if isempty(ds.top_monitor_z_um) && isfield(data, 'nearfield_top') && isfield(data.nearfield_top, 'z')
+        ds.top_monitor_z_um = mean(real(double(data.nearfield_top.z(:)))) * 1e6;
+    end
+    if isempty(ds.top_monitor_x_um) && isfield(data, 'nearfield_top') && isfield(data.nearfield_top, 'x')
+        x_arr = real(double(data.nearfield_top.x(:)));
+        ds.top_monitor_x_um = [min(x_arr) max(x_arr)] * 1e6;
+    end
+    if isempty(ds.side_monitor_y_um) && isfield(data, 'nearfield_side') && isfield(data.nearfield_side, 'y')
+        ds.side_monitor_y_um = mean(real(double(data.nearfield_side.y(:)))) * 1e6;
+    end
+    if isempty(ds.side_monitor_x_um) && isfield(data, 'nearfield_side') && isfield(data.nearfield_side, 'x')
+        x_arr = real(double(data.nearfield_side.x(:)));
+        ds.side_monitor_x_um = [min(x_arr) max(x_arr)] * 1e6;
+    end
+
+    % Grating pitch: per-dataset override (cfg.compare_pitch_nm) else the default.
+    % Devices in a TE/TM comparison can differ (e.g. a pitch-matched TM). The pitch
+    % feeds the XY tooth profile and the cavity-length default (pitch/2), so it must
+    % be the device's own value for the geometry overlay to line up with the field.
+    ds.pitch = cfg.pitch;
+    if ~isempty(cfg.compare_pitch_nm) && idx <= numel(cfg.compare_pitch_nm)
+        ds.pitch = cfg.compare_pitch_nm(idx) * 1e-9;
+    end
+
+    % Geometry parameters (override > data fields > filename > L_device inference)
+    [ds.n_periods_r, ds.n_apod_r, ds.cavity_length_r, ds.tooth_shift_r] = ...
+        resolve_geometry_params(filepath, data, ds.pitch, cfg.n_periods_override, ...
+            cfg.n_apod_override, cfg.cavity_length_override, cfg.tooth_shift_override);
+
+    if ds.n_apod_r > 0
+        ds.geom_str = sprintf('N=%d, %d apod, \\Lambda=%.1f nm', ds.n_periods_r, ds.n_apod_r, ds.pitch*1e9);
+    else
+        ds.geom_str = sprintf('N=%d, \\Lambda=%.1f nm', ds.n_periods_r, ds.pitch*1e9);
+    end
+end
+
+
+function make_plane_figure(name, datasets, cfg, plot_fn, field_name, base_size)
+% Create one figure for a plane, with a horizontal subplot per dataset.
+% Datasets lacking the plane's monitor get a placeholder tile.
+    n_ds = numel(datasets);
+    has_any = false;
+    for i = 1:n_ds
+        if isfield(datasets(i).data, field_name) && ~isempty(datasets(i).data.(field_name))
+            has_any = true; break;
+        end
+    end
+    if ~has_any
+        fprintf('%s: data not available in any file.\n', name);
+        return;
+    end
+
+    fig = figure('Name', name, 'Color', 'w', ...
+                 'Position', [120 100, base_size(1)*n_ds, base_size(2)]);
+    t = tiledlayout(fig, 1, n_ds, 'Padding', 'compact', 'TileSpacing', 'compact');
+    title(t, name, 'FontWeight', 'bold', 'FontSize', 13);
+
+    for i = 1:n_ds
+        ax = nexttile(t);
+        if isfield(datasets(i).data, field_name) && ~isempty(datasets(i).data.(field_name))
+            plot_fn(ax, datasets(i), cfg);
+        else
+            text(ax, 0.5, 0.5, sprintf('%s\n(%s not available)', datasets(i).label, field_name), ...
+                 'Units', 'normalized', 'HorizontalAlignment', 'center', 'FontSize', 11);
+            axis(ax, 'off');
+        end
+    end
+end
+
+
+function lp = label_prefix(label)
+% Title prefix: "TE — " when labelled, "" otherwise (single-file mode).
+    if isempty(label); lp = ''; else; lp = [label ' — ']; end
+end
+
+
+function plot_xz_plane(ax, ds, cfg)
+% XZ side view (zoomed in X) into axes ax.
+    d = ds.data.field_xz_side;
     x = double(d.x); y = double(d.y); z = double(d.z);
     lam = double(d.lambda_3d);
     Nx = length(x); Ny = length(y); Nz = length(z); Nlam = length(lam);
 
-    [~, idx_lam] = min(abs(lam - wl_res));
+    [~, idx_lam] = min(abs(lam - ds.wl_res));
     [~, idx_y0]  = min(abs(y));
     wl_plot = lam(idx_lam);
 
-    % Crop to zoomed region
-    [x_c, ix] = crop_to_range(x, x_range_xz);
-    [z_c, iz] = crop_to_range(z, z_range_xz);
+    [x_c, ix] = crop_to_range(x, cfg.x_range_xz);
+    [z_c, iz] = crop_to_range(z, cfg.z_range_xz);
 
     E_5D = reshape(d.E_res, [Nx, Ny, Nz, Nlam, 3]);
     E_plane = squeeze(E_5D(ix, idx_y0, iz, idx_lam, :));   % (Nx_c, Nz_c, 3)
@@ -200,73 +348,70 @@ if isfield(data, 'field_xz_side')
     I_xz_dB = 10 * log10(I_xz);
 
     Nx_c = length(ix); Nz_c = length(iz);
-    skip_x = max(min_skip, round(Nx_c / arrows_per_axis));
-    skip_z = max(min_skip, round(Nz_c / arrows_per_axis));
-    fprintf('  Cropped grid: %d x %d,  skip_x=%d, skip_z=%d\n', Nx_c, Nz_c, skip_x, skip_z);
+    skip_x = max(cfg.min_skip, round(Nx_c / cfg.arrows_per_axis));
+    skip_z = max(cfg.min_skip, round(Nz_c / cfg.arrows_per_axis));
 
-    figure('Name', 'XZ Zoomed', 'Color', 'w', 'Position', [200 100 850 500]);
-    imagesc(x_c*1e6, z_c*1e6, I_xz_dB');
-    set(gca, 'YDir', 'normal');
-    colormap(field_colormap);
+    imagesc(ax, x_c*1e6, z_c*1e6, I_xz_dB');
+    set(ax, 'YDir', 'normal');
+    colormap(ax, cfg.field_colormap);
     max_dB = max(I_xz_dB(:));
-    clim([max_dB - dB_limit, max_dB]);
-    cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
-    xlabel('Position X [\mum]', 'FontSize', 12); ylabel('Position Z [\mum]', 'FontSize', 12);
-    title(sprintf('XZ Zoomed Side View — %s | \\lambda = %.3f nm', geom_str, wl_plot*1e9), 'FontSize', 13);
+    clim(ax, [max_dB - cfg.dB_limit, max_dB]);
+    cb = colorbar(ax); ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
+    xlabel(ax, 'Position X [\mum]', 'FontSize', 12); ylabel(ax, 'Position Z [\mum]', 'FontSize', 12);
+    title(ax, sprintf('%sXZ Side | %s | \\lambda = %.3f nm', ...
+        label_prefix(ds.label), ds.geom_str, wl_plot*1e9), 'FontSize', 12);
 
-    hold on;
-    if isfield(d, 'P_res') && ~isempty(d.P_res)
+    hold(ax, 'on');
+    if cfg.plot_poynting_xz_xy && isfield(d, 'P_res') && ~isempty(d.P_res)
         P_5D = reshape(double(d.P_res), [Nx, Ny, Nz, Nlam, 3]);
         Px = squeeze(P_5D(ix, idx_y0, iz, idx_lam, 1));
         Pz = squeeze(P_5D(ix, idx_y0, iz, idx_lam, 3));
-        if use_smooth_algorithm
-            draw_smooth_quiver(gca, x_c*1e6, z_c*1e6, Px, Pz, I_xz_dB, smooth_opts); %#ok<UNRCH>
+        if cfg.use_smooth_algorithm
+            draw_smooth_quiver(ax, x_c*1e6, z_c*1e6, Px, Pz, I_xz_dB, cfg.smooth_opts);
         else
-            draw_poynting_quiver(x_c*1e6, z_c*1e6, Px, Pz, ...
-                skip_x, skip_z, arrow_scale, arrow_color, arrow_linewidth, ...
-                I_xz_dB, max_dB, poynting_threshold_dB, log_compress_k, arrow_min_frac);
+            draw_poynting_quiver(ax, x_c*1e6, z_c*1e6, Px, Pz, ...
+                skip_x, skip_z, cfg.arrow_scale, cfg.arrow_color, cfg.arrow_linewidth, ...
+                I_xz_dB, max_dB, cfg.poynting_threshold_dB, cfg.log_compress_k, cfg.arrow_min_frac);
         end
     end
 
-    xl = xlim; yl = ylim;
-    wg_hh = core_height / 2 * 1e6;
-    plot(xl, [ wg_hh  wg_hh], '-', 'Color', geom_color, 'LineWidth', geom_lw);
-    plot(xl, [-wg_hh -wg_hh], '-', 'Color', geom_color, 'LineWidth', geom_lw);
-    eff_cav_len_xz = cavity_length_r + ternary(tooth_shift_r > 0 && lengthen_cavity, 2*tooth_shift_r, 0);
-    draw_cavity_hatch(0, 0, eff_cav_len_xz*1e6, core_height*1e6, geom_color, geom_lw, 0.15);
-    xlim(xl); ylim(yl);
+    xl = xlim(ax); yl = ylim(ax);
+    wg_hh = cfg.core_height / 2 * 1e6;
+    plot(ax, xl, [ wg_hh  wg_hh], '-', 'Color', cfg.geom_color, 'LineWidth', cfg.geom_lw);
+    plot(ax, xl, [-wg_hh -wg_hh], '-', 'Color', cfg.geom_color, 'LineWidth', cfg.geom_lw);
+    eff_cav_len_xz = ds.cavity_length_r + ternary(ds.tooth_shift_r > 0 && cfg.lengthen_cavity, 2*ds.tooth_shift_r, 0);
+    draw_cavity_hatch(ax, 0, 0, eff_cav_len_xz*1e6, cfg.core_height*1e6, cfg.geom_color, cfg.geom_lw, 0.15);
+    xlim(ax, xl); ylim(ax, yl);
 
     % Top near-field monitor line
-    if ~isempty(top_monitor_z_um)
-        yl_cur = ylim;
-        if ~isempty(top_monitor_x_um)
-            x_lo = top_monitor_x_um(1); x_hi = top_monitor_x_um(2);
+    if ~isempty(ds.top_monitor_z_um)
+        yl_cur = ylim(ax);
+        if ~isempty(ds.top_monitor_x_um)
+            x_lo = ds.top_monitor_x_um(1); x_hi = ds.top_monitor_x_um(2);
         else
             x_lo = xl(1); x_hi = xl(2);
         end
         x_cen = (x_lo + x_hi) / 2;
-        plot([x_lo, x_hi], [top_monitor_z_um, top_monitor_z_um], '--', 'Color', [1 1 1], 'LineWidth', 2.0);
-        if top_monitor_z_um >= yl_cur(1) && top_monitor_z_um <= yl_cur(2)
-            text(x_cen, top_monitor_z_um + 0.015*(yl_cur(2)-yl_cur(1)), ...
-                 sprintf('Top Near-Field Monitor Position  (z = %.2f µm)', top_monitor_z_um), 'Color', [1 1 1], ...
-                 'FontSize', 13, 'FontWeight', 'bold', ...
+        plot(ax, [x_lo, x_hi], [ds.top_monitor_z_um, ds.top_monitor_z_um], '--', 'Color', [1 1 1], 'LineWidth', 2.0);
+        if ds.top_monitor_z_um >= yl_cur(1) && ds.top_monitor_z_um <= yl_cur(2)
+            text(ax, x_cen, ds.top_monitor_z_um + 0.015*(yl_cur(2)-yl_cur(1)), ...
+                 sprintf('Top Near-Field Monitor  (z = %.2f µm)', ds.top_monitor_z_um), 'Color', [1 1 1], ...
+                 'FontSize', 11, 'FontWeight', 'bold', ...
                  'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
         end
     end
-    hold off;
-else
-    fprintf('XZ side view data not available.\n');
+    hold(ax, 'off');
 end
 
-%% --- 4. Plot YZ Plane (Full Range Cross Section) ---
-if isfield(data, 'field_yz_cross')
-    fprintf('--- YZ Plane (Cross Section) ---\n');
-    d = data.field_yz_cross;
+
+function plot_yz_plane(ax, ds, cfg)
+% YZ cross section (full range) into axes ax.
+    d = ds.data.field_yz_cross;
     x = double(d.x); y = double(d.y); z = double(d.z);
     lam = double(d.lambda_3d);
     Nx = length(x); Ny = length(y); Nz = length(z); Nlam = length(lam);
 
-    [~, idx_lam] = min(abs(lam - wl_res));
+    [~, idx_lam] = min(abs(lam - ds.wl_res));
     [~, idx_x0]  = min(abs(x));
     wl_plot = lam(idx_lam);
 
@@ -275,62 +420,58 @@ if isfield(data, 'field_yz_cross')
     I_yz = sum(abs(E_plane).^2, 3);
     I_yz_dB = 10 * log10(I_yz);
 
-    skip_y = max(min_skip, round(Ny / arrows_per_axis));
-    skip_z = max(min_skip, round(Nz / arrows_per_axis));
-    fprintf('  Grid: %d x %d,  skip_y=%d, skip_z=%d\n', Ny, Nz, skip_y, skip_z);
+    skip_y = max(cfg.min_skip, round(Ny / cfg.arrows_per_axis));
+    skip_z = max(cfg.min_skip, round(Nz / cfg.arrows_per_axis));
 
-    figure('Name', 'YZ Full', 'Color', 'w', 'Position', [150 200 700 500]);
-    imagesc(y*1e6, z*1e6, I_yz_dB');
-    set(gca, 'YDir', 'normal');
-    colormap(field_colormap);
+    imagesc(ax, y*1e6, z*1e6, I_yz_dB');
+    set(ax, 'YDir', 'normal');
+    colormap(ax, cfg.field_colormap);
     max_dB_yz = max(I_yz_dB(:));
-    clim([max_dB_yz - dB_limit, max_dB_yz]);
-    cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
-    xlabel('Position Y [\mum]', 'FontSize', 12); ylabel('Position Z [\mum]', 'FontSize', 12);
-    title(sprintf('YZ Cross Section — %s | \\lambda = %.3f nm', geom_str, wl_plot*1e9), 'FontSize', 13);
+    clim(ax, [max_dB_yz - cfg.dB_limit, max_dB_yz]);
+    cb = colorbar(ax); ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
+    xlabel(ax, 'Position Y [\mum]', 'FontSize', 12); ylabel(ax, 'Position Z [\mum]', 'FontSize', 12);
+    title(ax, sprintf('%sYZ Cross Section | %s | \\lambda = %.3f nm', ...
+        label_prefix(ds.label), ds.geom_str, wl_plot*1e9), 'FontSize', 12);
 
-    hold on;
-    if isfield(d, 'P_res') && ~isempty(d.P_res)
+    hold(ax, 'on');
+    if cfg.plot_poynting_yz && isfield(d, 'P_res') && ~isempty(d.P_res)
         P_5D = reshape(double(d.P_res), [Nx, Ny, Nz, Nlam, 3]);
         Py = squeeze(P_5D(idx_x0, :, :, idx_lam, 2));
         Pz = squeeze(P_5D(idx_x0, :, :, idx_lam, 3));
-        if use_smooth_algorithm
-            draw_smooth_quiver(gca, y*1e6, z*1e6, Py, Pz, I_yz_dB, smooth_opts); %#ok<UNRCH>
+        if cfg.use_smooth_algorithm
+            draw_smooth_quiver(ax, y*1e6, z*1e6, Py, Pz, I_yz_dB, cfg.smooth_opts);
         else
-            draw_poynting_quiver(y*1e6, z*1e6, Py, Pz, ...
-                skip_y, skip_z, arrow_scale, arrow_color, arrow_linewidth, ...
-                I_yz_dB, max_dB_yz, poynting_threshold_dB, log_compress_k, arrow_min_frac);
+            draw_poynting_quiver(ax, y*1e6, z*1e6, Py, Pz, ...
+                skip_y, skip_z, cfg.arrow_scale, cfg.arrow_color, cfg.arrow_linewidth, ...
+                I_yz_dB, max_dB_yz, cfg.poynting_threshold_dB, cfg.log_compress_k, cfg.arrow_min_frac);
         end
     end
 
-    wg_hw = avg_corrugation_width / 2 * 1e6;
-    wg_hh = core_height / 2 * 1e6;
-    rectangle('Position', [-wg_hw, -wg_hh, 2*wg_hw, 2*wg_hh], ...
-              'EdgeColor', geom_color, 'LineStyle', '-', 'LineWidth', geom_lw);
-    xl2 = xlim; yl2 = ylim;
-    text(xl2(1) + 0.03*(xl2(2)-xl2(1)), yl2(2) - 0.05*(yl2(2)-yl2(1)), ...
-         'Phase-shift defect x-section', 'Color', geom_color, 'FontSize', 8, ...
+    wg_hw = cfg.avg_corrugation_width / 2 * 1e6;
+    wg_hh = cfg.core_height / 2 * 1e6;
+    rectangle(ax, 'Position', [-wg_hw, -wg_hh, 2*wg_hw, 2*wg_hh], ...
+              'EdgeColor', cfg.geom_color, 'LineStyle', '-', 'LineWidth', cfg.geom_lw);
+    xl2 = xlim(ax); yl2 = ylim(ax);
+    text(ax, xl2(1) + 0.03*(xl2(2)-xl2(1)), yl2(2) - 0.05*(yl2(2)-yl2(1)), ...
+         'Phase-shift defect x-section', 'Color', cfg.geom_color, 'FontSize', 8, ...
          'VerticalAlignment', 'top');
-    hold off;
-else
-    fprintf('YZ cross-section data not available.\n');
+    hold(ax, 'off');
 end
 
-%% --- 5. Plot XY Plane (Zoomed Top View) ---
-if isfield(data, 'field_xy')
-    fprintf('--- XY Plane (Zoomed Top View) ---\n');
-    d = data.field_xy;
+
+function plot_xy_plane(ax, ds, cfg)
+% XY top view (zoomed in X and Y) into axes ax.
+    d = ds.data.field_xy;
     x = double(d.x); y = double(d.y); z = double(d.z);
     lam = double(d.lambda_3d);
     Nx = length(x); Ny = length(y); Nz = length(z); Nlam = length(lam);
 
-    [~, idx_lam] = min(abs(lam - wl_res));
+    [~, idx_lam] = min(abs(lam - ds.wl_res));
     [~, idx_z0]  = min(abs(z));
     wl_plot = lam(idx_lam);
 
-    % Crop to zoomed region
-    [x_c, ix] = crop_to_range(x, x_range_xy);
-    [y_c, iy] = crop_to_range(y, y_range_xy);
+    [x_c, ix] = crop_to_range(x, cfg.x_range_xy);
+    [y_c, iy] = crop_to_range(y, cfg.y_range_xy);
 
     E_5D = reshape(d.E_res, [Nx, Ny, Nz, Nlam, 3]);
     E_plane = squeeze(E_5D(ix, iy, idx_z0, idx_lam, :));   % (Nx_c, Ny_c, 3)
@@ -338,74 +479,67 @@ if isfield(data, 'field_xy')
     I_xy_dB = 10 * log10(I_xy);
 
     Nx_c = length(ix); Ny_c = length(iy);
-    skip_x = max(min_skip, round(Nx_c / arrows_per_axis));
-    skip_y = max(min_skip, round(Ny_c / arrows_per_axis));
-    fprintf('  Cropped grid: %d x %d,  skip_x=%d, skip_y=%d\n', Nx_c, Ny_c, skip_x, skip_y);
+    skip_x = max(cfg.min_skip, round(Nx_c / cfg.arrows_per_axis));
+    skip_y = max(cfg.min_skip, round(Ny_c / cfg.arrows_per_axis));
 
-    figure('Name', 'XY Zoomed', 'Color', 'w', 'Position', [100 150 750 650]);
-    imagesc(x_c*1e6, y_c*1e6, I_xy_dB');
-    set(gca, 'YDir', 'normal');
-    colormap(field_colormap);
+    imagesc(ax, x_c*1e6, y_c*1e6, I_xy_dB');
+    set(ax, 'YDir', 'normal');
+    colormap(ax, cfg.field_colormap);
     max_dB_xy = max(I_xy_dB(:));
-    clim([max_dB_xy - dB_limit, max_dB_xy]);
-    cb = colorbar; ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
-    xlabel('Position X [\mum]', 'FontSize', 12); ylabel('Position Y [\mum]', 'FontSize', 12);
-    title(sprintf('XY Zoomed Top View — %s | \\lambda = %.3f nm', geom_str, wl_plot*1e9), 'FontSize', 13);
+    clim(ax, [max_dB_xy - cfg.dB_limit, max_dB_xy]);
+    cb = colorbar(ax); ylabel(cb, '10\cdotlog_{10}(|E|^2) [dB]');
+    xlabel(ax, 'Position X [\mum]', 'FontSize', 12); ylabel(ax, 'Position Y [\mum]', 'FontSize', 12);
+    title(ax, sprintf('%sXY Top | %s | \\lambda = %.3f nm', ...
+        label_prefix(ds.label), ds.geom_str, wl_plot*1e9), 'FontSize', 12);
 
-    hold on;
-    if isfield(d, 'P_res') && ~isempty(d.P_res)
+    hold(ax, 'on');
+    if cfg.plot_poynting_xz_xy && isfield(d, 'P_res') && ~isempty(d.P_res)
         P_5D = reshape(double(d.P_res), [Nx, Ny, Nz, Nlam, 3]);
         Px = squeeze(P_5D(ix, iy, idx_z0, idx_lam, 1));
         Py = squeeze(P_5D(ix, iy, idx_z0, idx_lam, 2));
-        if use_smooth_algorithm
-            draw_smooth_quiver(gca, x_c*1e6, y_c*1e6, Px, Py, I_xy_dB, smooth_opts); %#ok<UNRCH>
+        if cfg.use_smooth_algorithm
+            draw_smooth_quiver(ax, x_c*1e6, y_c*1e6, Px, Py, I_xy_dB, cfg.smooth_opts);
         else
-            draw_poynting_quiver(x_c*1e6, y_c*1e6, Px, Py, ...
-                skip_x, skip_y, arrow_scale, arrow_color, arrow_linewidth, ...
-                I_xy_dB, max_dB_xy, poynting_threshold_dB, log_compress_k, arrow_min_frac);
+            draw_poynting_quiver(ax, x_c*1e6, y_c*1e6, Px, Py, ...
+                skip_x, skip_y, cfg.arrow_scale, cfg.arrow_color, cfg.arrow_linewidth, ...
+                I_xy_dB, max_dB_xy, cfg.poynting_threshold_dB, cfg.log_compress_k, cfg.arrow_min_frac);
         end
     end
 
-    xl = xlim; yl = ylim;
-    [xp, wp] = make_grating_profile(pitch, width_narrow, width_wide, ...
-        n_periods_r, cavity_length_r, core_height, ...
-        n_apod_r, center_mod_depth_nm*1e-9, geom_mode, apod_method, tanh_steepness, ...
-        'xy', tooth_shift_r, lengthen_cavity);
-    plot(xp*1e6,  wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
-    plot(xp*1e6, -wp*1e6, '-', 'Color', geom_color, 'LineWidth', geom_lw);
+    xl = xlim(ax); yl = ylim(ax);
+    [xp, wp] = make_grating_profile(ds.pitch, cfg.width_narrow, cfg.width_wide, ...
+        ds.n_periods_r, ds.cavity_length_r, cfg.core_height, ...
+        ds.n_apod_r, cfg.center_mod_depth_nm*1e-9, cfg.geom_mode, cfg.apod_method, cfg.tanh_steepness, ...
+        'xy', ds.tooth_shift_r, cfg.lengthen_cavity);
+    plot(ax, xp*1e6,  wp*1e6, '-', 'Color', cfg.geom_color, 'LineWidth', cfg.geom_lw);
+    plot(ax, xp*1e6, -wp*1e6, '-', 'Color', cfg.geom_color, 'LineWidth', cfg.geom_lw);
     % Cavity width matches W_narrow[1] (same as make_grating_profile cavity segment)
     [~, i0] = min(abs(xp));
     cav_full_width = 2 * wp(i0);
-    eff_cav_len = cavity_length_r + ternary(tooth_shift_r > 0 && lengthen_cavity, 2*tooth_shift_r, 0);
-    draw_cavity_hatch(0, 0, eff_cav_len*1e6, cav_full_width*1e6, geom_color, geom_lw, 0.15);
-    xlim(xl); ylim(yl);
+    eff_cav_len = ds.cavity_length_r + ternary(ds.tooth_shift_r > 0 && cfg.lengthen_cavity, 2*ds.tooth_shift_r, 0);
+    draw_cavity_hatch(ax, 0, 0, eff_cav_len*1e6, cav_full_width*1e6, cfg.geom_color, cfg.geom_lw, 0.15);
+    xlim(ax, xl); ylim(ax, yl);
 
     % Side near-field monitor line
-    if ~isempty(side_monitor_y_um)
-        yl_cur = ylim;
-        if ~isempty(side_monitor_x_um)
-            x_lo = side_monitor_x_um(1); x_hi = side_monitor_x_um(2);
+    if ~isempty(ds.side_monitor_y_um)
+        yl_cur = ylim(ax);
+        if ~isempty(ds.side_monitor_x_um)
+            x_lo = ds.side_monitor_x_um(1); x_hi = ds.side_monitor_x_um(2);
         else
             x_lo = xl(1); x_hi = xl(2);
         end
         x_cen = (x_lo + x_hi) / 2;
-        plot([x_lo, x_hi], [side_monitor_y_um, side_monitor_y_um], '--', 'Color', [1 1 1], 'LineWidth', 2.0);
-        if side_monitor_y_um >= yl_cur(1) && side_monitor_y_um <= yl_cur(2)
-            text(x_cen, side_monitor_y_um + 0.015*(yl_cur(2)-yl_cur(1)), ...
-                 sprintf('Side Near-Field Monitor Position  (y = %.2f µm)', side_monitor_y_um), 'Color', [1 1 1], ...
-                 'FontSize', 13, 'FontWeight', 'bold', ...
+        plot(ax, [x_lo, x_hi], [ds.side_monitor_y_um, ds.side_monitor_y_um], '--', 'Color', [1 1 1], 'LineWidth', 2.0);
+        if ds.side_monitor_y_um >= yl_cur(1) && ds.side_monitor_y_um <= yl_cur(2)
+            text(ax, x_cen, ds.side_monitor_y_um + 0.015*(yl_cur(2)-yl_cur(1)), ...
+                 sprintf('Side Near-Field Monitor  (y = %.2f µm)', ds.side_monitor_y_um), 'Color', [1 1 1], ...
+                 'FontSize', 11, 'FontWeight', 'bold', ...
                  'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
         end
     end
-    hold off;
-else
-    fprintf('XY top view data not available.\n');
+    hold(ax, 'off');
 end
 
-fprintf('\nDone.\n');
-
-
-%% === Local Functions ===
 
 function [n_per, n_apod, cav_len, t_shift] = resolve_geometry_params( ...
         fpath, data, pitch, n_per_manual, n_apod_manual, cav_len_manual, ...
@@ -474,7 +608,7 @@ function [n_per, n_apod, cav_len, t_shift] = resolve_geometry_params( ...
                'Set n_periods_override manually in the Configuration section.']);
     end
 
-    fprintf('Geometry: n_periods=%d, n_apod=%d, cavity_length=%.0f nm, tooth_shift=%.1f nm\n', ...
+    fprintf('  Geometry: n_periods=%d, n_apod=%d, cavity_length=%.0f nm, tooth_shift=%.1f nm\n', ...
         n_per, n_apod, cav_len * 1e9, t_shift * 1e9);
 end
 
@@ -598,8 +732,9 @@ function [x_vec, w_half_vec] = make_grating_profile(pitch, w_narrow, w_wide, ...
 end
 
 
-function draw_cavity_hatch(x_cen, y_cen, w, h, color, lw, spacing)
+function draw_cavity_hatch(ax, x_cen, y_cen, w, h, color, lw, spacing)
 % Draw a hatched rectangle (45-degree diagonal stripes) to mark the cavity region.
+%   ax             : target axes
 %   (x_cen, y_cen) : rectangle centre [µm]
 %   w, h           : full width and height [µm]
 %   spacing        : stripe pitch [µm]
@@ -607,7 +742,7 @@ function draw_cavity_hatch(x_cen, y_cen, w, h, color, lw, spacing)
     y0 = y_cen - h/2;  y1 = y_cen + h/2;
 
     % Outline
-    plot([x0 x1 x1 x0 x0], [y0 y0 y1 y1 y0], '-', 'Color', color, 'LineWidth', lw);
+    plot(ax, [x0 x1 x1 x0 x0], [y0 y0 y1 y1 y0], '-', 'Color', color, 'LineWidth', lw);
 
     % -45-degree stripes: y = -x + offset, clipped to the rectangle
     % offset = x + y at each corner; ranges from (x0+y0) to (x1+y1)
@@ -619,7 +754,7 @@ function draw_cavity_hatch(x_cen, y_cen, w, h, color, lw, spacing)
         xB =  off - y0;  if xB >  x0 && xB <  x1; pts(end+1,:) = [xB, y0]; end %#ok<AGROW>
         xT =  off - y1;  if xT >  x0 && xT <  x1; pts(end+1,:) = [xT, y1]; end %#ok<AGROW>
         if size(pts, 1) == 2
-            plot([pts(1,1) pts(2,1)], [pts(1,2) pts(2,2)], '-', 'Color', color, 'LineWidth', lw*0.6);
+            plot(ax, [pts(1,1) pts(2,1)], [pts(1,2) pts(2,2)], '-', 'Color', color, 'LineWidth', lw*0.6);
         end
     end
 end
@@ -636,9 +771,9 @@ function [coord_crop, idx] = crop_to_range(coord_m, range_um)
 end
 
 
-function draw_smooth_quiver(ax, coord1, coord2, P1, P2, I_dB, opts) %#ok<DEFNU>
+function draw_smooth_quiver(ax, coord1, coord2, P1, P2, I_dB, opts)
 % Smoothed Poynting overlay: spatial averaging + staggered interpolated grid.
-% Mirrors the algorithm from plot_field_poynting_overlay.m.
+% Mirrors the algorithm from legacy/plot_field_poynting_overlay.m.
     sw     = opts.smooth_window;
     kernel = ones(sw) / sw^2;
     P1s    = imfilter(P1.', kernel, 'replicate');
@@ -685,7 +820,7 @@ function draw_smooth_quiver(ax, coord1, coord2, P1, P2, I_dB, opts) %#ok<DEFNU>
 end
 
 
-function draw_poynting_quiver(coord1, coord2, P1, P2, skip1, skip2, scale, color, lw, I_dB, max_dB, threshold_dB, log_k, min_frac)
+function draw_poynting_quiver(ax, coord1, coord2, P1, P2, skip1, skip2, scale, color, lw, I_dB, max_dB, threshold_dB, log_k, min_frac)
 % Overlay Poynting vector arrows with log-compressed, floor-bounded display.
     n1 = numel(coord1);
     n2 = numel(coord2);
@@ -756,5 +891,5 @@ function draw_poynting_quiver(coord1, coord2, P1, P2, skip1, skip2, scale, color
     % Draw
     P1_draw = (P1_q ./ (Pmag + 1e-30)) .* vis_scale;
     P2_draw = (P2_q ./ (Pmag + 1e-30)) .* vis_scale;
-    quiver(C1q, C2q, P1_draw, P2_draw, scale, 'Color', color, 'LineWidth', lw);
+    quiver(ax, C1q, C2q, P1_draw, P2_draw, scale, 'Color', color, 'LineWidth', lw);
 end

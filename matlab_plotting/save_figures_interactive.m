@@ -54,7 +54,7 @@ addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MAT
     n = numel(figsToSave);
     for i = 1:n
         f = figsToSave(i);
-        defaultName = sprintf('figure_%d', f.Number);
+        defaultName = figDefaultName(f);
         ans_ = inputdlg('Filename (no extension):', sprintf('Figure %d of %d', i, n), [1 60], {defaultName});
         if isempty(ans_)
             continue; % skip this figure
@@ -87,4 +87,57 @@ function s = figListItem(f)
     else
         s = sprintf('Figure %d: %s', f.Number, name);
     end
+end
+
+function name = figDefaultName(f)
+% Default filename = the text shown on the figure, sanitized.
+% Prefers the figure window Name (e.g. "XZ Zoomed Side View"); falls back
+% to the axes/sgtitle title text, then to "figure_N".
+    raw = strtrim(get(f, 'Name'));
+    if isempty(raw)
+        raw = figTitleText(f);
+    end
+    name = sanitizeFilename(raw);
+    if isempty(name)
+        name = sprintf('figure_%d', f.Number);
+    end
+end
+
+function t = figTitleText(f)
+% Best-effort extraction of a visible title from the figure.
+    t = '';
+    % sgtitle (super title) if present
+    sg = findobj(f, 'Type', 'subplottext', 'Tag', 'subplottitle');
+    if ~isempty(sg)
+        t = strtrim(charText(get(sg(1), 'String')));
+    end
+    if isempty(t)
+        ax = findobj(f, 'Type', 'axes');
+        for k = 1:numel(ax)
+            ttl = get(ax(k), 'Title');
+            t = strtrim(charText(get(ttl, 'String')));
+            if ~isempty(t)
+                break;
+            end
+        end
+    end
+end
+
+function s = charText(str)
+% Flatten a title String (char, cellstr, or string array) to one line.
+    if iscell(str) || (isstring(str) && numel(str) > 1)
+        s = strjoin(cellstr(str), ' ');
+    else
+        s = char(str);
+    end
+    s = strtrim(s);
+end
+
+function s = sanitizeFilename(s)
+% Turn arbitrary title text into a safe base filename.
+    s = char(s);
+    s = regexprep(s, '\s+', '_');        % whitespace -> underscore
+    s = regexprep(s, '[\\/:*?"<>|]', ''); % strip filesystem-illegal chars
+    s = regexprep(s, '_+', '_');          % collapse repeated underscores
+    s = regexprep(s, '^_+|_+$', '');      % trim leading/trailing underscores
 end

@@ -10,8 +10,8 @@ clear; clc;
 close all;
 
 % ── CONFIG ─────────────────────────────────────────────────────────────────
-RESULTS_DIR = 'C:\Users\evyat\Lumerical\long_bragg_grating_newer_results\radiation_angles_8\results';
-MAT_FILE    = fullfile(RESULTS_DIR, 'convergence_farfield.mat');
+RESULTS_DIR = 'C:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\results_from_athena\run_convergence\results';
+MAT_FILE    = fullfile(RESULTS_DIR, 'convergence_farfield_tm.mat');
 NF_CROP_X_UM = 30;  % crop near-field X to +/- N um ([] = no crop)
 % ───────────────────────────────────────────────────────────────────────────
 

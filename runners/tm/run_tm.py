@@ -14,7 +14,11 @@ Scan window — edit COMPARE_CENTER_M / COMPARE_WIDTH_NM / COMPARE_N_POINTS in
 _tm_vs_te_common.py (currently 1550 nm center, 150 nm wide, 6001 points).
 
 Environment flags (see _tm_vs_te_common):
-  TM_FARFIELD=1   enable far-field monitors (default 0)
+  TM_PITCH_NM=518.3  re-center TM on the calibrated pitch (default 500)
+  TM_RECORD_2D=1     record XY/YZ/XZ 2D field profiles (cavity cross-section)
+                     for MATLAB plot_field_poynting.m (default 0, spectra only)
+  TM_MESH=accurate   finer mesh, dx~35 nm (default optimization, dx=50 nm)
+  TM_FARFIELD=1      enable far-field monitors (default 0)
 """
 
 import os
@@ -26,6 +30,7 @@ from runners.tm import _tm_vs_te_common as tvt
 from simulation_config import SimulationConfig
 
 build_cfg = tvt.build_base_cfg
+STUDY_DIR_NAME = tvt.STUDY_DIR_NAME   # shared results folder: results/tm_te/
 
 
 def run_tm(cfg: SimulationConfig = None) -> dict:

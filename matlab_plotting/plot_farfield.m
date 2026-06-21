@@ -1,9 +1,13 @@
 % plot_farfield.m
 % ---------------
-% Two figures (one per monitor), each with:
+% One figure per monitor (top, side). Each figure pairs:
 %   LEFT subplot  : Near field  (E2 = |Ex|²+|Ey|²+|Ez|² at resonance wavelength)
 %                   sourced directly from the monitor surface (same monitor as far-field)
 %   RIGHT subplot : Far field   (XY map in direction-cosine space, no polar)
+%
+% Compare mode (optional): stack TWO results (e.g. TE over TM) as a 2×2 grid per
+%   monitor — row 1 = compare_labels{1} (near | far), row 2 = compare_labels{2}
+%   (near | far) — with a divider + row labels so the two are clearly separated.
 %
 % Near-field source (monitor surface E-field):
 %   top_monitor  (Z-normal) → nearfield_top   : axes = X (along grating), Y (transverse)
@@ -19,52 +23,76 @@ addpath(fileparts(fileparts(mfilename('fullpath'))));  % Add project root to MAT
 clear; clc;
 close all;
 
+% ── COMPARISON MODE ─────────────────────────────────────────────────────────
+% compare_mode = true  → stack two results (TE over TM) as a 2×2 grid per monitor
+%                        figure (row 1 = first label, row 2 = second label).
+% compare_mode = false → original single-file behaviour (one 1×2 figure per monitor).
+compare_mode      = true;
+compare_labels    = {'TE', 'TM'};   % row labels (top, bottom), in pick order
+compare_filepaths = {};             % optional: hardcode 2 paths to skip dialogs; {} = pick
+compare_pitch_nm  = [500, 518.3];   % per-dataset grating pitch [nm]; [] = use `pitch` for all
+
 % ── FILE SELECTION ─────────────────────────────────────────────────────────
 prefs_file = fullfile(fileparts(mfilename('fullpath')), 'plot_prefs.mat');
-start_path = '*.mat';
-MAT_FILE   = '';
 
-if exist(prefs_file, 'file')
-    p = load(prefs_file);
-    has_folder = isfield(p, 'farfield_last_folder') && isfolder(p.farfield_last_folder);
-    has_file   = isfield(p, 'farfield_last_file')   && ~isempty(p.farfield_last_file);
-    if has_folder
-        if has_file
-            msg = ['Last used:' newline fullfile(p.farfield_last_folder, p.farfield_last_file)];
-            answer = questdlg(msg, 'Reuse Previous Selection', ...
-                'Same File', 'Latest in Folder', 'Browse...', 'Same File');
-        else
-            msg = ['Use last folder?' newline p.farfield_last_folder];
-            answer = questdlg(msg, 'Reuse Previous Selection', ...
-                'Latest in Folder', 'Browse...', 'Latest in Folder');
-        end
-        if strcmp(answer, 'Same File')
-            MAT_FILE = fullfile(p.farfield_last_folder, p.farfield_last_file);
-        elseif strcmp(answer, 'Latest in Folder')
-            listing = dir(fullfile(p.farfield_last_folder, '*.mat'));
-            if ~isempty(listing)
-                [~, newest] = max([listing.datenum]);
-                MAT_FILE = fullfile(p.farfield_last_folder, listing(newest).name);
+if compare_mode
+    if numel(compare_filepaths) >= 2 && ~isempty(compare_filepaths{1}) && ~isempty(compare_filepaths{2})
+        MAT_FILES = compare_filepaths(1:2);
+    else
+        f1 = pick_ff_file(prefs_file, sprintf('Select the %s far-field .mat file', compare_labels{1}));
+        if isempty(f1); disp('No file selected.'); return; end
+        f2 = pick_ff_file(prefs_file, sprintf('Select the %s far-field .mat file', compare_labels{2}));
+        if isempty(f2); disp('No second file selected.'); return; end
+        MAT_FILES = {f1, f2};
+    end
+    LABELS = compare_labels;
+else
+    % ── single-file selection (original "Same File / Latest / Browse" flow) ──
+    start_path = '*.mat';   %#ok<UNRCH>
+    MAT_FILE   = '';
+    if exist(prefs_file, 'file')
+        p = load(prefs_file);
+        has_folder = isfield(p, 'farfield_last_folder') && isfolder(p.farfield_last_folder);
+        has_file   = isfield(p, 'farfield_last_file')   && ~isempty(p.farfield_last_file);
+        if has_folder
+            if has_file
+                msg = ['Last used:' newline fullfile(p.farfield_last_folder, p.farfield_last_file)];
+                answer = questdlg(msg, 'Reuse Previous Selection', ...
+                    'Same File', 'Latest in Folder', 'Browse...', 'Same File');
+            else
+                msg = ['Use last folder?' newline p.farfield_last_folder];
+                answer = questdlg(msg, 'Reuse Previous Selection', ...
+                    'Latest in Folder', 'Browse...', 'Latest in Folder');
+            end
+            if strcmp(answer, 'Same File')
+                MAT_FILE = fullfile(p.farfield_last_folder, p.farfield_last_file);
+            elseif strcmp(answer, 'Latest in Folder')
+                listing = dir(fullfile(p.farfield_last_folder, '*.mat'));
+                if ~isempty(listing)
+                    [~, newest] = max([listing.datenum]);
+                    MAT_FILE = fullfile(p.farfield_last_folder, listing(newest).name);
+                else
+                    start_path = fullfile(p.farfield_last_folder, '*.mat');
+                end
             else
                 start_path = fullfile(p.farfield_last_folder, '*.mat');
             end
-        else
-            start_path = fullfile(p.farfield_last_folder, '*.mat');
         end
     end
-end
-
-if isempty(MAT_FILE)
-    [file, folder] = uigetfile(start_path, 'Select far-field .mat file');
-    if isequal(file, 0)
-        disp('No file selected.');
-        return;
+    if isempty(MAT_FILE)
+        [file, folder] = uigetfile(start_path, 'Select far-field .mat file');
+        if isequal(file, 0)
+            disp('No file selected.');
+            return;
+        end
+        MAT_FILE = fullfile(folder, file);
     end
-    MAT_FILE = fullfile(folder, file);
+    MAT_FILES = {MAT_FILE};
+    LABELS    = {''};
 end
 
-% Save last folder and file
-[farfield_last_folder, farfield_last_file] = fileparts(MAT_FILE);
+% Save last folder and file (from the first selection)
+[farfield_last_folder, farfield_last_file] = fileparts(MAT_FILES{1});
 farfield_last_file = [farfield_last_file, '.mat'];
 if exist(prefs_file, 'file')
     save(prefs_file, 'farfield_last_folder', 'farfield_last_file', '-append');
@@ -75,7 +103,7 @@ end
 % ── CONFIG ─────────────────────────────────────────────────────────────────
 SCALE_DB         = false;   % false = linear  |  true = dB
 DB_FLOOR         = -40;     % dB floor  (only when SCALE_DB=true)
-HALF_ANGLE       = 30;      % degrees — unused currently
+HALF_ANGLE       = 30;      % degrees — unused currently %#ok<NASGU>
 CUSTOM_ANGLE_DEG = 22.8;    % analytic critical angle (degrees)
 PLOT_X_CONES     = false;    % true = draw the X-cone overlays and labels
 
@@ -88,7 +116,7 @@ DRAW_DEVICE           = true;
 avg_corrugation_width = 800e-9;   % [m]
 corrugation_depth     = 300e-9;   % [m]
 core_height           = 350e-9;   % [m]
-pitch                 = 500e-9;   % [m]
+pitch                 = 500e-9;   % [m] — default; per-dataset via compare_pitch_nm
 width_narrow          = avg_corrugation_width - corrugation_depth / 2;
 width_wide            = avg_corrugation_width + corrugation_depth / 2;
 geom_color            = [1 1 1 0.65];   % RGBA — 4th component = alpha (transparency)
@@ -102,15 +130,9 @@ lengthen_cavity        = true;
 n_periods_override     = [];
 n_apod_override        = [];
 cavity_length_override = [];
-
-% Parse simulation description from filename (e.g. result_100_periods_10_apodizations_CONST.mat)
-[~, fname_stem, ~] = fileparts(MAT_FILE);
-SIM_DESC = regexprep(fname_stem, '^result_', '');
-SIM_DESC = regexprep(SIM_DESC, '_(CONST|NOCONST)$', '');
-SIM_DESC = strrep(SIM_DESC, '_', ' ');
 % ───────────────────────────────────────────────────────────────────────────
 
-% Bundle geometry params for the device overlay
+% Bundle geometry params for the device overlay (pitch overridden per dataset below)
 geom = struct( ...
     'draw_device',      DRAW_DEVICE, ...
     'pitch',            pitch, ...
@@ -129,47 +151,115 @@ geom = struct( ...
     'n_apod_override',        n_apod_override, ...
     'cavity_length_override', cavity_length_override);
 
-%% Load
-data = load(MAT_FILE);
+%% Load datasets (1 or 2)
+n_ds = numel(MAT_FILES);
+datasets = struct('data', {}, 'label', {}, 'mat_file', {}, 'geom', {});
+for d = 1:n_ds
+    dd = load(MAT_FILES{d});
+    pit = pitch;
+    if ~isempty(compare_pitch_nm) && d <= numel(compare_pitch_nm)
+        pit = compare_pitch_nm(d) * 1e-9;
+    end
+    g = geom;  g.pitch = pit;
+    datasets(d) = struct('data', dd, 'label', LABELS{d}, 'mat_file', MAT_FILES{d}, 'geom', g);
+end
 
 monitors  = {'top_monitor',  'side_monitor'};    % top first
 ff_fields = {'farfield_top', 'farfield_side'};
-nf_fields = {'nearfield_top','nearfield_side'};  % E-field on the monitor surface
+nf_fields = {'nearfield_top','nearfield_side'};   % E-field on the monitor surface
 
 for k = 1:2
-    mname   = monitors{k};
-    ff_key  = ff_fields{k};
-    nf_key  = nf_fields{k};
-    is_top  = strcmp(mname, 'top_monitor');
+    mname  = monitors{k};
+    ff_key = ff_fields{k};
+    nf_key = nf_fields{k};
+    is_top = strcmp(mname, 'top_monitor');
 
-    if ~isfield(data, ff_key) || isempty(data.(ff_key))
-        fprintf('WARNING: %s not found in mat file — skipping.\n', ff_key);
+    % Need at least one dataset with this monitor's far-field
+    has_any = false;
+    for d = 1:n_ds
+        if isfield(datasets(d).data, ff_key) && ~isempty(datasets(d).data.(ff_key)); has_any = true; break; end
+    end
+    if ~has_any
+        fprintf('WARNING: %s not found in any file — skipping.\n', ff_key);
         continue;
     end
 
-    ff   = data.(ff_key);
-    E2   = double(ff.E2);
-    ux   = double(ff.ux(:));
-    uy   = double(ff.uy(:));
-    lam  = double(ff.lam);
+    fprintf('\n=== %s ===\n', mname);
 
-    % Near-field struct (may be empty if monitor was not recorded)
-    nf_struct = [];
-    if isfield(data, nf_key) && ~isempty(data.(nf_key))
-        nf_struct = data.(nf_key);
+    % Figure: taller for two stacked rows in compare mode. Kept compact so it
+    % fits a laptop screen and a PowerPoint slide.
+    if n_ds == 1
+        fig = figure('Position', [120 120 1120 500]);
+    else
+        fig = figure('Position', [120 60 1120 830]);
     end
 
-    fprintf('\n=== %s ===\n', mname);
-    make_figure(E2, ux, uy, lam, is_top, mname, nf_struct, ...
-        SCALE_DB, DB_FLOOR, HALF_ANGLE, CUSTOM_ANGLE_DEG, NF_SCALE, SIM_DESC, PLOT_X_CONES, NF_CROP_X_UM, ...
-        data, MAT_FILE, geom);
+    nf_axes  = gobjects(n_ds, 1);
+    ff_axes  = gobjects(n_ds, 1);
+    lam_strs = cell(1, 0);
+
+    for d = 1:n_ds
+        ds = datasets(d);
+
+        if n_ds == 1
+            ax_nf = subplot(1, 2, 1);
+            ax_ff = subplot(1, 2, 2);
+        else
+            ax_nf = subplot(2, 2, (d-1)*2 + 1);
+            ax_ff = subplot(2, 2, (d-1)*2 + 2);
+        end
+        nf_axes(d) = ax_nf;
+        ff_axes(d) = ax_ff;
+
+        if ~isfield(ds.data, ff_key) || isempty(ds.data.(ff_key))
+            text(ax_nf, 0.5, 0.5, sprintf('%s: %s not available', ds.label, ff_key), ...
+                'Units','normalized', 'HorizontalAlignment','center');
+            axis(ax_nf, 'off');  axis(ax_ff, 'off');
+            continue;
+        end
+
+        ff  = ds.data.(ff_key);
+        E2  = double(ff.E2);
+        ux  = double(ff.ux(:));
+        uy  = double(ff.uy(:));
+        lam = double(ff.lam);
+
+        nf_struct = [];
+        if isfield(ds.data, nf_key) && ~isempty(ds.data.(nf_key))
+            nf_struct = ds.data.(nf_key);
+        end
+
+        draw_pair(ax_nf, ax_ff, E2, ux, uy, lam, is_top, mname, nf_struct, ...
+            SCALE_DB, DB_FLOOR, CUSTOM_ANGLE_DEG, NF_SCALE, PLOT_X_CONES, NF_CROP_X_UM, ...
+            ds.data, ds.mat_file, ds.geom, ds.label);
+
+        lam_op = lam;   % resonance wavelength for the title (differs TE vs TM)
+        if isfield(ds.data, 'resonance_wavelength_nm')
+            lam_op = double(ds.data.resonance_wavelength_nm) * 1e-9;
+        end
+        if isempty(ds.label)
+            lam_strs{end+1} = sprintf('\\lambda_{res} = %.2f nm', lam_op*1e9);            %#ok<SAGROW>
+        else
+            lam_strs{end+1} = sprintf('%s \\lambda_{res} = %.2f nm', ds.label, lam_op*1e9); %#ok<SAGROW>
+        end
+    end
+
+    if is_top; view_name = 'Top'; else; view_name = 'Side'; end
+    sgtitle(sprintf('%s Monitor — Near & Far Field   |   %s', view_name, strjoin(lam_strs, ',   ')), ...
+        'FontWeight','bold', 'FontSize',16, 'Interpreter','tex');
+
+    % Visual separation between the stacked rows (compare mode only)
+    if n_ds > 1
+        add_row_separation(fig, ff_axes, LABELS);
+    end
 end
 
 
 %% ═══════════════════════════════════════════════════════════════════════════
-function make_figure(E2, ux, uy, lam, is_top, monitor_name, nf_struct, ...
-    SCALE_DB, DB_FLOOR, HALF_ANGLE, CUSTOM_ANGLE_DEG, NF_SCALE, SIM_DESC, PLOT_X_CONES, NF_CROP_X_UM, ...
-    data, mat_file, geom) %#ok<INUSD>
+function draw_pair(ax_nf, ax_ff, E2, ux, uy, lam, is_top, monitor_name, nf_struct, ...
+    SCALE_DB, DB_FLOOR, CUSTOM_ANGLE_DEG, NF_SCALE, PLOT_X_CONES, NF_CROP_X_UM, ...
+    data, mat_file, geom, label) %#ok<INUSD>
+% Draw one dataset's near-field (into ax_nf) and far-field (into ax_ff) pair.
 
 % Compute hemisphere mask
 [UX, UY] = meshgrid(ux, uy);
@@ -199,7 +289,7 @@ E2_m = E2_norm; E2_m(~valid) = 0;
 [pi_ux, pi_uy]  = ind2sub(size(E2_m), peak_lin);
 peak_ux_val     = ux(pi_ux);
 theta_peak      = asind(min(sqrt(peak_ux_val^2 + uy(pi_uy)^2), 1));
-fprintf('  Lobe center angle = %.1f deg\n', theta_peak);
+fprintf('  [%s] Lobe center angle = %.1f deg\n', tern_str(label, '?'), theta_peak);
 
 slice_uy  = E2(pi_ux, :);
 fwhm_uy   = compute_fwhm_deg(slice_uy, uy');
@@ -208,33 +298,29 @@ if ~isnan(fwhm_uy)
         fwhm_uy, fwhm_uy/2);
 end
 
-% ── Figure ────────────────────────────────────────────────────────────────
-figure('Position', [100 100 1400 620]);
-
-if is_top
-    view_name = 'Top Near-Field and Far-Field Views';
-else
-    view_name = 'Side Near-Field and Far-Field Views';
-end
-title_str = sprintf('%s  |  \\lambda = %.2f nm  |  %s', view_name, lam*1e9, SIM_DESC);
-sgtitle(title_str, 'FontWeight','bold', 'FontSize',16, 'Interpreter','tex');
+lp = lblpfx(label);   % "TE — " / "" prefix for titles
 
 % ══ LEFT: Near field ══════════════════════════════════════════════════════
-ax_nf = subplot(1,2,1);
-
 nf_ok = false;
-h_nf  = []; v_nf = [];
 if ~isempty(nf_struct)
     try
         [E2_nf, h_nf, v_nf, h_lbl, v_lbl] = get_nf_image(nf_struct, lam, is_top, NF_CROP_X_UM);
-        imagesc(ax_nf, h_nf*1e6, v_nf*1e6, E2_nf);  % raw E², no normalisation
+        % Bake the magnitude exponent into the colorbar LABEL instead of letting
+        % MATLAB float a "×10^-4" multiplier above the colorbar (it collided with
+        % the subplot title). Scale the color data so the ticks are O(1).
+        ex_nf = sci_exponent(E2_nf);
+        imagesc(ax_nf, h_nf*1e6, v_nf*1e6, E2_nf / 10^ex_nf);
         colormap(ax_nf, jet);                          % same colormap as far-field
         set(ax_nf, 'YDir','normal');
         axis(ax_nf, 'tight');
         xlabel(ax_nf, h_lbl, 'FontSize', 12);
         ylabel(ax_nf, v_lbl, 'FontSize', 12);
         cb_nf = colorbar(ax_nf);
-        cb_nf.Label.String = '|E|^2  [V^2/m^2]';
+        if ex_nf ~= 0
+            cb_nf.Label.String = sprintf('|E|^2  [\\times10^{%d} V^2/m^2]', ex_nf);
+        else
+            cb_nf.Label.String = '|E|^2  [V^2/m^2]';
+        end
         nf_ok = true;
 
         % Device overlay (X along grating is VERTICAL here — swap from zoom plot)
@@ -270,13 +356,13 @@ if ~isempty(nf_struct)
                 plot(ax_nf, xp*1e6, -wp*1e6, '-', 'Color', geom.color, 'LineWidth', geom.lw);
                 [~, i0] = min(abs(xp));
                 cav_full_w = 2 * wp(i0);
-                draw_cavity_hatch(0, 0, eff_cav*1e6, cav_full_w*1e6, geom.color, geom.lw, 0.15);
+                draw_cavity_hatch(ax_nf, 0, 0, eff_cav*1e6, cav_full_w*1e6, geom.color, geom.lw, 0.15);
             else
                 % Side view: X horizontal, Z vertical — slab lines are horizontal
                 wg_hh = geom.core_height / 2 * 1e6;
                 plot(ax_nf, xl_nf, [ wg_hh  wg_hh], '-', 'Color', geom.color, 'LineWidth', geom.lw);
                 plot(ax_nf, xl_nf, [-wg_hh -wg_hh], '-', 'Color', geom.color, 'LineWidth', geom.lw);
-                draw_cavity_hatch(0, 0, eff_cav*1e6, geom.core_height*1e6, geom.color, geom.lw, 0.15);
+                draw_cavity_hatch(ax_nf, 0, 0, eff_cav*1e6, geom.core_height*1e6, geom.color, geom.lw, 0.15);
             end
             xlim(ax_nf, xl_nf); ylim(ax_nf, yl_nf);
             hold(ax_nf, 'off');
@@ -298,15 +384,14 @@ else
     crop_str = '';
 end
 if is_top
-    title(ax_nf, ['Top Near-Field Monitor  (XY plane, |E|^2)' crop_str], 'FontSize', 13);
+    title(ax_nf, [lp 'Top Near-Field Monitor  (XY plane, |E|^2)' crop_str], 'FontSize', 12);
 else
-    title(ax_nf, ['Side Near-Field Monitor  (XZ plane, |E|^2)' crop_str], 'FontSize', 13);
+    title(ax_nf, [lp 'Side Near-Field Monitor  (XZ plane, |E|^2)' crop_str], 'FontSize', 12);
 end
 
 % ══ RIGHT: Far field XY map ═══════════════════════════════════════════════
 % Both monitors: H = uy (or uz for side), V = ux
 % E2_norm is (N_ux × N_uy) → imagesc(uy, ux, E2_norm): cols=uy, rows=ux ✓
-ax_ff = subplot(1,2,2);
 hold(ax_ff, 'on');
 
 imagesc(ax_ff, ux, uy, E2_ff.');
@@ -323,7 +408,7 @@ colormap(ax_ff, jet);
 axis(ax_ff, 'equal');
 xlim(ax_ff, [-1.05, 1.05]); ylim(ax_ff, [-1.05, 1.05]);
 set(ax_ff, 'YDir','normal');
-title(ax_ff, sprintf('Far Field  (XY map, %s)', scale_str), 'FontSize', 13);
+title(ax_ff, sprintf('%sFar Field  (XY map, %s)', lp, scale_str), 'FontSize', 12);
 
 % Hemisphere circle
 phi_c = linspace(0, 2*pi, 720);
@@ -365,10 +450,74 @@ new_l = pos_nf(1) + (pos_nf(3) - new_w) / 2;
 new_b = pos_nf(2) + (pos_nf(4) - new_h) / 2;
 ax_nf.Position = [new_l, new_b, new_w, new_h];
 
-end  % make_figure
+end  % draw_pair
 
 
 %% ── HELPERS ────────────────────────────────────────────────────────────────
+
+function fp = pick_ff_file(prefs_file, dlg_title)
+% Labeled .mat picker for compare mode — opens in the last-used folder, no
+% "Same/Latest" questdlg (so the per-polarization label prompt is shown directly).
+    start_path = '*.mat';
+    if exist(prefs_file, 'file')
+        p = load(prefs_file);
+        if isfield(p, 'farfield_last_folder') && isfolder(p.farfield_last_folder)
+            start_path = fullfile(p.farfield_last_folder, '*.mat');
+        end
+    end
+    [file, folder] = uigetfile(start_path, dlg_title);
+    if isequal(file, 0); fp = ''; return; end
+    fp = fullfile(folder, file);
+end
+
+
+function lp = lblpfx(label)
+% Title prefix: "TE — " when labelled, "" otherwise (single-file mode).
+    if isempty(label); lp = ''; else; lp = [label ' — ']; end
+end
+
+
+function ex = sci_exponent(A)
+% Order-of-magnitude exponent of the max finite value in A (0 if non-finite/≤0).
+% Used to bake a colorbar's scale into its label instead of a floating ×10^n.
+    mx = max(A(:));
+    if isempty(mx) || ~isfinite(mx) || mx <= 0
+        ex = 0;
+    else
+        ex = floor(log10(double(mx)));
+    end
+end
+
+
+function s = tern_str(label, default_str)
+% label if non-empty, else default_str (for log lines).
+    if isempty(label); s = default_str; else; s = label; end
+end
+
+
+function add_row_separation(fig, ff_axes, labels)
+% Draw a divider line between the two stacked rows and a bold row label on the
+% far left of each row, so the top (first label) and bottom (second) read as
+% clearly separated blocks. Positions taken from the (full-size) far-field axes.
+    drawnow;
+    r1 = ff_axes(1).Position;   % top row    [l b w h]
+    r2 = ff_axes(2).Position;   % bottom row
+    ymid = ((r2(2) + r2(4)) + r1(2)) / 2;   % between bottom-row top and top-row bottom
+    annotation(fig, 'line', [0.04 0.97], [ymid ymid], ...
+        'Color', [0.25 0.25 0.25], 'LineWidth', 1.5);
+
+    accent = {[0 0.30 0.75], [0.78 0.10 0.10]};   % row 1 / row 2 accent colors
+    rpos   = {r1, r2};
+    for r = 1:2
+        rr = rpos{r};
+        yy = rr(2) + rr(4)/2;
+        annotation(fig, 'textbox', [0.002, yy-0.04, 0.035, 0.08], ...
+            'String', labels{r}, 'Color', accent{min(r, numel(accent))}, ...
+            'FontWeight','bold', 'FontSize',16, 'EdgeColor','none', ...
+            'HorizontalAlignment','center', 'VerticalAlignment','middle');
+    end
+end
+
 
 function [E2_nf, h_axis, v_axis, h_lbl, v_lbl] = get_nf_image(nf, lam_res, is_top, crop_x_um)
 % Extract E2 = |Ex|^2 + |Ey|^2 + |Ez|^2 at resonance from the monitor surface.
@@ -605,13 +754,13 @@ function [x_vec, w_half_vec] = make_grating_profile(pitch, w_narrow, w_wide, ...
 end
 
 
-function draw_cavity_hatch(x_cen, y_cen, w, h, color, lw, spacing)
+function draw_cavity_hatch(ax, x_cen, y_cen, w, h, color, lw, spacing)
 % Hatched rectangle marking the cavity region. (x_cen,y_cen) centre [µm],
 % w,h full size [µm]. Mirror of helper in plot_field_poynting_zoom.m.
     x0 = x_cen - w/2;  x1 = x_cen + w/2;
     y0 = y_cen - h/2;  y1 = y_cen + h/2;
 
-    plot([x0 x1 x1 x0 x0], [y0 y0 y1 y1 y0], '-', 'Color', color, 'LineWidth', lw);
+    plot(ax, [x0 x1 x1 x0 x0], [y0 y0 y1 y1 y0], '-', 'Color', color, 'LineWidth', lw);
 
     offsets = (x0 + y0) : spacing : (x1 + y1);
     for off = offsets
@@ -621,7 +770,7 @@ function draw_cavity_hatch(x_cen, y_cen, w, h, color, lw, spacing)
         xB =  off - y0;  if xB >  x0 && xB <  x1; pts(end+1,:) = [xB, y0]; end %#ok<AGROW>
         xT =  off - y1;  if xT >  x0 && xT <  x1; pts(end+1,:) = [xT, y1]; end %#ok<AGROW>
         if size(pts, 1) == 2
-            plot([pts(1,1) pts(2,1)], [pts(1,2) pts(2,2)], '-', 'Color', color, 'LineWidth', lw*0.6);
+            plot(ax, [pts(1,1) pts(2,1)], [pts(1,2) pts(2,2)], '-', 'Color', color, 'LineWidth', lw*0.6);
         end
     end
 end

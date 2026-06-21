@@ -306,11 +306,17 @@ class SimulationConfig:
     # --- Simple Bragg (used by run_simple_bragg.py only) ---
     simple_grating: SimpleGratingConfig = field(default_factory=SimpleGratingConfig)
 
+    # Manual y/z domain-size override (× λ_center). None → default below (inert).
+    # Used only for one-off domain-size checks via the SPAN_MULT env in the TM runners.
+    span_multiplier_override: Optional[float] = None
+
     # ── Derived properties ────────────────────────────────────────────────
 
     @property
     def _span_multiplier(self) -> float:
         """Span multiplier for y/z domain sizing: extended when farfield monitors are on."""
+        if self.span_multiplier_override is not None:
+            return self.span_multiplier_override
         return 5.0 if self.farfield.enabled else 1.8
 
     @property

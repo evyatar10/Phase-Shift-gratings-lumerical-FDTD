@@ -26,6 +26,7 @@ from runners.tm import _tm_vs_te_common as tvt
 from simulation_config import SimulationConfig
 
 build_cfg = tvt.build_base_cfg
+STUDY_DIR_NAME = tvt.STUDY_DIR_NAME   # shared results folder: results/tm_te/
 
 
 def run_te(cfg: SimulationConfig = None) -> dict:

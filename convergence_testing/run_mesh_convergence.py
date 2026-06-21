@@ -87,15 +87,57 @@ PHASE_YZ_VALUES = [50, 25, 10]               # dyz_max_step_nm: only divisors of
 DEFAULT_CELLS    = 5
 DEFAULT_DYZ_NM   = 50.0   # production pins global dy = dz = 50 nm (max-mesh-step)
 
+# ── Polarization ─────────────────────────────────────────────────────────────
+# CONV_POL selects the polarization for the convergence study. The default "TE"
+# reproduces the original behavior (and the existing TE checkpoint) byte-for-byte
+# — nothing below the `if POLARIZATION == "TM"` guard runs unless CONV_POL=TM.
+#
+# CONV_POL=TM runs the TM convergence: SourceConfig.polarization="TM" flips the
+# port mode (fundamental TM) and the symmetry-plane parity automatically, and we
+# switch to the TM-study device (calibrated pitch + constant indices) and
+# re-center the scan window on the TM resonance. All TM artifacts use a separate
+# CONV_DIR + checkpoint (suffix "_TM"), so the TE results are never touched.
+POLARIZATION = (os.environ.get("CONV_POL") or "TE").upper()   # unset OR empty → TE
+
+# TM-study device parameters (used ONLY when POLARIZATION == "TM"):
+#   • pitch 518.3 nm — the calibrated pitch that re-centers the TM resonance onto
+#     λ_TE ≈ 1570.7 nm (runners/tm/PITCH_ALIGNMENT.md). Measured TM resonance at
+#     this pitch: 1568.6 nm (accurate mesh) / 1570.6 nm (optimization mesh).
+#   • n_core/n_clad — match the TM study (Si3N4 "Luke" / SiO2 "Palik" @ 1.55 µm)
+#     so the recommended mesh applies to the actual TM device being compared.
+#   • 40 nm window centered at 1567 nm brackets the TM stopband (~1554–1568 nm)
+#     and the cavity peak across every mesh point (~2 nm mesh-induced shift), with
+#     margin. find_resonance isolates the cavity peak inside the band (verified on
+#     the existing 150 nm scan).
+TM_PITCH_NM      = 518.3
+TM_N_CORE        = 1.9963
+TM_N_CLAD        = 1.444
+TM_CENTER_M      = 1.567e-6
+TM_SCAN_WIDTH_NM = 40.0
+TM_N_POINTS      = 2001
+
+# CONV_POL=TE_CMP runs TE on the SAME comparison device (identical indices) at
+# pitch 500 nm → TE resonance ≈ 1570.7 nm. This is the apples-to-apples partner
+# of the TM run: same materials/geometry, only the polarization differs, so a
+# TE-vs-TM mesh comparison isolates the polarization effect (esp. dz). It is
+# DISTINCT from the default CONV_POL=TE, which keeps the original 1.977/1.44
+# device + 1560 nm window byte-for-byte. TE_CMP uses the comparison indices /
+# window width / point count above (TM_N_CORE/TM_N_CLAD/TM_SCAN_WIDTH_NM/TM_N_POINTS).
+TE_CMP_PITCH_NM = 500.0
+TE_CMP_CENTER_M = 1.571e-6
+
 # ═════════════════════════════════════════════════════════════════════════════
 # Output paths
 # ═════════════════════════════════════════════════════════════════════════════
 
-CONV_DIR     = os.path.join(config.BASE_SAVE_DIR, "mesh_convergence")
+# TM artifacts live in a separate dir + checkpoint so they never collide with the
+# TE results. For POLARIZATION == "TE" the tag is empty → original paths verbatim.
+_POL_TAG     = "" if POLARIZATION == "TE" else f"_{POLARIZATION}"
+CONV_DIR     = os.path.join(config.BASE_SAVE_DIR, "mesh_convergence" + _POL_TAG.lower())
 LAYOUTS_DIR  = os.path.join(CONV_DIR, "layouts")
 RESULTS_DIR  = os.path.join(CONV_DIR, "results")
 CHECKPOINT   = os.path.join(CONV_DIR,
-    f"checkpoint_p{N_PERIODS_EACH_SIDE}_{CONVERGENCE_METRIC}.json")
+    f"checkpoint_p{N_PERIODS_EACH_SIDE}_{CONVERGENCE_METRIC}{_POL_TAG}.json")
 
 os.makedirs(LAYOUTS_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -119,6 +161,24 @@ def _make_cfg():
     # and avoids wasting DFT points outside the stopband.
     cfg.spectral.scan_width_nm = 20.0
     cfg.spectral.n_wl_points = 1001
+    if POLARIZATION in ("TM", "TE_CMP"):
+        # Comparison device (TM-study constant indices, same for both
+        # polarizations). SourceConfig.polarization flips the port mode +
+        # symmetry parity automatically (see bragg_device). TM uses the
+        # calibrated pitch (resonance ~1568.4 nm); TE_CMP uses pitch 500 nm
+        # (resonance ~1570.7 nm). Each window is re-centered on its own peak.
+        is_tm = POLARIZATION == "TM"
+        cfg.source.polarization = "TM" if is_tm else "TE"
+        cfg.grating.pitch_m = (TM_PITCH_NM if is_tm else TE_CMP_PITCH_NM) * 1e-9
+        cfg.material.use_constant_materials = True
+        cfg.material.n_core_const = TM_N_CORE
+        cfg.material.n_clad_const = TM_N_CLAD
+        cfg.spectral.center_wavelength_m = TM_CENTER_M if is_tm else TE_CMP_CENTER_M
+        cfg.spectral.scan_width_nm = TM_SCAN_WIDTH_NM
+        cfg.spectral.n_wl_points = TM_N_POINTS
+        # Seed the mode solver near the effective index (λ = 2·n_eff·Λ).
+        cfg.material.n_eff_guess = (
+            cfg.spectral.center_wavelength_m / (2.0 * cfg.grating.pitch_m))
     return cfg
 
 

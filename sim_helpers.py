@@ -294,6 +294,11 @@ def apply_monitor_overrides(sim, cfg):
         print(f"Override: Set 3D monitor to {n_3d_pts} points.")
 
     if sim.record_farfield:
+        # Single far-field frequency point. With "use source limits" it lands at the
+        # source band-CENTER frequency — so center the scan on the resonance (narrow
+        # band) so the far-field is recorded at the resonance, not the band center
+        # of a wide scan (which sits at the band-center FREQUENCY, e.g. 1546 nm for a
+        # 1550 nm / 150 nm-wide scan).
         sim.fdtd.setnamed("side_monitor", "frequency points", 1)
         sim.fdtd.setnamed("top_monitor", "frequency points", 1)
-        print("Override: Far-field monitors set to 1 frequency point (resonance wavelength only).")
+        print("Override: Far-field monitors set to 1 frequency point (source band center).")

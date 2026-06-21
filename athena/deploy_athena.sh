@@ -960,13 +960,21 @@ elif [[ "${OPTION}" == "2" ]]; then
         POL_ARRAY_OPT="--array=0-1%2"
         echo "--pol-array: submitting ${RUN_SCRIPT} as a 2-task GPU array (task 0 + task 1 in parallel)."
     fi
+    # Optional host-RAM request. Default (unset) → cluster default ~64 GB. Set
+    # SBATCH_MEM=256G for big-domain runs (far-field / large SPAN_MULT) — the
+    # GPU nodes have 1–2.3 TB physical, so the 64 GB default is the only OOM cause.
+    MEM_OPT=""
+    if [[ -n "${SBATCH_MEM:-}" ]]; then
+        MEM_OPT="--mem=${SBATCH_MEM}"
+        echo "[--mem] requesting ${SBATCH_MEM} host RAM for this job"
+    fi
     JOB_ID=$(ssh "${SSH}" \
-        "cd ${REMOTE_BASE} && sbatch ${POL_ARRAY_OPT} \
+        "cd ${REMOTE_BASE} && sbatch ${POL_ARRAY_OPT} ${MEM_OPT} \
             --gpus=1 --cpus-per-task=${N_CPUS} \
             --time=${ARRAY_TIME:-00:50:00} \
             --qos=${ARRAY_QOS} \
             --partition=${ARRAY_PARTITIONS} \
-            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},TM_PITCH_NM=${TM_PITCH_NM:-500},TM_MESH=${TM_MESH:-optimization},TM_FARFIELD=${TM_FARFIELD:-0},TM_CONST_MODE=${TM_CONST_MODE:-sampled},NTFY_TOPIC=${NTFY_TOPIC} \
+            --export=ALL,RUN_SCRIPT=${RUN_SCRIPT},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},TM_PITCH_NM=${TM_PITCH_NM:-500},TM_MESH=${TM_MESH:-optimization},TM_FARFIELD=${TM_FARFIELD:-0},TM_RECORD_2D=${TM_RECORD_2D:-0},SPAN_MULT=${SPAN_MULT:-},TM_CONST_MODE=${TM_CONST_MODE:-sampled},CONV_POL=${CONV_POL:-TE},NTFY_TOPIC=${NTFY_TOPIC} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_gpu.sh")
 
@@ -1162,7 +1170,7 @@ else
             --time=${ARRAY_TIME:-00:50:00} \
             --qos=${ARRAY_QOS} \
             --partition=${ARRAY_PARTITIONS} \
-            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
+            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},CONV_POL=${CONV_POL:-TE},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_array.sh")
 fi
@@ -1205,6 +1213,55 @@ if [[ -n "${AGG_PHASE}" ]]; then
         echo "WARNING: aggregator sbatch failed — fall back to local"
         echo "  python convergence_testing/run_mesh_convergence.py --aggregate ${AGG_PHASE}"
         echo "  (after downloading results)."
+    fi
+fi
+
+# ── Tooth-shift sweep: seed shift=0 baseline + queue server-side summary ─────
+# We do NOT re-run shift=0 — the baseline already exists. Copy the existing
+# run_tm_vs_te baseline result files into this study's results folder, where they
+# read as the shift=0 point (no `_S` tag). Then queue a CPU-only afterok job
+# (same idiom as the mesh aggregator above) that runs plot_tm_te_shift.py once the
+# array succeeds, writing transmission_vs_shift.png / modewidth_vs_shift.png /
+# shift_summary.csv into the same folder. Those download with `--results-no-fsp`.
+if [[ "${SWEEP_SPEC_MODULE}" == "runners.sweeps.tm_te_shift" ]]; then
+    REMOTE_SHIFT_RESULTS="${REMOTE_BASE}/results/tm_te_shift/results"
+    BASELINE_SRC="${LOCAL_PROJECT}/results_from_athena/run_tm_vs_te/results"
+    echo ""
+    echo "=== Seeding shift=0 baseline into ${REMOTE_SHIFT_RESULTS} ==="
+    ssh "${SSH}" "mkdir -p ${REMOTE_SHIFT_RESULTS}"
+    _seeded=0
+    for _bf in result_N80_avg_te.mat result_N80_TM_avg_tm.mat; do
+        if [[ -f "${BASELINE_SRC}/${_bf}" ]]; then
+            scp "${BASELINE_SRC}/${_bf}" "${SSH}:${REMOTE_SHIFT_RESULTS}/${_bf}" \
+                && _seeded=$((_seeded + 1))
+        else
+            echo "  WARNING: baseline file not found locally: ${BASELINE_SRC}/${_bf}"
+        fi
+    done
+    echo "  Seeded ${_seeded}/2 baseline (shift=0) file(s)."
+    if [[ "${_seeded}" -lt 2 ]]; then
+        echo "  (summary will still plot the swept points; the 0-shift point is"
+        echo "   only included for the polarizations whose baseline was seeded.)"
+    fi
+
+    echo ""
+    echo "=== Queueing server-side tooth-shift summary plotter ==="
+    SUM_RAW=$(ssh "${SSH}" \
+        "cd ${REMOTE_BASE} && sbatch \
+            --dependency=afterok:${NUMERIC_JOB} \
+            --qos=${AGG_QOS} \
+            --partition=${AGG_PARTITION} \
+            --export=ALL \
+            --chdir=${REMOTE_BASE}/jobs \
+            jobs/run_shift_summary.sh")
+    if [[ $? -eq 0 ]]; then
+        SUM_ID=$(echo "${SUM_RAW}" | awk '{print $NF}')
+        echo "Summary plotter queued: ${SUM_RAW}"
+        echo "  Will run after array ${NUMERIC_JOB} completes (afterok)."
+        echo "  Summary log: ${REMOTE_BASE}/jobs/logs/shift_summary-${SUM_ID}.out"
+    else
+        echo "WARNING: summary sbatch failed — fall back to local after download:"
+        echo "  python runners/sweeps/plot_tm_te_shift.py --results-dir results_from_athena/tm_te_shift/results"
     fi
 fi
 
