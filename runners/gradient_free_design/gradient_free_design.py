@@ -97,6 +97,18 @@ class GradientFreeDesignSpec:
     enforce_mirror_symmetry: bool = True
     lengthen_cavity: bool = True
 
+    # ── Evaluation backend ─────────────────────────────────────────────────
+    # False (default): drive ONE parametric .fsp, mutating a structure group's
+    # user properties per particle (shared with the adjoint/Option-A path).
+    # True: rebuild the FULL device via the production PiShiftBraggFDTD.build()
+    # pipeline (run_single_sim) each particle. Slower per eval, but immune to
+    # any divergence between the parametric skeleton+freed-group assembly and
+    # the real builder. Required for TM: the parametric assembly yields a DEAD
+    # device (modal T≈0 for every particle, incl. the regular-grating baseline)
+    # while the normal builder transmits correctly (~0.95). See
+    # optimize_transmission_tm.py.
+    rebuild_per_particle: bool = False
+
     # ── Study metadata ─────────────────────────────────────────────────────
     label: str = ""
 
@@ -455,15 +467,56 @@ def _evaluate_particle(fdtd, params_nm) -> float:
     return peak_T
 
 
+def _make_rebuild_evaluator(cfg_base: SimulationConfig, spec: GradientFreeDesignSpec,
+                            baseline_lambda_m: float):
+    """Return an evaluate(params_nm)->peak_T callable that rebuilds the FULL
+    device through the production pipeline (run_single_sim) for each particle.
+
+    This bypasses the parametric .fsp entirely: every particle is a fresh
+    PiShiftBraggFDTD.build() — the exact path measure_baseline uses — so the
+    FOM is guaranteed consistent with the production builder (no skeleton /
+    freed-group divergence). The per-particle scan is centred on the baseline
+    resonance with the spec's FOM window; the cavity resonance peak is located
+    by the same find_bragg_resonance scorer used everywhere else.
+    """
+    from runners.single.run_simulation import run_single_sim
+
+    def _evaluate(params_nm) -> float:
+        cfg_i = copy.deepcopy(cfg_base)
+        fk = params_to_kwargs(list(params_nm), spec.n_free_inner_teeth)
+        cfg_i.grating.inner_dw_nm = list(fk["inner_dw_nm"])
+        cfg_i.grating.inner_shift_nm = list(fk["inner_shift_nm"])
+        cfg_i.grating.cavity_width_m = fk["cavity_width_m"]
+        # Tight scan around the baseline resonance at the FOM resolution.
+        cfg_i.spectral.center_wavelength_m = float(baseline_lambda_m)
+        cfg_i.spectral.scan_width_nm = float(spec.fom_window_nm)
+        cfg_i.spectral.n_wl_points = int(spec.fom_n_points)
+        try:
+            res = run_single_sim(cfg_i, show_plots=False, save_figs=False)
+            return float(res["resonance_transmission"])
+        except Exception as exc:  # one bad particle shouldn't kill the swarm
+            print(f"[pso-rebuild] particle eval failed ({exc}); scoring 0.0")
+            return 0.0
+
+    return _evaluate
+
+
 def _pso_optimize(fdtd, spec: GradientFreeDesignSpec, p0_nm,
-                   incremental_save_path: Optional[str] = None) -> Tuple[List[float], float, List[dict]]:
+                   incremental_save_path: Optional[str] = None,
+                   evaluate=None) -> Tuple[List[float], float, List[dict]]:
     """Standard global-best PSO over the 5 freed-region parameters.
 
     Returns (best_params_nm, best_fom, history).
 
+    `evaluate`: optional callable evaluate(params_nm)->peak_T. When None
+    (default), particles are scored via the parametric structure-group path
+    `_evaluate_particle(fdtd, ...)`. When provided (rebuild backend), `fdtd`
+    is unused and each particle is scored by `evaluate(...)`.
+
     If incremental_save_path is given, writes a partial JSON after each
     generation so walltime-cut runs still produce useful output.
     """
+    _eval = evaluate if evaluate is not None else (lambda x: _evaluate_particle(fdtd, x))
     rng = np.random.default_rng(spec.seed)
     bounds = np.asarray(spec.all_bounds_nm(), dtype=float)   # shape (5, 2)
     lo, hi = bounds[:, 0], bounds[:, 1]
@@ -485,7 +538,7 @@ def _pso_optimize(fdtd, spec: GradientFreeDesignSpec, p0_nm,
     # Evaluate initial swarm.
     F = np.empty(pop)
     for i in range(pop):
-        F[i] = _evaluate_particle(fdtd, X[i])
+        F[i] = _eval(X[i])
         print(f"[pso] gen 0  particle {i+1}/{pop}: peak_T = {F[i]:.6f}  "
               f"params = {[f'{x:.2f}' for x in X[i]]}")
 
@@ -527,7 +580,7 @@ def _pso_optimize(fdtd, spec: GradientFreeDesignSpec, p0_nm,
         X = np.clip(X, lo, hi)   # final safety clip
 
         for i in range(pop):
-            F[i] = _evaluate_particle(fdtd, X[i])
+            F[i] = _eval(X[i])
             print(f"[pso] gen {g}  particle {i+1}/{pop}: peak_T = {F[i]:.6f}  "
                   f"params = {[f'{x:.2f}' for x in X[i]]}")
             if F[i] > F_best[i]:
@@ -610,23 +663,33 @@ def run_gradient_free_design(
     if baseline_lambda_m is None:
         baseline_lambda_m, initial_peak_T = measure_baseline(cfg)
 
-    print(f"[gradient_free_design] building parametric .fsp ...")
-    fdtd = lumapi.FDTD(hide=True)
-    fsp_path = os.path.join(out_dir, "gf_design.fsp")
     p_final: List[float] = list(p0)
     fom_final = float("nan")
     history: List[dict] = []
-    try:
-        _build_parametric_fsp(fdtd, cfg, spec, p0, baseline_lambda_m)
+    incremental_path = os.path.join(out_dir, "pso_incremental.json")
 
-        fdtd.save(fsp_path)
-        incremental_path = os.path.join(out_dir, "pso_incremental.json")
-        print(f"[gradient_free_design] running PSO "
+    if spec.rebuild_per_particle:
+        # Rebuild backend: no parametric .fsp; each particle is a full
+        # production build via run_single_sim. Robust path (used for TM).
+        print(f"[gradient_free_design] running PSO via full-rebuild backend "
               f"(pop={spec.population_size}, gens={spec.max_generations}) ...")
-        p_final, fom_final, history = _pso_optimize(fdtd, spec, p0,
-                                                     incremental_save_path=incremental_path)
-    finally:
-        fdtd.close()
+        evaluate = _make_rebuild_evaluator(cfg, spec, baseline_lambda_m)
+        p_final, fom_final, history = _pso_optimize(
+            None, spec, p0, incremental_save_path=incremental_path, evaluate=evaluate)
+    else:
+        print(f"[gradient_free_design] building parametric .fsp ...")
+        fdtd = lumapi.FDTD(hide=True)
+        fsp_path = os.path.join(out_dir, "gf_design.fsp")
+        try:
+            _build_parametric_fsp(fdtd, cfg, spec, p0, baseline_lambda_m)
+
+            fdtd.save(fsp_path)
+            print(f"[gradient_free_design] running PSO "
+                  f"(pop={spec.population_size}, gens={spec.max_generations}) ...")
+            p_final, fom_final, history = _pso_optimize(fdtd, spec, p0,
+                                                         incremental_save_path=incremental_path)
+        finally:
+            fdtd.close()
 
     # Post-optimization verification: re-simulate the converged geometry via
     # the full broadband baseline pipeline at HIGHER mesh accuracy so the

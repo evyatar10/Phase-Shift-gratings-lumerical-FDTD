@@ -42,6 +42,10 @@ SCILIBS="${HOME}/scilibs"
 # this job writes) live in /work/results/tm_te_shift/results.
 SUMMARY_DIR="${SUMMARY_DIR:-/work/results/tm_te_shift/results}"
 
+# X_AXIS=relative plots shift as % of half-pitch (so different pitches compare);
+# default 'absolute' plots shift in nm. Forwarded to plot_tm_te_shift.py --x.
+X_AXIS="${X_AXIS:-absolute}"
+
 echo "============================================================"
 echo "Tooth-shift summary job — SUMMARY_DIR=${SUMMARY_DIR}"
 echo "Job:        ${SLURM_JOB_ID}"
@@ -70,7 +74,7 @@ export LC_ALL=C
 # shim intended for R470 hosts; Athena runs R570+ so the shim must not lead).
 export LD_LIBRARY_PATH=\"\$(echo \"\${LD_LIBRARY_PATH}\" | tr ':' '\\n' | grep -v '^/usr/local/cuda/compat' | paste -sd: -)\"
 export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}:/scilibs\"
-/opt/lumerical/v261/python/bin/python /work/project/runners/sweeps/plot_tm_te_shift.py --results-dir '${SUMMARY_DIR}'
+/opt/lumerical/v261/python/bin/python /work/project/runners/sweeps/plot_tm_te_shift.py --results-dir '${SUMMARY_DIR}' --x '${X_AXIS}'
 "
 
 EXIT_CODE=$?

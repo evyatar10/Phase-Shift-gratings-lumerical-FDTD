@@ -77,42 +77,53 @@ def collect(results_dir):
         width_um = fwhm_m * 1e6 if fwhm_m is not None else np.nan
         lam_nm = _scalar(d, "resonance_wavelength_nm")
 
+        # Relative shift = shift as % of the half-pitch, so points at different
+        # pitches (e.g. TE@500 vs TM@518.3) are directly comparable.
+        pitch_m = _scalar(d, "pitch_m")
+        pitch_nm = pitch_m * 1e9 if pitch_m else np.nan
+        rel_pct = (shift_nm / (pitch_nm / 2.0) * 100.0) if pitch_m else np.nan
+
         rows.append({
             "fname": fname,
             "shift_nm": shift_nm,
+            "rel_pct": rel_pct,
+            "pitch_nm": pitch_nm,
             "pol": "TM" if is_tm else "TE",
             "T_peak": T_peak if T_peak is not None else np.nan,
             "width_um": width_um,
             "lambda_nm": lam_nm if lam_nm is not None else np.nan,
         })
-        print(f"  {fname:48s}  pol={rows[-1]['pol']}  shift={shift_nm:3d}nm  "
-              f"T={rows[-1]['T_peak']:.4f}  width={width_um:.3f}um")
+        print(f"  {fname:48s}  pol={rows[-1]['pol']}  shift={shift_nm:3d}nm "
+              f"({rel_pct:4.1f}%)  T={rows[-1]['T_peak']:.4f}  width={width_um:.3f}um")
     return rows
 
 
-def _series(rows, pol, key):
-    """Sorted (shift, value) arrays for one polarization."""
-    pts = sorted((r["shift_nm"], r[key]) for r in rows if r["pol"] == pol)
+def _series(rows, pol, xkey, ykey):
+    """Sorted (x, y) arrays for one polarization."""
+    pts = sorted((r[xkey], r[ykey]) for r in rows if r["pol"] == pol)
     if not pts:
         return np.array([]), np.array([])
     x, y = zip(*pts)
     return np.array(x, float), np.array(y, float)
 
 
-def _plot(rows, key, ylabel, title, out_png):
-    te_x, te_y = _series(rows, "TE", key)
-    tm_x, tm_y = _series(rows, "TM", key)
+def _plot(rows, ykey, ylabel, title, out_png, xkey, xlabel):
+    te_x, te_y = _series(rows, "TE", xkey, ykey)
+    tm_x, tm_y = _series(rows, "TM", xkey, ykey)
     fig, ax = plt.subplots()
     if te_x.size:
         ax.plot(te_x, te_y, "o-", lw=1.6, ms=7, mfc="w", label="TE")
     if tm_x.size:
         ax.plot(tm_x, tm_y, "s-", lw=1.6, ms=7, mfc="w", label="TM")
-    ax.set_xlabel("Innermost-tooth shift [nm]", fontsize=FONT_SIZE)
+    ax.set_xlabel(xlabel, fontsize=FONT_SIZE)
     ax.set_ylabel(ylabel, fontsize=FONT_SIZE)
     ax.set_title(title, fontsize=FONT_SIZE)
     all_x = np.unique(np.concatenate([te_x, tm_x])) if (te_x.size or tm_x.size) else None
     if all_x is not None and all_x.size:
-        ax.set_xticks(all_x)
+        # For the relative axis, TE (e.g. 20.0%) and TM (e.g. 20.07%, from the
+        # integer-nm filename tag) round to the same tick — dedupe so ticks read
+        # 0/20/40/60/80 instead of doubling up.
+        ax.set_xticks(np.unique(np.round(all_x).astype(int)) if xkey == "rel_pct" else all_x)
     ax.grid(True)
     ax.legend(loc="best")
     fig.tight_layout()
@@ -124,10 +135,10 @@ def _plot(rows, key, ylabel, title, out_png):
 def write_csv(rows, out_csv):
     order = sorted(rows, key=lambda r: (r["pol"], r["shift_nm"]))
     with open(out_csv, "w", encoding="utf-8") as f:
-        f.write("pol,shift_nm,T_peak,mode_width_um,lambda_nm\n")
+        f.write("pol,shift_nm,rel_pct_halfpitch,pitch_nm,T_peak,mode_width_um,lambda_nm\n")
         for r in order:
-            f.write(f"{r['pol']},{r['shift_nm']},{r['T_peak']:.6f},"
-                    f"{r['width_um']:.6f},{r['lambda_nm']:.4f}\n")
+            f.write(f"{r['pol']},{r['shift_nm']},{r['rel_pct']:.2f},{r['pitch_nm']:.2f},"
+                    f"{r['T_peak']:.6f},{r['width_um']:.6f},{r['lambda_nm']:.4f}\n")
     print(f"  wrote {out_csv}")
 
 
@@ -135,21 +146,29 @@ def main():
     ap = argparse.ArgumentParser(description="Summary plots for the tooth-shift sweep.")
     ap.add_argument("--results-dir", default=os.path.join("results", "tm_te_shift"),
                     help="Folder containing result_*.mat (default: results/tm_te_shift).")
+    ap.add_argument("--x", choices=["absolute", "relative"], default="absolute",
+                    help="x-axis: 'absolute' tooth shift [nm] (default) or 'relative' "
+                         "shift as %% of half-pitch (compares across pitches).")
     args = ap.parse_args()
 
+    if args.x == "relative":
+        xkey, xlabel, sub = "rel_pct", "Innermost-tooth shift [% of half-pitch]", "tooth shift (relative)"
+    else:
+        xkey, xlabel, sub = "shift_nm", "Innermost-tooth shift [nm]", "tooth shift"
+
     results_dir = args.results_dir
-    print(f"[plot_tm_te_shift] scanning {results_dir}")
+    print(f"[plot_tm_te_shift] scanning {results_dir}  (x-axis: {args.x})")
     rows = collect(results_dir)
     if not rows:
         print("  No result_*.mat found — nothing to plot.")
         return
 
     _plot(rows, "T_peak", "Peak transmission (T)",
-          "Resonance transmission vs. tooth shift",
-          os.path.join(results_dir, "transmission_vs_shift.png"))
+          f"Resonance transmission vs. {sub}",
+          os.path.join(results_dir, "transmission_vs_shift.png"), xkey, xlabel)
     _plot(rows, "width_um", r"Mode width, FWHM [$\mu$m]",
-          "Spatial mode width vs. tooth shift",
-          os.path.join(results_dir, "modewidth_vs_shift.png"))
+          f"Spatial mode width vs. {sub}",
+          os.path.join(results_dir, "modewidth_vs_shift.png"), xkey, xlabel)
     write_csv(rows, os.path.join(results_dir, "shift_summary.csv"))
 
 

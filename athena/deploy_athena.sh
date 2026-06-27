@@ -1265,6 +1265,61 @@ if [[ "${SWEEP_SPEC_MODULE}" == "runners.sweeps.tm_te_shift" ]]; then
     fi
 fi
 
+# ── Pitch-matched TM shift rerun: build the CORRECTED TE-vs-TM comparison ─────
+# tm_shift_p518 reruns ONLY TM at pitch 518.3. The summary image must compare the
+# unchanged TE (pitch 500) points with the new TM (pitch 518.3) points, so we seed
+# this study's results folder with: (a) the corrected shift=0 TM baseline
+# (result_N80_TM_avg_tm_P518p3.mat, uploaded from local), and (b) the existing
+# pitch-500 TE points (shift 0/50/100/150/200) copied server-side from the
+# tm_te_shift results. Then plot_tm_te_shift.py over this folder yields the
+# corrected transmission/mode-width-vs-shift images (TE@500 + TM@518.3).
+if [[ "${SWEEP_SPEC_MODULE}" == "runners.sweeps.tm_shift_p518" ]]; then
+    P518_RESULTS="${REMOTE_BASE}/results/tm_shift_p518/results"
+    TE_SRC="${REMOTE_BASE}/results/tm_te_shift/results"
+    TM0_LOCAL="${LOCAL_PROJECT}/results_from_athena/tm_te_pitch_matched/result_N80_TM_avg_tm_P518p3.mat"
+    echo ""
+    echo "=== Seeding corrected baseline + TE points into ${P518_RESULTS} ==="
+    ssh "${SSH}" "mkdir -p ${P518_RESULTS}"
+    # (a) corrected shift=0 TM baseline (pitch 518.3) — read as TM, shift 0 (no _S)
+    if [[ -f "${TM0_LOCAL}" ]]; then
+        scp "${TM0_LOCAL}" "${SSH}:${P518_RESULTS}/result_N80_TM_avg_tm_P518p3.mat" \
+            && echo "  seeded corrected TM shift=0 baseline" \
+            || echo "  WARNING: failed to upload corrected TM baseline"
+    else
+        echo "  WARNING: corrected TM baseline not found locally: ${TM0_LOCAL}"
+    fi
+    # (b) pitch-500 TE points (every result_*.mat in tm_te_shift WITHOUT _TM) —
+    #     copied server-side so no re-run and no download round-trip.
+    ssh "${SSH}" "if [[ -d '${TE_SRC}' ]]; then \
+        for f in ${TE_SRC}/result_*.mat; do \
+            b=\$(basename \"\$f\"); \
+            case \"\$b\" in *_TM*|*summary*) continue;; esac; \
+            cp \"\$f\" '${P518_RESULTS}/'; \
+        done; \
+        echo \"  seeded TE points: \$(ls ${P518_RESULTS}/ | grep -v _TM | grep -c '\.mat')\"; \
+    else echo '  WARNING: TE source folder missing on server: ${TE_SRC}'; fi"
+
+    echo ""
+    echo "=== Queueing server-side corrected summary plotter ==="
+    SUM_RAW=$(ssh "${SSH}" \
+        "cd ${REMOTE_BASE} && sbatch \
+            --dependency=afterok:${NUMERIC_JOB} \
+            --qos=${AGG_QOS} \
+            --partition=${AGG_PARTITION} \
+            --export=ALL,SUMMARY_DIR=/work/results/tm_shift_p518/results,X_AXIS=relative \
+            --chdir=${REMOTE_BASE}/jobs \
+            jobs/run_shift_summary.sh")
+    if [[ $? -eq 0 ]]; then
+        SUM_ID=$(echo "${SUM_RAW}" | awk '{print $NF}')
+        echo "Summary plotter queued: ${SUM_RAW}"
+        echo "  Will run after array ${NUMERIC_JOB} completes (afterok)."
+        echo "  Summary log: ${REMOTE_BASE}/jobs/logs/shift_summary-${SUM_ID}.out"
+    else
+        echo "WARNING: summary sbatch failed — fall back to local after download:"
+        echo "  python runners/sweeps/plot_tm_te_shift.py --results-dir results_from_athena/tm_shift_p518/results"
+    fi
+fi
+
 # ── Show monitoring commands ───────────────────────────────────────────────────
 echo ""
 echo "============================================================"
