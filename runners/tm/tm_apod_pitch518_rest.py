@@ -41,7 +41,7 @@ STUDY_DIR_NAME = "tm_apod_pitch518"
 def _base() -> SimulationConfig:
     """Identical baseline to runners/sweeps/tm_apod_pitch518.py."""
     base = build_base_cfg(SimulationConfig())
-    base.grating.pitch_m = 518.3e-9               # TM-corrected pitch (~1571 nm)
+    base.grating.pitch_m = 516.14e-9              # TM-corrected pitch (n 1.97, ~1558.7 nm)
     base.spectral.center_wavelength_m = 1.550e-6
     base.spectral.scan_width_nm       = 150.0
     base.spectral.n_wl_points         = 6001

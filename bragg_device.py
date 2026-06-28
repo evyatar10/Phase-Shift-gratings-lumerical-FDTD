@@ -45,8 +45,8 @@ class PiShiftBraggFDTD:
                  use_z_symmetry=True,
                  polarization="TE",
                  use_constant_materials=False,
-                 n_core_const=1.977,
-                 n_clad_const=1.44,
+                 n_core_const=1.97,
+                 n_clad_const=1.444,
                  const_material_mode="sampled",
                  # --- NEW OPTIONAL 2D PARAMS ---
                  record_2d_fields_top_and_cross=False,
@@ -70,7 +70,14 @@ class PiShiftBraggFDTD:
                  inner_dw_nm=None,
                  inner_shift_nm=None,
                  width_narrow_per_tooth_m=None,
-                 width_wide_per_tooth_m=None):
+                 width_wide_per_tooth_m=None,
+                 # --- NEW: two side-by-side coupled devices ---
+                 n_devices=1,
+                 device_gap_m=1.0e-6,
+                 device_stagger_m=0.0,
+                 width_narrow_2=None,
+                 width_wide_2=None,
+                 device2_closed=False):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -232,6 +239,57 @@ class PiShiftBraggFDTD:
         self.x_sim_boundary = self.x_port + self.dist_port_to_pml
         self.sim_x_span = 2.0 * self.x_sim_boundary
 
+        # ── Two side-by-side coupled devices ──────────────────────────────────
+        # Device 1 (driven) is centered at (x=0, y=+s/2); device 2 (passive) at
+        # (x=Δx, y=-s/2). The y-symmetry plane is broken (single-guide drive), so
+        # it is forced OFF here regardless of the incoming flag; z-symmetry stays.
+        self.n_devices = int(n_devices)
+        if self.n_devices not in (1, 2):
+            raise ValueError(f"n_devices must be 1 or 2, got {self.n_devices}.")
+        self.device_gap_m = float(device_gap_m)
+        self.device2_closed = bool(device2_closed)  # closed recycler (no feed waveguides / drain ports)
+        self.width_narrow_2 = float(width_narrow_2) if width_narrow_2 is not None else self.width_narrow
+        self.width_wide_2 = float(width_wide_2) if width_wide_2 is not None else self.width_wide
+        # Snap the longitudinal stagger to the x-mesh so device 2's teeth stay
+        # aligned to the same cell grid as device 1 (preserves mesh accuracy).
+        self.device_stagger_m = round(float(device_stagger_m) / self.dx_override) * self.dx_override
+
+        if self.n_devices == 2:
+            self.use_symmetry = False  # broken by single-guide excitation
+            # center-to-center lateral separation (edge-to-edge gap on the wide teeth = device_gap_m)
+            s = self.device_gap_m + 0.5 * self.width_wide + 0.5 * self.width_wide_2
+            self.y_dev1 = +0.5 * s
+            self.y_dev2 = -0.5 * s
+            self.x_dev1 = 0.0
+            self.x_dev2 = self.device_stagger_m
+            # Guard: the port feed lines (width_port) and wide teeth must not overlap.
+            half1 = 0.5 * max(self.width_wide, self.width_port)
+            half2 = 0.5 * max(self.width_wide_2, self.width_port)
+            if (s - half1 - half2) <= 0.0:
+                raise ValueError(
+                    f"device_gap_m={self.device_gap_m*1e9:.0f} nm too small: the two guides' "
+                    f"widest features (incl. {self.width_port*1e9:.0f} nm port feeds) overlap. "
+                    f"Increase device_gap_m."
+                )
+        else:
+            self.y_dev1 = 0.0
+            self.y_dev2 = 0.0
+            self.x_dev1 = 0.0
+            self.x_dev2 = 0.0
+
+        # Unified x-domain extent: symmetric about x=0 (keeps the existing mesh-edge
+        # parity logic keyed to x=0), but widened to enclose the staggered device 2.
+        self.fdtd_x_center = 0.0
+        self.fdtd_x_span = 2.0 * (self.x_sim_boundary + abs(self.x_dev2))
+
+        # Coupling outputs (populated by get_s_and_t_matrix when n_devices==2)
+        self.coupling_left = None
+        self.coupling_right = None
+        self.coupling_total = None
+        self.loss_4port = None
+        self.S31_complex = None
+        self.S41_complex = None
+
         self.coarse_width_nm = coarse_width_nm
         half_w = 0.5 * self.coarse_width_nm * 1e-9
         self.lam_min = self.lambda_B - half_w
@@ -321,7 +379,7 @@ class PiShiftBraggFDTD:
         }} else {{
             addmaterial("Dielectric");
             set("name", "{custom_sio2}");
-            set("Refractive Index", 1.44);
+            set("Refractive Index", 1.444);
         }}
 
         if (materialexists("{custom_sin}")) {{
@@ -365,8 +423,8 @@ class PiShiftBraggFDTD:
     def _add_fdtd_region(self):
         fdtd = self.fdtd
         fdtd.addfdtd()
-        fdtd.set("x", 0)
-        fdtd.set("x span", self.sim_x_span)
+        fdtd.set("x", self.fdtd_x_center)
+        fdtd.set("x span", self.fdtd_x_span)
         fdtd.set("y", 0)
         fdtd.set("y span", self.y_span)
         fdtd.set("z", 0)
@@ -386,6 +444,15 @@ class PiShiftBraggFDTD:
         if self.use_z_symmetry:
             fdtd.set("z min bc", "Symmetric" if self.polarization == "TE" else "Anti-Symmetric")
             fdtd.set("force symmetric z mesh", 1)
+
+        if self.n_devices == 2:
+            # The side-by-side pair has no y-symmetry plane (only device 1 is driven);
+            # y-min must stay PML or device 2 becomes a phantom mirror image.
+            assert fdtd.get("y min bc") == "PML", (
+                "Two-device run requires y-symmetry OFF (y min bc must be PML)."
+            )
+            print(f"  [2-device] y-symmetry OFF; guides at y=±{self.y_dev1*1e6:.3f} µm, "
+                  f"device-2 stagger Δx={self.x_dev2*1e6:.3f} µm")
 
         fdtd.set("dimension", "3D")
         if _cfg.USE_GPU:
@@ -431,16 +498,24 @@ class PiShiftBraggFDTD:
                 f"Consider bumping cells_per_half_period (e.g. simulation_mode='accurate')."
             )
 
-        min_span = self.sim_x_span + 2e-6
+        min_span = self.fdtd_x_span + 2e-6
         M = math.ceil(min_span / dx)
         if (M % 2) != (N % 2):
             M += 1
         box_span = M * dx
 
-        max_device_width = max(self.width_port, self.width_wide, self.width_narrow)
-        y_span_override = max_device_width * 1.2
+        if self.n_devices == 2:
+            # One union box covering BOTH guides and the gap between them (where the
+            # coupling lives). Centered at y=0 (the pair is symmetric about y=0).
+            s = self.y_dev1 - self.y_dev2  # center-to-center separation
+            margin = 0.5 * max(self.width_wide, self.width_wide_2)
+            y_span_override = s + 0.5 * self.width_wide + 0.5 * self.width_wide_2 + 2.0 * margin
+            dy_global = min(self.width_narrow, self.width_narrow_2) / 13.0
+        else:
+            max_device_width = max(self.width_port, self.width_wide, self.width_narrow)
+            y_span_override = max_device_width * 1.2
+            dy_global = self.width_narrow / 13.0
         z_span_override = self.core_height
-        dy_global = self.width_narrow / 13.0
         dz_global = self.core_height / 7.0
 
         fdtd.addmesh()
@@ -464,8 +539,9 @@ class PiShiftBraggFDTD:
         pitch = self.pitch
         half_pitch = pitch / 2.0
         seg_id = 0
+        x_domain_half = 0.5 * self.fdtd_x_span
 
-        def add_core_segment(x1, x2, width, name_prefix="core_seg"):
+        def add_core_segment(x1, x2, width, name_prefix="core_seg", y_center=0.0):
             nonlocal seg_id
             seg_id += 1
             fdtd.addrect()
@@ -473,102 +549,121 @@ class PiShiftBraggFDTD:
             fdtd.set("material", self.core_material)
             if self._object_index_mode:
                 fdtd.set("index", self.n_core_const)
-            fdtd.set("y", 0)
+            fdtd.set("y", y_center)
             fdtd.set("y span", width)
             fdtd.set("z", z_core_center)
             fdtd.set("z span", self.core_height)
             fdtd.set("x min", x1)
             fdtd.set("x max", x2)
 
-        avg_width = 0.5 * (self.width_narrow + self.width_wide)
-        full_depth_edge = self.width_wide - self.width_narrow
-        full_depth_center = self.center_mod_depth if self.use_apodization else full_depth_edge
-        n_total = self.n_periods_each_side
-        n_apod = self.n_apod_periods_each_side
-        n_free = self.n_free_inner_teeth
+        def build_grating_arms(y_center, x_offset, dev_width_narrow, dev_width_wide, featured, draw_feed=True):
+            """Build one pi-shift grating (two arms + central cavity) at the given
+            lateral (y_center) and longitudinal (x_offset) offset.
 
-        apod_method = self.apod_method
-        tanh_steepness = self.tanh_steepness
+            featured=True  → device 1: honours apodization, inner-tooth shifts/DW,
+                             explicit per-tooth width arrays, and cavity_width_m.
+            featured=False → device 2: a plain uniform pi-shift grating with its own
+                             corrugation depth (no apodization / shifts / per-tooth)."""
+            avg_width = 0.5 * (dev_width_narrow + dev_width_wide)
+            full_depth_edge = dev_width_wide - dev_width_narrow
+            full_depth_center = self.center_mod_depth if (featured and self.use_apodization) else full_depth_edge
+            n_total = self.n_periods_each_side
+            n_apod = self.n_apod_periods_each_side if featured else 0
+            n_free = self.n_free_inner_teeth
+            apod_method = self.apod_method
+            tanh_steepness = self.tanh_steepness
 
-        def get_mod_depth(d):
-            # Per-tooth DW override for the freed inner teeth (inverse-design path).
-            if d <= n_free and self.inner_dw_nm is not None:
-                return float(self.inner_dw_nm[d - 1]) * 1e-9
-            if d <= n_apod and n_total > 1:
-                denom = (n_apod - 1) if (n_apod > 1 and n_apod == n_total) else n_apod
-                if denom == 0: return full_depth_center
-                frac = (d - 1) / float(denom)
-                if apod_method == 'tanh':
-                    frac = np.tanh(tanh_steepness * 2.0 * frac) / np.tanh(2.0 * tanh_steepness)
-                return full_depth_center + (full_depth_edge - full_depth_center) * frac
-            else:
+            def get_mod_depth(d):
+                # Per-tooth DW override for the freed inner teeth (inverse-design path).
+                if featured and d <= n_free and self.inner_dw_nm is not None:
+                    return float(self.inner_dw_nm[d - 1]) * 1e-9
+                if featured and d <= n_apod and n_total > 1:
+                    denom = (n_apod - 1) if (n_apod > 1 and n_apod == n_total) else n_apod
+                    if denom == 0: return full_depth_center
+                    frac = (d - 1) / float(denom)
+                    if apod_method == 'tanh':
+                        frac = np.tanh(tanh_steepness * 2.0 * frac) / np.tanh(2.0 * tanh_steepness)
+                    return full_depth_center + (full_depth_edge - full_depth_center) * frac
                 return full_depth_edge
 
-        W_narrow, W_wide = {}, {}
-        n_explicit = len(self.width_narrow_per_tooth_m) if self.width_narrow_per_tooth_m is not None else 0
-        for d in range(1, n_total + 1):
-            if d <= n_explicit:
-                # Explicit per-tooth widths take precedence over the envelope.
-                W_narrow[d] = self.width_narrow_per_tooth_m[d - 1]
-                W_wide[d] = self.width_wide_per_tooth_m[d - 1]
+            W_narrow, W_wide = {}, {}
+            per_tooth_n = self.width_narrow_per_tooth_m if featured else None
+            n_explicit = len(per_tooth_n) if per_tooth_n is not None else 0
+            for d in range(1, n_total + 1):
+                if d <= n_explicit:
+                    # Explicit per-tooth widths take precedence over the envelope.
+                    W_narrow[d] = self.width_narrow_per_tooth_m[d - 1]
+                    W_wide[d] = self.width_wide_per_tooth_m[d - 1]
+                else:
+                    mod_depth = get_mod_depth(d)
+                    delta_w = mod_depth / 2.0
+                    W_narrow[d] = avg_width - delta_w
+                    W_wide[d] = avg_width + delta_w
+
+            # Per-tooth shift map (m). Nonzero only for the featured device's freed teeth.
+            shift_for_tooth = {d: 0.0 for d in range(0, n_total + 2)}
+            if featured:
+                for d in range(1, n_free + 1):
+                    shift_for_tooth[d] = float(self.inner_shift_nm[d - 1]) * 1e-9
+            cavity_extra = (2.0 * sum(shift_for_tooth[d] for d in range(1, n_free + 1))) \
+                if (featured and self.lengthen_cavity) else 0.0
+
+            x_grating_start = -self.x_grating_end + x_offset
+            x = x_grating_start
+            # Feed (access) waveguides run to the PML. Omitted for a CLOSED device 2
+            # (device2_closed): with no guided escape path, the power it catches from
+            # device 1's radiation re-radiates — a fraction back into device 1 — instead
+            # of draining out a through-port. The 80-period arms are strong mirrors, so
+            # device 2 acts as a self-contained recycling cavity.
+            if draw_feed:
+                add_core_segment(-x_domain_half - 1e-6, x_grating_start, self.width_port,
+                                 name_prefix="wg_left_inf", y_center=y_center)
+
+            # Left grating: walk d = n_total ... 1 (outside → cavity).
+            for d in range(n_total, 0, -1):
+                s_d = shift_for_tooth[d]
+                if d == 1 and self.cavity_width_option == "avg_ext":
+                    w_ln = avg_width
+                else:
+                    w_ln = W_narrow[d]
+                add_core_segment(x, x + half_pitch - s_d, w_ln, name_prefix=f"L_narrow_{d}", y_center=y_center)
+                x += half_pitch - s_d
+                add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"L_wide_{d}", y_center=y_center)
+                x += half_pitch
+
+            # Cavity (length expanded by 2*Σ shifts to keep x_grating_end constant)
+            if featured and self.cavity_width_m is not None:
+                W_cavity = self.cavity_width_m
             else:
-                mod_depth = get_mod_depth(d)
-                delta_w = mod_depth / 2.0
-                W_narrow[d] = avg_width - delta_w
-                W_wide[d] = avg_width + delta_w
+                W_cavity = avg_width if self.cavity_width_option in ("avg", "avg_ext") else W_narrow[1]
+            add_core_segment(x, x + self.cavity_length + cavity_extra, W_cavity,
+                             name_prefix="cavity", y_center=y_center)
+            x += self.cavity_length + cavity_extra
 
-        # Per-tooth shift map (m). shift_for_tooth[d] for d ∈ [1, n_free]; zero for d > n_free.
-        # Convention (preserved from the legacy single-tooth path):
-        #   shift_for_tooth[d] shortens left  narrow_d_L by shift_for_tooth[d]
-        #   shift_for_tooth[d] shortens right narrow_{d+1}_R by shift_for_tooth[d]
-        # Total grating extent x_grating_end is preserved by absorbing 2*Σ shifts into the cavity.
-        shift_for_tooth = {d: 0.0 for d in range(0, n_total + 2)}
-        for d in range(1, n_free + 1):
-            shift_for_tooth[d] = float(self.inner_shift_nm[d - 1]) * 1e-9
-        cavity_extra = (2.0 * sum(shift_for_tooth[d] for d in range(1, n_free + 1))) if self.lengthen_cavity else 0.0
+            # Right grating: walk d = 1 ... n_total (cavity → outside).
+            for d in range(1, n_total + 1):
+                s_prev = shift_for_tooth[d - 1] if d >= 2 else 0.0
+                if d == 1 and self.cavity_width_option == "avg_ext":
+                    w_rn = avg_width
+                else:
+                    w_rn = W_narrow[d]
+                add_core_segment(x, x + half_pitch - s_prev, w_rn, name_prefix=f"R_narrow_{d}", y_center=y_center)
+                x += half_pitch - s_prev
+                add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"R_wide_{d}", y_center=y_center)
+                x += half_pitch
 
-        x_grating_start = -self.x_grating_end
-        x = x_grating_start
-        add_core_segment(-self.x_sim_boundary - 1e-6, x_grating_start, self.width_port, name_prefix="wg_left_inf")
+            if draw_feed:
+                add_core_segment(x, x_domain_half + 1e-6, self.width_port,
+                                 name_prefix="wg_right_inf", y_center=y_center)
 
-        # Left grating: walk d = n_total ... 1 (outside → cavity).
-        # narrow_d_L is shortened by shift_for_tooth[d]; wide_d_L is always full half_pitch.
-        # cavity_width_option="avg_ext" widens L_narrow_1 to avg_width (mirror of R_narrow_1).
-        for d in range(n_total, 0, -1):
-            s_d = shift_for_tooth[d]
-            if d == 1 and self.cavity_width_option == "avg_ext":
-                w_ln = avg_width
-            else:
-                w_ln = W_narrow[d]
-            add_core_segment(x, x + half_pitch - s_d, w_ln, name_prefix=f"L_narrow_{d}")
-            x += half_pitch - s_d
-            add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"L_wide_{d}")
-            x += half_pitch
+        # Device 1 (driven, full-featured). y_dev1 = 0 for single-device runs.
+        build_grating_arms(self.y_dev1, self.x_dev1, self.width_narrow, self.width_wide, featured=True)
 
-        # Cavity (length expanded by 2*Σ shifts to keep x_grating_end constant)
-        if self.cavity_width_m is not None:
-            W_cavity = self.cavity_width_m
-        else:
-            W_cavity = avg_width if self.cavity_width_option in ("avg", "avg_ext") else W_narrow[1]
-        add_core_segment(x, x + self.cavity_length + cavity_extra, W_cavity, name_prefix="cavity")
-        x += self.cavity_length + cavity_extra
-
-        # Right grating: walk d = 1 ... n_total (cavity → outside).
-        # narrow_d_R is shortened by shift_for_tooth[d-1] for d>=2; full half_pitch for d=1.
-        # wide_d_R is always full half_pitch.
-        # cavity_width_option="avg_ext" widens R_narrow_1 to avg_width (legacy behavior).
-        for d in range(1, n_total + 1):
-            s_prev = shift_for_tooth[d - 1] if d >= 2 else 0.0
-            if d == 1 and self.cavity_width_option == "avg_ext":
-                w_rn = avg_width
-            else:
-                w_rn = W_narrow[d]
-            add_core_segment(x, x + half_pitch - s_prev, w_rn, name_prefix=f"R_narrow_{d}")
-            x += half_pitch - s_prev
-            add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"R_wide_{d}")
-            x += half_pitch
-
-        add_core_segment(x, self.x_sim_boundary + 1e-6, self.width_port, name_prefix="wg_right_inf")
+        # Device 2 (passive, plain uniform grating with its own corrugation depth).
+        # device2_closed → no feed waveguides (recycler, not a drain).
+        if self.n_devices == 2:
+            build_grating_arms(self.y_dev2, self.x_dev2, self.width_narrow_2, self.width_wide_2,
+                               featured=False, draw_feed=not self.device2_closed)
 
     def _add_source_and_monitors(self):
         fdtd = self.fdtd
@@ -577,29 +672,41 @@ class PiShiftBraggFDTD:
         self.dist_grating_to_port = dist_snapped
         self.x_port = self.x_grating_end + dist_snapped
 
-        fdtd.addport()
-        fdtd.set("name", "Port_1")
-        fdtd.set("injection axis", "x")
-        fdtd.set("x", -(self.x_grating_end + dist_snapped))
-        fdtd.set("y", 0)
-        fdtd.set("y span", 1.2 * self.y_span)
-        fdtd.set("z", 0)
-        fdtd.set("z span", 1.2 * self.z_span)
-        fdtd.set("direction", "forward")
-        fdtd.set("mode selection", f"fundamental {self.polarization} mode")
-        fdtd.set("frequency dependent profile", 1)
+        # Port y span: full-domain for a single device (legacy); for the two-device
+        # pair, shrink to a local window around each guide so the port mode solve
+        # locks onto its OWN waveguide instead of a two-guide supermode.
+        if self.n_devices == 2:
+            port_y_span = max(self.width_wide, self.width_wide_2, self.width_port) + 1.2e-6
+        else:
+            port_y_span = 1.2 * self.y_span
 
-        fdtd.addport()
-        fdtd.set("name", "Port_2")
-        fdtd.set("injection axis", "x")
-        fdtd.set("x", (self.x_grating_end + dist_snapped))
-        fdtd.set("y", 0)
-        fdtd.set("y span", 1.2 * self.y_span)
-        fdtd.set("z", 0)
-        fdtd.set("z span", 1.2 * self.z_span)
-        fdtd.set("direction", "backward")
-        fdtd.set("mode selection", f"fundamental {self.polarization} mode")
-        fdtd.set("frequency dependent profile", 1)
+        x_p = self.x_grating_end + dist_snapped
+
+        def add_port(name, x_pos, y_pos, direction):
+            fdtd.addport()
+            fdtd.set("name", name)
+            fdtd.set("injection axis", "x")
+            fdtd.set("x", x_pos)
+            fdtd.set("y", y_pos)
+            fdtd.set("y span", port_y_span)
+            fdtd.set("z", 0)
+            fdtd.set("z span", 1.2 * self.z_span)
+            fdtd.set("direction", direction)
+            fdtd.set("mode selection", f"fundamental {self.polarization} mode")
+            fdtd.set("frequency dependent profile", 1)
+
+        # Device 1 (driven). y_dev1 = 0 for single-device runs (legacy-identical).
+        add_port("Port_1", -x_p, self.y_dev1, "forward")
+        add_port("Port_2", +x_p, self.y_dev1, "backward")
+
+        if self.n_devices == 2 and not self.device2_closed:
+            # Device 2 (passive, OPEN): mirror of Port_1/Port_2 at device-2's y center,
+            # longitudinally shifted by the stagger Δx. Port_1 stays the only source.
+            add_port("Port_3", self.x_dev2 - x_p, self.y_dev2, "forward")
+            add_port("Port_4", self.x_dev2 + x_p, self.y_dev2, "backward")
+            fdtd.setnamed("FDTD::ports", "source port", "Port_1")
+        # device2_closed → no device-2 ports (it's a recycler, not measured); FoM is
+        # device-1 T from Port_1/Port_2 only.
 
         # --- Monitor: Central Mode Tracking (1D X-axis) ---
         fdtd.addprofile()
@@ -607,7 +714,7 @@ class PiShiftBraggFDTD:
         fdtd.set("monitor type", "2D Z-normal")  # This is usually kept thin to trace peak field
         fdtd.set("x", 0)
         fdtd.set("x span", 2.0 * self.x_grating_end + 2.0e-6)
-        fdtd.set("y", 0)
+        fdtd.set("y", self.y_dev1)  # track the driven (device-1) guide; 0 for single-device
         fdtd.set("y span", 1.5 * self.width_wide)
         fdtd.set("z", 0)
         fdtd.set("override global monitor settings", 1)
@@ -620,7 +727,7 @@ class PiShiftBraggFDTD:
             fdtd.set("name", name)
             fdtd.set("monitor type", "Point")
             fdtd.set("x", x_pos)
-            fdtd.set("y", 0)
+            fdtd.set("y", self.y_dev1)  # track the driven (device-1) guide; 0 for single-device
             fdtd.set("z", 0)
 
         add_time_mon("time_input", -self.x_grating_end - 0.5e-6)
@@ -811,4 +918,22 @@ class PiShiftBraggFDTD:
         )
 
         R_modal, T_modal, Loss_radiation, T_matrix = analysis.calculate_physics_matrices(S11_sim, S21_sim)
+
+        # Two-device side-by-side: read the passive guide's ports (3,4). Their raw
+        # |S|² is the fraction of input power coupled into device-2's fundamental
+        # mode (backward / forward). NO phase correction is applied to the cross
+        # terms — coupling magnitude is the physical quantity of interest.
+        if self.n_devices == 2 and not self.device2_closed:
+            res3 = self.fdtd.getresult("FDTD::ports::Port_3", "expansion for port monitor")
+            res4 = self.fdtd.getresult("FDTD::ports::Port_4", "expansion for port monitor")
+            S31 = np.squeeze(res3["S"])
+            S41 = np.squeeze(res4["S"])
+            self.S31_complex = S31
+            self.S41_complex = S41
+            self.coupling_left = np.abs(S31) ** 2
+            self.coupling_right = np.abs(S41) ** 2
+            self.coupling_total = self.coupling_left + self.coupling_right
+            # Device-1 pure radiation loss after subtracting what device 2 captured.
+            self.loss_4port = Loss_radiation - self.coupling_total
+
         return wl, R_modal, T_modal, Loss_radiation, T_matrix, S11_sim, S21_sim

@@ -46,10 +46,12 @@ IS_HELPER = True  # not a dispatchable runner (athena_run.py auto-discovery)
 STUDY_DIR_NAME = "tm_te"
 
 # Single wide scan window (all runners). One window per polarization, wide enough
-# to contain both resonances for this device (TE ≈ 1571, TM ≈ 1524 nm).
-COMPARE_CENTER_M = 1.571e-6
-COMPARE_WIDTH_NM = 10
-COMPARE_N_POINTS = 2001       # ~25 pm spacing across the 150 nm window
+# to contain BOTH resonances at n_core=1.97: TE ≈ 1556, TM ≈ 1509 nm — both shifted
+# DOWN ~15 nm from the old 1.9963 values (TE ≈ 1571 / TM ≈ 1524). A narrow window
+# around the old wavelengths would miss the shifted peaks entirely.
+COMPARE_CENTER_M = 1.550e-6
+COMPARE_WIDTH_NM = 150
+COMPARE_N_POINTS = 6001       # ~25 pm spacing across the 150 nm window
 
 
 def build_base_cfg(cfg: SimulationConfig) -> SimulationConfig:
@@ -63,11 +65,12 @@ def build_base_cfg(cfg: SimulationConfig) -> SimulationConfig:
     cfg.grating.n_periods_each_side = 80
     cfg.grating.cavity_neg_detuning_nm = 0.0     # true default device
     cfg.apodization.enabled = False
-    # Constant indices follow the grating-coupler project's values
-    # (library values at 1.55 µm: Si3N4 "Luke", SiO2 "Palik") instead of the
-    # IT11-calibrated n_core used elsewhere in this repo.
+    # Constant indices. n_core was 1.9963 (grating-coupler "Luke" value); the
+    # user moved the project-wide default to 1.97 (2026-06-28), so this study
+    # follows suit. Going 1.9963 -> 1.97 red... (blue-)shifts both TE & TM
+    # resonances DOWN ~15 nm, so the TM pitch must be re-found at this index.
     cfg.material.use_constant_materials = True
-    cfg.material.n_core_const = 1.9963
+    cfg.material.n_core_const = 1.97
     cfg.material.n_clad_const = 1.444
     # Constant-index backend A/B: TM_CONST_MODE=sampled|object overrides the
     # repo default. Unset -> inherit the MaterialConfig default (so a later
@@ -167,6 +170,7 @@ def run_one_scan(base_cfg, polarization,
         "stopband_nm": stopband_nm(res),
         "spectral_fwhm_nm": float(res["spectral_fwhm_nm"]),
         "resonance_T": float(res["resonance_transmission"]),
+        "fwhm_m": float(res["fwhm_m"]),     # spatial mode FWHM (energy envelope along x), meters
         "scan_mat": res["results_path"],
     }
 
@@ -234,7 +238,7 @@ def _chain_from_mat(path, n_core_const, n_clad_const) -> dict:
     }
 
 
-def stitch_dir(results_dir, n_core_const=1.9963, n_clad_const=1.444) -> str:
+def stitch_dir(results_dir, n_core_const=1.97, n_clad_const=1.444) -> str:
     """Build result_tm_vs_te_summary_N<n>.mat from the two per-polarization
     result_*.mat in `results_dir`. This is the parallel-array stitch step: each
     GPU task wrote one polarization (…_te.mat / …_tm.mat), so the comparison is

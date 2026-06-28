@@ -76,8 +76,8 @@ STUDY_DIR_NAME = "tm_match_bisect"
 # ── Search / device constants ────────────────────────────────────────────────
 TE_N        = 80          # fixed TE reference period count (kept as-is)
 TE_PITCH_M  = 500e-9      # TE resonates ~1570.7 nm at pitch 500
-TM_PITCH_M  = 518.3e-9    # TM-calibrated pitch -> TM resonates ~1571 nm
-CENTER_M    = 1.571e-6    # scan window center (covers both TE and TM resonances)
+TM_PITCH_M  = 516.14e-9   # TM-calibrated pitch (n 1.97) -> TM resonates ~1558.7 nm
+CENTER_M    = 1.5587e-6   # scan window center (covers both TE and TM resonances at n 1.97)
 WIDTH_NM    = 20.0        # wide enough that the resonance never leaves the window
 N_POINTS    = 4001        # ~5 pm spacing -> resolves the narrowing FWHM (hence Q)
 STRIDE      = 40          # bracket-expansion step in periods

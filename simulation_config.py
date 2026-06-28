@@ -30,6 +30,20 @@ class GeometryConfig:
     width_port_m: float = 1000e-9               # Access waveguide width at ports
     substrate_thickness_m: float = 10e-6        # SiO2 substrate thickness
 
+    # ── Two side-by-side coupled devices (radiative-coupling study) ────────────
+    # n_devices=2 builds a SECOND parallel pi-shift waveguide, offset laterally by
+    # device_gap_m (edge-to-edge between the wide teeth) and longitudinally by
+    # device_stagger_m (Δx of device 2's defect along the guide axis). Only the
+    # first device is driven; the second is passive (ports 3/4 read the coupled
+    # power). corrugation_depth_2_m gives the second device an independent grating
+    # strength (None → equal to device 1). See bragg_device.PiShiftBraggFDTD.
+    n_devices: int = 1                          # 1 (default) or 2 (side-by-side pair)
+    device_gap_m: float = 1.0e-6                # Lateral edge-to-edge gap (wide-tooth edges) between the two guides
+    device_stagger_m: float = 0.0               # Longitudinal Δx offset of device 2's defect along the guide
+    corrugation_depth_2_m: Optional[float] = None  # Device-2 corrugation depth (None → equals device 1)
+    device2_closed: bool = False                # Device 2 = CLOSED recycler (no feed waveguides / drain ports);
+                                                # caught radiation re-radiates back toward device 1 instead of draining
+
     @property
     def width_wide_m(self) -> float:
         """Wide corrugation width (derived)."""
@@ -39,6 +53,21 @@ class GeometryConfig:
     def width_narrow_m(self) -> float:
         """Narrow corrugation width (derived)."""
         return self.avg_corrugation_width_m - self.corrugation_depth_m / 2
+
+    @property
+    def _corrugation_depth_2(self) -> float:
+        """Device-2 corrugation depth, falling back to device 1 when unset."""
+        return self.corrugation_depth_2_m if self.corrugation_depth_2_m is not None else self.corrugation_depth_m
+
+    @property
+    def width_wide_2_m(self) -> float:
+        """Wide corrugation width of device 2 (derived)."""
+        return self.avg_corrugation_width_m + self._corrugation_depth_2 / 2
+
+    @property
+    def width_narrow_2_m(self) -> float:
+        """Narrow corrugation width of device 2 (derived)."""
+        return self.avg_corrugation_width_m - self._corrugation_depth_2 / 2
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -154,8 +183,8 @@ class MeshConfig:
 class MaterialConfig:
     """Refractive index and material model settings."""
     use_constant_materials: bool = True         # Use frequency-independent n
-    n_core_const: float = 1.977                 # Constant core index (Si3N4)
-    n_clad_const: float = 1.44                  # Constant cladding index (SiO2)
+    n_core_const: float = 1.97                  # Constant core index (Si3N4) — PROJECT-WIDE DEFAULT (user, 2026-06-28: 1.977 → 1.97)
+    n_clad_const: float = 1.444                 # Constant cladding index (SiO2) — 2026-06-27 (was 1.44)
     n_eff_guess: float = 1.55                   # Estimated effective index for Bragg wavelength calc
     # Backend for constant-index mode (only used when use_constant_materials=True):
     #   "object"  — direct "<Object defined dielectric>" + set("index", n) per object
@@ -321,8 +350,19 @@ class SimulationConfig:
 
     @property
     def y_span(self) -> float:
-        """Simulation domain Y extent (derived from geometry + mesh + spectral)."""
-        return self.geometry.width_wide_m + self._span_multiplier * self.spectral.center_wavelength_m
+        """Simulation domain Y extent (derived from geometry + mesh + spectral).
+
+        For the two-device side-by-side pair the domain must enclose BOTH guides
+        (separated by the center-to-center distance s) plus their outer wide
+        teeth, with a generous PML standoff on each side (the subradiant coupling
+        tail is long — see span_multiplier_override for convergence runs).
+        """
+        g = self.geometry
+        pad = self._span_multiplier * self.spectral.center_wavelength_m
+        if g.n_devices == 2:
+            s = g.device_gap_m + 0.5 * g.width_wide_m + 0.5 * g.width_wide_2_m
+            return s + 0.5 * g.width_wide_m + 0.5 * g.width_wide_2_m + 2.0 * pad
+        return g.width_wide_m + pad
 
     @property
     def z_span(self) -> float:
@@ -373,6 +413,13 @@ class SimulationConfig:
             width_port=g.width_port_m,
             core_height=g.core_height_m,
             substrate_thickness=g.substrate_thickness_m,
+            # Two side-by-side coupled devices (n_devices=2)
+            n_devices=g.n_devices,
+            device_gap_m=g.device_gap_m,
+            device_stagger_m=g.device_stagger_m,
+            device2_closed=g.device2_closed,
+            width_narrow_2=g.width_narrow_2_m,
+            width_wide_2=g.width_wide_2_m,
             override_cavity_length_nm=cavity_override,
             cavity_width_option=gr.cavity_width_option,
             cavity_width_m=gr.cavity_width_m,

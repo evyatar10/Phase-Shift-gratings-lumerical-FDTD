@@ -78,6 +78,12 @@ class SweepSpec:
     # ── Source / polarization ───────────────────────────────────────────────
     polarization:               Optional[List[str]]   = None     # ["TE"], ["TM"], or ["TE","TM"]
 
+    # ── Two side-by-side coupled devices (radiative-coupling study) ───────────
+    n_devices:                  Optional[List[int]]   = None     # [1] | [2]
+    device_gap_nm:              Optional[List[float]] = None     # lateral edge-to-edge gap (nm)
+    device_stagger_nm:          Optional[List[float]] = None     # longitudinal Δx offset of device 2 (nm)
+    corrugation_depth_2_nm:     Optional[List[float]] = None     # device-2 corrugation depth (nm)
+
     # ── Behavior ────────────────────────────────────────────────────────────
     mode: Literal["cartesian", "zipped"] = "cartesian"
     label: str = ""

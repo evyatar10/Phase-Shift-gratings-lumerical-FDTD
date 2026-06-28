@@ -355,6 +355,21 @@ def assemble_results(
         'fwhm_m':                   field_profile.fwhm_m,
     }
 
+    # Two-device side-by-side coupling spectra + geometry (only for n_devices==2).
+    if getattr(sim, "n_devices", 1) == 2 and getattr(sim, "coupling_total", None) is not None:
+        results['coupling_left']  = sim.coupling_left    # |S31|² into device-2 (backward)
+        results['coupling_right'] = sim.coupling_right   # |S41|² into device-2 (forward)
+        results['coupling_total'] = sim.coupling_total   # device-2 captured fraction vs λ
+        results['loss_4port']     = sim.loss_4port       # device-1 radiated power not captured by device 2
+        results['n_devices']      = sim.n_devices
+        results['device_gap_m']   = sim.device_gap_m
+        results['device_stagger_m'] = sim.x_dev2
+        results['corrugation_depth_2_m'] = sim.width_wide_2 - sim.width_narrow_2
+        results['device_separation_m']   = sim.y_dev1 - sim.y_dev2  # center-to-center (lateral)
+        if getattr(sim, "S31_complex", None) is not None:
+            results['S31_complex'] = sim.S31_complex
+            results['S41_complex'] = sim.S41_complex
+
     # 2D field monitors (only include if data was recorded)
     if fields_2d:
         results['field_xy']       = fields_2d.get('xy', np.array([]))

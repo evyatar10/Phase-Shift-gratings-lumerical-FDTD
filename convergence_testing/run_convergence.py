@@ -44,15 +44,15 @@ _POL_TAG     = "" if POLARIZATION == "TE" else f"_{POLARIZATION.lower()}"
 # TM-study device parameters (used ONLY when POLARIZATION == "TM").
 # Mirrors convergence_testing/run_mesh_convergence.py — see that file and
 # runners/tm/PITCH_ALIGNMENT.md for the pitch-calibration rationale.
-TM_PITCH_NM      = 518.3      # calibrated pitch that re-centers TM near the TE wavelength
-TM_N_CORE        = 1.9963     # Si3N4 "Luke" @ 1.55 µm
+TM_PITCH_NM      = 516.14     # calibrated pitch (n_core 1.97) re-centers TM near the TE wavelength
+TM_N_CORE        = 1.97       # Si3N4 (user 2026-06-28; was 1.9963 "Luke")
 TM_N_CLAD        = 1.444      # SiO2 "Palik" @ 1.55 µm
 # Source center → the single-point far-field is sampled here. 1571.4 nm is the
 # TM cavity resonance on the production mesh (cells=5 / dy=dz=50 nm, which this
 # runner uses) from the mesh study's Phase-X table — so the monitors capture the
 # on-resonance radiating cavity mode (NOT the mesh study's 1567 nm scan center,
 # which is a wide-window center, not the peak).
-TM_CENTER_M      = 1.5714e-6
+TM_CENTER_M      = 1.5587e-6   # new TM resonance at n 1.97 / pitch 516.14 (was 1.5714 @ 1.9963/518.3)
 TM_SCAN_WIDTH_NM = 40.0
 TM_N_POINTS      = 2001
 

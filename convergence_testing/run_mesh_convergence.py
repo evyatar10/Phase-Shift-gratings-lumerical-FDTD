@@ -109,8 +109,8 @@ POLARIZATION = (os.environ.get("CONV_POL") or "TE").upper()   # unset OR empty â
 #     and the cavity peak across every mesh point (~2 nm mesh-induced shift), with
 #     margin. find_resonance isolates the cavity peak inside the band (verified on
 #     the existing 150 nm scan).
-TM_PITCH_NM      = 518.3
-TM_N_CORE        = 1.9963
+TM_PITCH_NM      = 516.14
+TM_N_CORE        = 1.97
 TM_N_CLAD        = 1.444
 TM_CENTER_M      = 1.567e-6
 TM_SCAN_WIDTH_NM = 40.0

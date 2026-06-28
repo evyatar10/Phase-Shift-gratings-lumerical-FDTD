@@ -4,7 +4,7 @@ Bragg grating — for BOTH TE and TM — used to compute the TM pitch that re-ce
 the TM resonance on the TE wavelength.
 
 WHY THIS EXISTS
-  The FDTD example holds the MATERIAL index constant (n_core=1.9963, n_clad=1.444),
+  The FDTD example holds the MATERIAL index constant (n_core=1.97, n_clad=1.444),
   but the EFFECTIVE index n_eff is still wavelength-dependent through WAVEGUIDE
   (geometric) dispersion. So the naive "scale the pitch by the wavelength ratio"
   under-predicts the pitch. FDE gives n_eff(λ) directly, which fixes that.
@@ -51,10 +51,12 @@ IS_HELPER = True  # local tool, not a cluster-dispatchable runner
 CORE_HEIGHT_M = 350e-9
 WIDE_WIDTH_M = 950e-9     # avg 800 + depth/2 (300/2)
 NARROW_WIDTH_M = 650e-9   # avg 800 − depth/2
-N_CORE = 1.9963
+N_CORE = 1.97        # user 2026-06-28 (was 1.9963); project-wide default flip
 N_CLAD = 1.444
 
-# Default FDTD anchors (overridden by --out result_*.mat if present, or CLI)
+# Default FDTD anchors (overridden by --out result_*.mat if present, or CLI).
+# NOTE: these were measured at the OLD n_core=1.9963; at 1.97 both resonances
+# shift DOWN ~15 nm, so re-anchor from a fresh 1.97 baseline (don't rely on these).
 DEFAULT_LAM_TE_NM = 1570.74
 DEFAULT_LAM_TM_NM = 1523.57
 DEFAULT_PITCH_NM = 500.0

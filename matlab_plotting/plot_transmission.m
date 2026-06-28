@@ -11,8 +11,10 @@ clear; clc;
 %close all;
 %% User settings
 % Filter range in microns for the combined loss and transmission plots5
-LAMBDA_MIN_UM = 1.553;
-LAMBDA_MAX_UM = 1.590;
+LAMBDA_CENTER_UM = 1.55879; % Center wavelength for zoomed plots
+delta_scan_um = 20e-3; % scan window 
+LAMBDA_MIN_UM = LAMBDA_CENTER_UM-delta_scan_um/2;
+LAMBDA_MAX_UM = LAMBDA_CENTER_UM+delta_scan_um/2;
 
 % LAMBDA_MIN_UM = 1.5;
 % LAMBDA_MAX_UM = 1.8;
@@ -337,7 +339,8 @@ if PLOT_COMBINED_LOSS
     hold off;
     xlabel('Wavelength [nm]', 'FontSize', FONT_SIZE);
     ylabel('Loss (1 - R - T)', 'FontSize', FONT_SIZE);
-    title('Combined Loss (Zoomed)', 'FontSize', FONT_SIZE);
+    title('Combined Loss', 'FontSize', FONT_SIZE);
+    xlim([LAMBDA_MIN_NM LAMBDA_MAX_NM]);  % center on LAMBDA_CENTER_UM (no auto-pad)
     grid on;
     legend('show', 'Location', 'best', 'Interpreter', 'none', 'FontSize', LEGEND_FONT_SIZE);
     set(gcf, 'Name', 'Combined Loss');
@@ -446,7 +449,8 @@ if PLOT_COMBINED_TRANS
     else
         ylabel('Transmission (T)', 'FontSize', FONT_SIZE);
     end
-    title('Combined Transmission (Zoomed)', 'FontSize', FONT_SIZE);
+    title('Combined Transmission', 'FontSize', FONT_SIZE);
+    xlim([LAMBDA_MIN_NM LAMBDA_MAX_NM]);  % center on LAMBDA_CENTER_UM (no auto-pad)
     grid on;
     legend('show', 'Location', 'best', 'Interpreter', 'none', 'FontSize', LEGEND_FONT_SIZE);
     set(gcf, 'Name', 'Combined Transmission');

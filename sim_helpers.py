@@ -263,15 +263,41 @@ def generate_file_tag(sim):
         _cwo = getattr(sim, 'cavity_width_option', 'narrow')
         wgd_tag = "_avgx" if _cwo == "avg_ext" else "_avg" if _cwo == "avg" else ""
 
+    # ── Two side-by-side pi-shift devices: naming convention ──────────────────
+    # Single-device (n_devices=1) file names are UNCHANGED — this suffix is only
+    # appended for the two-device study, and it carries every distinguishing knob
+    # so a two-device .mat name is fully self-documenting:
+    #   _2pishift            marks a two-pi-shift (coupled-pair) run
+    #   _p{..}               grating pitch in nm (e.g. p500, p518p3) — matters for TM-calibrated runs
+    #   _Ygap{..}nm          lateral edge-to-edge distance between the guides  (Y axis)
+    #   _Xstag{..}nm         longitudinal stagger of device 2 along the guide  (X axis)
+    #   _corr1{..}nm         device-1 corrugation depth
+    #   _corr2{..}nm         device-2 corrugation depth
+    #   _closed              device 2 is a closed recycler (no feed waveguides / drain ports)
+    # Unique per config → concurrent sweep tasks NEVER share a layout/.h5/.mat
+    # filename (a shared tag makes same-node array tasks clobber each other's
+    # output .h5 mid-run → "expansion for port monitor" crash).
+    two_dev_tag = ""
+    if getattr(sim, 'n_devices', 1) == 2:
+        gap_nm = round(float(getattr(sim, 'device_gap_m', 0.0)) * 1e9)
+        stag_nm = round(float(getattr(sim, 'device_stagger_m', 0.0)) * 1e9)
+        d1_nm = round((float(sim.width_wide) - float(sim.width_narrow)) * 1e9)
+        d2_nm = round((float(getattr(sim, 'width_wide_2', 0.0)) -
+                       float(getattr(sim, 'width_narrow_2', 0.0))) * 1e9)
+        pitch_str = f"{float(sim.pitch) * 1e9:.1f}".replace(".", "p")  # 500.0->500p0, 518.3->518p3
+        closed_tag = "_closed" if getattr(sim, 'device2_closed', False) else ""
+        two_dev_tag = (f"_2pishift_p{pitch_str}_Ygap{gap_nm}nm_Xstag{stag_nm}nm"
+                       f"_corr1{d1_nm}nm_corr2{d2_nm}nm{closed_tag}")
+
     if use_apod:
         tanh_tag = "_th" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""
         # Annotate center modulation depth only when it differs from the
         # historical default (100 nm) — keeps pre-sweep filenames stable.
         mod_depth_nm = float(getattr(sim, 'center_mod_depth', 100e-9)) * 1e9
         mod_tag = f"_M{round(mod_depth_nm):.0f}" if abs(mod_depth_nm - 100.0) > 0.5 else ""
-        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}"
+        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}"
     else:
-        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}"
+        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}"
 
 
 def apply_monitor_overrides(sim, cfg):

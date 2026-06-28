@@ -50,9 +50,9 @@ from simulation_config import SimulationConfig
 # Baseline = the TM/TE comparison device, but pinned to the TM-calibrated pitch
 # (518.3 nm) so the TM resonance sits at ~1571 nm (mirrors tm_periods_match_te.py).
 BASE = build_base_cfg(SimulationConfig())
-BASE.grating.pitch_m = 518.3e-9
+BASE.grating.pitch_m = 516.14e-9   # TM pitch at n 1.97 (was 518.3 @ 1.9963)
 # 150 nm window (1475–1625 nm) — same as the apodization study; comfortably
-# holds the TM resonance (~1570.5 nm at pitch 518.3).
+# holds the TM resonance (~1558.7 nm at pitch 516.14, n 1.97).
 BASE.spectral.center_wavelength_m = 1.550e-6
 BASE.spectral.scan_width_nm       = 150.0
 BASE.spectral.n_wl_points         = 6001

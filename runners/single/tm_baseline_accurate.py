@@ -8,7 +8,7 @@ accurate — not a fair gain. This run re-simulates the regular-grating baseline
 [300, 300, 800] at the SAME accurate mesh + scan settings the optimizer used for
 its final verification, so we get an apples-to-apples accurate-vs-accurate number.
 
-Imports the optimization BASE so n_core=1.9963 / n_clad=1.444 / pitch=518.3 /
+Imports the optimization BASE so n_core=1.97 / n_clad=1.444 / pitch=516.14 /
 TM polarization / scan window all match exactly; only the mesh and geometry
 (regular grating) differ.
 

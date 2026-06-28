@@ -49,6 +49,10 @@ n̄_eff at the *old* wavelength. FDE gives n̄_eff(λ) so you can evaluate it at
 
 ## Worked example (this device: 500 nm pitch, 80 periods, n_core 1.9963 / n_clad 1.444)
 
+> **Index changed (user, 2026-06-28): n_core 1.9963 → 1.97.** The table below is the
+> historical 1.9963 calibration. At 1.97 both resonances shift DOWN ~15 nm, so the
+> TM pitch must be re-found — rerun the procedure (fresh 500 nm baseline first).
+
 Goal: TM resonance onto λ_TE = 1570.74 nm.
 
 | pitch (nm) | method                | TM λ_res (nm) | off (nm) |

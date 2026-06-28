@@ -33,7 +33,7 @@ from simulation_config import SimulationConfig
 
 
 BASE = build_base_cfg(SimulationConfig())
-BASE.grating.pitch_m = 518.3e-9
+BASE.grating.pitch_m = 516.14e-9   # TM pitch at n 1.97 (was 518.3 @ 1.9963)
 BASE.spectral.center_wavelength_m = 1.550e-6
 BASE.spectral.scan_width_nm       = 150.0
 BASE.spectral.n_wl_points         = 6001

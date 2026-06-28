@@ -63,8 +63,8 @@ class SimpleBraggFDTD:
                  use_symmetry=True,
                  use_z_symmetry=True,
                  use_constant_materials=False,
-                 n_core_const=1.977,
-                 n_clad_const=1.44,
+                 n_core_const=1.97,
+                 n_clad_const=1.444,
                  const_material_mode="sampled"):
 
         self.pitch = pitch
@@ -191,7 +191,7 @@ class SimpleBraggFDTD:
         }} else {{
             addmaterial("Dielectric");
             set("name", "{custom_sio2}");
-            set("Refractive Index", 1.44);
+            set("Refractive Index", 1.444);
         }}
         if (materialexists("{custom_sin}")) {{
             setmaterial("{custom_sin}", "specify fit range", 1);

@@ -41,8 +41,8 @@ from simulation_config import SimulationConfig
 # Baseline = the TM/TE comparison device, but at the pitch-matched pitch so TM
 # re-centers on the TE wavelength. Everything else identical to tm_te_shift.
 BASE = build_base_cfg(SimulationConfig())
-BASE.grating.pitch_m              = 518.3e-9      # pitch-matched TM (re-centers ~1571 nm)
-# 150 nm window (1475–1625 nm) still holds the pitch-518.3 TM resonance (~1570.6).
+BASE.grating.pitch_m              = 516.14e-9     # pitch-matched TM at n 1.97 (re-centers ~1558.7 nm)
+# 150 nm window (1475–1625 nm) still holds the pitch-516.14 TM resonance (~1558.7).
 BASE.spectral.center_wavelength_m = 1.550e-6
 BASE.spectral.scan_width_nm       = 150.0
 BASE.spectral.n_wl_points         = 6001
@@ -51,9 +51,9 @@ BASE.farfield.enabled             = False
 
 
 SPEC = SweepSpec(
-    # Pitch-scaled shifts = {50,100,150,200}×(518.3/500) → same relative shift
+    # Pitch-scaled shifts = {50,100,150,200}×(516.14/500) → same relative shift
     # (20/40/60/80% of half-pitch) as the pitch-500 TE points.
-    innermost_tooth_shift_nm = [51.83, 103.66, 155.49, 207.32],   # 0 reused; 250 excluded
+    innermost_tooth_shift_nm = [51.61, 103.23, 154.84, 206.46],   # 0 reused; 250 excluded
     polarization             = ["TM"],
     label = "tm_shift_p518",
 )

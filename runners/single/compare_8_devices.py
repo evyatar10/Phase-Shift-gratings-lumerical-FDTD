@@ -58,7 +58,7 @@ def _base(pol: str, pitch_nm: float) -> SimulationConfig:
     cfg.spectral.scan_width_nm       = 50.0
     cfg.spectral.n_wl_points         = 2501
     cfg.material.n_eff_guess        = cfg.spectral.center_wavelength_m / (2 * cfg.grating.pitch_m)
-    cfg.monitors.record_2d_fields   = False
+    cfg.monitors.record_2d_fields   = True   # need yx (top) + zx (side) for both-plane mode width
     cfg.monitors.record_3d_fields   = False
     cfg.farfield.enabled            = False
     return cfg

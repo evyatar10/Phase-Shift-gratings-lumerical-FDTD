@@ -46,6 +46,11 @@ _CARD_FIELD_MAP = {
     "scan_width_nm":            ("spectral.scan_width_nm",               None),
     "farfield":                 ("farfield.enabled",                     None),
     "polarization":             ("source.polarization",                  None),  # "TE" | "TM"
+    # Two side-by-side coupled devices (radiative-coupling study)
+    "n_devices":                ("geometry.n_devices",                   None),  # 1 | 2
+    "device_gap_nm":            ("geometry.device_gap_m",                lambda v: v * 1e-9),
+    "device_stagger_nm":        ("geometry.device_stagger_m",            lambda v: v * 1e-9),
+    "corrugation_depth_2_nm":   ("geometry.corrugation_depth_2_m",       lambda v: v * 1e-9),
 }
 
 
@@ -77,6 +82,11 @@ class ExperimentCard:
     # Explicit per-tooth width arrays in nm, ordered innermost → outermost (index 0 = tooth nearest cavity).
     width_narrow_per_tooth_nm: Optional[list] = None
     width_wide_per_tooth_nm: Optional[list] = None
+    # Two side-by-side coupled devices (radiative-coupling study)
+    n_devices: Optional[int] = None                # 1 (default) | 2 (side-by-side pair)
+    device_gap_nm: Optional[float] = None          # lateral edge-to-edge gap between the two guides
+    device_stagger_nm: Optional[float] = None      # longitudinal Δx offset of device 2
+    corrugation_depth_2_nm: Optional[float] = None  # device-2 corrugation depth (None → equals device 1)
     label: str = ''
 
     def to_config(self, base: Optional[SimulationConfig] = None) -> SimulationConfig:
@@ -123,6 +133,14 @@ class ExperimentCard:
             cfg.spectral.scan_width_nm = self.scan_width_nm
         if self.farfield is not None:
             cfg.farfield.enabled = self.farfield
+        if self.n_devices is not None:
+            cfg.geometry.n_devices = self.n_devices
+        if self.device_gap_nm is not None:
+            cfg.geometry.device_gap_m = self.device_gap_nm * 1e-9
+        if self.device_stagger_nm is not None:
+            cfg.geometry.device_stagger_m = self.device_stagger_nm * 1e-9
+        if self.corrugation_depth_2_nm is not None:
+            cfg.geometry.corrugation_depth_2_m = self.corrugation_depth_2_nm * 1e-9
 
         # Apodization enable/disable logic
         if self.apod_method is not None:

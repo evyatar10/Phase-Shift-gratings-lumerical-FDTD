@@ -13,8 +13,13 @@ Usage:
 Scan window — edit COMPARE_CENTER_M / COMPARE_WIDTH_NM / COMPARE_N_POINTS in
 _tm_vs_te_common.py (currently 1550 nm center, 150 nm wide, 6001 points).
 
+The standalone TM device defaults to its CALIBRATED geometry: pitch 516.14 nm
+(TM resonance on the TE line) and corrugation 400 nm (TM spatial mode width = TE's,
+i.e. equal kappa). Override either per run via TM_PITCH_NM / TM_CORR_NM.
+
 Environment flags (see _tm_vs_te_common):
-  TM_PITCH_NM=518.3  re-center TM on the calibrated pitch (default 500)
+  TM_PITCH_NM=NNN    pitch in nm (default 516.14, the calibrated TM pitch at n 1.97)
+  TM_CORR_NM=NNN     corrugation depth in nm (default 400, the TE-mode-width match)
   TM_RECORD_2D=1     record XY/YZ/XZ 2D field profiles (cavity cross-section)
                      for MATLAB plot_field_poynting.m (default 0, spectra only)
   TM_MESH=accurate   finer mesh, dx~35 nm (default optimization, dx=50 nm)
@@ -35,6 +40,14 @@ STUDY_DIR_NAME = tvt.STUDY_DIR_NAME   # shared results folder: results/tm_te/
 
 def run_tm(cfg: SimulationConfig = None) -> dict:
     base = cfg if cfg is not None else build_cfg(SimulationConfig())
+    # Anchor the standalone TM device to its calibrated geometry (user 2026-06-28),
+    # both DEFAULTS and both overridable per run:
+    #   corrugation 400 nm (TM_CORR_NM) -> matches TE's spatial mode width / kappa,
+    #     found by runners/tm/tm_match_corrugation_bisect.py (job 113571).
+    #   pitch 516.14 nm  (TM_PITCH_NM)  -> matches the TM resonance to the TE line.
+    base.geometry.corrugation_depth_m = float(os.environ.get("TM_CORR_NM", "400")) * 1e-9
+    if "TM_PITCH_NM" not in os.environ:
+        base.grating.pitch_m = 516.14e-9
     return tvt.run_one_scan(base, "TM")
 
 

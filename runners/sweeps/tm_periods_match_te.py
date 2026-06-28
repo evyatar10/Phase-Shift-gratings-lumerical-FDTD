@@ -45,12 +45,12 @@ from simulation_config import SimulationConfig
 
 
 # Baseline = the TM/TE comparison device, but pinned to the TM-calibrated pitch
-# (518.3 nm) so the TM resonance sits at ~1571 nm regardless of TM_PITCH_NM.
+# (516.14 nm, n 1.97) so the TM resonance sits at ~1558.7 nm regardless of TM_PITCH_NM.
 BASE = build_base_cfg(SimulationConfig())
-BASE.grating.pitch_m = 518.3e-9
+BASE.grating.pitch_m = 516.14e-9
 # Clean, narrow spectra-only window centered on the TM resonance, fine enough to
 # resolve the FWHM (hence Q) as the grating narrows it at high N.
-BASE.spectral.center_wavelength_m = 1.571e-6
+BASE.spectral.center_wavelength_m = 1.5587e-6
 BASE.spectral.scan_width_nm       = 12.0
 BASE.spectral.n_wl_points         = 2401          # ~5 pm spacing across 12 nm
 # Spectra only — no 2D field profiles, no far-field (keeps the box at 1.8·λ).
