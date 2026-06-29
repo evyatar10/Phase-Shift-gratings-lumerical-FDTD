@@ -9,6 +9,16 @@ fsp_preview/
 *.fig
 *.mat
 
+# Figures, images, and rendered docs — output artifacts, never source. Do not commit.
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.eps
+*.tif
+*.tiff
+*.pdf
+
 # Large binary/container files (shared across DGX + Athena)
 container/lumerical-2026R1.sif
 container/AnsysInstaller.sh
