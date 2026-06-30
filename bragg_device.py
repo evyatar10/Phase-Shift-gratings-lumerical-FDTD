@@ -460,7 +460,9 @@ class PiShiftBraggFDTD:
         fdtd.set("background material", self.clad_material)
         if self._object_index_mode:
             fdtd.set("background index", self.n_clad_const)
-        fdtd.set("simulation time", 2000e-12)
+        # Sim time stays 2000 ps project-wide; OPT-IN override via TM_SIM_TIME_PS
+        # for one-off convergence checks only (empty/unset -> unchanged default).
+        fdtd.set("simulation time", (float(os.environ.get("TM_SIM_TIME_PS") or "2000")) * 1e-12)
         fdtd.set("auto shutoff min", 1e-7)
 
         fdtd.set("mesh type", "custom non-uniform")

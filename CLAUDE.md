@@ -106,3 +106,6 @@ generated figures or result data; if you see them staged, flag it.
 - Keep changes minimal and match surrounding code. Don't propose snapshot/auto-save/
   helper-CLI layers on top of workflows that already work via plain file edits.
 - Start optimizers from a known-good baseline (regular grating), not multi-start LHS.
+- **Links: give the full path, not just a relative one.** When linking to a file, use
+  the full absolute path (e.g. `c:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\matlab_plotting\plot_transmission.m`)
+  in the link target, not a bare relative/local path like `matlab_plotting/plot_transmission.m`.

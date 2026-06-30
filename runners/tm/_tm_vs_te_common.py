@@ -63,6 +63,11 @@ def build_base_cfg(cfg: SimulationConfig) -> SimulationConfig:
     # is recorded in the result filename (run_one_scan) so runs don't collide.
     cfg.grating.pitch_m = float(os.environ.get("TM_PITCH_NM", "500")) * 1e-9
     cfg.grating.n_periods_each_side = 80
+    # Core (Si3N4) thickness. Defaults to the device's 350 nm; override with
+    # TM_HEIGHT_NM for thin-guide studies (e.g. TM_HEIGHT_NM=200). A thinner core
+    # lowers n_eff and blue-shifts both resonances, so widen/recenter the scan
+    # window accordingly (TM_SCAN_CENTER_NM / TM_SCAN_WIDTH_NM in run_one_scan).
+    cfg.geometry.core_height_m = float(os.environ.get("TM_HEIGHT_NM", "350")) * 1e-9
     cfg.grating.cavity_neg_detuning_nm = 0.0     # true default device
     cfg.apodization.enabled = False
     # Constant indices. n_core was 1.9963 (grating-coupler "Luke" value); the
@@ -123,6 +128,18 @@ def run_one_scan(base_cfg, polarization,
     summary-dict shape that run_stitch consumes (T/R spectra live in the .mat)."""
     cfg = copy.deepcopy(base_cfg)
     cfg.source.polarization = polarization
+    # Per-run scan-window override (center/width/points). Defaults to the wide
+    # module window; set TM_SCAN_CENTER_NM / TM_SCAN_WIDTH_NM / TM_SCAN_NPTS to
+    # recenter/widen when a geometry change (e.g. thin core) shifts the peak.
+    # NB: use .get() truthiness, NOT `in os.environ` — deploy_athena.sh forwards
+    # these via --export with an empty-string default (${VAR:-}), so the key is
+    # PRESENT-BUT-EMPTY when unset; `in` would be true and float("") would crash.
+    if os.environ.get("TM_SCAN_CENTER_NM"):
+        center_m = float(os.environ["TM_SCAN_CENTER_NM"]) * 1e-9
+    if os.environ.get("TM_SCAN_WIDTH_NM"):
+        width_nm = float(os.environ["TM_SCAN_WIDTH_NM"])
+    if os.environ.get("TM_SCAN_NPTS"):
+        n_points = int(os.environ["TM_SCAN_NPTS"])
     cfg.material.n_eff_guess = center_m / (2.0 * cfg.grating.pitch_m)
     # Field-profile capture: spectra-only by default (comparison is about the
     # spectra). TM_RECORD_2D=1 turns on the XY/YZ/XZ 2D profile monitors so the
@@ -145,6 +162,9 @@ def run_one_scan(base_cfg, polarization,
     pitch_nm = base_cfg.grating.pitch_m * 1e9
     if abs(pitch_nm - 500.0) > 0.5:
         suffix += f"_P{pitch_nm:.1f}".replace(".", "p")   # 0.1 nm res, e.g. _P518p3
+    height_nm = base_cfg.geometry.core_height_m * 1e9
+    if abs(height_nm - 350.0) > 0.5:
+        suffix += f"_H{height_nm:.0f}"                    # thin-guide study, e.g. _H200
     if base_cfg.mesh.simulation_mode == "accurate":
         suffix += "_acc"                                  # don't clobber optimization results
     if cfg.span_multiplier_override is not None:
