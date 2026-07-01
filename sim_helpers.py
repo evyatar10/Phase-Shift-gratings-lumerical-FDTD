@@ -289,15 +289,32 @@ def generate_file_tag(sim):
         two_dev_tag = (f"_2pishift_p{pitch_str}_Ygap{gap_nm}nm_Xstag{stag_nm}nm"
                        f"_corr1{d1_nm}nm_corr2{d2_nm}nm{closed_tag}")
 
+    # ── Scatterer (radiation-recycling study): appended only when one is actually
+    #    drawn, so all existing file names — and the r=0 in-study control — are
+    #    unchanged. Carries radius + position (integer nm; 'm' prefix = minus), so
+    #    concurrent array tasks NEVER share a layout/.h5/.mat filename.
+    #      _scR{r}_X{x}_Y{y}   cylinder radius / center x / center y in nm
+    #      _pair               y-mirrored pair at ±y (the symmetry-compatible form)
+    scat_tag = ""
+    if getattr(sim, '_has_scatterer', False):
+        r_nm = round(sim.scatterer_radius_m * 1e9)
+        x_nm = round(sim.scatterer_x_m * 1e9)
+        y_nm = round(sim.scatterer_y_m * 1e9)
+        x_str = f"m{abs(x_nm)}" if x_nm < 0 else f"{x_nm}"
+        y_str = f"m{abs(y_nm)}" if y_nm < 0 else f"{y_nm}"
+        scat_tag = f"_scR{r_nm}_X{x_str}_Y{y_str}"
+        if getattr(sim, 'scatterer_mirrored_y', False):
+            scat_tag += "_pair"
+
     if use_apod:
         tanh_tag = "_th" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""
         # Annotate center modulation depth only when it differs from the
         # historical default (100 nm) — keeps pre-sweep filenames stable.
         mod_depth_nm = float(getattr(sim, 'center_mod_depth', 100e-9)) * 1e9
         mod_tag = f"_M{round(mod_depth_nm):.0f}" if abs(mod_depth_nm - 100.0) > 0.5 else ""
-        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}"
+        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{scat_tag}"
     else:
-        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}"
+        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{scat_tag}"
 
 
 def apply_monitor_overrides(sim, cfg):

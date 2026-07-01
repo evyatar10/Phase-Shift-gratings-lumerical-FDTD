@@ -77,7 +77,16 @@ class PiShiftBraggFDTD:
                  device_stagger_m=0.0,
                  width_narrow_2=None,
                  width_wide_2=None,
-                 device2_closed=False):
+                 device2_closed=False,
+                 # --- NEW: small dielectric scatterer(s) (radiation-recycling study) ---
+                 scatterer_enabled=False,
+                 scatterer_shape="cylinder",
+                 scatterer_radius_m=150e-9,
+                 scatterer_x_m=0.0,
+                 scatterer_y_m=1.0e-6,
+                 scatterer_index=None,
+                 scatterer_mirrored_y=True,
+                 scatterer_height_m=None):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -290,6 +299,47 @@ class PiShiftBraggFDTD:
         self.S31_complex = None
         self.S41_complex = None
 
+        # ── Small dielectric scatterer(s) — radiation-recycling study ──────────
+        # Active only when enabled AND radius > 0 (radius 0 = clean in-study
+        # control with identical numerics/domain). Drawn by _add_scatterers().
+        self.scatterer_shape = str(scatterer_shape or "cylinder").lower()
+        if self.scatterer_shape != "cylinder":
+            raise ValueError(f"scatterer_shape must be 'cylinder', got {scatterer_shape!r}")
+        self.scatterer_radius_m = float(scatterer_radius_m)
+        self.scatterer_x_m = float(scatterer_x_m)
+        self.scatterer_y_m = float(scatterer_y_m)
+        self.scatterer_index = scatterer_index  # None → n_core_const at placement
+        self.scatterer_mirrored_y = bool(scatterer_mirrored_y)
+        self.scatterer_height_m = (float(scatterer_height_m) if scatterer_height_m
+                                   else self.core_height)
+        self._has_scatterer = bool(scatterer_enabled) and self.scatterer_radius_m > 0.0
+        if (self._has_scatterer and not self.scatterer_mirrored_y
+                and abs(self.scatterer_y_m) > 0.0 and self.use_symmetry):
+            # A single off-axis scatterer breaks the y=0 mirror plane; with the TM
+            # 'Symmetric' BC left on, Lumerical would silently simulate the
+            # MIRRORED PAIR. Refuse rather than mislead.
+            raise ValueError(
+                "Single (non-mirrored) off-axis scatterer with the y-symmetry plane ON "
+                "would silently simulate a mirrored pair. Set symmetry.use_y_symmetry="
+                "False, or use scatterer_mirrored_y=True."
+            )
+        if self._has_scatterer:
+            y_edge = abs(self.scatterer_y_m) + self.scatterer_radius_m
+            if y_edge > 0.5 * self.y_span:
+                raise ValueError(
+                    f"Scatterer extends to |y|={y_edge*1e6:.2f} µm, outside the domain "
+                    f"(half y-span {0.5*self.y_span*1e6:.2f} µm). Widen the domain "
+                    f"(SimulationConfig.y_span_override_m)."
+                )
+            clearance = 0.5 * self.y_span - y_edge
+            lam_clad = self.lambda_B / self.n_clad_const
+            if clearance < lam_clad:
+                print(f"  WARNING: scatterer-to-PML clearance {clearance*1e6:.2f} µm < "
+                      f"λ/n_clad ({lam_clad*1e6:.2f} µm) — boundary artifacts possible.")
+            if abs(self.scatterer_y_m) - self.scatterer_radius_m < 0.5 * self.width_wide:
+                print(f"  WARNING: scatterer inner edge |y|={ (abs(self.scatterer_y_m)-self.scatterer_radius_m)*1e9:.0f} nm "
+                      f"overlaps/touches the wide teeth (half-width {0.5*self.width_wide*1e9:.0f} nm).")
+
         self.coarse_width_nm = coarse_width_nm
         half_w = 0.5 * self.coarse_width_nm * 1e-9
         self.lam_min = self.lambda_B - half_w
@@ -418,6 +468,7 @@ class PiShiftBraggFDTD:
         self._add_fdtd_region()
         self._add_aligned_mesh_override()
         self._add_bragg_core()
+        self._add_scatterers()
         self._add_source_and_monitors()
 
     def _add_fdtd_region(self):
@@ -666,6 +717,41 @@ class PiShiftBraggFDTD:
         if self.n_devices == 2:
             build_grating_arms(self.y_dev2, self.x_dev2, self.width_narrow_2, self.width_wide_2,
                                featured=False, draw_feed=not self.device2_closed)
+
+    def _add_scatterers(self):
+        """Small dielectric cylinder(s) beside the guide (radiation-recycling study).
+
+        Vertical cylinder(s), z-centered on the core, full core height — the z=0
+        mirror parity is preserved. With scatterer_mirrored_y both (x, ±y) copies
+        are drawn, so the scene stays valid whether the y=0 symmetry BC is on
+        (only the +y half is solved) or off. Index defaults to the core index
+        (SiN post in the oxide background); pass n_clad for an oxide hole inside
+        the core — the mesh-order override lets the scatterer win overlaps."""
+        if not self._has_scatterer:
+            return
+        fdtd = self.fdtd
+        n_scat = (float(self.scatterer_index) if self.scatterer_index is not None
+                  else self.n_core_const)
+        y_centers = ([self.scatterer_y_m, -self.scatterer_y_m]
+                     if self.scatterer_mirrored_y else [self.scatterer_y_m])
+        for k, y_c in enumerate(y_centers, start=1):
+            fdtd.addcircle()                      # cylinder, axis = z
+            fdtd.set("name", f"scatterer_{k}")
+            fdtd.set("material", self.core_material)
+            if self._object_index_mode:
+                fdtd.set("index", n_scat)
+            fdtd.set("radius", self.scatterer_radius_m)
+            fdtd.set("x", self.scatterer_x_m)
+            fdtd.set("y", y_c)
+            fdtd.set("z", 0.0)
+            fdtd.set("z span", self.scatterer_height_m)
+            fdtd.set("override mesh order from material database", 1)
+            fdtd.set("mesh order", 1)             # wins overlaps (needed for in-core holes)
+        print(f"  [scatterer] {len(y_centers)}x cylinder r={self.scatterer_radius_m*1e9:.0f} nm, "
+              f"n={n_scat:.4g}, at (x={self.scatterer_x_m*1e6:.3f} µm, "
+              f"y=±{abs(self.scatterer_y_m)*1e6:.3f} µm)" if self.scatterer_mirrored_y else
+              f"  [scatterer] cylinder r={self.scatterer_radius_m*1e9:.0f} nm, n={n_scat:.4g}, "
+              f"at (x={self.scatterer_x_m*1e6:.3f} µm, y={self.scatterer_y_m*1e6:.3f} µm)")
 
     def _add_source_and_monitors(self):
         fdtd = self.fdtd

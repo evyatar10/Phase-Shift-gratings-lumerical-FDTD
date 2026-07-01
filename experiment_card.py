@@ -51,6 +51,12 @@ _CARD_FIELD_MAP = {
     "device_gap_nm":            ("geometry.device_gap_m",                lambda v: v * 1e-9),
     "device_stagger_nm":        ("geometry.device_stagger_m",            lambda v: v * 1e-9),
     "corrugation_depth_2_nm":   ("geometry.corrugation_depth_2_m",       lambda v: v * 1e-9),
+    # Small dielectric scatterer(s) (radiation-recycling study). Drawn only when
+    # scatterer.enabled=True in the base config AND radius > 0 (radius 0 = control).
+    "scatterer_radius_nm":      ("scatterer.radius_m",                   lambda v: v * 1e-9),
+    "scatterer_x_nm":           ("scatterer.x_m",                        lambda v: v * 1e-9),
+    "scatterer_y_nm":           ("scatterer.y_m",                        lambda v: v * 1e-9),
+    "scatterer_mirrored_y":     ("scatterer.mirrored_y",                 None),
 }
 
 

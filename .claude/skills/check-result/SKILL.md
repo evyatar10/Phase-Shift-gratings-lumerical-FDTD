@@ -11,9 +11,11 @@ right the first time.
 
 ## Steps
 
-1. Resolve the file. If the user named one, use it. Otherwise list candidates
-   (`result_*.mat` under `results_from_athena/` or the relevant results dir, newest
-   first) and ask which one — don't guess.
+1. Resolve the file. If the user named one, use it. If they named a study/folder or a
+   sweep, load **all** `result_*.mat` in it and report a compact table (one row per
+   file: swept parameter(s), resonance λ, peak T, Q) plus the sanity-check verdicts.
+   Otherwise list candidates (`result_*.mat` under `results_from_athena/` or the
+   relevant results dir, newest first) and ask which one — don't guess.
 
 2. Load it (read-only; do not write anything). In Python:
    `from scipy.io import loadmat; d = loadmat(path)`. Fields of interest:
@@ -35,6 +37,8 @@ right the first time.
      so use a low floor, not a TE-tuned one)? If not → flag "dead / off-resonance device".
    - If a check fails, **lead with the failure** — do not present derived numbers as if
      the result were valid.
+
+5. End with the full absolute local path(s) of the file(s) inspected.
 
 ## Keep it minimal
 

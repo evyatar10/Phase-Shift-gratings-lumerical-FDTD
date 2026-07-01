@@ -84,6 +84,14 @@ class SweepSpec:
     device_stagger_nm:          Optional[List[float]] = None     # longitudinal Δx offset of device 2 (nm)
     corrugation_depth_2_nm:     Optional[List[float]] = None     # device-2 corrugation depth (nm)
 
+    # ── Small dielectric scatterer(s) (radiation-recycling study) ─────────────
+    # Drawn only when the base config has scatterer.enabled=True AND radius > 0
+    # (radius 0 = in-study no-scatterer control with identical numerics).
+    scatterer_radius_nm:        Optional[List[float]] = None     # cylinder radius (nm); 0 = none
+    scatterer_x_nm:             Optional[List[float]] = None     # center x (nm; defect = 0)
+    scatterer_y_nm:             Optional[List[float]] = None     # center y (nm; +y side)
+    scatterer_mirrored_y:       Optional[List[bool]]  = None     # True = pair at ±y
+
     # ── Behavior ────────────────────────────────────────────────────────────
     mode: Literal["cartesian", "zipped"] = "cartesian"
     label: str = ""

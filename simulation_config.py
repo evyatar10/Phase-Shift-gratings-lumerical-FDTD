@@ -227,6 +227,33 @@ class SymmetryConfig:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Scatterer (radiation-recycling study)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class ScattererConfig:
+    """Small dielectric scatterer(s) placed beside (or inside) the guide in the
+    horizontal plane — the lateral radiation-recycling study (paper_8 §7).
+
+    Disabled unless enabled=True AND radius_m > 0 (radius 0 = clean in-study
+    control with identical numerics). shape 'cylinder' is a vertical cylinder,
+    z-centered on the core, full core height (same litho layer as the teeth).
+    index None → n_core_const (SiN post in the oxide cladding); set n_clad_const
+    for an oxide hole inside the core (mesh order lets the hole win overlaps).
+    mirrored_y=True draws the pair at (x_m, ±y_m) — REQUIRED while the y=0
+    symmetry plane is on: a single off-axis scatterer breaks that plane, and the
+    TM 'Symmetric' BC would silently simulate the mirrored pair anyway."""
+    enabled: bool = False
+    shape: str = "cylinder"                     # 'cylinder' (addcircle); future: 'rect'
+    radius_m: float = 150e-9
+    x_m: float = 0.0                            # center x (cavity defect = x 0)
+    y_m: float = 1.0e-6                         # center y (+y side; pair mirrors to -y)
+    index: Optional[float] = None               # None → material.n_core_const
+    mirrored_y: bool = True
+    height_m: Optional[float] = None            # None → core height (z-centered)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Monitors
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -329,6 +356,7 @@ class SimulationConfig:
     symmetry: SymmetryConfig = field(default_factory=SymmetryConfig)
     monitors: MonitorConfig = field(default_factory=MonitorConfig)
     farfield: FarFieldConfig = field(default_factory=FarFieldConfig)
+    scatterer: ScattererConfig = field(default_factory=ScattererConfig)
     phase_correction: PhaseCorrectionConfig = field(default_factory=PhaseCorrectionConfig)
     run: RunConfig = field(default_factory=RunConfig)
 
@@ -338,6 +366,12 @@ class SimulationConfig:
     # Manual y/z domain-size override (× λ_center). None → default below (inert).
     # Used only for one-off domain-size checks via the SPAN_MULT env in the TM runners.
     span_multiplier_override: Optional[float] = None
+
+    # Absolute Y-domain override in meters (single-device only; None → inert).
+    # Unlike span_multiplier_override this widens Y ALONE (z stays at its default),
+    # so off-axis scatterers can be given PML clearance without inflating the z
+    # span/memory. Ignored for the two-device (n_devices==2) geometry.
+    y_span_override_m: Optional[float] = None
 
     # ── Derived properties ────────────────────────────────────────────────
 
@@ -362,6 +396,8 @@ class SimulationConfig:
         if g.n_devices == 2:
             s = g.device_gap_m + 0.5 * g.width_wide_m + 0.5 * g.width_wide_2_m
             return s + 0.5 * g.width_wide_m + 0.5 * g.width_wide_2_m + 2.0 * pad
+        if self.y_span_override_m is not None:
+            return self.y_span_override_m
         return g.width_wide_m + pad
 
     @property
@@ -464,6 +500,15 @@ class SimulationConfig:
             farfield_x_span_m=ff.farfield_x_span_m,
             farfield_y_dist_m=calc_farfield_y,
             farfield_z_dist_m=calc_farfield_z,
+            # Scatterer(s) (radiation-recycling study)
+            scatterer_enabled=self.scatterer.enabled,
+            scatterer_shape=self.scatterer.shape,
+            scatterer_radius_m=self.scatterer.radius_m,
+            scatterer_x_m=self.scatterer.x_m,
+            scatterer_y_m=self.scatterer.y_m,
+            scatterer_index=self.scatterer.index,
+            scatterer_mirrored_y=self.scatterer.mirrored_y,
+            scatterer_height_m=self.scatterer.height_m,
         )
 
     def to_simple_device_kwargs(self) -> dict:

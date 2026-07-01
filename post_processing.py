@@ -355,6 +355,15 @@ def assemble_results(
         'fwhm_m':                   field_profile.fwhm_m,
     }
 
+    # Scatterer geometry (radiation-recycling study). Always stored so the MATLAB
+    # sweep plots can read positions from the .mat instead of parsing filenames;
+    # scatterer_r_m == 0 marks the no-scatterer control / legacy-equivalent runs.
+    has_scat = bool(getattr(sim, "_has_scatterer", False))
+    results['scatterer_r_m']        = float(sim.scatterer_radius_m) if has_scat else 0.0
+    results['scatterer_x_m']        = float(getattr(sim, "scatterer_x_m", 0.0)) if has_scat else 0.0
+    results['scatterer_y_m']        = float(getattr(sim, "scatterer_y_m", 0.0)) if has_scat else 0.0
+    results['scatterer_mirrored_y'] = int(getattr(sim, "scatterer_mirrored_y", False)) if has_scat else 0
+
     # Two-device side-by-side coupling spectra + geometry (only for n_devices==2).
     if getattr(sim, "n_devices", 1) == 2 and getattr(sim, "coupling_total", None) is not None:
         results['coupling_left']  = sim.coupling_left    # |S31|² into device-2 (backward)

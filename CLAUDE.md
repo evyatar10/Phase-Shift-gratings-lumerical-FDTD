@@ -56,6 +56,10 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
   rather than assuming these defaults.
 - When material index or pitch changes mid-study, **re-scan the baseline** at the new
   resonance (don't reuse the old scan window — that's how peaks get missed).
+- **Before dispatching a new scan, state the target resonance λ and scan-window width**
+  in one line and sanity-check them against the study (past incidents: a 75 nm window
+  where ~20 nm was meant; aiming at 1449 nm when the user meant 1550). Don't block on
+  it — but if they conflict with something the user said, ask first.
 
 ## 5. Verification policy (smoke-test, don't over-test)
 
@@ -77,6 +81,11 @@ Over-testing never once cost anything. So:
 
 ## 6. Server safety
 
+- **ssh/scp command form.** Always write remote commands host-first:
+  `ssh evyatarrubin@athena.technion.ac.il "..."`. Never env-var-prefixed forms
+  (`SSHHOST=... ssh "$SSHHOST" ...`) — they evade the permission-rule pattern matching
+  (including the `scancel` ask-guard). Strip the Technion login banner with
+  `grep -vE "post-quantum|openssh|may need to be upgraded"`.
 - **Concurrency / no clobbering.** Deploy does `rsync --delete` into a *shared*
   `REMOTE_BASE/project/` and writes to a *shared* `results/` + `data/sweep_list.txt`.
   Two chats/jobs deploying at once **overwrite each other's source and outputs** (real
@@ -87,13 +96,26 @@ Over-testing never once cost anything. So:
 - **Stopping runs is a confirm-first action.** Never blanket `scancel`. Resolve the
   specific job ID from `squeue` first, state it back, and confirm before cancelling.
   After cancel, re-check `squeue` to verify. Treat "stop the run" as needing a job ID,
-  not speed.
+  not speed. (Enforced: `scancel` is on the permission **ask** list — the prompt the
+  user approves IS the confirmation. Use the `stop-runs` skill.)
 - **Disk quota.** Home has a ~300 GB quota; rebuild-PSO fills it with `.fsp`+`.h5` and
   then jobs silently hang at container init ("Setting --writable-tmpfs"). If jobs hang
   or quota is near 300 G, **delete `.h5` scratch** (don't keep `.h5` by default).
 - **Silent no-ops.** A license outage makes `fdtd.run()` return instantly with no
-  results. If a run finishes implausibly fast / empty, check the license
-  (`--license-probe` / `lmstat`) before re-dispatching.
+  results. If a run finishes implausibly fast / empty, check the license before
+  re-dispatching.
+- **`lmstat` -96 on Athena is a FALSE NEGATIVE — do NOT block a dispatch on it.**
+  `--license-probe` / container `lmutil lmstat` returns `-96` ("lmgrd is not running /
+  server down"; locally `HOST_NOT_FOUND`) *even when the license is fully working*. Cause:
+  lmstat enumerates by the server's advertised FQDN `lumerical-lm.ece.technion.ac.il`,
+  which doesn't resolve — but real jobs check out **by IP** via the `ANSYSLMD_LICENSE_FILE
+  =1055@132.68.48.51` / `ANSYSLI_SERVERS=2325@132.68.48.51` env vars the deploy exports.
+  So lmstat probes a path real runs never use. Reliable signal instead: TCP ports `1055`
+  and `2325` OPEN by IP ⇒ server reachable (open ports + lmstat `-96` = this false
+  negative, not an outage); a *genuine* outage no-ops `fdtd.run()` in seconds, so confirm
+  with one real sim before concluding "down." (2026-06-30: preflight said "down"; job
+  115369 then ran real 7-min solves. Cost a wasted abort cycle.) See
+  `memory/project_athena_lmstat_false_negative.md`.
 
 ## 7. Don't commit artifacts
 
@@ -101,11 +123,22 @@ Figures and data are regenerated outputs, not source. `.gitignore` covers
 `*.mat`/`*.fig`/`*.h5`/`results*/` and now image rasters (`*.png` etc.). Don't `git add`
 generated figures or result data; if you see them staged, flag it.
 
-## 8. Style
+## 8. Interaction & style
 
+- **An exploratory question is NOT authorization to build or dispatch.** "Can X work?",
+  "what should I do?", "מה דעתך" + even a bare "continue" = discuss and propose; do not
+  implement new geometry/features or submit jobs until the user picks an option. (Real
+  incident 2026-07-01: a "what to do?" question turned into unwanted two-phase-shift
+  geometry.)
 - Keep changes minimal and match surrounding code. Don't propose snapshot/auto-save/
   helper-CLI layers on top of workflows that already work via plain file edits.
 - Start optimizers from a known-good baseline (regular grating), not multi-start LHS.
 - **Links: give the full path, not just a relative one.** When linking to a file, use
   the full absolute path (e.g. `c:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\matlab_plotting\plot_transmission.m`)
   in the link target, not a bare relative/local path like `matlab_plotting/plot_transmission.m`.
+- **End every results/figure answer with the full absolute local paths** to the files
+  produced, unprompted (the user has had to ask "give me the full link" 21 times).
+- **Plots:** title carries the physical dimensions + resonance λ + peak T; compact
+  legends; never label a plot "zoomed"; `'Interpreter','none'` for filename-ish text.
+- If the user writes in Hebrew, answer in Hebrew (right-to-left, and avoid em-dashes
+  in Hebrew text).
