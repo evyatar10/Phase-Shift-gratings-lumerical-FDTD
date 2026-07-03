@@ -95,6 +95,18 @@ class GratingConfig:
     inner_shift_nm: Optional[list] = None        # Per-tooth gap shift in nm. Length must equal n_free_inner_teeth. None → use innermost_tooth_shift_m for tooth d=1, zero for d>=2.
     enforce_mirror_symmetry: bool = True         # Inverse-design optimizer: mirror DW and shift across left/right (always True at the bragg_device level — flagged here for future asymmetric runs).
 
+    # ── Sidewall-corrugation phase offset (radiation null-steering study) ──────
+    # Shifts the BOTTOM (-y) wall's teeth along x by (deg/360)*pitch relative to
+    # the top wall. 0 = standard aligned width modulation (all existing devices).
+    # The two walls' radiated fields then interfere with an extra phase φ at the
+    # in-plane lobe angle: φ chosen so the walls cancel AT the measured lobe
+    # (~14° for TM corr-400) while the guided-mode κ only drops as cos(φ/2)
+    # (recoverable by deepening the corrugation). Breaks the y-mirror symmetry →
+    # requires symmetry.use_y_symmetry = False (enforced in bragg_device).
+    # Incompatible with apodization / per-tooth arrays / inner-tooth DW-shift /
+    # n_devices=2 (guarded).
+    wall_phase_offset_deg: float = 0.0
+
     # ── Explicit per-tooth width arrays (mirror-symmetric per-side) ────────────
     # When both are set, W_narrow[d]/W_wide[d] are taken verbatim for the innermost
     # d ∈ [1, len] teeth (index 0 = innermost). Teeth beyond the array length fall
@@ -251,6 +263,13 @@ class ScattererConfig:
     index: Optional[float] = None               # None → material.n_core_const
     mirrored_y: bool = True
     height_m: Optional[float] = None            # None → core height (z-centered)
+    # Multi-scatterer array (coherent-recycling study): when set, draws one
+    # scatterer (or ±y pair) at EACH x in the list — same radius/index for all.
+    # Overrides x_m. Positions in meters, e.g. the measured 540-nm winner comb.
+    x_list_m: Optional[list] = None
+    # Optional per-site y (same length as x_list_m) for arc / diagonal-ray
+    # placements; None → all sites at y_m. Each site still mirrors to ±y_i.
+    y_list_m: Optional[list] = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -466,6 +485,7 @@ class SimulationConfig:
             inner_shift_nm=gr.inner_shift_nm,
             width_narrow_per_tooth_m=gr.width_narrow_per_tooth_m,
             width_wide_per_tooth_m=gr.width_wide_per_tooth_m,
+            wall_phase_offset_deg=gr.wall_phase_offset_deg,
             y_span=self.y_span,
             z_span=self.z_span,
             material_db_path=config.MATERIAL_DB_PATH,
@@ -500,6 +520,11 @@ class SimulationConfig:
             farfield_x_span_m=ff.farfield_x_span_m,
             farfield_y_dist_m=calc_farfield_y,
             farfield_z_dist_m=calc_farfield_z,
+            # Domain-size overrides active → file tag carries the box size
+            # (keeps default-box filenames unchanged; prevents same-tag clobber
+            # when sweeping the domain itself)
+            domain_tag_active=(self.y_span_override_m is not None
+                               or self.span_multiplier_override is not None),
             # Scatterer(s) (radiation-recycling study)
             scatterer_enabled=self.scatterer.enabled,
             scatterer_shape=self.scatterer.shape,
@@ -509,6 +534,8 @@ class SimulationConfig:
             scatterer_index=self.scatterer.index,
             scatterer_mirrored_y=self.scatterer.mirrored_y,
             scatterer_height_m=self.scatterer.height_m,
+            scatterer_x_list_m=self.scatterer.x_list_m,
+            scatterer_y_list_m=self.scatterer.y_list_m,
         )
 
     def to_simple_device_kwargs(self) -> dict:

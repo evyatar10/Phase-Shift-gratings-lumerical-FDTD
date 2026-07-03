@@ -42,6 +42,9 @@ plot of a dead device.
   use `'Interpreter','none'` for filenames in titles.
 - Plot cosmetics the user has corrected before: title should carry the physical
   dimensions + resonance λ + peak T; keep legends compact; don't label plots "zoomed".
+- Field-map view naming is deliberately NON-standard in this project: the XZ monitor
+  is labeled **"Top view"**, the XY monitor **"Side view"**; x (propagation) is always
+  the horizontal axis (z vertical for XZ, y vertical for XY; ux horizontal in far-field).
 
 ## 4. Deliver
 

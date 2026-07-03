@@ -57,6 +57,7 @@ class SweepSpec:
     n_apod_periods_each_side:   Optional[List[int]]   = None
     center_mod_depth_nm:        Optional[List[float]] = None
     corrugation_depth_nm:       Optional[List[float]] = None
+    avg_width_nm:               Optional[List[float]] = None
     pitch_nm:                   Optional[List[float]] = None
 
     # ── Cavity / phase-shift ────────────────────────────────────────────────
@@ -91,6 +92,13 @@ class SweepSpec:
     scatterer_x_nm:             Optional[List[float]] = None     # center x (nm; defect = 0)
     scatterer_y_nm:             Optional[List[float]] = None     # center y (nm; +y side)
     scatterer_mirrored_y:       Optional[List[bool]]  = None     # True = pair at ±y
+    scatterer_index:            Optional[List[float]] = None     # 1.97 SiN pillar | 1.444 SiO2 hole
+    scatterer_x_list_nm:        Optional[List[list]]  = None     # per-task LIST of x centers (nm) — multi-scatterer array
+    scatterer_y_list_nm:        Optional[List[list]]  = None     # per-task LIST of per-site y (nm; None entry = shared y_m) — arc/diagonal rows
+
+    # ── Domain-size knobs (convergence studies) ───────────────────────────────
+    y_span_um:                  Optional[List[float]] = None     # absolute Y box (um; single-device)
+    span_mult:                  Optional[List[float]] = None     # y/z multiplier override (None = default 1.8)
 
     # ── Behavior ────────────────────────────────────────────────────────────
     mode: Literal["cartesian", "zipped"] = "cartesian"

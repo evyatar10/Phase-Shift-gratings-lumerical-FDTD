@@ -81,15 +81,44 @@
       "PowerShell(git cherry-pick*)",
       "PowerShell(git revert*)",
       "PowerShell(git config*)",
-      "Bash(rm -rf*)",
-      "Bash(rm -fr*)",
-      "PowerShell(Remove-Item * -Recurse*)",
-      "PowerShell(Remove-Item -Recurse*)",
+      "Bash(rm*)",
+      "Bash(rmdir *)",
+      "Bash(unlink *)",
+      "Bash(shred *)",
+      "Bash(find * -delete*)",
+      "Bash(find * -exec rm*)",
+      "Bash(ssh * rm *)",
+      "Bash(ssh *rm -rf*)",
+      "Bash(ssh *rm -f*)",
+      "PowerShell(Remove-Item*)",
+      "PowerShell(rm *)",
+      "PowerShell(rd *)",
+      "PowerShell(ri *)",
+      "PowerShell(del *)",
+      "PowerShell(rmdir *)",
+      "PowerShell(erase *)",
+      "PowerShell(Clear-Content*)",
+      "PowerShell(ssh * rm *)",
       "Bash(ssh *scancel*)",
       "PowerShell(ssh *scancel*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\hpc\\scripts"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/check_py_syntax.py",
+            "timeout": 20,
+            "statusMessage": "Checking Python syntax"
+          }
+        ]
+      }
     ]
   }
 }

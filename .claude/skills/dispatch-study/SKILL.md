@@ -15,13 +15,25 @@ expensive mistake class in this project's history.
    (CLAUDE.md §8). For TM work, confirm height + pitch + corrugation first (§4).
 2. **One line stating target resonance λ and scan-window width**, sanity-checked
    against the study (§4). If they conflict with anything the user said — ask.
-3. **Preflight**: run the `athena-preflight` skill (license ports, queue, quota).
+3. **Echo the *built* config, not the intent**: pitch, n_core, N periods, and which
+   monitors are ON (2D fields / far-field), read from the SPEC/runner file or the
+   smoke output. Three full resubmissions happened because the dispatched config
+   silently used the wrong pitch; three more reruns because far-field/2D monitors were
+   off. TM studies copy anchors from `runners/tm/run_tm.py` — never raw
+   `SimulationConfig` defaults. TE/TM comparison pairs must record **identical
+   monitor sets**.
+4. **Preflight**: run the `athena-preflight` skill (license ports, queue, quota).
    Never launch a second `--option3` sweep while one has pending tasks; serialize
-   jobs that share `data/sweep_list.txt` / `results/` (§6).
-4. **Smoke-test rule (§5)**: if the change touches geometry, a new builder/scaffold,
+   jobs that share `data/sweep_list.txt` / `results/` (§6). **No exceptions** — a
+   different study or a tiny 4-task job still rewrites the shared sweep_list.txt and
+   kills every pending task whose index exceeds the new length ("SWEEP_INDEX out of
+   range"; 2026-07-02 hole-scan incident). Check pending with `squeue -r` (plain
+   `squeue` collapses a pending array to one line). QOS `24h_1g` caps 100 submitted /
+   4 running tasks per user → chunk big arrays with `--array-tasks=`.
+5. **Smoke-test rule (§5)**: if the change touches geometry, a new builder/scaffold,
    gradients, or source/BC setup → smoke first. For the four optimization families
    that means dispatching `smoke_test.py` (~15–30 min) before `optimize_transmission.py`.
-5. **Unique outputs**: new/parallel studies need distinct `generate_file_tag()` names
+6. **Unique outputs**: new/parallel studies need distinct `generate_file_tag()` names
    and their own `STUDY_DIR` — shared `.h5`/`.mat` filenames have raced before.
 
 ## 2. Pick the dispatch form (from runners/README.md)

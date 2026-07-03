@@ -34,6 +34,7 @@ _CARD_FIELD_MAP = {
     "apod_method":              ("apodization.method",                   None),
     "tanh_steepness":           ("apodization.tanh_steepness",           None),
     "corrugation_depth_nm":     ("geometry.corrugation_depth_m",         lambda v: v * 1e-9),
+    "avg_width_nm":             ("geometry.avg_corrugation_width_m",     lambda v: v * 1e-9),
     "pitch_nm":                 ("grating.pitch_m",                      lambda v: v * 1e-9),
     "n_apod_periods_each_side": ("apodization.n_apod_periods_each_side", None),
     "cavity_length_nm":         ("grating.override_cavity_length_nm",    None),
@@ -57,6 +58,14 @@ _CARD_FIELD_MAP = {
     "scatterer_x_nm":           ("scatterer.x_m",                        lambda v: v * 1e-9),
     "scatterer_y_nm":           ("scatterer.y_m",                        lambda v: v * 1e-9),
     "scatterer_mirrored_y":     ("scatterer.mirrored_y",                 None),
+    "scatterer_index":          ("scatterer.index",                      None),  # 1.97 pillar | 1.444 hole
+    "scatterer_x_list_nm":      ("scatterer.x_list_m",                   lambda v: [float(x) * 1e-9 for x in v]),  # array of x centers
+    "scatterer_y_list_nm":      ("scatterer.y_list_m",                   lambda v: None if v is None else [float(x) * 1e-9 for x in v]),  # per-site y (arc/diagonal)
+    # Domain-size knobs (convergence studies). y_span_um sets the ABSOLUTE Y box
+    # (single-device only); span_mult scales the default y/z multiplier — with
+    # y_span_um also set, span_mult effectively controls Z alone.
+    "y_span_um":                ("y_span_override_m",                    lambda v: v * 1e-6),
+    "span_mult":                ("span_multiplier_override",             None),
 }
 
 

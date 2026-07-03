@@ -289,6 +289,25 @@ def generate_file_tag(sim):
         two_dev_tag = (f"_2pishift_p{pitch_str}_Ygap{gap_nm}nm_Xstag{stag_nm}nm"
                        f"_corr1{d1_nm}nm_corr2{d2_nm}nm{closed_tag}")
 
+    # ── Domain-size override (convergence studies): appended only when a y/z box
+    #    override is active, so domain sweeps get distinct filenames while every
+    #    default-box file name stays exactly as before.
+    dom_tag = ""
+    if getattr(sim, '_domain_tag_active', False):
+        y_um = float(sim.y_span) * 1e6
+        z_um = float(sim.z_span) * 1e6
+        dom_tag = f"_Ybox{y_um:.1f}_Zbox{z_um:.1f}".replace(".", "p")
+
+    # ── Core width / corrugation (light-line-margin study): appended only when the
+    #    average corrugated width differs from the historical 800 nm default, so
+    #    every existing file name is unchanged. Carries corr too, because width
+    #    rows are swept both at fixed and at proportionally-scaled corrugation.
+    wc_tag = ""
+    _w_avg_nm = round((float(sim.width_wide) + float(sim.width_narrow)) * 0.5e9)
+    if abs(_w_avg_nm - 800) > 0:
+        _c_nm = round((float(sim.width_wide) - float(sim.width_narrow)) * 1e9)
+        wc_tag = f"_Wavg{_w_avg_nm}_C{_c_nm}"
+
     # ── Scatterer (radiation-recycling study): appended only when one is actually
     #    drawn, so all existing file names — and the r=0 in-study control — are
     #    unchanged. Carries radius + position (integer nm; 'm' prefix = minus), so
@@ -302,9 +321,26 @@ def generate_file_tag(sim):
         y_nm = round(sim.scatterer_y_m * 1e9)
         x_str = f"m{abs(x_nm)}" if x_nm < 0 else f"{x_nm}"
         y_str = f"m{abs(y_nm)}" if y_nm < 0 else f"{y_nm}"
-        scat_tag = f"_scR{r_nm}_X{x_str}_Y{y_str}"
-        if getattr(sim, 'scatterer_mirrored_y', False):
+        x_list = getattr(sim, 'scatterer_x_list_m', None)
+        y_list = getattr(sim, 'scatterer_y_list_m', None)
+        if x_list:
+            # Array form: count + first/last x (and y for arc/diagonal rows).
+            x0 = round(x_list[0] * 1e9)
+            x1 = round(x_list[-1] * 1e9)
+            if y_list:
+                y0 = round(y_list[0] * 1e9)
+                y1 = round(y_list[-1] * 1e9)
+                scat_tag = f"_scR{r_nm}_arr{len(x_list)}_X{x0}to{x1}_Y{y0}to{y1}"
+            else:
+                scat_tag = f"_scR{r_nm}_arr{len(x_list)}_X{x0}to{x1}_Y{y_str}"
+        else:
+            scat_tag = f"_scR{r_nm}_X{x_str}_Y{y_str}"
+        if getattr(sim, 'scatterer_mirrored_y', False) and y_nm != 0:
             scat_tag += "_pair"
+        # Flipped-material case: index below the core index marks an oxide HOLE
+        # inside the SiN core (vs the default SiN pillar in the oxide cladding).
+        if getattr(sim, '_scatterer_n', sim.n_core_const) < sim.n_core_const - 1e-9:
+            scat_tag += "_hole"
 
     if use_apod:
         tanh_tag = "_th" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""
@@ -312,9 +348,9 @@ def generate_file_tag(sim):
         # historical default (100 nm) — keeps pre-sweep filenames stable.
         mod_depth_nm = float(getattr(sim, 'center_mod_depth', 100e-9)) * 1e9
         mod_tag = f"_M{round(mod_depth_nm):.0f}" if abs(mod_depth_nm - 100.0) > 0.5 else ""
-        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{scat_tag}"
+        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{dom_tag}{scat_tag}"
     else:
-        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{scat_tag}"
+        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{dom_tag}{scat_tag}"
 
 
 def apply_monitor_overrides(sim, cfg):

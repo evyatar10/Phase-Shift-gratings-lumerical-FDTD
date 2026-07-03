@@ -363,6 +363,14 @@ def assemble_results(
     results['scatterer_x_m']        = float(getattr(sim, "scatterer_x_m", 0.0)) if has_scat else 0.0
     results['scatterer_y_m']        = float(getattr(sim, "scatterer_y_m", 0.0)) if has_scat else 0.0
     results['scatterer_mirrored_y'] = int(getattr(sim, "scatterer_mirrored_y", False)) if has_scat else 0
+    results['scatterer_n']          = float(getattr(sim, "_scatterer_n", 0.0)) if has_scat else 0.0
+    _sc_xl = getattr(sim, "scatterer_x_list_m", None)
+    results['scatterer_n_sites']    = (len(_sc_xl) if (has_scat and _sc_xl) else (1 if has_scat else 0))
+    if has_scat and _sc_xl:
+        results['scatterer_x_list_m'] = np.asarray(_sc_xl, dtype=float)
+        _sc_yl = getattr(sim, "scatterer_y_list_m", None)
+        results['scatterer_y_list_m'] = np.asarray(
+            _sc_yl if _sc_yl else [sim.scatterer_y_m] * len(_sc_xl), dtype=float)
 
     # Two-device side-by-side coupling spectra + geometry (only for n_devices==2).
     if getattr(sim, "n_devices", 1) == 2 and getattr(sim, "coupling_total", None) is not None:

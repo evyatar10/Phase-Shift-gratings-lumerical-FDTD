@@ -78,6 +78,8 @@ class PiShiftBraggFDTD:
                  width_narrow_2=None,
                  width_wide_2=None,
                  device2_closed=False,
+                 # --- NEW: domain-size override marker (file-tag disambiguation) ---
+                 domain_tag_active=False,
                  # --- NEW: small dielectric scatterer(s) (radiation-recycling study) ---
                  scatterer_enabled=False,
                  scatterer_shape="cylinder",
@@ -86,7 +88,11 @@ class PiShiftBraggFDTD:
                  scatterer_y_m=1.0e-6,
                  scatterer_index=None,
                  scatterer_mirrored_y=True,
-                 scatterer_height_m=None):
+                 scatterer_height_m=None,
+                 scatterer_x_list_m=None,
+                 scatterer_y_list_m=None,
+                 # --- NEW: sidewall-corrugation phase offset (null-steering study) ---
+                 wall_phase_offset_deg=0.0):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -299,6 +305,10 @@ class PiShiftBraggFDTD:
         self.S31_complex = None
         self.S41_complex = None
 
+        # File-tag marker: a domain-size override is in effect (generate_file_tag
+        # appends the y/z box size so domain sweeps never share filenames).
+        self._domain_tag_active = bool(domain_tag_active)
+
         # ── Small dielectric scatterer(s) — radiation-recycling study ──────────
         # Active only when enabled AND radius > 0 (radius 0 = clean in-study
         # control with identical numerics/domain). Drawn by _add_scatterers().
@@ -308,7 +318,24 @@ class PiShiftBraggFDTD:
         self.scatterer_radius_m = float(scatterer_radius_m)
         self.scatterer_x_m = float(scatterer_x_m)
         self.scatterer_y_m = float(scatterer_y_m)
+        # Multi-scatterer array: list of x centers (same r/index for all).
+        # Overrides scatterer_x_m when set. Optional per-site y (arc / diagonal
+        # placements) must match the x list length; None → all sites at y_m.
+        self.scatterer_x_list_m = ([float(v) for v in scatterer_x_list_m]
+                                   if scatterer_x_list_m is not None else None)
+        self.scatterer_y_list_m = ([float(v) for v in scatterer_y_list_m]
+                                   if scatterer_y_list_m is not None else None)
+        if self.scatterer_y_list_m is not None:
+            if self.scatterer_x_list_m is None or \
+                    len(self.scatterer_y_list_m) != len(self.scatterer_x_list_m):
+                raise ValueError(
+                    "scatterer_y_list_m requires scatterer_x_list_m of the same length."
+                )
         self.scatterer_index = scatterer_index  # None → n_core_const at placement
+        # Resolved scatterer index: n_core (SiN pillar in oxide) unless overridden —
+        # e.g. n_clad for an SiO2 hole INSIDE the core (the flipped-material case).
+        self._scatterer_n = (float(scatterer_index) if scatterer_index is not None
+                             else self.n_core_const)
         self.scatterer_mirrored_y = bool(scatterer_mirrored_y)
         self.scatterer_height_m = (float(scatterer_height_m) if scatterer_height_m
                                    else self.core_height)
@@ -324,7 +351,9 @@ class PiShiftBraggFDTD:
                 "False, or use scatterer_mirrored_y=True."
             )
         if self._has_scatterer:
-            y_edge = abs(self.scatterer_y_m) + self.scatterer_radius_m
+            _y_max = (max(abs(v) for v in self.scatterer_y_list_m)
+                      if self.scatterer_y_list_m else abs(self.scatterer_y_m))
+            y_edge = _y_max + self.scatterer_radius_m
             if y_edge > 0.5 * self.y_span:
                 raise ValueError(
                     f"Scatterer extends to |y|={y_edge*1e6:.2f} µm, outside the domain "
@@ -336,9 +365,35 @@ class PiShiftBraggFDTD:
             if clearance < lam_clad:
                 print(f"  WARNING: scatterer-to-PML clearance {clearance*1e6:.2f} µm < "
                       f"λ/n_clad ({lam_clad*1e6:.2f} µm) — boundary artifacts possible.")
-            if abs(self.scatterer_y_m) - self.scatterer_radius_m < 0.5 * self.width_wide:
+            # Overlap with the core is intended for a HOLE (index < core), a mistake
+            # for a pillar (it would merge with the teeth) — warn only for pillars.
+            if (self._scatterer_n >= self.n_core_const - 1e-9
+                    and abs(self.scatterer_y_m) - self.scatterer_radius_m < 0.5 * self.width_wide):
                 print(f"  WARNING: scatterer inner edge |y|={ (abs(self.scatterer_y_m)-self.scatterer_radius_m)*1e9:.0f} nm "
                       f"overlaps/touches the wide teeth (half-width {0.5*self.width_wide*1e9:.0f} nm).")
+
+        # ── Sidewall-corrugation phase offset (radiation null-steering study) ──
+        # Bottom (-y) wall's teeth shifted by (deg/360)*pitch along x. Nonzero
+        # offset breaks the y=0 mirror plane, so the y-symmetry BC must be OFF
+        # (with TM 'Symmetric' left on, Lumerical would silently mirror the top
+        # wall and simulate the ALIGNED grating — refuse rather than mislead).
+        self.wall_phase_offset_deg = float(wall_phase_offset_deg or 0.0)
+        self._has_wall_offset = abs(self.wall_phase_offset_deg) > 1e-9
+        if self._has_wall_offset:
+            if self.use_symmetry:
+                raise ValueError(
+                    "wall_phase_offset_deg != 0 breaks the y-mirror plane; with the "
+                    "y-symmetry BC ON the offset would be silently undone. Set "
+                    "symmetry.use_y_symmetry=False for this study."
+                )
+            if use_apodization or (inner_dw_nm is not None) or (inner_shift_nm is not None) \
+                    or (width_narrow_per_tooth_m is not None) or (n_devices != 1) \
+                    or abs(float(innermost_tooth_shift_m or 0.0)) > 0.0:
+                raise ValueError(
+                    "wall_phase_offset_deg supports only the plain uniform single "
+                    "pi-shift grating (no apodization / per-tooth arrays / inner "
+                    "DW-shift / tooth shift / n_devices=2)."
+                )
 
         self.coarse_width_nm = coarse_width_nm
         half_w = 0.5 * self.coarse_width_nm * 1e-9
@@ -619,6 +674,51 @@ class PiShiftBraggFDTD:
                              corrugation depth (no apodization / shifts / per-tooth)."""
             avg_width = 0.5 * (dev_width_narrow + dev_width_wide)
             full_depth_edge = dev_width_wide - dev_width_narrow
+
+            # ── Wall-phase-offset branch (null-steering study) ─────────────────
+            # Uniform grating drawn as: continuous base strip (W_narrow) + one
+            # tooth rectangle per wall per period, the bottom (-y) wall's teeth
+            # shifted along x by (deg/360)*pitch. Guards in __init__ guarantee
+            # this path only ever sees the plain uniform single-device grating.
+            if self._has_wall_offset and featured:
+                n_per = self.n_periods_each_side
+                dx_off = (self.wall_phase_offset_deg / 360.0) * pitch
+                tooth_w = 0.5 * full_depth_edge                      # per-wall depth
+                y_tooth = 0.5 * dev_width_narrow + 0.5 * tooth_w     # tooth center |y|
+                x_start = -self.x_grating_end + x_offset
+                x_end = self.x_grating_end + x_offset
+
+                if draw_feed:
+                    add_core_segment(-x_domain_half - 1e-6, x_start, self.width_port,
+                                     name_prefix="wg_left_inf", y_center=y_center)
+                    add_core_segment(x_end, x_domain_half + 1e-6, self.width_port,
+                                     name_prefix="wg_right_inf", y_center=y_center)
+
+                # Base strip under both arms and the cavity.
+                add_core_segment(x_start, x_end, dev_width_narrow,
+                                 name_prefix="base_strip", y_center=y_center)
+
+                # Cavity segment (drawn on top; width per the usual option).
+                W_cavity = (self.cavity_width_m if self.cavity_width_m is not None
+                            else (avg_width if self.cavity_width_option in ("avg", "avg_ext")
+                                  else dev_width_narrow))
+                x_cav = x_start + n_total_walls * pitch
+                add_core_segment(x_cav, x_cav + self.cavity_length, W_cavity,
+                                 name_prefix="cavity", y_center=y_center)
+
+                # Teeth: wide half-pitch of every period, per wall.
+                for arm, x_arm0 in (("L", x_start),
+                                    ("R", x_cav + self.cavity_length)):
+                    for d in range(n_total_walls):
+                        xw = x_arm0 + d * pitch + half_pitch
+                        add_core_segment(xw, xw + half_pitch, tooth_w,
+                                         name_prefix=f"{arm}toothT_{d+1}",
+                                         y_center=y_center + y_tooth)
+                        add_core_segment(xw + dx_off, xw + half_pitch + dx_off, tooth_w,
+                                         name_prefix=f"{arm}toothB_{d+1}",
+                                         y_center=y_center - y_tooth)
+                return
+
             full_depth_center = self.center_mod_depth if (featured and self.use_apodization) else full_depth_edge
             n_total = self.n_periods_each_side
             n_apod = self.n_apod_periods_each_side if featured else 0
@@ -730,28 +830,42 @@ class PiShiftBraggFDTD:
         if not self._has_scatterer:
             return
         fdtd = self.fdtd
-        n_scat = (float(self.scatterer_index) if self.scatterer_index is not None
-                  else self.n_core_const)
-        y_centers = ([self.scatterer_y_m, -self.scatterer_y_m]
-                     if self.scatterer_mirrored_y else [self.scatterer_y_m])
-        for k, y_c in enumerate(y_centers, start=1):
-            fdtd.addcircle()                      # cylinder, axis = z
-            fdtd.set("name", f"scatterer_{k}")
-            fdtd.set("material", self.core_material)
-            if self._object_index_mode:
-                fdtd.set("index", n_scat)
-            fdtd.set("radius", self.scatterer_radius_m)
-            fdtd.set("x", self.scatterer_x_m)
-            fdtd.set("y", y_c)
-            fdtd.set("z", 0.0)
-            fdtd.set("z span", self.scatterer_height_m)
-            fdtd.set("override mesh order from material database", 1)
-            fdtd.set("mesh order", 1)             # wins overlaps (needed for in-core holes)
-        print(f"  [scatterer] {len(y_centers)}x cylinder r={self.scatterer_radius_m*1e9:.0f} nm, "
-              f"n={n_scat:.4g}, at (x={self.scatterer_x_m*1e6:.3f} µm, "
-              f"y=±{abs(self.scatterer_y_m)*1e6:.3f} µm)" if self.scatterer_mirrored_y else
-              f"  [scatterer] cylinder r={self.scatterer_radius_m*1e9:.0f} nm, n={n_scat:.4g}, "
-              f"at (x={self.scatterer_x_m*1e6:.3f} µm, y={self.scatterer_y_m*1e6:.3f} µm)")
+        n_scat = self._scatterer_n
+        # Site list: (x_j, y_j) pairs. y defaults to the shared scatterer_y_m;
+        # a per-site y list enables arc / diagonal-ray placements.
+        x_centers = (self.scatterer_x_list_m if self.scatterer_x_list_m
+                     else [self.scatterer_x_m])
+        y_sites = (self.scatterer_y_list_m if self.scatterer_y_list_m
+                   else [self.scatterer_y_m] * len(x_centers))
+        n_drawn = 0
+        for j, (x_c, y_s) in enumerate(zip(x_centers, y_sites), start=1):
+            if abs(x_c) + self.scatterer_radius_m > 0.5 * self.fdtd_x_span:
+                raise ValueError(
+                    f"Scatterer at x={x_c*1e6:.2f} µm extends outside the domain "
+                    f"(half x-span {0.5*self.fdtd_x_span*1e6:.2f} µm)."
+                )
+            # On-axis (y=0) sites are their own mirror image — draw ONE object.
+            y_centers = ([y_s, -y_s]
+                         if (self.scatterer_mirrored_y and abs(y_s) > 0.0)
+                         else [y_s])
+            for k, y_c in enumerate(y_centers, start=1):
+                fdtd.addcircle()                  # cylinder, axis = z
+                fdtd.set("name", f"scatterer_{j}_{k}")
+                fdtd.set("material", self.core_material)
+                if self._object_index_mode:
+                    fdtd.set("index", n_scat)
+                fdtd.set("radius", self.scatterer_radius_m)
+                fdtd.set("x", x_c)
+                fdtd.set("y", y_c)
+                fdtd.set("z", 0.0)
+                fdtd.set("z span", self.scatterer_height_m)
+                fdtd.set("override mesh order from material database", 1)
+                fdtd.set("mesh order", 1)         # wins overlaps (needed for in-core holes)
+                n_drawn += 1
+        sites_str = ", ".join(f"({x*1e6:.3f},±{abs(y)*1e6:.3f})"
+                              for x, y in zip(x_centers, y_sites))
+        print(f"  [scatterer] {n_drawn}x cylinder r={self.scatterer_radius_m*1e9:.0f} nm, "
+              f"n={n_scat:.4g}, sites(x,y µm): {sites_str}")
 
     def _add_source_and_monitors(self):
         fdtd = self.fdtd
