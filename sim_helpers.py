@@ -78,6 +78,78 @@ def extract_monitor_nearfield(fdtd, monitor_name):
     }
 
 
+def extract_monitor_polarimetry(fdtd, monitor_name, normal):
+    """
+    Polarization-resolved Poynting flux through a planar profile monitor,
+    reduced SERVER-SIDE to scalars + 1D x-profiles (the full complex E/H maps
+    on an arm-length monitor are ~100s of MB — never ship those).
+
+    normal='y' (side monitor, plane coords x-z):
+        S_y = 0.5*Re(Ez*conj(Hx) - Ex*conj(Hz))
+        term_TM = 0.5*Re(Ez*conj(Hx))   — same polarization as the guided TM mode
+        term_TE = -0.5*Re(Ex*conj(Hz))  — polarization-converted component
+    normal='z' (top monitor, plane coords x-y):
+        S_z = 0.5*Re(Ex*conj(Hy) - Ey*conj(Hx))  (no TM/TE split defined here)
+
+    Returns dict with: flux_norm (source-normalized net power, from
+    transmission()), P_total / P_tm / P_te (surface-integrated Poynting, W),
+    prof_total / prof_tm / prof_te (1D profiles vs x, transverse-integrated),
+    x (m), and lam. None on failure.
+    """
+    print(f"  Polarimetry from monitor: {monitor_name} (normal={normal})")
+    # Fail-soft throughout: this runs AFTER the GPU solve — a shape surprise
+    # here must degrade to None, never kill the .mat save.
+    try:
+        rE = fdtd.getresult(monitor_name, "E")
+        rH = fdtd.getresult(monitor_name, "H")
+
+        # E/H arrays: (nx, ny, nz, nf, 3) — single recorded frequency
+        E = np.squeeze(rE["E"])          # -> (nx, nt, 3), nt = transverse pts
+        Hf = np.squeeze(rH["H"])
+        if E.ndim != 3 or E.shape[-1] != 3 or Hf.shape != E.shape:
+            raise ValueError(f"unexpected field shapes E{E.shape} H{Hf.shape}")
+        x = np.atleast_1d(np.squeeze(rE["x"]))
+        t_ax = np.atleast_1d(np.squeeze(rE["z"] if normal == "y" else rE["y"]))
+        if E.shape[0] != x.size or E.shape[1] != t_ax.size:
+            raise ValueError(f"axes mismatch E{E.shape} x{x.size} t{t_ax.size}")
+        lam = float(np.atleast_1d(np.squeeze(rE["lambda"]))[0])
+
+        if normal == "y":
+            term_tm = 0.5 * np.real(E[..., 2] * np.conj(Hf[..., 0]))
+            term_te = -0.5 * np.real(E[..., 0] * np.conj(Hf[..., 2]))
+        else:
+            term_tm = 0.5 * np.real(E[..., 0] * np.conj(Hf[..., 1]))
+            term_te = -0.5 * np.real(E[..., 1] * np.conj(Hf[..., 0]))
+        s_tot = term_tm + term_te
+
+        _trapz = getattr(np, "trapezoid", None) or np.trapz   # numpy 2 rename
+
+        def surf_int(a):
+            return float(_trapz(_trapz(a, t_ax, axis=1), x, axis=0))
+
+        def prof(a):
+            return _trapz(a, t_ax, axis=1)
+
+        out = {
+            "lam": lam, "x": x,
+            "P_total": surf_int(s_tot), "P_tm": surf_int(term_tm),
+            "P_te": surf_int(term_te),
+            "prof_total": prof(s_tot), "prof_tm": prof(term_tm),
+            "prof_te": prof(term_te),
+        }
+    except Exception as e:
+        print(f"    ERROR: polarimetry failed on {monitor_name} [{e}]")
+        return None
+
+    try:
+        out["flux_norm"] = float(np.atleast_1d(
+            np.squeeze(fdtd.transmission(monitor_name)))[0])
+    except Exception as e:
+        print(f"    WARN: transmission() failed [{e}]")
+        out["flux_norm"] = np.nan
+    return out
+
+
 # ── Resonance detection ──────────────────────────────────────────────────────
 
 def find_bragg_resonance(wl, T):
@@ -308,6 +380,78 @@ def generate_file_tag(sim):
         _c_nm = round((float(sim.width_wide) - float(sim.width_narrow)) * 1e9)
         wc_tag = f"_Wavg{_w_avg_nm}_C{_c_nm}"
 
+    # ── Distributed pi-shift (per-tooth gap shifts): appended only when the
+    #    inner_shift list is set with any nonzero entry, so all legacy names are
+    #    unchanged. Carries count, total (m-prefixed if negative) and first
+    #    element to keep distribution variants distinct.
+    dsh_tag = ""
+    _ish_list = getattr(sim, 'inner_shift_nm', None)
+    if _ish_list and any(abs(float(v)) > 1e-9 for v in _ish_list):
+        _tot = round(sum(float(v) for v in _ish_list))
+        _s0 = round(float(_ish_list[0]))
+        def _fmt(n):
+            return f"m{abs(n)}" if n < 0 else f"{n}"
+        dsh_tag = f"_dsh{len(_ish_list)}S{_fmt(_tot)}s{_fmt(_s0)}"
+
+    # ── Explicit per-tooth width arrays (width-envelope / graded-island study):
+    #    appended only when set, so every uniform-grating file name is unchanged.
+    ptw_tag = ""
+    _ptw = getattr(sim, 'width_wide_per_tooth_m', None)
+    if _ptw:
+        _w0 = round(float(_ptw[0]) * 1e9)
+        _w1 = round(float(_ptw[-1]) * 1e9)
+        ptw_tag = (f"_ptw{len(_ptw)}W{_w0}" if _w0 == _w1
+                   else f"_ptw{len(_ptw)}W{_w0}to{_w1}")
+    # Narrow-tooth per-tooth widths (narrow see-saw study): appended only when
+    # the narrow list deviates from uniform 600 — legacy names (incl. the
+    # width-envelope study, whose narrow lists were uniform) are unchanged.
+    _ptn = getattr(sim, 'width_narrow_per_tooth_m', None)
+    if _ptn:
+        _n0 = round(float(_ptn[0]) * 1e9)
+        _n1 = round(float(_ptn[-1]) * 1e9)
+        _nom = round(float(sim.width_narrow) * 1e9)
+        if any(round(float(v) * 1e9) != _nom for v in _ptn):
+            ptw_tag += (f"_ptn{len(_ptn)}W{_n0}" if _n0 == _n1
+                        else f"_ptn{len(_ptn)}W{_n0}to{_n1}")
+
+    # ── Sidewall-corrugation phase offset (null-steering study): appended only
+    #    when nonzero, so every aligned-wall file name is unchanged.
+    wp_tag = ""
+    _wp_deg = float(getattr(sim, 'wall_phase_offset_deg', 0.0) or 0.0)
+    if abs(_wp_deg) > 1e-9:
+        wp_tag = f"_wp{_wp_deg:g}".replace(".", "p")
+
+    # ── Corrugation profile (tooth-shape study): appended only for sin/tri, so
+    #    every rectangular-tooth file name is unchanged.
+    prof_tag = ""
+    _prof = getattr(sim, 'corrugation_profile', 'rect')
+    if _prof != 'rect':
+        prof_tag = f"_prof{_prof}"
+
+    # ── Inner-tooth shape (center-shape study): appended only for shaped teeth,
+    #    so every rectangular-tooth file name is unchanged.
+    ish_tag = ""
+    _ish = getattr(sim, 'inner_tooth_shape', 'rect')
+    if _ish != 'rect' and getattr(sim, 'n_shaped_inner_teeth', 0) > 0:
+        ish_tag = f"_ish{_ish}{int(sim.n_shaped_inner_teeth)}"
+    # Cavity-segment shape (center-shape study); appended only when non-rect.
+    _csh = getattr(sim, 'cavity_shape', 'rect')
+    if _csh != 'rect' and float(getattr(sim, 'cavity_shape_depth_m', 0.0)) > 0.0:
+        ish_tag += f"_cav{_csh[:4]}{round(sim.cavity_shape_depth_m * 1e9)}"
+    # Antisymmetric inner-tooth DW detuning (anti-radiator study); appended only
+    # when active. Single-tooth form `_adw{delta}d{tooth}`; multi-tooth joined.
+    if getattr(sim, '_has_asym_dw', False):
+        _nz = [(i + 1, float(v)) for i, v in enumerate(sim.asym_inner_dw_delta_nm)
+               if abs(float(v)) > 1e-9]
+        ish_tag += "_adw" + "_".join(f"{v:g}d{d}" for d, v in _nz).replace(".", "p").replace("-", "m")
+
+    # ── Symmetry-off marker: single-device runs historically always used the
+    #    y-symmetry BC, so annotate only when it is explicitly OFF (wall-phase
+    #    rows and their dedicated controls) to avoid control/legacy collisions.
+    nosym_tag = ""
+    if not getattr(sim, 'use_symmetry', True) and getattr(sim, 'n_devices', 1) == 1:
+        nosym_tag = "_nosym"
+
     # ── Scatterer (radiation-recycling study): appended only when one is actually
     #    drawn, so all existing file names — and the r=0 in-study control — are
     #    unchanged. Carries radius + position (integer nm; 'm' prefix = minus), so
@@ -348,9 +492,9 @@ def generate_file_tag(sim):
         # historical default (100 nm) — keeps pre-sweep filenames stable.
         mod_depth_nm = float(getattr(sim, 'center_mod_depth', 100e-9)) * 1e9
         mod_tag = f"_M{round(mod_depth_nm):.0f}" if abs(mod_depth_nm - 100.0) > 0.5 else ""
-        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{dom_tag}{scat_tag}"
+        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{prof_tag}{ish_tag}{dsh_tag}{ptw_tag}{wp_tag}{nosym_tag}{dom_tag}{scat_tag}"
     else:
-        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{dom_tag}{scat_tag}"
+        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{prof_tag}{ish_tag}{dsh_tag}{ptw_tag}{wp_tag}{nosym_tag}{dom_tag}{scat_tag}"
 
 
 def apply_monitor_overrides(sim, cfg):

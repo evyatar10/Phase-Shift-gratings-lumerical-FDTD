@@ -37,6 +37,7 @@ from sim_helpers import (
     extract_and_process_field_profile,
     extract_farfield,
     extract_monitor_nearfield,
+    extract_monitor_polarimetry,
     find_bragg_resonance,
 )
 
@@ -283,9 +284,13 @@ def extract_farfield_data(sim, cfg) -> dict:
     the side and top planar monitors.
 
     Returns a flat dict with keys:
-      farfield_side, farfield_top     — E², ux, uy direction cosine grids
-      nearfield_side, nearfield_top   — complex E on monitor surface
-      farfield_config                 — recording parameters
+      farfield_side, farfield_top       — E², ux, uy direction cosine grids
+      polarimetry_side, polarimetry_top — server-side-reduced Poynting split:
+                                          flux_norm, P_total/P_tm/P_te scalars +
+                                          1D x-profiles (always small)
+      nearfield_side, nearfield_top     — complex E on monitor surface (only if
+                                          cfg.farfield.save_nearfield)
+      farfield_config                   — recording parameters
 
     Missing monitors return empty dicts for their key. Returns {} entirely
     if far-field recording was not enabled.
@@ -299,11 +304,15 @@ def extract_farfield_data(sim, cfg) -> dict:
     result = {'farfield_config': {'ff_res': ff_res}}
 
     print("\nExtracting far-field and near-field data...")
-    for monitor_name, key in [("side_monitor", "side"), ("top_monitor", "top")]:
+    for monitor_name, key, normal in [("side_monitor", "side", "y"),
+                                      ("top_monitor", "top", "z")]:
         ff = extract_farfield(sim.fdtd, monitor_name, ff_res=ff_res)
-        nf = extract_monitor_nearfield(sim.fdtd, monitor_name)
-        result[f"farfield_{key}"]  = ff if ff is not None else {}
-        result[f"nearfield_{key}"] = nf if nf is not None else {}
+        result[f"farfield_{key}"] = ff if ff is not None else {}
+        pol = extract_monitor_polarimetry(sim.fdtd, monitor_name, normal)
+        result[f"polarimetry_{key}"] = pol if pol is not None else {}
+        if cfg.farfield.save_nearfield:
+            nf = extract_monitor_nearfield(sim.fdtd, monitor_name)
+            result[f"nearfield_{key}"] = nf if nf is not None else {}
 
     return result
 
@@ -371,6 +380,23 @@ def assemble_results(
         _sc_yl = getattr(sim, "scatterer_y_list_m", None)
         results['scatterer_y_list_m'] = np.asarray(
             _sc_yl if _sc_yl else [sim.scatterer_y_m] * len(_sc_xl), dtype=float)
+
+    # Sidewall-corrugation phase offset (null-steering study); 0 = aligned walls.
+    results['wall_phase_offset_deg'] = float(getattr(sim, "wall_phase_offset_deg", 0.0) or 0.0)
+    # Corrugation profile (tooth-shape study): "rect" | "sin" | "tri".
+    results['corrugation_profile'] = getattr(sim, "corrugation_profile", "rect")
+    # Inner-tooth shape (center-shape study).
+    results['inner_tooth_shape'] = getattr(sim, "inner_tooth_shape", "rect")
+    results['n_shaped_inner_teeth'] = int(getattr(sim, "n_shaped_inner_teeth", 0)
+                                          if getattr(sim, "inner_tooth_shape", "rect") != "rect" else 0)
+    # Cavity-segment shape (center-shape study).
+    results['cavity_shape'] = getattr(sim, "cavity_shape", "rect")
+    results['cavity_shape_depth_m'] = (float(getattr(sim, "cavity_shape_depth_m", 0.0))
+                                       if getattr(sim, "cavity_shape", "rect") != "rect" else 0.0)
+    # Antisymmetric inner-tooth DW detuning (anti-radiator study).
+    _adw = getattr(sim, "asym_inner_dw_delta_nm", None)
+    results['asym_dw_delta_nm'] = (np.asarray(_adw, dtype=float)
+                                   if getattr(sim, "_has_asym_dw", False) else np.zeros(1))
 
     # Two-device side-by-side coupling spectra + geometry (only for n_devices==2).
     if getattr(sim, "n_devices", 1) == 2 and getattr(sim, "coupling_total", None) is not None:

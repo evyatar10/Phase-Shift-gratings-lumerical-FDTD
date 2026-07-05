@@ -62,6 +62,19 @@ class SweepSpec:
 
     # ── Cavity / phase-shift ────────────────────────────────────────────────
     innermost_tooth_shift_nm:   Optional[List[float]] = None
+    wall_phase_deg:             Optional[List[float]] = None     # bottom-wall tooth x-shift in deg of pitch (null-steering)
+    corr_profile:               Optional[List[str]]   = None     # "rect" | "sin" | "tri" tooth shape
+    inner_shape:                Optional[List[str]]   = None     # innermost-tooth shape (center-shape study)
+    n_shaped_teeth:             Optional[List[int]]   = None     # innermost teeth per side that get the shape
+    cavity_shape:               Optional[List[str]]   = None     # "rect" | "barrel" | "hourglass" pi-shift segment
+    cavity_shape_depth_nm:      Optional[List[float]] = None     # bulge/pinch depth (nm)
+    asym_dw_delta_nm:           Optional[List[list]]  = None     # per-task LIST of per-tooth ±deltas (anti-radiator); None entry = symmetric
+    simulation_mode:            Optional[List[str]]   = None     # "optimization" | "accurate" mesh per row
+    width_narrow_per_tooth_nm:  Optional[List[list]]  = None     # per-task LIST of per-tooth narrow widths (nm, innermost first); None entry = uniform
+    width_wide_per_tooth_nm:    Optional[List[list]]  = None     # per-task LIST of per-tooth wide widths (nm, innermost first)
+    inner_shift_list_nm:        Optional[List[list]]  = None     # per-task LIST of per-tooth gap shifts (nm; negative widens gap) — distributed pi-shift
+    n_free_inner_teeth:         Optional[List[int]]   = None     # must equal len(inner_shift_list_nm[row]) for those rows
+    use_y_symmetry:             Optional[List[bool]]  = None     # False for wall-phase rows + their controls
     cavity_neg_detuning_nm:     Optional[List[float]] = None
     cavity_length_nm:           Optional[List[float]] = None
     cavity_width_nm:            Optional[List[float]] = None

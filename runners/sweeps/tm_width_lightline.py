@@ -42,12 +42,16 @@ BOX_Y_UM = 6.8       # converged y (tm_span_convergence, job 116854)
 BOX_Z_MULT = 5.42    # converged z (round 2, job 116870): z = 8.8 um
 
 BASE = build_base()
+BASE.scatterer.enabled = False        # build_base leaves the scatterer ON (r=150 default)!
 BASE.y_span_override_m = BOX_Y_UM * 1e-6
 BASE.span_multiplier_override = BOX_Z_MULT
-# Wide shared window — the resonance red-shifts with width.
+# Wide shared window — the resonance red-shifts with width. 4001 pts (50 pm):
+# 7001 pts at this box OOM'd (port monitors store fields x freq points; the
+# 6.8x8.8 um cross-section doubles the per-point cost vs the old 4.8 um box —
+# job 116974 task 2 died OUT_OF_MEMORY at 7001).
 BASE.spectral.center_wavelength_m = 1.590e-6
 BASE.spectral.scan_width_nm = 200.0
-BASE.spectral.n_wl_points = 7001
+BASE.spectral.n_wl_points = 4001
 
 _widths = [800.0, 900.0, 1000.0, 1100.0, 1200.0, 900.0, 1000.0, 1100.0, 1200.0]
 _corrs  = [400.0, 400.0, 400.0,  400.0,  400.0,  450.0, 500.0,  550.0,  600.0]

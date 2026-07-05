@@ -39,9 +39,26 @@ _CARD_FIELD_MAP = {
     "n_apod_periods_each_side": ("apodization.n_apod_periods_each_side", None),
     "cavity_length_nm":         ("grating.override_cavity_length_nm",    None),
     "cavity_neg_detuning_nm":   ("grating.cavity_neg_detuning_nm",       None),
-    "cavity_width_nm":          ("grating.cavity_width_m",               lambda v: v * 1e-9),
+    "cavity_width_nm":          ("grating.cavity_width_m",               lambda v: None if v is None else v * 1e-9),  # None = use cavity_width_option
     "cavity_width_option":      ("grating.cavity_width_option",          None),
     "innermost_tooth_shift_nm": ("grating.innermost_tooth_shift_m",      lambda v: v * 1e-9),
+    "wall_phase_deg":           ("grating.wall_phase_offset_deg",        None),  # bottom-wall tooth shift in deg of pitch (null-steering)
+    "corr_profile":             ("grating.corrugation_profile",          None),  # "rect" | "sin" | "tri" tooth shape
+    "inner_shape":              ("grating.inner_tooth_shape",            None),  # innermost-tooth shape (center-shape study)
+    "n_shaped_teeth":           ("grating.n_shaped_inner_teeth",         None),  # how many innermost teeth per side get the shape
+    "cavity_shape":             ("grating.cavity_shape",                 None),  # "rect" | "barrel" | "hourglass" pi-shift segment
+    "cavity_shape_depth_nm":    ("grating.cavity_shape_depth_nm",        None),  # bulge/pinch depth (nm)
+    "asym_dw_delta_nm":         ("grating.asym_inner_dw_delta_nm",       None),  # per-tooth ±delta list (anti-radiator); None = symmetric
+    "simulation_mode":          ("mesh.simulation_mode",                 None),  # "optimization" (dx=50) | "accurate" (dx~35) per row
+    # Explicit per-tooth width arrays (innermost first), nm — the width-envelope
+    # ("graded island") study. None = uniform grating.
+    "width_narrow_per_tooth_nm": ("grating.width_narrow_per_tooth_m",    lambda v: None if v is None else [float(x) * 1e-9 for x in v]),
+    "width_wide_per_tooth_nm":   ("grating.width_wide_per_tooth_m",      lambda v: None if v is None else [float(x) * 1e-9 for x in v]),
+    # Distributed pi-shift (theory study): per-tooth gap shifts in nm (innermost
+    # first; negative = widen the gap, cavity shrinks via lengthen_cavity).
+    "inner_shift_list_nm":       ("grating.inner_shift_nm",              None),
+    "n_free_inner_teeth":        ("grating.n_free_inner_teeth",          None),
+    "use_y_symmetry":           ("symmetry.use_y_symmetry",              None),  # False required for wall_phase rows (+ their controls)
     "lengthen_cavity":          ("grating.lengthen_cavity",              None),
     "center_wavelength_nm":     ("spectral.center_wavelength_m",         lambda v: v * 1e-9),
     "scan_width_nm":            ("spectral.scan_width_nm",               None),

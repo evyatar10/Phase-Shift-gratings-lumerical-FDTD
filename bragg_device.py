@@ -92,7 +92,17 @@ class PiShiftBraggFDTD:
                  scatterer_x_list_m=None,
                  scatterer_y_list_m=None,
                  # --- NEW: sidewall-corrugation phase offset (null-steering study) ---
-                 wall_phase_offset_deg=0.0):
+                 wall_phase_offset_deg=0.0,
+                 # --- NEW: corrugation profile shape (tooth-shape study) ---
+                 corrugation_profile="rect",
+                 # --- NEW: inner-tooth shape (center-shape study) ---
+                 inner_tooth_shape="rect",
+                 n_shaped_inner_teeth=1,
+                 # --- NEW: cavity-segment shape (center-shape study) ---
+                 cavity_shape="rect",
+                 cavity_shape_depth_m=150e-9,
+                 # --- NEW: antisymmetric inner-tooth DW detuning (anti-radiator study) ---
+                 asym_inner_dw_delta_nm=None):
 
         self.pitch = pitch
         self.n_periods_each_side = n_periods_each_side
@@ -205,17 +215,27 @@ class PiShiftBraggFDTD:
                 f"inner_shift_nm length ({len(self.inner_shift_nm)}) "
                 f"must equal n_free_inner_teeth ({self.n_free_inner_teeth})."
             )
+        # Positive shifts SHORTEN the narrow gap (inverse-design path, upper bound
+        # half_pitch). Negative shifts LENGTHEN it (distributed-pi-shift study);
+        # bounded to one half-pitch of widening, with the cavity-length floor
+        # enforced below (lengthen_cavity absorbs 2*sum into the cavity).
         for d, s_nm in enumerate(self.inner_shift_nm, start=1):
             s_m = s_nm * 1e-9
-            if not (0.0 <= s_m < half_pitch_val):
+            if not (-half_pitch_val < s_m < half_pitch_val):
                 raise ValueError(
-                    f"inner_shift_nm[{d-1}] must be in [0, half_pitch) nm. "
+                    f"inner_shift_nm[{d-1}] must be in (-half_pitch, half_pitch) nm. "
                     f"Got {s_nm:.1f} nm, half_pitch={half_pitch_val * 1e9:.1f} nm."
                 )
 
         total_shift_m = sum(s * 1e-9 for s in self.inner_shift_nm)
         cavity_extra = 2.0 * total_shift_m if self.lengthen_cavity else 0.0
         self.cavity_length_effective = self.cavity_length + cavity_extra
+        if self.cavity_length_effective < -1e-12:
+            raise ValueError(
+                f"Distributed shifts shrink the cavity below zero "
+                f"(cavity_length_effective = {self.cavity_length_effective * 1e9:.1f} nm). "
+                f"Reduce |sum(inner_shift_nm)|."
+            )
 
         # Explicit per-tooth width arrays (m), indexed d=1..len = innermost → outermost.
         # When supplied, W_narrow[d]/W_wide[d] are taken verbatim for d <= len; teeth
@@ -394,6 +414,97 @@ class PiShiftBraggFDTD:
                     "pi-shift grating (no apodization / per-tooth arrays / inner "
                     "DW-shift / tooth shift / n_devices=2)."
                 )
+
+        # ── Corrugation profile shape (tooth-shape study) ────────────────────
+        # Smooth outlines are y-symmetric, so the symmetry BC stays usable.
+        if corrugation_profile not in ("rect", "sin", "tri"):
+            raise ValueError(f"corrugation_profile must be rect|sin|tri, got {corrugation_profile!r}")
+        self.corrugation_profile = corrugation_profile
+        self._smooth_profile = corrugation_profile != "rect"
+        if self._smooth_profile:
+            if use_apodization or (inner_dw_nm is not None) or (inner_shift_nm is not None) \
+                    or (width_narrow_per_tooth_m is not None) or (n_devices != 1) \
+                    or abs(float(innermost_tooth_shift_m or 0.0)) > 0.0 \
+                    or self._has_wall_offset:
+                raise ValueError(
+                    "corrugation_profile sin/tri supports only the plain uniform "
+                    "single pi-shift grating (no apodization / per-tooth arrays / "
+                    "inner DW-shift / tooth shift / wall offset / n_devices=2)."
+                )
+
+        # ── Inner-tooth shape (center-shape study) ───────────────────────────
+        # Only the innermost teeth are reshaped; y-symmetric and x-mirrored, so
+        # both symmetry BCs stay usable.
+        _ISH = ("rect", "ellipse", "tri", "wedge_cav", "wedge_out")
+        if inner_tooth_shape not in _ISH:
+            raise ValueError(f"inner_tooth_shape must be one of {_ISH}, got {inner_tooth_shape!r}")
+        self.inner_tooth_shape = inner_tooth_shape
+        self.n_shaped_inner_teeth = int(n_shaped_inner_teeth)
+        self._has_shaped_teeth = inner_tooth_shape != "rect" and self.n_shaped_inner_teeth > 0
+        if self._has_shaped_teeth:
+            if use_apodization or (inner_dw_nm is not None) or (inner_shift_nm is not None) \
+                    or (width_narrow_per_tooth_m is not None) or (n_devices != 1) \
+                    or abs(float(innermost_tooth_shift_m or 0.0)) > 0.0 \
+                    or self._has_wall_offset or self._smooth_profile:
+                raise ValueError(
+                    "inner_tooth_shape supports only the plain uniform single "
+                    "pi-shift grating (no apodization / per-tooth arrays / inner "
+                    "DW-shift / tooth shift / wall offset / smooth profile / n_devices=2)."
+                )
+
+        # ── Cavity-segment shape (center-shape study) ────────────────────────
+        # barrel/hourglass: half-sine (max slope at the tooth junctions).
+        # hann: raised-cosine bulge, ZERO slope at both ends (no fab corner).
+        # gauss: Gaussian bulge (sigma = L/6.7), effectively zero-slope ends.
+        # tri3/tri5/tri7: triangular bulge, apex at 30/50/70% of the cavity
+        #   (x-asymmetric shape probes; area = depth/2 regardless of apex).
+        # dbl2: two triangular bumps (apexes at 25/75%) — same area as tri at
+        #   equal depth, material at the ends instead of the middle.
+        # sldn/slup: ZERO-added-area impedance slopes — cavity width ramps
+        #   linearly from the wide-tooth width to the narrow-tooth width (sldn)
+        #   or reverse (slup); depth parameter is ignored (gate only).
+        # tilt: linear ramp CENTERED on the cavity width (W_cavity -depth/2 at
+        #   the wide-tooth end -> +depth/2 at the narrow-tooth end — the slup
+        #   orientation, which measured beneficial — zero area vs the same
+        #   W_cavity rectangle).
+        _CSH = ("rect", "barrel", "hourglass", "hann", "gauss",
+                "tri3", "tri5", "tri7", "dbl2", "sldn", "slup", "tilt")
+        if cavity_shape not in _CSH:
+            raise ValueError(f"cavity_shape must be one of {_CSH}, got {cavity_shape!r}")
+        self.cavity_shape = cavity_shape
+        self.cavity_shape_depth_m = float(cavity_shape_depth_m)
+        self._has_shaped_cavity = cavity_shape != "rect" and self.cavity_shape_depth_m > 0.0
+        if self._has_shaped_cavity:
+            if use_apodization or (inner_dw_nm is not None) or (inner_shift_nm is not None) \
+                    or (width_narrow_per_tooth_m is not None) or (n_devices != 1) \
+                    or abs(float(innermost_tooth_shift_m or 0.0)) > 0.0 \
+                    or self._has_wall_offset or self._smooth_profile:
+                raise ValueError(
+                    "cavity_shape supports only the plain uniform single pi-shift "
+                    "grating (no apodization / per-tooth arrays / inner DW-shift / "
+                    "tooth shift / wall offset / smooth profile / n_devices=2)."
+                )
+
+        # ── Antisymmetric inner-tooth DW detuning (anti-radiator study) ───────
+        # Left-arm tooth d: DW = corr + delta[d-1]; right-arm: corr - delta[d-1].
+        self.asym_inner_dw_delta_nm = (list(asym_inner_dw_delta_nm)
+                                       if asym_inner_dw_delta_nm else None)
+        self._has_asym_dw = bool(self.asym_inner_dw_delta_nm) and \
+            any(abs(float(v)) > 1e-9 for v in self.asym_inner_dw_delta_nm)
+        if self._has_asym_dw:
+            if use_apodization or (inner_dw_nm is not None) or (inner_shift_nm is not None) \
+                    or (width_narrow_per_tooth_m is not None) or (n_devices != 1) \
+                    or abs(float(innermost_tooth_shift_m or 0.0)) > 0.0 \
+                    or self._has_wall_offset or self._smooth_profile \
+                    or getattr(self, '_has_shaped_teeth', False) \
+                    or getattr(self, '_has_shaped_cavity', False):
+                raise ValueError(
+                    "asym_inner_dw_delta_nm supports only the plain uniform single "
+                    "pi-shift grating (no apodization / per-tooth arrays / inner "
+                    "DW-shift / tooth shift / wall offset / shaped teeth or cavity)."
+                )
+            if len(self.asym_inner_dw_delta_nm) > n_periods_each_side:
+                raise ValueError("asym_inner_dw_delta_nm longer than the grating arm.")
 
         self.coarse_width_nm = coarse_width_nm
         half_w = 0.5 * self.coarse_width_nm * 1e-9
@@ -664,6 +775,42 @@ class PiShiftBraggFDTD:
             fdtd.set("x min", x1)
             fdtd.set("x max", x2)
 
+        def add_shaped_tooth(x1, x2, w_narrow_d, w_wide_d, arm, d, y_center):
+            """Shaped innermost tooth (center-shape study): narrow-width base
+            segment + one shaped bump polygon per wall (y-symmetric pair).
+            arm 'L': cavity to the right (x2 side); 'R': cavity to the left."""
+            add_core_segment(x1, x2, w_narrow_d, name_prefix=f"{arm}_shbase_{d}", y_center=y_center)
+            base = 0.5 * w_narrow_d
+            h = 0.5 * (w_wide_d - w_narrow_d)
+            shape = self.inner_tooth_shape
+            if shape == "ellipse":
+                u = np.linspace(-1.0, 1.0, 25)
+                xc, a = 0.5 * (x1 + x2), 0.5 * (x2 - x1)
+                pts = [(xc + a * ui, base + h * np.sqrt(max(0.0, 1.0 - ui * ui))) for ui in u]
+                verts = [(x1, base)] + pts + [(x2, base)]
+            elif shape == "tri":
+                verts = [(x1, base), (0.5 * (x1 + x2), base + h), (x2, base)]
+            elif shape == "wedge_cav":
+                verts = ([(x1, base), (x2, base), (x2, base + h)] if arm == "L"
+                         else [(x1, base), (x1, base + h), (x2, base)])
+            elif shape == "wedge_out":
+                verts = ([(x1, base), (x1, base + h), (x2, base)] if arm == "L"
+                         else [(x1, base), (x2, base), (x2, base + h)])
+            else:
+                raise ValueError(shape)
+            for wall, sgn in (("T", +1.0), ("B", -1.0)):
+                v = np.array([(vx, y_center + sgn * vy) for vx, vy in verts])
+                fdtd.addpoly()
+                fdtd.set("name", f"{arm}_shtooth_{d}_{wall}")
+                fdtd.set("material", self.core_material)
+                if self._object_index_mode:
+                    fdtd.set("index", self.n_core_const)
+                fdtd.set("x", 0.0)
+                fdtd.set("y", 0.0)
+                fdtd.set("z", z_core_center)
+                fdtd.set("z span", self.core_height)
+                fdtd.set("vertices", v)
+
         def build_grating_arms(y_center, x_offset, dev_width_narrow, dev_width_wide, featured, draw_feed=True):
             """Build one pi-shift grating (two arms + central cavity) at the given
             lateral (y_center) and longitudinal (x_offset) offset.
@@ -702,14 +849,14 @@ class PiShiftBraggFDTD:
                 W_cavity = (self.cavity_width_m if self.cavity_width_m is not None
                             else (avg_width if self.cavity_width_option in ("avg", "avg_ext")
                                   else dev_width_narrow))
-                x_cav = x_start + n_total_walls * pitch
+                x_cav = x_start + n_per * pitch
                 add_core_segment(x_cav, x_cav + self.cavity_length, W_cavity,
                                  name_prefix="cavity", y_center=y_center)
 
                 # Teeth: wide half-pitch of every period, per wall.
                 for arm, x_arm0 in (("L", x_start),
                                     ("R", x_cav + self.cavity_length)):
-                    for d in range(n_total_walls):
+                    for d in range(n_per):
                         xw = x_arm0 + d * pitch + half_pitch
                         add_core_segment(xw, xw + half_pitch, tooth_w,
                                          name_prefix=f"{arm}toothT_{d+1}",
@@ -717,6 +864,67 @@ class PiShiftBraggFDTD:
                         add_core_segment(xw + dx_off, xw + half_pitch + dx_off, tooth_w,
                                          name_prefix=f"{arm}toothB_{d+1}",
                                          y_center=y_center - y_tooth)
+                return
+
+            # ── Smooth-profile branch (tooth-shape study): sin/tri outline drawn as
+            # a single sampled polygon (both walls symmetric in y; teeth phased so
+            # the wide bump sits on the wide half-pitch, exactly like the rect
+            # layout at profile="rect"). Cavity = flat W_cavity segment at center.
+            if getattr(self, '_smooth_profile', False) and featured:
+                n_per = self.n_periods_each_side
+                n_samp = 24                                # samples per period
+                x_start = -self.x_grating_end + x_offset
+                x_cav = x_start + n_per * pitch
+                x_cav_end = x_cav + self.cavity_length
+                x_end = self.x_grating_end + x_offset
+                W_cavity = (self.cavity_width_m if self.cavity_width_m is not None
+                            else (avg_width if self.cavity_width_option in ("avg", "avg_ext")
+                                  else dev_width_narrow))
+
+                def w_of_t(t):
+                    # t = fraction of a period; narrow-half first (min at t=0.25),
+                    # wide-half second (max at t=0.75) — same phasing as rect arms.
+                    if self.corrugation_profile == "sin":
+                        s = -np.cos(2.0 * np.pi * (t - 0.25))
+                    else:  # tri
+                        tt = (t - 0.25) % 1.0
+                        s = (4.0 * tt - 1.0) if tt < 0.5 else (3.0 - 4.0 * tt)
+                    return avg_width + 0.5 * full_depth_edge * s
+
+                xs, ws = [], []
+                for arm0 in (x_start, x_cav_end):          # left arm, right arm
+                    for k in range(n_per * n_samp):
+                        t = (k % n_samp) / float(n_samp)
+                        xs.append(arm0 + (k // n_samp) * pitch + t * pitch)
+                        ws.append(w_of_t(t))
+                    xs.append(arm0 + n_per * pitch)
+                    ws.append(w_of_t(0.0))
+                # Insert the flat cavity segment between the two arms.
+                n_left = n_per * n_samp + 1
+                xs = xs[:n_left] + [x_cav, x_cav_end] + xs[n_left:]
+                ws = ws[:n_left] + [W_cavity, W_cavity] + ws[n_left:]
+
+                xs = np.asarray(xs); ws = np.asarray(ws)
+                verts = np.concatenate([
+                    np.column_stack([xs, y_center + 0.5 * ws]),          # top wall →
+                    np.column_stack([xs[::-1], y_center - 0.5 * ws[::-1]])  # bottom wall ←
+                ])
+                fdtd.addpoly()
+                fdtd.set("name", "core_profile")
+                fdtd.set("material", self.core_material)
+                if self._object_index_mode:
+                    fdtd.set("index", self.n_core_const)
+                fdtd.set("x", 0.0)
+                fdtd.set("y", 0.0)
+                fdtd.set("z", z_core_center)
+                fdtd.set("z span", self.core_height)
+                fdtd.set("vertices", verts)
+
+                if draw_feed:
+                    add_core_segment(-x_domain_half - 1e-6, x_start, self.width_port,
+                                     name_prefix="wg_left_inf", y_center=y_center)
+                    add_core_segment(x_end, x_domain_half + 1e-6, self.width_port,
+                                     name_prefix="wg_right_inf", y_center=y_center)
                 return
 
             full_depth_center = self.center_mod_depth if (featured and self.use_apodization) else full_depth_edge
@@ -753,6 +961,18 @@ class PiShiftBraggFDTD:
                     W_narrow[d] = avg_width - delta_w
                     W_wide[d] = avg_width + delta_w
 
+            # Antisymmetric DW detuning: per-ARM width maps (left +delta, right
+            # -delta about the nominal depth). Identical to W_narrow/W_wide when
+            # the study is off.
+            W_narrow_L, W_wide_L = dict(W_narrow), dict(W_wide)
+            W_narrow_R, W_wide_R = dict(W_narrow), dict(W_wide)
+            if featured and getattr(self, '_has_asym_dw', False):
+                for _i, _dv in enumerate(self.asym_inner_dw_delta_nm):
+                    _d = _i + 1
+                    _hd = 0.5 * float(_dv) * 1e-9
+                    W_narrow_L[_d] -= _hd; W_wide_L[_d] += _hd
+                    W_narrow_R[_d] += _hd; W_wide_R[_d] -= _hd
+
             # Per-tooth shift map (m). Nonzero only for the featured device's freed teeth.
             shift_for_tooth = {d: 0.0 for d in range(0, n_total + 2)}
             if featured:
@@ -778,10 +998,13 @@ class PiShiftBraggFDTD:
                 if d == 1 and self.cavity_width_option == "avg_ext":
                     w_ln = avg_width
                 else:
-                    w_ln = W_narrow[d]
+                    w_ln = W_narrow_L[d]
                 add_core_segment(x, x + half_pitch - s_d, w_ln, name_prefix=f"L_narrow_{d}", y_center=y_center)
                 x += half_pitch - s_d
-                add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"L_wide_{d}", y_center=y_center)
+                if featured and getattr(self, '_has_shaped_teeth', False) and d <= self.n_shaped_inner_teeth:
+                    add_shaped_tooth(x, x + half_pitch, W_narrow_L[d], W_wide_L[d], "L", d, y_center)
+                else:
+                    add_core_segment(x, x + half_pitch, W_wide_L[d], name_prefix=f"L_wide_{d}", y_center=y_center)
                 x += half_pitch
 
             # Cavity (length expanded by 2*Σ shifts to keep x_grating_end constant)
@@ -789,8 +1012,56 @@ class PiShiftBraggFDTD:
                 W_cavity = self.cavity_width_m
             else:
                 W_cavity = avg_width if self.cavity_width_option in ("avg", "avg_ext") else W_narrow[1]
-            add_core_segment(x, x + self.cavity_length + cavity_extra, W_cavity,
-                             name_prefix="cavity", y_center=y_center)
+            if featured and getattr(self, '_has_shaped_cavity', False):
+                # Shaped cavity segment: half-sine bulge (+) / pinch (-), ends at
+                # W_cavity, length unchanged, y-symmetric.
+                L_cav = self.cavity_length + cavity_extra
+                u = np.linspace(0.0, 1.0, 41)
+                if self.cavity_shape in ("sldn", "slup"):
+                    # Impedance slope between the adjacent tooth widths — pure
+                    # shape, zero added area; depth parameter unused.
+                    w_a, w_b = ((dev_width_wide, dev_width_narrow)
+                                if self.cavity_shape == "sldn"
+                                else (dev_width_narrow, dev_width_wide))
+                    w_prof = w_a + (w_b - w_a) * u
+                elif self.cavity_shape == "tilt":
+                    # Linear ramp centered on W_cavity, rising toward the
+                    # narrow-tooth end (the measured-beneficial orientation);
+                    # zero area vs the same-W_cavity rectangle.
+                    w_prof = W_cavity + self.cavity_shape_depth_m * (u - 0.5)
+                else:
+                    if self.cavity_shape == "hann":
+                        prof = np.sin(np.pi * u) ** 2      # zero-slope ends
+                    elif self.cavity_shape == "gauss":
+                        prof = np.exp(-(((u - 0.5) / 0.15) ** 2))
+                    elif self.cavity_shape in ("tri3", "tri5", "tri7"):
+                        p = {"tri3": 0.3, "tri5": 0.5, "tri7": 0.7}[self.cavity_shape]
+                        prof = np.where(u < p, u / p, (1.0 - u) / (1.0 - p))
+                    elif self.cavity_shape == "dbl2":
+                        u2 = (u % 0.5) / 0.5
+                        prof = 1.0 - np.abs(u2 - 0.5) / 0.5
+                    else:                                   # barrel / hourglass
+                        prof = np.sin(np.pi * u)
+                    sgn_c = -1.0 if self.cavity_shape == "hourglass" else +1.0
+                    w_prof = W_cavity + sgn_c * self.cavity_shape_depth_m * prof
+                xs_c = x + u * L_cav
+                verts_c = np.concatenate([
+                    np.column_stack([xs_c, y_center + 0.5 * w_prof]),
+                    np.column_stack([xs_c[::-1], y_center - 0.5 * w_prof[::-1]])
+                ])
+                fdtd.addpoly()
+                fdtd.set("name", "cavity_shaped")
+                fdtd.set("material", self.core_material)
+                if self._object_index_mode:
+                    fdtd.set("index", self.n_core_const)
+                fdtd.set("x", 0.0)
+                fdtd.set("y", 0.0)
+                fdtd.set("z", z_core_center)
+                fdtd.set("z span", self.core_height)
+                fdtd.set("vertices", verts_c)
+            else:
+                add_core_segment(x, x + self.cavity_length + cavity_extra, W_cavity,
+                                 name_prefix="cavity", y_center=y_center)
             x += self.cavity_length + cavity_extra
 
             # Right grating: walk d = 1 ... n_total (cavity → outside).
@@ -799,10 +1070,13 @@ class PiShiftBraggFDTD:
                 if d == 1 and self.cavity_width_option == "avg_ext":
                     w_rn = avg_width
                 else:
-                    w_rn = W_narrow[d]
+                    w_rn = W_narrow_R[d]
                 add_core_segment(x, x + half_pitch - s_prev, w_rn, name_prefix=f"R_narrow_{d}", y_center=y_center)
                 x += half_pitch - s_prev
-                add_core_segment(x, x + half_pitch, W_wide[d], name_prefix=f"R_wide_{d}", y_center=y_center)
+                if featured and getattr(self, '_has_shaped_teeth', False) and d <= self.n_shaped_inner_teeth:
+                    add_shaped_tooth(x, x + half_pitch, W_narrow_R[d], W_wide_R[d], "R", d, y_center)
+                else:
+                    add_core_segment(x, x + half_pitch, W_wide_R[d], name_prefix=f"R_wide_{d}", y_center=y_center)
                 x += half_pitch
 
             if draw_feed:

@@ -107,6 +107,46 @@ class GratingConfig:
     # n_devices=2 (guarded).
     wall_phase_offset_deg: float = 0.0
 
+    # ── Corrugation profile shape (tooth-shape study) ───────────────────────────
+    # "rect" (default — all existing devices) draws the historical rectangular
+    # teeth. "sin"/"tri" draw a smooth sampled-polygon outline with the SAME
+    # pitch and peak-to-peak depth semantics (corrugation_depth_m = W_wide −
+    # W_narrow). Note the Bragg κ of a smooth profile is its FUNDAMENTAL Fourier
+    # coefficient: to match the rect grating's κ (i.e. keep the spatial mode
+    # width), scale depth by 4/π (sin) or π²/8 (tri). Symmetric in y (symmetry
+    # BC stays usable). Uniform single-device gratings only (guarded).
+    corrugation_profile: str = "rect"
+
+    # ── Inner-tooth SHAPE (center-shape study) ──────────────────────────────────
+    # Replaces the innermost n_shaped_inner_teeth teeth (per side, x-mirrored,
+    # both walls, y-symmetric) with a shaped bump of the same footprint and
+    # height: "rect" (default — unchanged device) | "ellipse" (smooth dome) |
+    # "tri" (pointy) | "wedge_cav" (slanted face toward the cavity) |
+    # "wedge_out" (slanted face away). Only the defect-adjacent teeth change —
+    # the mirror body stays rectangular, so kappa / spatial mode width are
+    # essentially untouched. Uniform single-device gratings only (guarded).
+    inner_tooth_shape: str = "rect"
+    n_shaped_inner_teeth: int = 1
+
+    # ── Cavity-segment SHAPE (center-shape study) ───────────────────────────────
+    # The pi-shift segment itself is the defect antenna; its sidewall profile is
+    # an impedance-transition knob nobody has touched (always a plain rect).
+    # "rect" (default — unchanged) | "barrel" (half-sine bulge, +depth at the
+    # middle) | "hourglass" (half-sine pinch, -depth). Ends stay at the nominal
+    # cavity width; length unchanged; y-symmetric (symmetry BCs stay usable).
+    cavity_shape: str = "rect"
+    cavity_shape_depth_nm: float = 150.0
+
+    # ── Antisymmetric inner-tooth depth detuning (anti-radiator study) ──────────
+    # Per-tooth delta (nm) applied ANTISYMMETRICALLY about the defect: left-arm
+    # tooth d gets corrugation depth corr+delta[d-1], right-arm tooth d gets
+    # corr-delta[d-1] (innermost first). An odd perturbation on the even cavity
+    # mode radiates with a tunable phase (tooth index) and amplitude (delta) but
+    # to FIRST ORDER does not shift the resonance or kappa (left/right cancel) —
+    # a built-in destructive interferer aimed at the TM near-axial lobes.
+    # None = standard symmetric device (all existing results unchanged).
+    asym_inner_dw_delta_nm: Optional[list] = None
+
     # ── Explicit per-tooth width arrays (mirror-symmetric per-side) ────────────
     # When both are set, W_narrow[d]/W_wide[d] are taken verbatim for the innermost
     # d ∈ [1, len] teeth (index 0 = innermost). Teeth beyond the array length fall
@@ -297,6 +337,10 @@ class FarFieldConfig:
     farfield_x_span_m: float = 30e-6            # X extent of far-field monitors
     farfield_dist_wls: float = 0.8              # Monitor distance from PML edge (in wavelengths)
     ff_resolution: int = 201                    # Far-field ux/uy grid resolution
+    save_nearfield: bool = True                 # Store full complex E on the monitor surfaces.
+                                                # Pin False for arm-length monitors (~100s of MB
+                                                # per row); the polarimetry reduction (scalars +
+                                                # 1D x-profiles) is always saved regardless.
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -486,6 +530,12 @@ class SimulationConfig:
             width_narrow_per_tooth_m=gr.width_narrow_per_tooth_m,
             width_wide_per_tooth_m=gr.width_wide_per_tooth_m,
             wall_phase_offset_deg=gr.wall_phase_offset_deg,
+            corrugation_profile=gr.corrugation_profile,
+            inner_tooth_shape=gr.inner_tooth_shape,
+            n_shaped_inner_teeth=gr.n_shaped_inner_teeth,
+            cavity_shape=gr.cavity_shape,
+            cavity_shape_depth_m=gr.cavity_shape_depth_nm * 1e-9,
+            asym_inner_dw_delta_nm=gr.asym_inner_dw_delta_nm,
             y_span=self.y_span,
             z_span=self.z_span,
             material_db_path=config.MATERIAL_DB_PATH,
