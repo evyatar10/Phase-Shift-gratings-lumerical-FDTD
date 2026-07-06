@@ -101,6 +101,9 @@ class SweepSpec:
     # ── Small dielectric scatterer(s) (radiation-recycling study) ─────────────
     # Drawn only when the base config has scatterer.enabled=True AND radius > 0
     # (radius 0 = in-study no-scatterer control with identical numerics).
+    scatterer_shape:            Optional[List[str]]   = None     # 'cylinder' | 'rect' (lateral-reflector strip)
+    scatterer_x_span_um:        Optional[List[float]] = None     # rect strip LENGTH along x (um); None/0 entry = control
+    scatterer_y_span_nm:        Optional[List[float]] = None     # rect strip WIDTH along y (nm)
     scatterer_radius_nm:        Optional[List[float]] = None     # cylinder radius (nm); 0 = none
     scatterer_x_nm:             Optional[List[float]] = None     # center x (nm; defect = 0)
     scatterer_y_nm:             Optional[List[float]] = None     # center y (nm; +y side)

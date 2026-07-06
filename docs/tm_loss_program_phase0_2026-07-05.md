@@ -1,12 +1,12 @@
 # TM loss program — Phase 0 (theory + pending results), 2026-07-05
 
 Tool: `python_tools/lateral_radiation_theory.py` (zero GPU, zero license).
-Success bar (user, 2026-07-05): headline ΔT ≈ +0.05 vs champion (T 0.9165 → ~0.966,
+Success bar (user, 2026-07-05): headline ΔT ≈ +0.05 vs rect-1050 (T 0.9165 → ~0.966,
 i.e. recover ~60% of the remaining 8.2% loss); smaller confirmed gains still reportable.
 
 ## 0. anti_moment_cavity job 117814 (accurate mesh) — fetched
 
-- Family B width ladder: shallow parabola, flat optimum 1050–1075 (champion confirmed);
+- Family B width ladder: shallow parabola, flat optimum 1050–1075 (rect-1050 confirmed);
   in-study jitter (1052 partner) ≈ 2e-4.
 - Family A zero-area tooth pair (wide tooth ±1 = 1000+δ, ±2 = 1000−δ on the 1050 base):
   real signed trend. +δ helps, saturating: loss 0.0823 → **0.0810 at δ=+20/+30**

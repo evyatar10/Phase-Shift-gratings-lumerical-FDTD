@@ -38,7 +38,7 @@ Registered predictions (filed before dispatch):
      field antinodes' gaps so the moment weight differs; no sign prediction
      registered (genuinely unknown).
 
-Rows (zipped, 37 tasks, accurate mesh, converged box y=6.8/z-mult 5.42):
+Rows (zipped, 49 tasks, accurate mesh, converged box y=6.8/z-mult 5.42):
    0     control W800 avg          (cross-study anchor: expect loss 0.1174)
    1     W1050                     (champion: expect 0.0823)
    2     W1052                     (jitter partner: expect |delta| ~ 2e-4)
@@ -130,11 +130,20 @@ for w in (None, 1050.0):                          # 31-34 teeth-1&2 pairs
     row(w=w, ishl=[-20.0, -20.0], nfree=2)
 row(ssc=20.0, lenc=False)                         # 35 W800 fixed-cavity
 row(w=1050.0, ssc=20.0, lenc=False)               # 36 W1050 fixed-cavity
+for d1, d2 in ((20.0, -30.0), (20.0, -40.0), (30.0, -20.0), (30.0, -40.0),
+               (40.0, -20.0), (40.0, -30.0), (40.0, -40.0)):
+    row(w=1050.0, ptwn=_NARROW, ptww=[1000.0 + d1, 1000.0 + d2])   # 37-43
+for d3 in (10.0, -10.0):                          # 44-45 tooth-3 extension
+    row(w=1050.0, ptwn=[600.0] * 3, ptww=[1020.0, 980.0, 1000.0 + d3])
+row(w=1050.0, ptwn=[620.0, 580.0], ptww=_PTW_BEST)          # 46 narrow see-saw +
+row(w=1050.0, ptwn=[580.0, 620.0], ptww=_PTW_BEST)          # 47 narrow see-saw -
+row(w=1050.0, ptwn=[620.0, 580.0], ptww=[1000.0, 1000.0])   # 48 narrow-only
 
-_n = 37
+_n = 49
 assert all(len(v) == _n for v in (_cw, _det, _ssc, _ishl, _nfree, _lenc, _ptwn, _ptww))
-_keys = [(w, d, s, tuple(l) if l else None, lc, tuple(pw) if pw else None)
-         for w, d, s, l, lc, pw in zip(_cw, _det, _ssc, _ishl, _lenc, _ptww)]
+_keys = [(w, d, s, tuple(l) if l else None, lc,
+          tuple(pw) if pw else None, tuple(pn) if pn else None)
+         for w, d, s, l, lc, pw, pn in zip(_cw, _det, _ssc, _ishl, _lenc, _ptww, _ptwn)]
 assert len(set(_keys)) == _n, "duplicate row -> tag collision"
 
 SPEC = SweepSpec(

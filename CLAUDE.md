@@ -12,6 +12,11 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
 
 - **Default: run FDTD on Athena**, dispatched via `bash athena/deploy_athena.sh`.
   Athena has good availability and is far faster than the local machine.
+- **IGUM (ECE faculty cluster) is a second, coexisting option** — `bash
+  igum/deploy_igum.sh`. Native Lumerical (NO containers there), submission needs
+  `--account`+matching QOS, `part-preempt` is preemptible (sweeps OK, long stateful
+  optimizations stay on Athena), and **license seats are SHARED with Athena** —
+  probe both before big runs. Athena stays the default. See `igum/README.md`.
 - **Local is allowed** for: building scenes, `save_fsp`, smoke tests, MATLAB plotting,
   and any quick non-GPU check. Local `fdtd.run()` is slow — only do a real local FDTD
   run if the user explicitly asks.

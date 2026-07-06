@@ -1,0 +1,163 @@
+% plot_shape_gallery.m — the NON-rectangular teeth & cavity shapes we tested,
+% each drawn from the builder's actual polygon math (bragg_device.py:
+% add_shaped_tooth + the cavity_shape profiles) with its MEASURED result.
+% All rows are OPTIMIZATION mesh (dx=50), avg-800 rect cavity baseline = 0.1098
+% -> compare WITHIN this set; the rectangular winners (rect-1050, the stack)
+% are marked as reference lines. Headless-safe.
+
+clear; close all;
+proj = 'c:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes';
+R = fullfile(proj,'results_from_athena');
+out_dir = fullfile(R,'device_gallery'); if ~exist(out_dir,'dir'), mkdir(out_dir); end
+HP = 0.51683/2; SIN=[0.82 0.60 0.28]; OX=[0.93 0.96 0.99];
+GOOD=[0.30 0.55 0.35]; BAD=[0.80 0.30 0.20]; NEU=[0.55 0.55 0.60];
+
+BASE = met(fullfile(R,'inner_shape_study','results','result_N80_TM_avg_Ybox6p8_Zbox8p8.mat'));
+
+% device list: name, file, kind('tooth'|'cav'), shape, depth(um for cav), note
+S = {};
+S{end+1}=struct('nm','baseline: rect teeth + rect cavity','d','inner_shape_study','f','result_N80_TM_avg_Ybox6p8_Zbox8p8.mat','k','none','sh','','dp',0,'note','all rectangles (reference)');
+S{end+1}=struct('nm','TEETH: inner tooth ellipse','d','inner_shape_study','f','result_N80_TM_avg_ishellipse1_Ybox6p8_Zbox8p8.mat','k','tooth','sh','ellipse','dp',0,'note','smooth dome on innermost tooth');
+S{end+1}=struct('nm','TEETH: inner tooth triangle','d','inner_shape_study','f','result_N80_TM_avg_ishtri1_Ybox6p8_Zbox8p8.mat','k','tooth','sh','tri','dp',0,'note','pointy innermost tooth');
+S{end+1}=struct('nm','TEETH: inner tooth wedge','d','inner_shape_study','f','result_N80_TM_avg_ishwedge_cav1_Ybox6p8_Zbox8p8.mat','k','tooth','sh','wedge_cav','dp',0,'note','slanted face toward cavity');
+S{end+1}=struct('nm','CAVITY: barrel (bulge)','d','inner_shape_study','f','result_N80_TM_avg_cavbarr150_Ybox6p8_Zbox8p8.mat','k','cav','sh','barrel','dp',0.150,'note','half-sine bulge, +area');
+S{end+1}=struct('nm','CAVITY: Hann','d','cavity_design_study','f','result_N80_TM_avg_cavhann300_Ybox6p8_Zbox8p8.mat','k','cav','sh','hann','dp',0.300,'note','raised-cosine, +area');
+S{end+1}=struct('nm','CAVITY: Gaussian','d','cavity_design_study','f','result_N80_TM_avg_cavgaus300_Ybox6p8_Zbox8p8.mat','k','cav','sh','gauss','dp',0.300,'note','Gaussian bulge, +area');
+S{end+1}=struct('nm','CAVITY: triangle','d','cavity_shape2_study','f','result_N80_TM_avg_cavtri5191_Ybox6p8_Zbox8p8.mat','k','cav','sh','tri5','dp',0.191,'note','triangular, +area');
+S{end+1}=struct('nm','CAVITY: double-bump','d','cavity_shape2_study','f','result_N80_TM_avg_cavdbl2191_Ybox6p8_Zbox8p8.mat','k','cav','sh','dbl2','dp',0.191,'note','two bumps, +area');
+S{end+1}=struct('nm','CAVITY: hourglass (pinch)','d','inner_shape_study','f','result_N80_TM_avg_cavhour150_Ybox6p8_Zbox8p8.mat','k','cav','sh','hour','dp',0.150,'note','half-sine pinch, -area');
+S{end+1}=struct('nm','CAVITY: zero-area slope','d','cavity_shape2_study','f','result_N80_TM_avg_cavslup400_Ybox6p8_Zbox8p8.mat','k','cav','sh','slup','dp',0.400,'note','linear ramp, zero added area');
+
+fig=figure('Visible','off','Position',[20 20 1560 1240],'Color','w');
+tl=tiledlayout(fig,3,4,'TileSpacing','compact','Padding','compact');
+
+for q=1:numel(S)
+    s=S{q}; nexttile; hold on;
+    m=met(fullfile(R,s.d,'results',s.f));
+    dl=(m.loss-BASE.loss)*1e3;
+    if dl < -2, col=GOOD; elseif dl > 2, col=BAD; else, col=NEU; end
+
+    yl=0.82; rectangle('Position',[-1.5 -yl 3 2*yl],'FaceColor',OX,'EdgeColor','none');
+    % draw cavity +- 3 periods (rect teeth), replacing cavity or innermost tooth
+    Wn=0.600; Ww=1.000; Wc=0.800;
+    % segments as [x0 x1 w]; build symmetric walk (approx: cavity centered)
+    segL={}; x=0;
+    for d=3:-1:1
+        segL{end+1}=[x x+HP Wn]; x=x+HP;               % narrow
+        segL{end+1}=[x x+HP Ww d];  x=x+HP;            % wide (tag inner=1)
+    end
+    cav0=x; cavlen=HP; x=x+cavlen;
+    segR={};
+    for d=1:3
+        segR{end+1}=[x x+HP Wn]; x=x+HP;
+        segR{end+1}=[x x+HP Ww d]; x=x+HP;
+    end
+    xc=cav0+cavlen/2;
+    drawseg=@(v,shaded) fill([v(1) v(2) v(2) v(1)]-xc,[-v(3) -v(3) v(3) v(3)]/2, ...
+        shaded,'EdgeColor',[0.25 0.25 0.25],'LineWidth',0.4);
+
+    % left teeth (last wide = innermost, adjacent to cavity)
+    for r=1:numel(segL)
+        v=segL{r}; isInner=(numel(v)>=4 && v(4)==1 && r==numel(segL));
+        if isInner && strcmp(s.k,'tooth')
+            drawShapedTooth(v(1)-xc, v(2)-xc, Wn, Ww, s.sh, 'L', col);
+        else
+            drawseg(v(1:3), SIN);
+        end
+    end
+    % cavity
+    if strcmp(s.k,'cav')
+        drawShapedCavity(cav0-xc, cavlen, Wc, s.sh, s.dp, col);
+    else
+        drawseg([cav0 cav0+cavlen Wc], SIN);
+    end
+    % right teeth (first wide after gap = innermost on right)
+    for r=1:numel(segR)
+        v=segR{r}; isInner=(numel(v)>=4 && v(4)==1 && r==2);
+        if isInner && strcmp(s.k,'tooth')
+            drawShapedTooth(v(1)-xc, v(2)-xc, Wn, Ww, s.sh, 'R', col);
+        else
+            drawseg(v(1:3), SIN);
+        end
+    end
+    plot([0 0],[-Wc Wc]/2,'k-','LineWidth',1);
+    xlim([-1.5 1.5]); ylim([-yl yl]); set(gca,'XTick',[],'YTick',[]); box on;
+    title(sprintf('%s\nloss %.4f  (%+.1f\\times10^{-3} vs rect)', s.nm, m.loss, dl), ...
+        'FontSize',8.5,'Interpreter','tex');
+    text(0,-yl*0.86,s.note,'HorizontalAlignment','center','FontSize',7,'Color',[0.35 0.35 0.35]);
+end
+
+% ---- panel 12: results bars vs rectangular winners ----
+nexttile; hold on; grid on;
+names={}; vals=[]; cols=[];
+for q=1:numel(S)
+    s=S{q}; m=met(fullfile(R,s.d,'results',s.f));
+    short=regexprep(s.nm,'^(TEETH|CAVITY): ','');
+    if q==1, short='baseline'; end
+    names{end+1}=short; vals(end+1)=m.loss;
+    dl=(m.loss-BASE.loss)*1e3;
+    if dl<-2, cols(end+1,:)=GOOD; elseif dl>2, cols(end+1,:)=BAD; else, cols(end+1,:)=NEU; end
+end
+[vs,ord]=sort(vals);
+b=barh(vs,'FaceColor','flat'); b.CData=cols(ord,:);
+set(gca,'YTick',1:numel(vs),'YTickLabel',names(ord),'FontSize',7.5);
+xline(0.0770,'-','Color',[0.19 0.45 0.72],'LineWidth',1.5,'Label','rect-1050','LabelVerticalAlignment','bottom','FontSize',7);
+xline(0.0509,'-','Color',[0.85 0.33 0.10],'LineWidth',1.5,'Label','the stack','FontSize',7);
+xlabel('resonant loss 1-T-R  (opt mesh)'); xlim([0.045 0.145]);
+title('(12) all shapes vs the rectangular winners','FontSize',8.5);
+
+title(tl,{['TM \pi-shift Bragg cavity — non-rectangular teeth & cavity shapes tested ' ...
+    '(opt mesh, drawn to scale).   green = better, red = worse, grey = neutral vs the rect baseline.'], ...
+    ['Every cavity shape that helps only ADDS AREA (a plain wider rectangle does the same); ' ...
+    'every shape loses to the rectangular winners (rect-1050, the stack).']}, ...
+    'FontSize',11,'Interpreter','tex');
+
+exportgraphics(fig,fullfile(out_dir,'shape_gallery.png'),'Resolution',200);
+savefig(fig,fullfile(out_dir,'shape_gallery.fig'));
+fprintf('saved: %s\n', fullfile(out_dir,'shape_gallery.png'));
+
+% ===================== shape drawing helpers =====================
+function m = met(fp)
+    d=load(fp); [~,i]=min(abs(d.wl_nm-d.resonance_wavelength_nm));
+    m=struct('loss',1-d.resonance_transmission-d.R(i),'T',d.resonance_transmission,'fw',d.fwhm_m*1e6);
+end
+
+function drawShapedTooth(x1,x2,wn,ww,shape,arm,col)
+    base=0.5*wn; h=0.5*(ww-wn);
+    % base narrow segment
+    fill([x1 x2 x2 x1],[-base -base base base],[0.82 0.60 0.28],'EdgeColor',[0.25 0.25 0.25],'LineWidth',0.4);
+    switch shape
+        case 'ellipse'
+            u=linspace(-1,1,25); xc=0.5*(x1+x2); a=0.5*(x2-x1);
+            px=xc+a*u; py=base+h*sqrt(max(0,1-u.^2));
+            vx=[x1 px x2]; vy=[base py base];
+        case 'tri'
+            vx=[x1 0.5*(x1+x2) x2]; vy=[base base+h base];
+        case 'wedge_cav'
+            if arm=='L', vx=[x1 x2 x2]; vy=[base base base+h];
+            else,        vx=[x1 x1 x2]; vy=[base base+h base]; end
+        otherwise
+            vx=[x1 x2 x2 x1]; vy=[base base base base];
+    end
+    for sgn=[1 -1]
+        fill(vx, sgn*vy, col,'EdgeColor',[0.25 0.25 0.25],'LineWidth',0.4);
+    end
+end
+
+function drawShapedCavity(x0,L,Wc,shape,dp,col)
+    u=linspace(0,1,60);
+    switch shape
+        case 'barrel', w=Wc+dp*sin(pi*u);
+        case 'hour',   w=Wc-dp*sin(pi*u);
+        case 'hann',   w=Wc+dp*sin(pi*u).^2;
+        case 'gauss',  w=Wc+dp*exp(-((u-0.5)/0.15).^2);
+        case 'tri3',   p=0.3; w=Wc+dp*min(u/p,(1-u)/(1-p));
+        case 'tri5',   p=0.5; w=Wc+dp*min(u/p,(1-u)/(1-p));
+        case 'dbl2',   u2=mod(u,0.5)/0.5; w=Wc+dp*(1-abs(u2-0.5)/0.5);
+        case 'slup',   w=0.6+(1.0-0.6)*u;      % narrow->wide ramp (zero-area)
+        case 'sldn',   w=1.0+(0.6-1.0)*u;
+        otherwise,     w=Wc*ones(size(u));
+    end
+    xs=x0+u*L;
+    fill([xs fliplr(xs)],[w/2 -fliplr(w)/2],col,'EdgeColor',[0.25 0.25 0.25],'LineWidth',0.5);
+end

@@ -21,6 +21,19 @@
             "problemMatcher": []
         },
         {
+            "label": "IGUM",
+            "type": "shell",
+            "command": "bash",
+            "args": ["-c", "${input:igumAction}"],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "DGX",
             "type": "shell",
             "command": "bash",
@@ -62,6 +75,19 @@
                 {"label": "Upload only (no submit)",                                "value": "bash athena/deploy_athena.sh --upload-only"},
                 {"label": "Download results",                                       "value": "bash athena/deploy_athena.sh --results"},
                 {"label": "SSH into Athena",                                        "value": "ssh athena"}
+            ]
+        },
+        {
+            "id": "igumAction",
+            "type": "pickString",
+            "description": "IGUM (ECE) — pick action:",
+            "options": [
+                {"label": "Deploy — FSP job (local .fsp → engine on IGUM)",         "value": "bash igum/deploy_igum.sh --option1"},
+                {"label": "Deploy — Python pipeline (single sim or sweep)",         "value": "bash igum/deploy_igum.sh --option2"},
+                {"label": "Watch job status (no deploy)",                           "value": "bash igum/deploy_igum.sh --watch-only"},
+                {"label": "Upload only (no submit)",                                "value": "bash igum/deploy_igum.sh --upload-only"},
+                {"label": "Download results",                                       "value": "bash igum/deploy_igum.sh --results"},
+                {"label": "SSH into IGUM",                                          "value": "ssh igum"}
             ]
         },
         {

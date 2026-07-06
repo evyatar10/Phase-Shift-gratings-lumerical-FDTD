@@ -71,6 +71,10 @@ _CARD_FIELD_MAP = {
     "corrugation_depth_2_nm":   ("geometry.corrugation_depth_2_m",       lambda v: v * 1e-9),
     # Small dielectric scatterer(s) (radiation-recycling study). Drawn only when
     # scatterer.enabled=True in the base config AND radius > 0 (radius 0 = control).
+    # Rect strips (lateral-reflector study): shape='rect' + both spans > 0.
+    "scatterer_shape":          ("scatterer.shape",                      None),  # 'cylinder' | 'rect'
+    "scatterer_x_span_um":      ("scatterer.x_span_m",                   lambda v: None if v is None else v * 1e-6),  # rect strip LENGTH along x
+    "scatterer_y_span_nm":      ("scatterer.y_span_m",                   lambda v: None if v is None else v * 1e-9),  # rect strip WIDTH along y
     "scatterer_radius_nm":      ("scatterer.radius_m",                   lambda v: v * 1e-9),
     "scatterer_x_nm":           ("scatterer.x_m",                        lambda v: v * 1e-9),
     "scatterer_y_nm":           ("scatterer.y_m",                        lambda v: v * 1e-9),

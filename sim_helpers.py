@@ -460,11 +460,17 @@ def generate_file_tag(sim):
     #      _pair               y-mirrored pair at ±y (the symmetry-compatible form)
     scat_tag = ""
     if getattr(sim, '_has_scatterer', False):
-        r_nm = round(sim.scatterer_radius_m * 1e9)
         x_nm = round(sim.scatterer_x_m * 1e9)
         y_nm = round(sim.scatterer_y_m * 1e9)
         x_str = f"m{abs(x_nm)}" if x_nm < 0 else f"{x_nm}"
         y_str = f"m{abs(y_nm)}" if y_nm < 0 else f"{y_nm}"
+        # Rect strip form (lateral-reflector study): length x width + center.
+        if getattr(sim, 'scatterer_shape', 'cylinder') == 'rect':
+            l_nm = round(sim.scatterer_x_span_m * 1e9)
+            w_nm = round(sim.scatterer_y_span_m * 1e9)
+            head = f"_scRECT_L{l_nm}xW{w_nm}"
+        else:
+            head = f"_scR{round(sim.scatterer_radius_m * 1e9)}"
         x_list = getattr(sim, 'scatterer_x_list_m', None)
         y_list = getattr(sim, 'scatterer_y_list_m', None)
         if x_list:
@@ -474,11 +480,11 @@ def generate_file_tag(sim):
             if y_list:
                 y0 = round(y_list[0] * 1e9)
                 y1 = round(y_list[-1] * 1e9)
-                scat_tag = f"_scR{r_nm}_arr{len(x_list)}_X{x0}to{x1}_Y{y0}to{y1}"
+                scat_tag = f"{head}_arr{len(x_list)}_X{x0}to{x1}_Y{y0}to{y1}"
             else:
-                scat_tag = f"_scR{r_nm}_arr{len(x_list)}_X{x0}to{x1}_Y{y_str}"
+                scat_tag = f"{head}_arr{len(x_list)}_X{x0}to{x1}_Y{y_str}"
         else:
-            scat_tag = f"_scR{r_nm}_X{x_str}_Y{y_str}"
+            scat_tag = f"{head}_X{x_str}_Y{y_str}"
         if getattr(sim, 'scatterer_mirrored_y', False) and y_nm != 0:
             scat_tag += "_pair"
         # Flipped-material case: index below the core index marks an oxide HOLE

@@ -296,8 +296,13 @@ class ScattererConfig:
     symmetry plane is on: a single off-axis scatterer breaks that plane, and the
     TM 'Symmetric' BC would silently simulate the mirrored pair anyway."""
     enabled: bool = False
-    shape: str = "cylinder"                     # 'cylinder' (addcircle); future: 'rect'
-    radius_m: float = 150e-9
+    shape: str = "cylinder"                     # 'cylinder' (addcircle) | 'rect' (addrect strip)
+    radius_m: float = 150e-9                    # cylinder only
+    # Rect strip only (lateral-reflector study): x_span = strip LENGTH along the
+    # guide, y_span = strip WIDTH (the Fresnel/quarter-wave dimension). Rect is
+    # active when enabled AND both spans > 0 (spans None/0 = in-study control).
+    x_span_m: Optional[float] = None
+    y_span_m: Optional[float] = None
     x_m: float = 0.0                            # center x (cavity defect = x 0)
     y_m: float = 1.0e-6                         # center y (+y side; pair mirrors to -y)
     index: Optional[float] = None               # None → material.n_core_const
@@ -578,6 +583,8 @@ class SimulationConfig:
             # Scatterer(s) (radiation-recycling study)
             scatterer_enabled=self.scatterer.enabled,
             scatterer_shape=self.scatterer.shape,
+            scatterer_x_span_m=self.scatterer.x_span_m,
+            scatterer_y_span_m=self.scatterer.y_span_m,
             scatterer_radius_m=self.scatterer.radius_m,
             scatterer_x_m=self.scatterer.x_m,
             scatterer_y_m=self.scatterer.y_m,

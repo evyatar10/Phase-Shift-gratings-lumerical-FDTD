@@ -83,6 +83,8 @@ class PiShiftBraggFDTD:
                  # --- NEW: small dielectric scatterer(s) (radiation-recycling study) ---
                  scatterer_enabled=False,
                  scatterer_shape="cylinder",
+                 scatterer_x_span_m=None,
+                 scatterer_y_span_m=None,
                  scatterer_radius_m=150e-9,
                  scatterer_x_m=0.0,
                  scatterer_y_m=1.0e-6,
@@ -330,12 +332,18 @@ class PiShiftBraggFDTD:
         self._domain_tag_active = bool(domain_tag_active)
 
         # ── Small dielectric scatterer(s) — radiation-recycling study ──────────
-        # Active only when enabled AND radius > 0 (radius 0 = clean in-study
-        # control with identical numerics/domain). Drawn by _add_scatterers().
+        # Active only when enabled AND radius > 0 (cylinder) / both spans > 0
+        # (rect strip) — the zero case = clean in-study control with identical
+        # numerics/domain. Drawn by _add_scatterers().
         self.scatterer_shape = str(scatterer_shape or "cylinder").lower()
-        if self.scatterer_shape != "cylinder":
-            raise ValueError(f"scatterer_shape must be 'cylinder', got {scatterer_shape!r}")
+        if self.scatterer_shape not in ("cylinder", "rect"):
+            raise ValueError(
+                f"scatterer_shape must be 'cylinder' or 'rect', got {scatterer_shape!r}")
         self.scatterer_radius_m = float(scatterer_radius_m)
+        # Rect strip (lateral-reflector study): x_span = length along the guide,
+        # y_span = width (the quarter-wave/Fresnel dimension).
+        self.scatterer_x_span_m = float(scatterer_x_span_m) if scatterer_x_span_m else None
+        self.scatterer_y_span_m = float(scatterer_y_span_m) if scatterer_y_span_m else None
         self.scatterer_x_m = float(scatterer_x_m)
         self.scatterer_y_m = float(scatterer_y_m)
         # Multi-scatterer array: list of x centers (same r/index for all).
@@ -359,7 +367,16 @@ class PiShiftBraggFDTD:
         self.scatterer_mirrored_y = bool(scatterer_mirrored_y)
         self.scatterer_height_m = (float(scatterer_height_m) if scatterer_height_m
                                    else self.core_height)
-        self._has_scatterer = bool(scatterer_enabled) and self.scatterer_radius_m > 0.0
+        if self.scatterer_shape == "rect":
+            _rect_on = bool(self.scatterer_x_span_m) and bool(self.scatterer_y_span_m)
+            self._has_scatterer = bool(scatterer_enabled) and _rect_on
+            # Half-extents used by the domain/PML/teeth checks below.
+            self._scat_half_x = 0.5 * (self.scatterer_x_span_m or 0.0)
+            self._scat_half_y = 0.5 * (self.scatterer_y_span_m or 0.0)
+        else:
+            self._has_scatterer = bool(scatterer_enabled) and self.scatterer_radius_m > 0.0
+            self._scat_half_x = self.scatterer_radius_m
+            self._scat_half_y = self.scatterer_radius_m
         if (self._has_scatterer and not self.scatterer_mirrored_y
                 and abs(self.scatterer_y_m) > 0.0 and self.use_symmetry):
             # A single off-axis scatterer breaks the y=0 mirror plane; with the TM
@@ -373,7 +390,7 @@ class PiShiftBraggFDTD:
         if self._has_scatterer:
             _y_max = (max(abs(v) for v in self.scatterer_y_list_m)
                       if self.scatterer_y_list_m else abs(self.scatterer_y_m))
-            y_edge = _y_max + self.scatterer_radius_m
+            y_edge = _y_max + self._scat_half_y
             if y_edge > 0.5 * self.y_span:
                 raise ValueError(
                     f"Scatterer extends to |y|={y_edge*1e6:.2f} µm, outside the domain "
@@ -388,8 +405,8 @@ class PiShiftBraggFDTD:
             # Overlap with the core is intended for a HOLE (index < core), a mistake
             # for a pillar (it would merge with the teeth) — warn only for pillars.
             if (self._scatterer_n >= self.n_core_const - 1e-9
-                    and abs(self.scatterer_y_m) - self.scatterer_radius_m < 0.5 * self.width_wide):
-                print(f"  WARNING: scatterer inner edge |y|={ (abs(self.scatterer_y_m)-self.scatterer_radius_m)*1e9:.0f} nm "
+                    and abs(self.scatterer_y_m) - self._scat_half_y < 0.5 * self.width_wide):
+                print(f"  WARNING: scatterer inner edge |y|={ (abs(self.scatterer_y_m)-self._scat_half_y)*1e9:.0f} nm "
                       f"overlaps/touches the wide teeth (half-width {0.5*self.width_wide*1e9:.0f} nm).")
 
         # ── Sidewall-corrugation phase offset (radiation null-steering study) ──
@@ -1113,7 +1130,7 @@ class PiShiftBraggFDTD:
                    else [self.scatterer_y_m] * len(x_centers))
         n_drawn = 0
         for j, (x_c, y_s) in enumerate(zip(x_centers, y_sites), start=1):
-            if abs(x_c) + self.scatterer_radius_m > 0.5 * self.fdtd_x_span:
+            if abs(x_c) + self._scat_half_x > 0.5 * self.fdtd_x_span:
                 raise ValueError(
                     f"Scatterer at x={x_c*1e6:.2f} µm extends outside the domain "
                     f"(half x-span {0.5*self.fdtd_x_span*1e6:.2f} µm)."
@@ -1123,14 +1140,25 @@ class PiShiftBraggFDTD:
                          if (self.scatterer_mirrored_y and abs(y_s) > 0.0)
                          else [y_s])
             for k, y_c in enumerate(y_centers, start=1):
-                fdtd.addcircle()                  # cylinder, axis = z
-                fdtd.set("name", f"scatterer_{j}_{k}")
-                fdtd.set("material", self.core_material)
-                if self._object_index_mode:
-                    fdtd.set("index", n_scat)
-                fdtd.set("radius", self.scatterer_radius_m)
-                fdtd.set("x", x_c)
-                fdtd.set("y", y_c)
+                if self.scatterer_shape == "rect":
+                    fdtd.addrect()                # strip, z-centered on core
+                    fdtd.set("name", f"scatterer_{j}_{k}")
+                    fdtd.set("material", self.core_material)
+                    if self._object_index_mode:
+                        fdtd.set("index", n_scat)
+                    fdtd.set("x", x_c)
+                    fdtd.set("x span", self.scatterer_x_span_m)
+                    fdtd.set("y", y_c)
+                    fdtd.set("y span", self.scatterer_y_span_m)
+                else:
+                    fdtd.addcircle()              # cylinder, axis = z
+                    fdtd.set("name", f"scatterer_{j}_{k}")
+                    fdtd.set("material", self.core_material)
+                    if self._object_index_mode:
+                        fdtd.set("index", n_scat)
+                    fdtd.set("radius", self.scatterer_radius_m)
+                    fdtd.set("x", x_c)
+                    fdtd.set("y", y_c)
                 fdtd.set("z", 0.0)
                 fdtd.set("z span", self.scatterer_height_m)
                 fdtd.set("override mesh order from material database", 1)
@@ -1138,8 +1166,14 @@ class PiShiftBraggFDTD:
                 n_drawn += 1
         sites_str = ", ".join(f"({x*1e6:.3f},±{abs(y)*1e6:.3f})"
                               for x, y in zip(x_centers, y_sites))
-        print(f"  [scatterer] {n_drawn}x cylinder r={self.scatterer_radius_m*1e9:.0f} nm, "
-              f"n={n_scat:.4g}, sites(x,y µm): {sites_str}")
+        if self.scatterer_shape == "rect":
+            print(f"  [scatterer] {n_drawn}x rect strip "
+                  f"L={self.scatterer_x_span_m*1e6:.2f} µm x "
+                  f"W={self.scatterer_y_span_m*1e9:.0f} nm, "
+                  f"n={n_scat:.4g}, sites(x,y µm): {sites_str}")
+        else:
+            print(f"  [scatterer] {n_drawn}x cylinder r={self.scatterer_radius_m*1e9:.0f} nm, "
+                  f"n={n_scat:.4g}, sites(x,y µm): {sites_str}")
 
     def _add_source_and_monitors(self):
         fdtd = self.fdtd

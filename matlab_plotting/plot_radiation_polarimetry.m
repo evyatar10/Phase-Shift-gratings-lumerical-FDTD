@@ -18,10 +18,10 @@ files = { ...
     'result_N80_TM_avg_Ybox6p8_Zbox8p8.mat', ...                 % 0 control (no ff)
     'result_N80_TM_W800_Ybox6p8_Zbox8p8_ff.mat', ...             % 1 baseline map
     'result_N80_TM_W1050_Ybox6p8_Zbox8p8_ff.mat', ...            % 2 champion
-    'result_N80_TM_D0p02_avg_Ybox6p8_Zbox8p8_ff.mat', ...        % 3 off-peak ctl
+    'result_N80_D0p02_TM_avg_Ybox6p8_Zbox8p8_ff.mat', ...        % 3 off-peak ctl
     'result_N80_TM_avg_Ybox8p0_Zbox8p8_ff.mat', ...              % 4 big-box ctl
     'result_N80_TM_W1400_Ybox6p8_Zbox8p8_ff.mat', ...            % 5 ladder reversal
-    'result_N80_TM_D0p04_avg_Ybox6p8_Zbox8p8_ff.mat'};           % 6 accurate
+    'result_N80_D0p04_TM_avg_Ybox6p8_Zbox8p8_ff.mat'};           % 6 accurate
 lb = {'control (ff off)', 'W800 baseline', 'W1050 champion', 'off-peak ctl', ...
       'y=8.0 box ctl', 'W1400 reversal', 'accurate mesh'};
 
