@@ -102,9 +102,7 @@
       "Bash(ssh *scancel*)",
       "PowerShell(ssh *scancel*)"
     ],
-    "additionalDirectories": [
-      "c:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\hpc\\scripts"
-    ]
+    "additionalDirectories": []
   },
   "hooks": {
     "PostToolUse": [

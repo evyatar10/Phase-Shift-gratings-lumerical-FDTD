@@ -82,7 +82,6 @@
     ├── analyze_yz_circle_power.m      # YZ circular power extraction
     ├── analyze_radiation_recycling.m  # Radiation recycling analysis
     ├── compare_simulations.m          # Compare two simulation results
-    ├── calculate_profile.m            # 3D field profile FWHM
     ├── overlap_analysis_many.m        # Batch overlap integrals
     └── overlap_analysis_bg.m          # Overlap utility
 ```
@@ -400,7 +399,6 @@ Each stage is a standalone function and can be called independently (e.g., to re
 - **analyze_yz_circle_power.m** — Power distribution along circular boundary in YZ cross-section
 - **analyze_radiation_recycling.m** — Radiation recycling analysis
 - **compare_simulations.m** — Side-by-side comparison of two simulation results
-- **calculate_profile.m** — 3D field profile FWHM analysis
 - **overlap_analysis_many.m** — Batch overlap integral computation between devices
 - **overlap_analysis_bg.m** — Overlap integral utility function
 

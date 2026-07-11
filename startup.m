@@ -2,4 +2,5 @@
 project_root = fileparts(mfilename('fullpath'));
 addpath(project_root);
 addpath(fullfile(project_root, 'matlab_plotting'));
+addpath(fullfile(project_root, 'matlab_plotting', 'studies'));  % archived one-off study plots (kept runnable)
 addpath(fullfile(project_root, 'matlab_analysis'));

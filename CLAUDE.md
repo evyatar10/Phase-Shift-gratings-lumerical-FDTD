@@ -211,3 +211,54 @@ them; when a convergence study finishes, state where the files live.
   editable MATLAB `.fig` + PNG (not plotly/matplotlib).
 - If the user writes in Hebrew, answer in Hebrew (right-to-left, and avoid em-dashes
   in Hebrew text).
+
+## 9. Honesty & calibration (overrides style, speed, and optimism)
+
+- **Report what happened, not what was hoped.** Failed test, undispatched job,
+  skipped step, partial download, empty result — state it first and prominently,
+  before any summary of success. "Done" is only for things actually done and checked.
+- **Label every quantitative claim** as one of: MEASURED (read from a named file
+  this session — cite the file), DERIVED (computed from measured values — show
+  from what), or EXPECTED (theory/memory/estimate — say so). Never state numbers
+  from a file that wasn't opened this session.
+- **No overstatement.** Near-noise-floor effects (§2), single-point results, and
+  unconverged optimizations are "candidate"/"preliminary" — never "confirmed",
+  "proven", "best", or "significant" until the §2 sanity checks pass. State the
+  uncertainty with the claim, not after being asked.
+- **"I didn't check" beats a plausible guess.** A confident wrong answer costs
+  GPU-hours; "unsure, let me verify" costs a minute. When memory and current code
+  disagree, the code wins and the memory gets corrected in the same session.
+- **Push back on wrong premises.** If the user's assumption contradicts the data,
+  say so directly instead of building on it.
+
+## 10. Code lifecycle — AI-generated study code must not accumulate
+
+(2026-07-11 audit: ~90 spent one-off scripts had piled up in live directories —
+23-file side_by_side tree, 8 phase0 gates, 47 job-specific MATLAB plots, 14
+near-duplicate runner families — making the repo unusable without a big cleanup.
+These rules prevent the re-accumulation, at creation time.)
+
+- **Reuse before creating.** Before writing any new file, check whether an
+  existing engine already does it: a sweep is a `SweepSpec` in ONE small file
+  (never a copied runner with edits); a plot goes through an existing
+  `matlab_plotting/` engine script when one fits. Copy-with-tweak of an existing
+  study file is the pattern that created the 14 duplicate families — parameterize
+  instead when reasonable.
+- **One study = one runner file + at most one plot script**, named after the
+  study dir. Every one-off script's header states: study dir, job ID(s), date,
+  and one line of purpose. No `_v2`/`_fixed`/second-name copies — edit the
+  original (git keeps history).
+- **AI scratch/debug code never lands in the repo.** Throwaway test scripts,
+  probes, and comparison snippets go in the session scratchpad or get deleted in
+  the same session. If it isn't something the user would run again, it doesn't
+  get a file in the project.
+- **When a study closes, archive in the same session:** its one-off runners →
+  `runners/archive/`, its one-off plots → `matlab_plotting/studies/`, unedited
+  (they are the lab notebook — never rewrite archived science). Live dirs hold
+  only engines + active studies. Verify after moving: deploy-menu listing
+  unchanged for live studies + `python -m compileall` clean.
+- **Very long new code is a smell, not an achievement.** A new runner over ~150
+  lines or a new module over ~400 lines needs a stated reason (e.g. a genuine new
+  engine); otherwise decompose or reuse. Never grow the god-objects
+  (`bragg_device.__init__`, `deploy_athena.sh`) casually — additions there get a
+  one-line heads-up.

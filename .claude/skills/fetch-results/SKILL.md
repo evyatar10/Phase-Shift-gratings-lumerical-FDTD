@@ -36,7 +36,11 @@ plot of a dead device.
 & "C:\Program Files\MATLAB\R2025b\bin\matlab.exe" -batch "cd('c:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\matlab_plotting'); <plot_script>"
 ```
 - Pick the existing script for the study (`plot_transmission.m`, `plot_resonance_vs_param.m`,
-  `plot_transmission_compare.m`, ...) before writing a new one.
+  `plot_transmission_compare.m`, ...) before writing a new one. One-off plot scripts of
+  CLOSED studies live in `matlab_plotting/studies/` (on the MATLAB path via `startup.m`;
+  with `-batch`, `cd` into that folder instead). A NEW study's one-off plot script starts
+  in `matlab_plotting/` and moves to `studies/` when the study closes; its header states
+  the study dir + job ID.
 - MATLAB `-batch` is synchronous but slow to start; give it a generous timeout.
 - Watch the UTF-8 / underscore-in-title gotchas (`reference_matlab_local_verification.md`):
   use `'Interpreter','none'` for filenames in titles.

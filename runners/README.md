@@ -147,6 +147,16 @@ bash athena/deploy_athena.sh --gradient-free-design=runners.gradient_free_design
 # Other families: --inverse-design= / --lumerical-native= / --fd-gradient-design=
 ```
 
+## archive/ — closed studies
+
+When a study is declared closed, its one-off runner/analysis files move to
+`runners/archive/` (and its one-off MATLAB plots to `matlab_plotting/studies/`),
+unedited. The deploy menus never scan `archive/`, so archived files leave the
+menus but stay runnable via their new module path (see
+[archive/README.md](archive/README.md)). Currently archived: the whole
+`side_by_side/` coupled-cavities program, the TM period-match viewers, and
+`pull_by_subname.py`.
+
 ## Legacy files (kept runnable, superseded)
 
 - `single/run_simple_bragg.py` — self-contained uniform-Bragg runner
