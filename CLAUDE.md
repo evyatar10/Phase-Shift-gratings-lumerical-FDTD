@@ -96,6 +96,11 @@ Over-testing never once cost anything. So:
   builder / parametric scaffold, (3) inverse-design / gradient equations, (4) source or
   boundary-condition setup. Especially for anything **new**.
   - Lumapi: local build-only `save_fsp` (<1 min) + eyeball the geometry.
+  - **Any edit to `bragg_device.py` geometry/monitor code:** run
+    `python debug_fsp_compare/scene_snapshot.py --out <tmp>` and diff against
+    the committed `debug_fsp_compare/snapshots/` references (6 configs spanning
+    the builder's code paths; byte-identical = behavior preserved). Regenerate
+    the references only when a geometry change is INTENDED, and say so.
   - Parametric/PSO builders: score gen-0 / seed against the known-good baseline; if it
     doesn't match, the builder is broken (use `rebuild_per_particle`).
   - New gradient method: finite-difference `check_gradient` on a tiny problem before
