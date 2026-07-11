@@ -1163,8 +1163,17 @@ else
         echo "Array will start after prelim job ${PRELIM_ID} succeeds."
     fi
 
+    # Optional host-RAM request (also honored in the option-3 array path). Set
+    # SBATCH_MEM=300G for big-domain runs — the port mode-expansion post-processing
+    # over a large transverse box can exceed the 128 GB default (OOM). GPU nodes
+    # have 1-2.3 TB physical, so raising --mem is the fix.
+    MEM_OPT=""
+    if [[ -n "${SBATCH_MEM:-}" ]]; then
+        MEM_OPT="--mem=${SBATCH_MEM}"
+        echo "[--mem] requesting ${SBATCH_MEM} host RAM for this array"
+    fi
     JOB_ID=$(ssh "${SSH}" \
-        "cd ${REMOTE_BASE} && sbatch \
+        "cd ${REMOTE_BASE} && sbatch ${MEM_OPT} \
             --array=${ARRAY_RANGE}%${K} ${DEP_FLAG} \
             --gpus=1 --cpus-per-task=${N_CPUS} \
             --time=${ARRAY_TIME:-00:50:00} \

@@ -452,7 +452,7 @@ class PiShiftBraggFDTD:
         # ── Inner-tooth shape (center-shape study) ───────────────────────────
         # Only the innermost teeth are reshaped; y-symmetric and x-mirrored, so
         # both symmetry BCs stay usable.
-        _ISH = ("rect", "ellipse", "tri", "wedge_cav", "wedge_out")
+        _ISH = ("rect", "ellipse", "tri", "wedge_cav", "wedge_out", "step", "notch")
         if inner_tooth_shape not in _ISH:
             raise ValueError(f"inner_tooth_shape must be one of {_ISH}, got {inner_tooth_shape!r}")
         self.inner_tooth_shape = inner_tooth_shape
@@ -813,6 +813,28 @@ class PiShiftBraggFDTD:
             elif shape == "wedge_out":
                 verts = ([(x1, base), (x1, base + h), (x2, base)] if arm == "L"
                          else [(x1, base), (x2, base), (x2, base + h)])
+            elif shape == "step":
+                # Two-level "blocky" tooth, TALLER on the cavity-facing half
+                # (secondary longitudinal edge tilted toward the cavity — a
+                # blazed recycler aimed at redirecting the near-grazing leak
+                # back inward). x-mirrored across the cavity via `arm`.
+                xm = 0.5 * (x1 + x2)
+                lo = 0.5 * h
+                verts = ([(x1, base), (x1, base + lo), (xm, base + lo),
+                          (xm, base + h), (x2, base + h), (x2, base)] if arm == "L"
+                         else [(x1, base), (x1, base + h), (xm, base + h),
+                               (xm, base + lo), (x2, base + lo), (x2, base)])
+            elif shape == "notch":
+                # Slot cut in the top-center -> two sub-peaks (a localized
+                # "double-lattice": the split creates a second scattering edge
+                # a fraction of a period away, a candidate destructive-outside
+                # channel). x-symmetric within the tooth (no arm dependence).
+                xm = 0.5 * (x1 + x2)
+                wn = 0.16 * (x2 - x1)
+                hn = 0.35 * h
+                verts = [(x1, base), (x1, base + h), (xm - wn, base + h),
+                         (xm - wn, base + hn), (xm + wn, base + hn),
+                         (xm + wn, base + h), (x2, base + h), (x2, base)]
             else:
                 raise ValueError(shape)
             for wall, sgn in (("T", +1.0), ("B", -1.0)):

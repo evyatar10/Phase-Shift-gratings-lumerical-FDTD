@@ -41,6 +41,12 @@ class GeometryConfig:
     device_gap_m: float = 1.0e-6                # Lateral edge-to-edge gap (wide-tooth edges) between the two guides
     device_stagger_m: float = 0.0               # Longitudinal Δx offset of device 2's defect along the guide
     corrugation_depth_2_m: Optional[float] = None  # Device-2 corrugation depth (None → equals device 1)
+    # Device-2 AVERAGE corrugation width (None → equals device 1's avg_corrugation_width_m).
+    # This is the Friedrich–Wintgen DETUNING knob: a different device-2 average width
+    # shifts its n_eff → its π-shift defect resonance detunes from device 1's, so the
+    # two side-coupled cavities can interfere at a controlled offset D (single-resonance
+    # BIC route 4.1b). Default None keeps every existing two-device run bit-identical.
+    avg_corrugation_width_2_m: Optional[float] = None
     device2_closed: bool = False                # Device 2 = CLOSED recycler (no feed waveguides / drain ports);
                                                 # caught radiation re-radiates back toward device 1 instead of draining
 
@@ -60,14 +66,20 @@ class GeometryConfig:
         return self.corrugation_depth_2_m if self.corrugation_depth_2_m is not None else self.corrugation_depth_m
 
     @property
+    def _avg_width_2(self) -> float:
+        """Device-2 average corrugation width, falling back to device 1 when unset."""
+        return (self.avg_corrugation_width_2_m if self.avg_corrugation_width_2_m is not None
+                else self.avg_corrugation_width_m)
+
+    @property
     def width_wide_2_m(self) -> float:
         """Wide corrugation width of device 2 (derived)."""
-        return self.avg_corrugation_width_m + self._corrugation_depth_2 / 2
+        return self._avg_width_2 + self._corrugation_depth_2 / 2
 
     @property
     def width_narrow_2_m(self) -> float:
         """Narrow corrugation width of device 2 (derived)."""
-        return self.avg_corrugation_width_m - self._corrugation_depth_2 / 2
+        return self._avg_width_2 - self._corrugation_depth_2 / 2
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -463,6 +475,23 @@ class SimulationConfig:
         pad = self._span_multiplier * self.spectral.center_wavelength_m
         if g.n_devices == 2:
             s = g.device_gap_m + 0.5 * g.width_wide_m + 0.5 * g.width_wide_2_m
+            # Absolute y-box override (FW-BIC study): decouples the transverse
+            # radiation standoff from the z-standoff (span_multiplier), which for
+            # TM must stay large (≈5.4λ) or vertical loss reads unphysically —
+            # applying that multiplier to the y-pad too would inflate the pair
+            # domain to ~20 µm. When set, it is used as the absolute enclosing y,
+            # guarded so it cannot clip either guide's outer wide tooth + a 1.2 µm
+            # PML clearance (> λ/n_clad). Unset → the historical pad-based box
+            # (all existing two-device runs unchanged).
+            if self.y_span_override_m is not None:
+                min_enclose = s + 0.5 * g.width_wide_m + 0.5 * g.width_wide_2_m + 2.0 * 1.2e-6
+                if self.y_span_override_m < min_enclose:
+                    raise ValueError(
+                        f"y_span_override_m={self.y_span_override_m*1e6:.2f} µm too small for the "
+                        f"two-device pair: needs ≥ {min_enclose*1e6:.2f} µm to enclose both guides "
+                        f"(center-to-center {s*1e6:.2f} µm) with 1.2 µm PML clearance."
+                    )
+                return self.y_span_override_m
             return s + 0.5 * g.width_wide_m + 0.5 * g.width_wide_2_m + 2.0 * pad
         if self.y_span_override_m is not None:
             return self.y_span_override_m

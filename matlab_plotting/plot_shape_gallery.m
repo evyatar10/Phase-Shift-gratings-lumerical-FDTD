@@ -12,34 +12,31 @@ out_dir = fullfile(R,'device_gallery'); if ~exist(out_dir,'dir'), mkdir(out_dir)
 HP = 0.51683/2; SIN=[0.82 0.60 0.28]; OX=[0.93 0.96 0.99];
 GOOD=[0.30 0.55 0.35]; BAD=[0.80 0.30 0.20]; NEU=[0.55 0.55 0.60];
 
-BASE = met(fullfile(R,'inner_shape_study','results','result_N80_TM_avg_Ybox6p8_Zbox8p8.mat'));
+BASE   = met(fullfile(R,'inner_shape_study','results','result_N80_TM_avg_Ybox6p8_Zbox8p8.mat'));
+RC1050 = met(fullfile(R,'cavity_width_ladder','results','result_N80_TM_W1050_Ybox6p8_Zbox8p8.mat'));
 
-% device list: name, file, kind('tooth'|'cav'), shape, depth(um for cav), note
+% device list: name, file, kind('tooth'|'cav'|'rectwide'|'none'), shape, depth(um for cav), note
+% Trimmed set: baseline, the plain wider rect winner, and the two transmission-
+% improving bulges (Hann, Gaussian). Barrel is shown as a depth SCAN panel below.
 S = {};
 S{end+1}=struct('nm','baseline: rect teeth + rect cavity','d','inner_shape_study','f','result_N80_TM_avg_Ybox6p8_Zbox8p8.mat','k','none','sh','','dp',0,'note','all rectangles (reference)');
-S{end+1}=struct('nm','TEETH: inner tooth ellipse','d','inner_shape_study','f','result_N80_TM_avg_ishellipse1_Ybox6p8_Zbox8p8.mat','k','tooth','sh','ellipse','dp',0,'note','smooth dome on innermost tooth');
-S{end+1}=struct('nm','TEETH: inner tooth triangle','d','inner_shape_study','f','result_N80_TM_avg_ishtri1_Ybox6p8_Zbox8p8.mat','k','tooth','sh','tri','dp',0,'note','pointy innermost tooth');
-S{end+1}=struct('nm','TEETH: inner tooth wedge','d','inner_shape_study','f','result_N80_TM_avg_ishwedge_cav1_Ybox6p8_Zbox8p8.mat','k','tooth','sh','wedge_cav','dp',0,'note','slanted face toward cavity');
-S{end+1}=struct('nm','CAVITY: barrel (bulge)','d','inner_shape_study','f','result_N80_TM_avg_cavbarr150_Ybox6p8_Zbox8p8.mat','k','cav','sh','barrel','dp',0.150,'note','half-sine bulge, +area');
-S{end+1}=struct('nm','CAVITY: Hann','d','cavity_design_study','f','result_N80_TM_avg_cavhann300_Ybox6p8_Zbox8p8.mat','k','cav','sh','hann','dp',0.300,'note','raised-cosine, +area');
+S{end+1}=struct('nm','rect-1050: plain wider cavity','d','cavity_width_ladder','f','result_N80_TM_W1050_Ybox6p8_Zbox8p8.mat','k','rectwide','sh','','dp',0,'note','plain rectangle, wider (1050 nm)','Wcav',1.050);
+S{end+1}=struct('nm','CAVITY: Hann','d','cavity_design_study','f','result_N80_TM_avg_cavhann300_Ybox6p8_Zbox8p8.mat','k','cav','sh','hann','dp',0.300,'note','raised-cosine bulge, +area');
 S{end+1}=struct('nm','CAVITY: Gaussian','d','cavity_design_study','f','result_N80_TM_avg_cavgaus300_Ybox6p8_Zbox8p8.mat','k','cav','sh','gauss','dp',0.300,'note','Gaussian bulge, +area');
-S{end+1}=struct('nm','CAVITY: triangle','d','cavity_shape2_study','f','result_N80_TM_avg_cavtri5191_Ybox6p8_Zbox8p8.mat','k','cav','sh','tri5','dp',0.191,'note','triangular, +area');
-S{end+1}=struct('nm','CAVITY: double-bump','d','cavity_shape2_study','f','result_N80_TM_avg_cavdbl2191_Ybox6p8_Zbox8p8.mat','k','cav','sh','dbl2','dp',0.191,'note','two bumps, +area');
-S{end+1}=struct('nm','CAVITY: hourglass (pinch)','d','inner_shape_study','f','result_N80_TM_avg_cavhour150_Ybox6p8_Zbox8p8.mat','k','cav','sh','hour','dp',0.150,'note','half-sine pinch, -area');
-S{end+1}=struct('nm','CAVITY: zero-area slope','d','cavity_shape2_study','f','result_N80_TM_avg_cavslup400_Ybox6p8_Zbox8p8.mat','k','cav','sh','slup','dp',0.400,'note','linear ramp, zero added area');
 
-fig=figure('Visible','off','Position',[20 20 1560 1240],'Color','w');
-tl=tiledlayout(fig,3,4,'TileSpacing','compact','Padding','compact');
+fig=figure('Visible','off','Position',[20 20 1500 900],'Color','w');
+tl=tiledlayout(fig,2,3,'TileSpacing','compact','Padding','compact');
 
 for q=1:numel(S)
     s=S{q}; nexttile; hold on;
     m=met(fullfile(R,s.d,'results',s.f));
-    dl=(m.loss-BASE.loss)*1e3;
-    if dl < -2, col=GOOD; elseif dl > 2, col=BAD; else, col=NEU; end
+    dT=(m.T-BASE.T)*1e3;
+    if dT > 2, col=GOOD; elseif dT < -2, col=BAD; else, col=NEU; end
 
     yl=0.82; rectangle('Position',[-1.5 -yl 3 2*yl],'FaceColor',OX,'EdgeColor','none');
     % draw cavity +- 3 periods (rect teeth), replacing cavity or innermost tooth
-    Wn=0.600; Ww=1.000; Wc=0.800;
+    Wn=0.600; Ww=1.000;
+    if isfield(s,'Wcav'), Wc=s.Wcav; else, Wc=0.800; end
     % segments as [x0 x1 w]; build symmetric walk (approx: cavity centered)
     segL={}; x=0;
     for d=3:-1:1
@@ -68,6 +65,8 @@ for q=1:numel(S)
     % cavity
     if strcmp(s.k,'cav')
         drawShapedCavity(cav0-xc, cavlen, Wc, s.sh, s.dp, col);
+    elseif strcmp(s.k,'rectwide')
+        drawseg([cav0 cav0+cavlen Wc], col);   % plain wider rect, colored
     else
         drawseg([cav0 cav0+cavlen Wc], SIN);
     end
@@ -82,35 +81,47 @@ for q=1:numel(S)
     end
     plot([0 0],[-Wc Wc]/2,'k-','LineWidth',1);
     xlim([-1.5 1.5]); ylim([-yl yl]); set(gca,'XTick',[],'YTick',[]); box on;
-    title(sprintf('%s\nloss %.4f  (%+.1f\\times10^{-3} vs rect)', s.nm, m.loss, dl), ...
+    title(sprintf('%s\nT = %.4f  (%+.1f\\times10^{-3} vs rect)', s.nm, m.T, dT), ...
         'FontSize',8.5,'Interpreter','tex');
     text(0,-yl*0.86,s.note,'HorizontalAlignment','center','FontSize',7,'Color',[0.35 0.35 0.35]);
 end
 
-% ---- panel 12: results bars vs rectangular winners ----
+% ---- panel 5: barrel bulge DEPTH scan (T vs depth) ----
+nexttile; hold on; grid on;
+bd=[75 150 168 225 300 400];
+bdir={'inner_shape_study','barrel_followup','barrel_followup','barrel_followup','barrel_followup','barrel_followup'};
+bT=zeros(size(bd));
+for j=1:numel(bd)
+    mm=met(fullfile(R,bdir{j},'results',sprintf('result_N80_TM_avg_cavbarr%d_Ybox6p8_Zbox8p8.mat',bd(j))));
+    bT(j)=mm.T;
+end
+yline(RC1050.T,'-','Color',[0.19 0.45 0.72],'LineWidth',1.4,'Label','rect-1050','LabelHorizontalAlignment','left','FontSize',7);
+yline(BASE.T,'--','Color',NEU,'LineWidth',1.2,'Label','baseline 800','LabelHorizontalAlignment','left','FontSize',7);
+plot(bd,bT,'-o','Color',GOOD,'MarkerFaceColor',GOOD,'LineWidth',1.6,'MarkerSize',5);
+xlabel('barrel bulge depth (nm)'); ylabel('transmission T'); xlim([50 420]); ylim([0.882 0.926]);
+title('barrel bulge depth scan','FontSize',8.5);
+
+% ---- panel 6: results bars vs the stack winner ----
 nexttile; hold on; grid on;
 names={}; vals=[]; cols=[];
 for q=1:numel(S)
     s=S{q}; m=met(fullfile(R,s.d,'results',s.f));
     short=regexprep(s.nm,'^(TEETH|CAVITY): ','');
-    if q==1, short='baseline'; end
-    names{end+1}=short; vals(end+1)=m.loss;
-    dl=(m.loss-BASE.loss)*1e3;
-    if dl<-2, cols(end+1,:)=GOOD; elseif dl>2, cols(end+1,:)=BAD; else, cols(end+1,:)=NEU; end
+    if q==1, short='baseline'; elseif strcmp(s.k,'rectwide'), short='rect-1050'; end
+    names{end+1}=short; vals(end+1)=m.T;
+    dT=(m.T-BASE.T)*1e3;
+    if dT>2, cols(end+1,:)=GOOD; elseif dT<-2, cols(end+1,:)=BAD; else, cols(end+1,:)=NEU; end
 end
-[vs,ord]=sort(vals);
+[vs,ord]=sort(vals,'descend');   % highest T at bottom
 b=barh(vs,'FaceColor','flat'); b.CData=cols(ord,:);
-set(gca,'YTick',1:numel(vs),'YTickLabel',names(ord),'FontSize',7.5);
-xline(0.0770,'-','Color',[0.19 0.45 0.72],'LineWidth',1.5,'Label','rect-1050','LabelVerticalAlignment','bottom','FontSize',7);
-xline(0.0509,'-','Color',[0.85 0.33 0.10],'LineWidth',1.5,'Label','the stack','FontSize',7);
-xlabel('resonant loss 1-T-R  (opt mesh)'); xlim([0.045 0.145]);
-title('(12) all shapes vs the rectangular winners','FontSize',8.5);
+set(gca,'YTick',1:numel(vs),'YTickLabel',names(ord),'FontSize',8);
+xline(0.9449,'-','Color',[0.85 0.33 0.10],'LineWidth',1.5,'Label','the stack','FontSize',7);
+xlabel('resonant transmission T  (opt mesh)'); xlim([0.85 0.955]);
+title('shapes vs the stack winner','FontSize',8.5);
 
-title(tl,{['TM \pi-shift Bragg cavity — non-rectangular teeth & cavity shapes tested ' ...
-    '(opt mesh, drawn to scale).   green = better, red = worse, grey = neutral vs the rect baseline.'], ...
-    ['Every cavity shape that helps only ADDS AREA (a plain wider rectangle does the same); ' ...
-    'every shape loses to the rectangular winners (rect-1050, the stack).']}, ...
-    'FontSize',11,'Interpreter','tex');
+title(tl,{'TM \pi-shift Bragg cavity — transmission-improving cavity bulges vs a plain wider rectangle (opt mesh, to scale)', ...
+    'green = higher transmission vs the rect-800 baseline; every bulge just adds area, and the plain rect-1050 matches or beats them'}, ...
+    'FontSize',9,'Interpreter','tex');
 
 exportgraphics(fig,fullfile(out_dir,'shape_gallery.png'),'Resolution',200);
 savefig(fig,fullfile(out_dir,'shape_gallery.fig'));

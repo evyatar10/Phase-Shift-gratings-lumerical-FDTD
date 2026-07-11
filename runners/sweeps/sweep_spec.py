@@ -97,6 +97,7 @@ class SweepSpec:
     device_gap_nm:              Optional[List[float]] = None     # lateral edge-to-edge gap (nm)
     device_stagger_nm:          Optional[List[float]] = None     # longitudinal Δx offset of device 2 (nm)
     corrugation_depth_2_nm:     Optional[List[float]] = None     # device-2 corrugation depth (nm)
+    avg_width_2_nm:             Optional[List[float]] = None     # device-2 average width (FW-BIC detuning; None entry = equals device 1)
 
     # ── Small dielectric scatterer(s) (radiation-recycling study) ─────────────
     # Drawn only when the base config has scatterer.enabled=True AND radius > 0

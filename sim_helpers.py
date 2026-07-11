@@ -358,8 +358,16 @@ def generate_file_tag(sim):
                        float(getattr(sim, 'width_narrow_2', 0.0))) * 1e9)
         pitch_str = f"{float(sim.pitch) * 1e9:.1f}".replace(".", "p")  # 500.0->500p0, 518.3->518p3
         closed_tag = "_closed" if getattr(sim, 'device2_closed', False) else ""
+        # Device-2 average corrugation width (FW-BIC detuning knob): appended
+        # only when device 2's average differs from device 1's, so all existing
+        # two-device file names (equal averages) are unchanged. Without this,
+        # detuning-only rows share a .fsp/.h5/.mat name and clobber each other.
+        avg1_nm = round(0.5 * (float(sim.width_wide) + float(sim.width_narrow)) * 1e9)
+        avg2_nm = round(0.5 * (float(getattr(sim, 'width_wide_2', 0.0)) +
+                               float(getattr(sim, 'width_narrow_2', 0.0))) * 1e9)
+        avg2_tag = f"_avg2W{avg2_nm}" if avg2_nm != avg1_nm else ""
         two_dev_tag = (f"_2pishift_p{pitch_str}_Ygap{gap_nm}nm_Xstag{stag_nm}nm"
-                       f"_corr1{d1_nm}nm_corr2{d2_nm}nm{closed_tag}")
+                       f"_corr1{d1_nm}nm_corr2{d2_nm}nm{avg2_tag}{closed_tag}")
 
     # ── Domain-size override (convergence studies): appended only when a y/z box
     #    override is active, so domain sweeps get distinct filenames while every

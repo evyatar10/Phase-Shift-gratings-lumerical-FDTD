@@ -69,6 +69,7 @@ _CARD_FIELD_MAP = {
     "device_gap_nm":            ("geometry.device_gap_m",                lambda v: v * 1e-9),
     "device_stagger_nm":        ("geometry.device_stagger_m",            lambda v: v * 1e-9),
     "corrugation_depth_2_nm":   ("geometry.corrugation_depth_2_m",       lambda v: v * 1e-9),
+    "avg_width_2_nm":           ("geometry.avg_corrugation_width_2_m",   lambda v: None if v is None else v * 1e-9),  # FW-BIC detuning knob (None → equals device 1)
     # Small dielectric scatterer(s) (radiation-recycling study). Drawn only when
     # scatterer.enabled=True in the base config AND radius > 0 (radius 0 = control).
     # Rect strips (lateral-reflector study): shape='rect' + both spans > 0.
@@ -123,6 +124,7 @@ class ExperimentCard:
     device_gap_nm: Optional[float] = None          # lateral edge-to-edge gap between the two guides
     device_stagger_nm: Optional[float] = None      # longitudinal Δx offset of device 2
     corrugation_depth_2_nm: Optional[float] = None  # device-2 corrugation depth (None → equals device 1)
+    avg_width_2_nm: Optional[float] = None          # device-2 average corrugation width (FW-BIC detuning; None → equals device 1)
     label: str = ''
 
     def to_config(self, base: Optional[SimulationConfig] = None) -> SimulationConfig:
@@ -177,6 +179,8 @@ class ExperimentCard:
             cfg.geometry.device_stagger_m = self.device_stagger_nm * 1e-9
         if self.corrugation_depth_2_nm is not None:
             cfg.geometry.corrugation_depth_2_m = self.corrugation_depth_2_nm * 1e-9
+        if self.avg_width_2_nm is not None:
+            cfg.geometry.avg_corrugation_width_2_m = self.avg_width_2_nm * 1e-9
 
         # Apodization enable/disable logic
         if self.apod_method is not None:
