@@ -29,6 +29,18 @@ One small file per study, driven by the shared core modules.
   - **`calibrate_neff.py`** (`IS_HELPER`, local-only) — FDE n_eff(λ) for TE & TM
     (grating-averaged, constant indices), anchored to the FDTD result, to compute
     the TM pitch that re-centers TM on λ_TE. Run locally (needs a MODE license).
+  - **`tm_match_periods_bisect.py`** / **`tm_match_pitch_bisect.py`** /
+    **`tm_match_corrugation_bisect.py`** — self-contained integer-bisection /
+    secant search drivers: TM period count to match TE@80 peak T; pitch to hit a
+    target resonance λ; corrugation to match the TE spatial mode width. Each runs
+    a short FDTD sequence per iteration (dispatch like any TM runner).
+  - **`tm_wide_mode_corr.py`** — secant search on corrugation for a target
+    spatial mode FWHM (the wide-mode H200 devices).
+  - **`tm_mode_loss.py`** (`IS_HELPER`, local-only) — FDE modal absorption loss
+    (dB/cm), classifying TE/TM by E-power (the FDE "TE fraction" label is
+    inverted for this rotated geometry).
+  - **`tm_apod_pitch518_rest.py`** — recovery runner for 4 failed points of the
+    (archived) pitch-518.3 apodization sweep.
 
   All runners write to the study's standard `layouts/` (`.fsp`) + `results/`
   (`.mat`) folders and nothing else — the comparison summary is
@@ -153,9 +165,17 @@ When a study is declared closed, its one-off runner/analysis files move to
 `runners/archive/` (and its one-off MATLAB plots to `matlab_plotting/studies/`),
 unedited. The deploy menus never scan `archive/`, so archived files leave the
 menus but stay runnable via their new module path (see
-[archive/README.md](archive/README.md)). Currently archived: the whole
-`side_by_side/` coupled-cavities program, the TM period-match viewers, and
-`pull_by_subname.py`.
+[archive/README.md](archive/README.md) for the per-program subfolders:
+side_by_side, scatterers, cavity_shapes, loss_program, bic_kerker_trench,
+apodization, convergence).
+
+The live `sweeps/` directory holds only: the engine (`sweep_spec.py`), the
+shared anchored-TM base (`_tm_base.py` — imported by both live and archived
+TM sweeps; don't move or rename it), the four canonical example sweeps
+documented above, the shift-summary pair (`tm_te_shift.py`,
+`tm_shift_p518.py`, `plot_tm_te_shift.py` — referenced by
+`athena/jobs/run_shift_summary.sh` and the deploy scripts), and currently
+active studies.
 
 ## Legacy files (kept runnable, superseded)
 

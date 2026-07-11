@@ -33,7 +33,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from runners.sweeps.sweep_spec import SweepSpec, run_sweep_spec
-from runners.sweeps.tm_scatterer_scan import build_base
+from runners.sweeps._tm_base import build_base
 
 
 BOX_Y_UM = 6.8       # converged y (job 116854)

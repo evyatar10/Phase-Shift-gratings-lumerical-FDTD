@@ -153,6 +153,12 @@ Over-testing never once cost anything. So:
   server code**: restrictive dir perms on remote `project/` can make rsync silently skip
   root `*.py` files (`rsync --inplace` is the known fix — verify the deploy's itemized
   output actually updated the files you edited).
+- **Cluster scripts are a maintained PAIR: athena/ + igum/.** Any edit to
+  `athena/scripts/*` or `athena/jobs/*` is either mirrored to `igum/` in the same
+  change or explicitly reported as not mirrored. **`dgx/` is FROZEN legacy — do
+  not edit it and do not dispatch to it** (broken with 2026R1; see its README
+  banner). This rule exists because the forks measurably drifted (2026-07-11
+  audit: dgx missing two athena fixes).
 - **`lmstat` -96 on Athena is a FALSE NEGATIVE — do NOT block a dispatch on it.**
   `--license-probe` / container `lmutil lmstat` returns `-96` ("lmgrd is not running /
   server down"; locally `HOST_NOT_FOUND`) *even when the license is fully working*. Cause:

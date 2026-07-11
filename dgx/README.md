@@ -1,6 +1,13 @@
 # DGX GPU Workflow
 
-Parallel GPU pipeline for running Lumerical FDTD on Technion's **DGX** cluster (dgx-master, 9× DGX A100 nodes). This workflow is **fully independent** of the Zeus CPU workflow in `hpc/` — no files there are modified or shared.
+> **FROZEN — LEGACY, DO NOT MAINTAIN (2026-07-11).** The DGX FDTD GPU path is
+> silently broken with Lumerical 2026R1 on the R470 driver (~3 s no-op solve,
+> then port-expansion crash) and this tree no longer receives athena/ fixes —
+> it is already behind (missing the `run_mesh_convergence` alias and the
+> `STUDY_DIR_NAME` override in `scripts/athena_run.py`). Dispatch to **Athena**
+> (default) or **IGUM** instead; keep this directory for reference only.
+
+Parallel GPU pipeline for running Lumerical FDTD on Technion's **DGX** cluster (dgx-master, 9× DGX A100 nodes). This workflow is **fully independent** of the Zeus CPU workflow (`zeus/`) — no files there are modified or shared.
 
 ---
 
