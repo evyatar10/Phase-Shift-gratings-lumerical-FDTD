@@ -358,6 +358,10 @@ class FarFieldConfig:
                                                 # Pin False for arm-length monitors (~100s of MB
                                                 # per row); the polarimetry reduction (scalars +
                                                 # 1D x-profiles) is always saved regardless.
+    save_complex: bool = False                  # Also store the complex far-field vectors
+                                                # Ex_c/Ey_c/Ez_c per monitor (~1.9 MB each) —
+                                                # needed by the response-matrix (Green's) study,
+                                                # where phase carries the cancellation.
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

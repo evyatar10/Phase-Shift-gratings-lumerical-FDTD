@@ -306,7 +306,8 @@ def extract_farfield_data(sim, cfg) -> dict:
     print("\nExtracting far-field and near-field data...")
     for monitor_name, key, normal in [("side_monitor", "side", "y"),
                                       ("top_monitor", "top", "z")]:
-        ff = extract_farfield(sim.fdtd, monitor_name, ff_res=ff_res)
+        ff = extract_farfield(sim.fdtd, monitor_name, ff_res=ff_res,
+                              complex_fields=getattr(cfg.farfield, "save_complex", False))
         result[f"farfield_{key}"] = ff if ff is not None else {}
         pol = extract_monitor_polarimetry(sim.fdtd, monitor_name, normal)
         result[f"polarimetry_{key}"] = pol if pol is not None else {}

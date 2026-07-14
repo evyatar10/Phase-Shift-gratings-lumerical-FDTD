@@ -273,3 +273,36 @@ These rules prevent the re-accumulation, at creation time.)
   engine); otherwise decompose or reuse. Never grow the god-objects
   (`bragg_device.__init__`, `deploy_athena.sh`) casually — additions there get a
   one-line heads-up.
+
+## 11. Coding style — write like a lazy senior dev
+
+(Adapted from the "ponytail" skill's decision ladder. §10 says where code lives and
+how much may accumulate; this section says what the code itself looks like. The user
+is a physicist who will reread and edit this code months later — optimize for that
+reader, not for the AI that wrote it.)
+
+- **Climb the ladder, stop at the first rung that holds:** (1) does this code need
+  to exist at all? (2) does the codebase already do it? (3) does
+  numpy/scipy/stdlib/MATLAB built-ins do it? (4) does an installed package do it?
+  (5) can it be a few plain lines? Only then write "the minimum that works".
+  Lazy about the *solution*, never about *reading* — understand the existing code
+  first; the ladder is not an excuse to skip §5 verification.
+- **Compact but not cryptic.** Short means fewer moving parts, not code golf. Prefer
+  the boring obvious construct (a plain loop, a plain dict) over a clever one-liner,
+  chained comprehension, or lambda pile the user would have to decode. Plain
+  functions + module-level CONSTANTS at the top of the file (the knobs a user tweaks)
+  beat classes, decorators, and config objects here.
+- **No speculative scaffolding.** No CLI flags, config options, plugin hooks,
+  abstraction layers, or "for future use" parameters that this study doesn't use
+  today. No try/except wrapping that hides errors — in study code a loud stack trace
+  is the correct behavior. Add generality the second time it's actually needed, not
+  the first time it's imaginable.
+- **Structure for the human reader:** one screen ≈ one idea; the file reads top to
+  bottom in execution order (config → build → run → save); names say physics
+  (`corrugation_nm`, not `param2`); comments only where the *why* isn't in the code
+  (units, sign conventions, incident numbers). If a helper is used once and is under
+  ~5 lines, inline it.
+- **Before reporting "done", reread the diff as the user:** anything you'd have to
+  explain in chat should instead be simplified in the code. If the diff is much
+  longer than the task sounded, say so and why — length surprises get flagged, not
+  buried.

@@ -12,7 +12,7 @@ from scipy.interpolate import interp1d
 
 # ── Far-field extraction ─────────────────────────────────────────────────────
 
-def extract_farfield(fdtd, monitor_name, ff_res=201, idx_f=1):
+def extract_farfield(fdtd, monitor_name, ff_res=201, idx_f=1, complex_fields=False):
     """
     Pull far-field data from a planar monitor via Lumerical eval().
 
@@ -21,9 +21,13 @@ def extract_farfield(fdtd, monitor_name, ff_res=201, idx_f=1):
         monitor_name: Name of the monitor (e.g., "side_monitor", "top_monitor")
         ff_res: Far-field ux/uy grid resolution
         idx_f: 1-based frequency index
+        complex_fields: Also return the complex far-field vector components
+            Ex_c/Ey_c/Ez_c (response-matrix study — phase carries the
+            cancellation; |E|² alone cannot form a linear response).
 
     Returns:
-        dict with E2, ux, uy, lam  or  None on failure.
+        dict with E2, ux, uy, lam (+ Ex_c, Ey_c, Ez_c when complex_fields)
+        or  None on failure.
     """
     print(f"  Extracting far-field: {monitor_name}")
     try:
@@ -42,6 +46,13 @@ def extract_farfield(fdtd, monitor_name, ff_res=201, idx_f=1):
     ux = farfieldux(mname, idx, res, res);
     uy = farfielduy(mname, idx, res, res);
     """
+    if complex_fields:
+        script += """
+    E_vec = farfieldvector3d(mname, idx, res, res);
+    Exc = pinch(E_vec, 3, 1);
+    Eyc = pinch(E_vec, 3, 2);
+    Ezc = pinch(E_vec, 3, 3);
+    """
     try:
         fdtd.eval(script)
     except Exception as e:
@@ -51,7 +62,12 @@ def extract_farfield(fdtd, monitor_name, ff_res=201, idx_f=1):
     E2 = np.squeeze(fdtd.getv("E2"))
     ux = np.squeeze(fdtd.getv("ux"))
     uy = np.squeeze(fdtd.getv("uy"))
-    return {"E2": E2, "ux": ux, "uy": uy, "lam": lam}
+    out = {"E2": E2, "ux": ux, "uy": uy, "lam": lam}
+    if complex_fields:
+        out["Ex_c"] = np.squeeze(fdtd.getv("Exc"))
+        out["Ey_c"] = np.squeeze(fdtd.getv("Eyc"))
+        out["Ez_c"] = np.squeeze(fdtd.getv("Ezc"))
+    return out
 
 
 def extract_monitor_nearfield(fdtd, monitor_name):
