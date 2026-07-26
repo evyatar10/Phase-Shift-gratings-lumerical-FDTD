@@ -99,7 +99,9 @@ export QT_QPA_PLATFORM=offscreen
 # athena_run.py derives all paths from WORK_DIR and LUMAPI_PATH.
 export WORK_DIR
 export LUMAPI_PATH="${LUM_HOME}/api/python/lumapi.py"
-export LD_LIBRARY_PATH="${LUM_HOME}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+# WORK_DIR/scilibs: libgfortran+libquadmath for scipy — missing on the
+# part-preempt compute nodes (present on login1/alecohen1); staged 2026-07-25.
+export LD_LIBRARY_PATH="${LUM_HOME}/lib:${WORK_DIR}/scilibs${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 # fdtd-solutions resets LD_LIBRARY_PATH to $FDTD_LD_LIBRARY_PATH:$LUMERICAL_LD_LIBRARY_PATH
 # at relaunch — capture the current value so the reset restores it instead of
 # wiping it (same mechanism documented in the Athena container job).

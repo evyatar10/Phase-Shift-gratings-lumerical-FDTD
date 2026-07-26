@@ -1,5 +1,12 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(timeout 50 ssh -o BatchMode=yes -o ConnectTimeout=20 evyatarrubin@athena.technion.ac.il \"echo ATHENA_OK\")",
+      "Bash(echo \"ssh_rc=$?\")",
+      "Read(//c/Users/evyat/**)",
+      "Bash(timeout 45 ssh -o BatchMode=yes -o ConnectTimeout=20 evyatarrubin@athena.technion.ac.il \"echo ATHENA_OK\")",
+      "Bash(echo \"login_rc=$?\")"
+    ],
     "additionalDirectories": [
       "c:\\Users\\evyat\\.claude\\projects\\c--Users-evyat-Lumerical-phase-shift-grating-FTDT-codes\\memory"
     ]

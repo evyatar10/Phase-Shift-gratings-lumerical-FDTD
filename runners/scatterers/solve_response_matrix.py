@@ -617,8 +617,11 @@ def cmd_solve2(args):
     ys_a = np.array([s[1] for s in sites])
 
     def ok2(i, j):
-        return (abs(ys_a[i] - ys_a[j]) > 0.5) or \
-               (abs(xs_a[i] - xs_a[j]) >= args.min_spacing - 1e-6)
+        # Euclidean center-to-center distance between pillar-pair sites: excludes
+        # physical overlap (<160 nm, r=80 pillars) AND the measured nonlinear dimer
+        # zone (gates FAILED at 200 nm stacking; PASSED at 270 nm in-row spacing).
+        d = ((xs_a[i] - xs_a[j]) ** 2 + (ys_a[i] - ys_a[j]) ** 2) ** 0.5
+        return d >= args.min_spacing - 1e-6
 
     p1 = P0 + g + s_
     n = len(sites)

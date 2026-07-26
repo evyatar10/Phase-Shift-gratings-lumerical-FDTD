@@ -42,6 +42,12 @@ RUNBOOK — stages run one after the other; serialize per CLAUDE.md section 6
       bash athena/deploy_athena.sh --option3 --spec=runners.scatterers.scat_e_validate
       download, then:  python runners/scatterers/solve_response_matrix.py validate
       figure:          matlab_plotting/plot_scatterer_greens.m
+  G apodized-device probe (known pair [0,270]@700 on apod n=5/n=10 vs own controls;
+      ports-only, NO lambda sidecar — apod shifts lambda_res):
+      ARRAY_TIME=02:00:00 bash athena/deploy_athena.sh --option3 --spec=runners.scatterers.scat_g_apod --max-concurrent=3
+  J metal-mirror d-scan ("option B" after the stage-H null) lives in its OWN dir:
+      runners/metal_mirror/metal_mirror_dscan.py (reuses build_ff_base + the
+      stage-H sidecar; see runners/metal_mirror/README.md)
 
 Any device/geometry change ==> rerun stage A (the lambda sidecar goes stale).
 

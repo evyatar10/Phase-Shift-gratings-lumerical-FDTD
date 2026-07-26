@@ -87,6 +87,8 @@ class SweepSpec:
     # ── Spectral / monitors ─────────────────────────────────────────────────
     center_wavelength_nm:       Optional[List[float]] = None
     scan_width_nm:              Optional[List[float]] = None
+    monitor_2d_center_nm:       Optional[List[float]] = None     # 2D monitors' own window (None entry = source limits)
+    monitor_2d_span_nm:         Optional[List[float]] = None
     farfield:                   Optional[List[bool]]  = None
 
     # ── Source / polarization ───────────────────────────────────────────────
@@ -110,8 +112,11 @@ class SweepSpec:
     scatterer_y_nm:             Optional[List[float]] = None     # center y (nm; +y side)
     scatterer_mirrored_y:       Optional[List[bool]]  = None     # True = pair at ±y
     scatterer_index:            Optional[List[float]] = None     # 1.97 SiN pillar | 1.444 SiO2 hole
+    scatterer_material:         Optional[List[str]]   = None     # named Lumerical DB material (PEC/metal); None entry = dielectric index path
     scatterer_x_list_nm:        Optional[List[list]]  = None     # per-task LIST of x centers (nm) — multi-scatterer array
     scatterer_y_list_nm:        Optional[List[list]]  = None     # per-task LIST of per-site y (nm; None entry = shared y_m) — arc/diagonal rows
+    scatterer_rot_list_deg:     Optional[List[list]]  = None     # per-task LIST of per-site z-rotations (deg; rect only) — corner-array retro rows
+    scatterer_height_nm:        Optional[List[float]] = None     # z-height (nm); None entry = core height (350) — tall-variant diagnostics
 
     # ── Domain-size knobs (convergence studies) ───────────────────────────────
     y_span_um:                  Optional[List[float]] = None     # absolute Y box (um; single-device)

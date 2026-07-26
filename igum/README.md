@@ -86,6 +86,21 @@ srun/sbatch under every account/partition/QOS combination returns
 - **Seats are one pool across Athena + IGUM.** Before a big IGUM run, check what
   Athena is consuming (`bash athena/deploy_athena.sh --status` / `--license-probe`).
   `MAX_CONCURRENT=4` in `igum.conf` is deliberately conservative for this reason.
+- **One GPU solve = 7 `lum_fdtd_solve` seats, and the EFFECTIVE pool is 42 of
+  the 50 issued (MEASURED 2026-07-25: 6 solves = 42/50 in use, and a 7th solve
+  still died with `FlexNet -4` — ~8 seats are evidently reserved server-side).
+  Hard ceiling: 6 concurrent solves total** across ALL arrays and clusters; the
+  7th dies instantly with a bare `LumApiError: 'in run:'` (real error in the
+  layout's `*_p0.log`). Keep the SUM of all array throttles ≤ 6, and stagger
+  new arrays with `--dependency` instead of launching into a full house (jobs
+  42317/42325 lost 12 tasks this way).
+- **part-preempt compute nodes are bare** (no libgfortran, no X11/GL client
+  libs — ece-ykasten1 at least; part-lumerical + login nodes have everything).
+  Fix (2026-07-25, permanent): `REMOTE_BASE/scilibs/` carries libgfortran,
+  libquadmath, the whole libxcb*/libX*/libGL* family and an apt-extracted
+  libglut, and both job scripts put it on `LD_LIBRARY_PATH`. Some of these are
+  dlopen'ed at runtime — `ldd` showing clean does NOT prove a node is OK; the
+  real test is an `srun` lumapi `FDTD(hide=True)` probe.
 
 ## 6. How to use (mirrors the Athena workflow)
 

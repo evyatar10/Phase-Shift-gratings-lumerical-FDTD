@@ -507,6 +507,10 @@ def generate_file_tag(sim):
                 scat_tag = f"{head}_arr{len(x_list)}_X{x0}to{x1}_Y{y0}to{y1}"
             else:
                 scat_tag = f"{head}_arr{len(x_list)}_X{x0}to{x1}_Y{y_str}"
+            # Corrugation depth (array form only): corr-trim rows of a hole-lattice
+            # sweep share the same site list and would otherwise collide on the
+            # .fsp/.h5/.mat name (corr is not in the base tag at avg width 800).
+            scat_tag += f"_C{round((float(sim.width_wide) - float(sim.width_narrow)) * 1e9)}"
         else:
             scat_tag = f"{head}_X{x_str}_Y{y_str}"
         if getattr(sim, 'scatterer_mirrored_y', False) and y_nm != 0:
@@ -515,6 +519,18 @@ def generate_file_tag(sim):
         # inside the SiN core (vs the default SiN pillar in the oxide cladding).
         if getattr(sim, '_scatterer_n', sim.n_core_const) < sim.n_core_const - 1e-9:
             scat_tag += "_hole"
+        # Named-material case (metal-mirror study): first token of the database
+        # name, e.g. "_PEC" / "_Al" — dielectric-index file names are unchanged.
+        _scat_mat = getattr(sim, 'scatterer_material', None)
+        if _scat_mat:
+            scat_tag += f"_{_scat_mat.split()[0]}"
+        # Height tag — only when the scatterer height differs from the core
+        # height, so every historical (full-core / default) file name is stable.
+        # Needed since heights became sweepable: rows differing only in height
+        # would otherwise share .fsp/.h5/.mat names (§6 clobber).
+        _scat_h = getattr(sim, 'scatterer_height_m', None)
+        if _scat_h and abs(_scat_h - sim.core_height) > 1e-12:
+            scat_tag += f"_H{round(_scat_h * 1e9)}"
 
     if use_apod:
         tanh_tag = "_th" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""
@@ -534,10 +550,22 @@ def apply_monitor_overrides(sim, cfg):
     n_2d_pts = cfg.spectral.n_2d_monitor_points
 
     if sim.record_2d_fields_top_and_cross:
-        sim.fdtd.setnamed("field_profile_2D_XY", "frequency points", n_2d_pts)
-        sim.fdtd.setnamed("field_profile_2D_YZ_cross", "frequency points", n_2d_pts)
-        sim.fdtd.setnamed("field_profile_2D_XZ_side", "frequency points", n_2d_pts)
+        _mons_2d = ("field_profile_2D_XY", "field_profile_2D_YZ_cross",
+                    "field_profile_2D_XZ_side")
+        for _m in _mons_2d:
+            sim.fdtd.setnamed(_m, "frequency points", n_2d_pts)
         print(f"Override: Set 2D monitors to {n_2d_pts} points.")
+        # Optional: give the 2D monitors their OWN narrow wavelength window
+        # (decoupled from the source scan) so the recorded planes sample densely
+        # around a known resonance instead of spreading over the full scan.
+        c_nm = cfg.monitors.monitor_2d_center_nm
+        s_nm = cfg.monitors.monitor_2d_span_nm
+        if c_nm and s_nm:
+            for _m in _mons_2d:
+                sim.fdtd.setnamed(_m, "use source limits", 0)
+                sim.fdtd.setnamed(_m, "wavelength center", c_nm * 1e-9)
+                sim.fdtd.setnamed(_m, "wavelength span", s_nm * 1e-9)
+            print(f"Override: 2D monitors own window {c_nm} +/- {s_nm / 2} nm.")
 
     if getattr(sim, 'record_3d_fields', False):
         n_3d_pts = cfg.monitors.n_3d_freq_points

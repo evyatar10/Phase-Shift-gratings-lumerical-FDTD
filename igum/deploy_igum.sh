@@ -1155,8 +1155,16 @@ else
         echo "Array will start after prelim job ${PRELIM_ID} succeeds."
     fi
 
+    # SBATCH_MEM=<size> overrides the array script's 128G default — mirrored
+    # from athena/deploy_athena.sh (the forks had drifted: igum only honored it
+    # for --option2).
+    MEM_OPT=""
+    if [[ -n "${SBATCH_MEM:-}" ]]; then
+        MEM_OPT="--mem=${SBATCH_MEM}"
+        echo "[--mem] requesting ${SBATCH_MEM} host RAM for this array"
+    fi
     JOB_ID=$(ssh "${SSH}" \
-        "cd ${REMOTE_BASE} && sbatch \
+        "cd ${REMOTE_BASE} && sbatch ${MEM_OPT} \
             --array=${ARRAY_RANGE}%${K} ${DEP_FLAG} \
             ${GPU_REQ} --cpus-per-task=${N_CPUS} \
             --time=${ARRAY_TIME:-00:50:00} \

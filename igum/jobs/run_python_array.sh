@@ -94,7 +94,18 @@ export QT_QPA_PLATFORM=offscreen
 # athena_run_one.py derives all paths from WORK_DIR and LUMAPI_PATH.
 export WORK_DIR
 export LUMAPI_PATH="${LUM_HOME}/api/python/lumapi.py"
-export LD_LIBRARY_PATH="${LUM_HOME}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+# scilibs: libgfortran.so.5 (+libquadmath) for scipy — present on igum-login1
+# and ece-alecohen1 but MISSING on the part-preempt compute nodes (ece-ykasten1
+# killed job 41776 in 2 s on `import scipy.io`, 2026-07-25). Staged from the
+# login node into the shared research volume.
+export LD_LIBRARY_PATH="${LUM_HOME}/lib:${WORK_DIR}/scilibs${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+# fdtd-solutions resets LD_LIBRARY_PATH to $FDTD_LD_LIBRARY_PATH:$LUMERICAL_LD_LIBRARY_PATH
+# at relaunch — capture the current value so the reset restores it (same
+# mechanism as run_python_gpu.sh; was missing here vs the Athena array script).
+export LUMERICAL_LD_LIBRARY_PATH="${LD_LIBRARY_PATH}"
+# Force-load Lumerical's TBB malloc interceptor — prevents the intermittent
+# "free(): invalid pointer" crash when lumapi spawns fdtd-solutions.
+export LD_PRELOAD="${LUM_HOME}/lib/libtbbmalloc.so.2:${LUM_HOME}/lib/libtbbmalloc_proxy.so.2"
 # Fabric autodetect guards (same values proven in the Athena container).
 export RDMAV_FORK_SAFE=1
 export FI_EFA_FORK_SAFE=1

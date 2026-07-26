@@ -13,6 +13,13 @@ outputs.
 
 ## Recipe
 
+0. **Don't re-run points that already have results** (user rule 2026-07-26).
+   Before writing the row list, enumerate which requested points already exist
+   (results_from_athena/, results_from_igum/, memory) at usable numerics and
+   drop them; the dispatch summary states "points X reused from <job>, N new
+   tasks". Any rerun of a known point needs a one-line justification
+   (no same-numerics control exists / user-requested cross-check / suspected
+   drift). "Canary comfort" alone doesn't qualify.
 1. **Copy the closest sibling** in the right directory:
    - parameter sweep → `runners/sweeps/<closest>.py`, edit the `SPEC = SweepSpec(...)`
      field lists (sweepable fields = `experiment_card._CARD_FIELD_MAP`; add there once

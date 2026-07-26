@@ -89,10 +89,12 @@ class PiShiftBraggFDTD:
                  scatterer_x_m=0.0,
                  scatterer_y_m=1.0e-6,
                  scatterer_index=None,
+                 scatterer_material=None,
                  scatterer_mirrored_y=True,
                  scatterer_height_m=None,
                  scatterer_x_list_m=None,
                  scatterer_y_list_m=None,
+                 scatterer_rot_list_deg=None,
                  # --- NEW: sidewall-corrugation phase offset (null-steering study) ---
                  wall_phase_offset_deg=0.0,
                  # --- NEW: corrugation profile shape (tooth-shape study) ---
@@ -359,7 +361,24 @@ class PiShiftBraggFDTD:
                 raise ValueError(
                     "scatterer_y_list_m requires scatterer_x_list_m of the same length."
                 )
+        # Per-site in-plane rotation (deg, about z) — rect strips only; used by
+        # the corner-array (sawtooth retro) study. The -y mirror copy gets the
+        # NEGATED angle so the V-corners stay mirror-symmetric about y=0.
+        self.scatterer_rot_list_deg = ([float(v) for v in scatterer_rot_list_deg]
+                                       if scatterer_rot_list_deg is not None else None)
+        if self.scatterer_rot_list_deg is not None:
+            if self.scatterer_x_list_m is None or \
+                    len(self.scatterer_rot_list_deg) != len(self.scatterer_x_list_m):
+                raise ValueError(
+                    "scatterer_rot_list_deg requires scatterer_x_list_m of the same length."
+                )
+            if self.scatterer_shape != "rect":
+                raise ValueError("scatterer_rot_list_deg is rect-only.")
         self.scatterer_index = scatterer_index  # None → n_core_const at placement
+        # Named Lumerical-database material (e.g. "PEC (Perfect Electrical
+        # Conductor)", "Al (Aluminium) - Palik") — metal-mirror study. When set
+        # it overrides the index path for the scatterer objects only.
+        self.scatterer_material = str(scatterer_material) if scatterer_material else None
         # Resolved scatterer index: n_core (SiN pillar in oxide) unless overridden —
         # e.g. n_clad for an SiO2 hole INSIDE the core (the flipped-material case).
         self._scatterer_n = (float(scatterer_index) if scatterer_index is not None
@@ -373,6 +392,12 @@ class PiShiftBraggFDTD:
             # Half-extents used by the domain/PML/teeth checks below.
             self._scat_half_x = 0.5 * (self.scatterer_x_span_m or 0.0)
             self._scat_half_y = 0.5 * (self.scatterer_y_span_m or 0.0)
+            if self.scatterer_rot_list_deg is not None:
+                # Rotated strips: bound both half-extents by the half-diagonal.
+                _diag = 0.5 * ((self.scatterer_x_span_m or 0.0)**2
+                               + (self.scatterer_y_span_m or 0.0)**2) ** 0.5
+                self._scat_half_x = _diag
+                self._scat_half_y = _diag
         else:
             self._has_scatterer = bool(scatterer_enabled) and self.scatterer_radius_m > 0.0
             self._scat_half_x = self.scatterer_radius_m
@@ -1150,8 +1175,12 @@ class PiShiftBraggFDTD:
                      else [self.scatterer_x_m])
         y_sites = (self.scatterer_y_list_m if self.scatterer_y_list_m
                    else [self.scatterer_y_m] * len(x_centers))
+        rot_sites = (self.scatterer_rot_list_deg
+                     if self.scatterer_rot_list_deg is not None
+                     else [None] * len(x_centers))
         n_drawn = 0
-        for j, (x_c, y_s) in enumerate(zip(x_centers, y_sites), start=1):
+        for j, (x_c, y_s, rot_s) in enumerate(
+                zip(x_centers, y_sites, rot_sites), start=1):
             if abs(x_c) + self._scat_half_x > 0.5 * self.fdtd_x_span:
                 raise ValueError(
                     f"Scatterer at x={x_c*1e6:.2f} µm extends outside the domain "
@@ -1165,19 +1194,31 @@ class PiShiftBraggFDTD:
                 if self.scatterer_shape == "rect":
                     fdtd.addrect()                # strip, z-centered on core
                     fdtd.set("name", f"scatterer_{j}_{k}")
-                    fdtd.set("material", self.core_material)
-                    if self._object_index_mode:
-                        fdtd.set("index", n_scat)
+                    if self.scatterer_material:   # named DB material (PEC/metal)
+                        fdtd.set("material", self.scatterer_material)
+                    else:
+                        fdtd.set("material", self.core_material)
+                        if self._object_index_mode:
+                            fdtd.set("index", n_scat)
                     fdtd.set("x", x_c)
                     fdtd.set("x span", self.scatterer_x_span_m)
                     fdtd.set("y", y_c)
                     fdtd.set("y span", self.scatterer_y_span_m)
+                    if rot_s is not None:
+                        # In-plane rotation about z; -y mirror copy gets the
+                        # negated angle (mirror symmetry of the V-corners).
+                        fdtd.set("first axis", "z")
+                        fdtd.set("rotation 1",
+                                 rot_s if y_c >= 0.0 else -rot_s)
                 else:
                     fdtd.addcircle()              # cylinder, axis = z
                     fdtd.set("name", f"scatterer_{j}_{k}")
-                    fdtd.set("material", self.core_material)
-                    if self._object_index_mode:
-                        fdtd.set("index", n_scat)
+                    if self.scatterer_material:   # named DB material (PEC/metal)
+                        fdtd.set("material", self.scatterer_material)
+                    else:
+                        fdtd.set("material", self.core_material)
+                        if self._object_index_mode:
+                            fdtd.set("index", n_scat)
                     fdtd.set("radius", self.scatterer_radius_m)
                     fdtd.set("x", x_c)
                     fdtd.set("y", y_c)
@@ -1188,14 +1229,15 @@ class PiShiftBraggFDTD:
                 n_drawn += 1
         sites_str = ", ".join(f"({x*1e6:.3f},±{abs(y)*1e6:.3f})"
                               for x, y in zip(x_centers, y_sites))
+        mat_str = self.scatterer_material or f"n={n_scat:.4g}"
         if self.scatterer_shape == "rect":
             print(f"  [scatterer] {n_drawn}x rect strip "
                   f"L={self.scatterer_x_span_m*1e6:.2f} µm x "
                   f"W={self.scatterer_y_span_m*1e9:.0f} nm, "
-                  f"n={n_scat:.4g}, sites(x,y µm): {sites_str}")
+                  f"{mat_str}, sites(x,y µm): {sites_str}")
         else:
             print(f"  [scatterer] {n_drawn}x cylinder r={self.scatterer_radius_m*1e9:.0f} nm, "
-                  f"n={n_scat:.4g}, sites(x,y µm): {sites_str}")
+                  f"{mat_str}, sites(x,y µm): {sites_str}")
 
     def _add_source_and_monitors(self):
         fdtd = self.fdtd

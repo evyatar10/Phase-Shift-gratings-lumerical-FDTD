@@ -318,6 +318,12 @@ class ScattererConfig:
     x_m: float = 0.0                            # center x (cavity defect = x 0)
     y_m: float = 1.0e-6                         # center y (+y side; pair mirrors to -y)
     index: Optional[float] = None               # None → material.n_core_const
+    # Named Lumerical-database material for the scatterer object(s) ONLY — e.g.
+    # "PEC (Perfect Electrical Conductor)" or "Al (Aluminium) - Palik" (metal-
+    # mirror study). When set it overrides index/core material for the scatterer;
+    # the rest of the scene keeps the configured material mode. Constant `index`
+    # cannot express a metal (real scalar only) — this is the metal path.
+    material: Optional[str] = None
     mirrored_y: bool = True
     height_m: Optional[float] = None            # None → core height (z-centered)
     # Multi-scatterer array (coherent-recycling study): when set, draws one
@@ -327,6 +333,9 @@ class ScattererConfig:
     # Optional per-site y (same length as x_list_m) for arc / diagonal-ray
     # placements; None → all sites at y_m. Each site still mirrors to ±y_i.
     y_list_m: Optional[list] = None
+    # Optional per-site in-plane rotation (deg about z; rect strips only) —
+    # corner-array (sawtooth retro) study. -y mirror copies auto-negate.
+    rot_list_deg: Optional[list] = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -338,6 +347,8 @@ class MonitorConfig:
     """2D and 3D field monitor settings."""
     record_2d_fields: bool = True               # Record XY (top) and YZ (cross) field profiles
     field_2d_x_span_m: Optional[float] = None   # X span for 2D monitors (None = full device)
+    monitor_2d_center_nm: Optional[float] = None  # 2D-monitor own wavelength center (None = use source limits)
+    monitor_2d_span_nm: Optional[float] = None    # 2D-monitor own wavelength span (with center above)
     downsample_yz: int = 1                      # Spatial downsampling factor for monitors
     record_3d_fields: bool = False              # Record full 3D field volume
     field_3d_span_m: Optional[float] = None     # X span for 3D monitor (None = full device)
@@ -622,10 +633,12 @@ class SimulationConfig:
             scatterer_x_m=self.scatterer.x_m,
             scatterer_y_m=self.scatterer.y_m,
             scatterer_index=self.scatterer.index,
+            scatterer_material=self.scatterer.material,
             scatterer_mirrored_y=self.scatterer.mirrored_y,
             scatterer_height_m=self.scatterer.height_m,
             scatterer_x_list_m=self.scatterer.x_list_m,
             scatterer_y_list_m=self.scatterer.y_list_m,
+            scatterer_rot_list_deg=self.scatterer.rot_list_deg,
         )
 
     def to_simple_device_kwargs(self) -> dict:
