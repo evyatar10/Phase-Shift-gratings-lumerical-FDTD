@@ -29,6 +29,12 @@ class GeometryConfig:
     core_height_m: float = 350e-9               # Si3N4 core thickness
     width_port_m: float = 1000e-9               # Access waveguide width at ports
     substrate_thickness_m: float = 10e-6        # SiO2 substrate thickness
+    # Fab-stack check: silicon handle wafer under the BOX. None (default) = the
+    # historical all-oxide model — scene unchanged. Set to the BOX thickness in
+    # meters (core BOTTOM face -> Si top face; fab: 3.8e-6) to draw a
+    # semi-infinite Si slab below. Requires symmetry.use_z_symmetry = False
+    # (enforced in bragg_device — Si breaks the z=0 mirror plane).
+    si_box_thickness_m: Optional[float] = None
 
     # ── Two side-by-side coupled devices (radiative-coupling study) ────────────
     # n_devices=2 builds a SECOND parallel pi-shift waveguide, offset laterally by
@@ -561,6 +567,7 @@ class SimulationConfig:
             width_port=g.width_port_m,
             core_height=g.core_height_m,
             substrate_thickness=g.substrate_thickness_m,
+            si_box_thickness=g.si_box_thickness_m,
             # Two side-by-side coupled devices (n_devices=2)
             n_devices=g.n_devices,
             device_gap_m=g.device_gap_m,

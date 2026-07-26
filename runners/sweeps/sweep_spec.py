@@ -75,6 +75,8 @@ class SweepSpec:
     inner_shift_list_nm:        Optional[List[list]]  = None     # per-task LIST of per-tooth gap shifts (nm; negative widens gap) — distributed pi-shift
     n_free_inner_teeth:         Optional[List[int]]   = None     # must equal len(inner_shift_list_nm[row]) for those rows
     use_y_symmetry:             Optional[List[bool]]  = None     # False for wall-phase rows + their controls
+    use_z_symmetry:             Optional[List[bool]]  = None     # False for Si-substrate rows + their controls
+    si_box_um:                  Optional[List[float]] = None     # Si handle wafer below this BOX (µm); None entry = all-oxide
     cavity_neg_detuning_nm:     Optional[List[float]] = None
     cavity_length_nm:           Optional[List[float]] = None
     cavity_width_nm:            Optional[List[float]] = None
