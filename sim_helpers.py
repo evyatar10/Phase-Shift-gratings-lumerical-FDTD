@@ -540,6 +540,12 @@ def generate_file_tag(sim):
         _scat_h = getattr(sim, 'scatterer_height_m', None)
         if _scat_h and abs(_scat_h - sim.core_height) > 1e-12:
             scat_tag += f"_H{round(_scat_h * 1e9)}"
+        # Explicit z floor (fab-stack diagnostic) — appended only when set, so
+        # every symmetric-trench file name is unchanged. 'm' prefix = minus.
+        _scat_zmin = getattr(sim, 'scatterer_z_min', None)
+        if _scat_zmin is not None:
+            _zn = round(_scat_zmin * 1e9)
+            scat_tag += f"_Zmin{'m' if _zn < 0 else ''}{abs(_zn)}"
 
     if use_apod:
         tanh_tag = "_th" if getattr(sim, 'apod_method', 'linear') == 'tanh' else ""

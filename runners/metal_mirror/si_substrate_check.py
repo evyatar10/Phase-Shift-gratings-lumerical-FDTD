@@ -62,13 +62,18 @@ BASE.spectral.n_wl_points = N_WL_POINTS
 BASE.spectral.scan_width_nm = SCAN_WIDTH_NM
 BASE.scatterer.height_m = TRENCH_H_NM * 1e-9
 
-# rows: (label, si_box_um, trench?)
+# rows: (label, si_box_um, trench?, trench_z_min_um)
+# Row 5 (added 2026-07-27 after rows 0-4 completed on IGUM 43459/43519): the
+# missing depth case — trench bottom at the Si depth but with OXIDE continuing
+# below (no Si). Compares against row 3 (full-z) and row 4 (trench-on-Si).
+# z floor = -(core/2 + 3.8) = -3.975 um. Dispatch row 5 alone: --array-tasks=5-5.
 ROWS = [
-    ("ctrl (no Si, no trench)", None,        False),
-    ("Si, fab BOX 3.8",         BOX_FAB_UM,  False),
-    ("Si, BOX 3.665 node-guard", BOX_NODE_UM, False),
-    ("trench full-z (no Si)",   None,        True),
-    ("trench + Si (fab stack)", BOX_FAB_UM,  True),
+    ("ctrl (no Si, no trench)",        None,        False, None),
+    ("Si, fab BOX 3.8",                BOX_FAB_UM,  False, None),
+    ("Si, BOX 3.665 node-guard",       BOX_NODE_UM, False, None),
+    ("trench full-z (no Si)",          None,        True,  None),
+    ("trench + Si (fab stack)",        BOX_FAB_UM,  True,  None),
+    ("trench to 3.8 depth, oxide below", None,      True,  -(0.175 + BOX_FAB_UM)),
 ]
 
 _PML_CLEAR_NM = 1200.0        # > lambda/n_clad = 1080
@@ -86,11 +91,12 @@ SPEC = SweepSpec(
     scatterer_y_span_nm = [TRENCH_W_NM if r[2] else 0.0 for r in ROWS],
     scatterer_y_nm      = [TRENCH_D_NM] * len(ROWS),
     scatterer_index     = [1.0] * len(ROWS),
+    scatterer_z_min_um  = [r[3] for r in ROWS],
     mode  = "zipped",
     label = "si_substrate_check",
 )
 
 if __name__ == "__main__":
     print(SPEC.describe())
-    for i, (name, box, trench) in enumerate(ROWS):
+    for i, (name, *_rest) in enumerate(ROWS):
         print(f"  task {i}: {name}")

@@ -25,6 +25,7 @@ class PiShiftBraggFDTD:
                  core_height=350e-9,
                  substrate_thickness=4e-6,
                  si_box_thickness=None,
+                 scatterer_z_min=None,
                  y_span=4e-6,
                  z_span=8e-6,
                  n_periods_dist_to_port=5,
@@ -153,6 +154,18 @@ class PiShiftBraggFDTD:
                 )
         else:
             self._si_top_z = None
+
+        # Explicit z floor for scatterers/trenches WITHOUT Si (fab-stack
+        # diagnostic: "trench stops at the Si depth but oxide continues below").
+        # With Si present, the Si top face is the floor and this must stay None.
+        self.scatterer_z_min = scatterer_z_min
+        if scatterer_z_min is not None:
+            if si_box_thickness is not None:
+                raise ValueError("scatterer_z_min and si_box_thickness are mutually "
+                                 "exclusive — with Si the trench is clipped at the Si top.")
+            if self.use_z_symmetry:
+                raise ValueError("scatterer_z_min is z-asymmetric — set "
+                                 "use_z_symmetry=False for these rows AND their controls.")
         if polarization not in ("TE", "TM"):
             raise ValueError(f"polarization must be 'TE' or 'TM', got {polarization!r}")
         self.polarization = polarization
@@ -1273,11 +1286,14 @@ class PiShiftBraggFDTD:
                     fdtd.set("y", y_c)
                 fdtd.set("z", 0.0)
                 fdtd.set("z span", self.scatterer_height_m)
-                if (self._si_top_z is not None
-                        and -0.5 * self.scatterer_height_m < self._si_top_z):
-                    # Fab-stack: the trench is etched down TO the silicon —
-                    # terminate it on the Si top face, never through the wafer.
-                    fdtd.set("z min", self._si_top_z)
+                _z_floor = (self._si_top_z if self._si_top_z is not None
+                            else self.scatterer_z_min)
+                if (_z_floor is not None
+                        and -0.5 * self.scatterer_height_m < _z_floor):
+                    # Fab-stack: the trench is etched down TO the silicon depth —
+                    # terminate it there (on the Si top face when Si is present,
+                    # or on continuing oxide for the no-Si diagnostic).
+                    fdtd.set("z min", _z_floor)
                 fdtd.set("override mesh order from material database", 1)
                 fdtd.set("mesh order", 1)         # wins overlaps (needed for in-core holes)
                 n_drawn += 1
