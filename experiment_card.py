@@ -59,8 +59,6 @@ _CARD_FIELD_MAP = {
     "inner_shift_list_nm":       ("grating.inner_shift_nm",              None),
     "n_free_inner_teeth":        ("grating.n_free_inner_teeth",          None),
     "use_y_symmetry":           ("symmetry.use_y_symmetry",              None),  # False required for wall_phase rows (+ their controls)
-    "use_z_symmetry":           ("symmetry.use_z_symmetry",              None),  # False required for Si-substrate rows (+ their controls)
-    "si_box_um":                ("geometry.si_box_thickness_m",          lambda v: None if v is None else v * 1e-6),  # Si handle wafer below this BOX thickness (µm); None = all-oxide
     "lengthen_cavity":          ("grating.lengthen_cavity",              None),
     "center_wavelength_nm":     ("spectral.center_wavelength_m",         lambda v: v * 1e-9),
     "scan_width_nm":            ("spectral.scan_width_nm",               None),

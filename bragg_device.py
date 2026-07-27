@@ -24,7 +24,6 @@ class PiShiftBraggFDTD:
                  width_port=1000e-9,
                  core_height=350e-9,
                  substrate_thickness=4e-6,
-                 si_box_thickness=None,
                  y_span=4e-6,
                  z_span=8e-6,
                  n_periods_dist_to_port=5,
@@ -133,26 +132,6 @@ class PiShiftBraggFDTD:
 
         self.use_symmetry = use_symmetry
         self.use_z_symmetry = use_z_symmetry
-
-        # Si handle wafer under the BOX (fab-stack check). si_box_thickness =
-        # oxide gap core-BOTTOM face -> Si top face (fab: 3.8e-6). None (the
-        # default) = historical all-oxide model, scene unchanged.
-        self.si_box_thickness = si_box_thickness
-        if si_box_thickness is not None:
-            if self.use_z_symmetry:
-                raise ValueError(
-                    "si_box_thickness breaks the z=0 mirror plane — set "
-                    "use_z_symmetry=False for Si-substrate rows AND their controls."
-                )
-            self._si_top_z = -(0.5 * self.core_height + si_box_thickness)
-            if self._si_top_z <= -0.5 * self.z_span:
-                raise ValueError(
-                    f"Si top face z={self._si_top_z*1e6:.3f} µm is below the domain "
-                    f"(z min {-0.5*self.z_span*1e6:.3f} µm) — increase the z span "
-                    f"(span_multiplier) so the interface is inside the mesh."
-                )
-        else:
-            self._si_top_z = None
         if polarization not in ("TE", "TM"):
             raise ValueError(f"polarization must be 'TE' or 'TM', got {polarization!r}")
         self.polarization = polarization
@@ -697,36 +676,8 @@ class PiShiftBraggFDTD:
         self._add_fdtd_region()
         self._add_aligned_mesh_override()
         self._add_bragg_core()
-        self._add_si_substrate()
         self._add_scatterers()
         self._add_source_and_monitors()
-
-    def _add_si_substrate(self):
-        """Silicon handle wafer below the BOX (fab-stack check). One rect from
-        the Si top face down through the bottom z-PML; the oxide above it stays
-        the background material, so BOX thickness = core bottom -> Si top.
-        Constant index in every material mode: n_Si dispersion over our 20-30 nm
-        windows is <0.005 — not worth a DB fit that differs between modes."""
-        if self.si_box_thickness is None:
-            return
-        n_si = 3.4757                             # Si at 1550 nm (Palik)
-        fdtd = self.fdtd
-        fdtd.addrect()
-        fdtd.set("name", "si_substrate")
-        fdtd.set("material", "<Object defined dielectric>")
-        fdtd.set("index", n_si)
-        fdtd.set("x", self.fdtd_x_center)
-        fdtd.set("x span", self.fdtd_x_span + 4e-6)   # through the x PMLs
-        fdtd.set("y", 0.0)
-        fdtd.set("y span", self.y_span + 4e-6)        # through the y PMLs
-        fdtd.set("z max", self._si_top_z)
-        fdtd.set("z min", -0.5 * self.z_span - 2e-6)  # through the bottom z-PML
-        # No overlap handling needed: scatterers/trenches are z-clipped at the
-        # Si top face in _add_scatterers (fab: etched down TO the Si, not through).
-        si_in_domain = 0.5 * self.z_span + self._si_top_z
-        print(f"  [si_substrate] BOX {self.si_box_thickness*1e9:.0f} nm: Si top at "
-              f"z={self._si_top_z*1e6:.3f} µm, {si_in_domain*1e6:.3f} µm of Si "
-              f"before the z-PML (n={n_si})")
 
     def _add_fdtd_region(self):
         fdtd = self.fdtd
@@ -1273,11 +1224,6 @@ class PiShiftBraggFDTD:
                     fdtd.set("y", y_c)
                 fdtd.set("z", 0.0)
                 fdtd.set("z span", self.scatterer_height_m)
-                if (self._si_top_z is not None
-                        and -0.5 * self.scatterer_height_m < self._si_top_z):
-                    # Fab-stack: the trench is etched down TO the silicon —
-                    # terminate it on the Si top face, never through the wafer.
-                    fdtd.set("z min", self._si_top_z)
                 fdtd.set("override mesh order from material database", 1)
                 fdtd.set("mesh order", 1)         # wins overlaps (needed for in-core holes)
                 n_drawn += 1
@@ -1319,12 +1265,6 @@ class PiShiftBraggFDTD:
             fdtd.set("y span", port_y_span)
             fdtd.set("z", 0)
             fdtd.set("z span", 1.2 * self.z_span)
-            if self._si_top_z is not None:
-                # Keep the Si slab OUT of the port window: with Si inside it,
-                # "fundamental TM mode" locks onto a high-neff Si slab mode
-                # instead of the guide. Guided-mode tail at the Si top is
-                # ~e^-13 in intensity, so this truncation is inert.
-                fdtd.set("z min", self._si_top_z + 0.2e-6)
             fdtd.set("direction", direction)
             fdtd.set("mode selection", f"fundamental {self.polarization} mode")
             fdtd.set("frequency dependent profile", 1)

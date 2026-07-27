@@ -476,15 +476,6 @@ def generate_file_tag(sim):
     if not getattr(sim, 'use_symmetry', True) and getattr(sim, 'n_devices', 1) == 1:
         nosym_tag = "_nosym"
 
-    # ── Si-substrate fab-stack check: _SiBOX{nm} only when the Si handle wafer
-    #    is drawn, plus a z-symmetry-off marker for its identical-numerics
-    #    controls — all existing (all-oxide, z-sym) file names are unchanged.
-    si_tag = ""
-    if getattr(sim, 'si_box_thickness', None) is not None:
-        si_tag = f"_SiBOX{round(sim.si_box_thickness * 1e9)}"
-    if not getattr(sim, 'use_z_symmetry', True):
-        si_tag += "_noZsym"
-
     # ── Scatterer (radiation-recycling study): appended only when one is actually
     #    drawn, so all existing file names — and the r=0 in-study control — are
     #    unchanged. Carries radius + position (integer nm; 'm' prefix = minus), so
@@ -547,9 +538,9 @@ def generate_file_tag(sim):
         # historical default (100 nm) — keeps pre-sweep filenames stable.
         mod_depth_nm = float(getattr(sim, 'center_mod_depth', 100e-9)) * 1e9
         mod_tag = f"_M{round(mod_depth_nm):.0f}" if abs(mod_depth_nm - 100.0) > 0.5 else ""
-        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{prof_tag}{ish_tag}{dsh_tag}{ptw_tag}{wp_tag}{nosym_tag}{si_tag}{dom_tag}{scat_tag}"
+        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{prof_tag}{ish_tag}{dsh_tag}{ptw_tag}{wp_tag}{nosym_tag}{dom_tag}{scat_tag}"
     else:
-        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{prof_tag}{ish_tag}{dsh_tag}{ptw_tag}{wp_tag}{nosym_tag}{si_tag}{dom_tag}{scat_tag}"
+        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{prof_tag}{ish_tag}{dsh_tag}{ptw_tag}{wp_tag}{nosym_tag}{dom_tag}{scat_tag}"
 
 
 def apply_monitor_overrides(sim, cfg):
