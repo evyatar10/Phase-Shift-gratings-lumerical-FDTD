@@ -13,13 +13,23 @@ outputs.
 
 ## Recipe
 
-0. **Don't re-run points that already have results** (user rule 2026-07-26).
+0. **Don't re-run points that already have results** (user rule 2026-07-26,
+   re-flagged 2026-07-27 — controls are the repeat offender).
    Before writing the row list, enumerate which requested points already exist
    (results_from_athena/, results_from_igum/, memory) at usable numerics and
    drop them; the dispatch summary states "points X reused from <job>, N new
    tasks". Any rerun of a known point needs a one-line justification
    (no same-numerics control exists / user-requested cross-check / suspected
    drift). "Canary comfort" alone doesn't qualify.
+   - **Control rows get the strictest version of this.** Default = NO control
+     row: reuse the stored baseline and cite its job/file. A new control is
+     allowed ONLY when something that moves absolute T changed vs every stored
+     baseline (box size, window/points, mesh, symmetry/BCs, solver cluster —
+     the §2 identical-numerics list), and the runner docstring must name which
+     of those changed and which stored baseline was checked and rejected. If
+     nothing changed, there is no reason for a control — don't add one.
+   - Same discipline for "reference" rows (e.g. re-measuring a known winner
+     alongside a new variant): reuse unless the numerics differ.
 1. **Copy the closest sibling** in the right directory:
    - parameter sweep → `runners/sweeps/<closest>.py`, edit the `SPEC = SweepSpec(...)`
      field lists (sweepable fields = `experiment_card._CARD_FIELD_MAP`; add there once
