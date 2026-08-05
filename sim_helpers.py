@@ -393,6 +393,12 @@ def generate_file_tag(sim):
         y_um = float(sim.y_span) * 1e6
         z_um = float(sim.z_span) * 1e6
         dom_tag = f"_Ybox{y_um:.1f}_Zbox{z_um:.1f}".replace(".", "p")
+    # Auto-shutoff override (convergence study): appended only when the knob is
+    # set, so every default-threshold (1e-7) file name is unchanged. Rows
+    # differing only in shutoff would otherwise collide (§6).
+    _asm = getattr(sim, 'auto_shutoff_min', None)
+    if _asm:
+        dom_tag += f"_AS{_asm:.0e}".replace("e-0", "em").replace("e-", "em")
 
     # ── Core width / corrugation (light-line-margin study): appended only when the
     #    average corrugated width differs from the historical 800 nm default, so
@@ -400,9 +406,15 @@ def generate_file_tag(sim):
     #    rows are swept both at fixed and at proportionally-scaled corrugation.
     wc_tag = ""
     _w_avg_nm = round((float(sim.width_wide) + float(sim.width_narrow)) * 0.5e9)
+    _c_nm = round((float(sim.width_wide) - float(sim.width_narrow)) * 1e9)
     if abs(_w_avg_nm - 800) > 0:
-        _c_nm = round((float(sim.width_wide) - float(sim.width_narrow)) * 1e9)
         wc_tag = f"_Wavg{_w_avg_nm}_C{_c_nm}"
+    elif _c_nm != (400 if getattr(sim, 'polarization', 'TE') == 'TM' else 300):
+        # Corr ladders at the historical W800 (q3db studies): corr is otherwise
+        # absent from the tag, so same-N ladder rows would clobber each other's
+        # .fsp/.h5/.mat (section-6). Historical W800 results are corr-400-only
+        # for TM and corr-300-only for TE -> every old name is unchanged.
+        wc_tag = f"_C{_c_nm}"
 
     # ── Distributed pi-shift (per-tooth gap shifts): appended only when the
     #    inner_shift list is set with any nonzero entry, so all legacy names are
@@ -548,6 +560,13 @@ def apply_monitor_overrides(sim, cfg):
     Override frequency points on large monitors to control memory usage.
     """
     n_2d_pts = cfg.spectral.n_2d_monitor_points
+
+    # Always-on 1D core-tracking monitor (builder default 501 points): cap for
+    # mm-scale devices where the 501-point getresult segfaults (N=1300, 127321).
+    n_fp = getattr(cfg.monitors, "field_profile_freq_points", None)
+    if n_fp:
+        sim.fdtd.setnamed("field_profile", "frequency points", int(n_fp))
+        print(f"Override: Set field_profile monitor to {n_fp} points.")
 
     if sim.record_2d_fields_top_and_cross:
         _mons_2d = ("field_profile_2D_XY", "field_profile_2D_YZ_cross",

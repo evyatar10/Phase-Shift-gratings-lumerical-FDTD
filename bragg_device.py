@@ -95,6 +95,8 @@ class PiShiftBraggFDTD:
                  scatterer_x_list_m=None,
                  scatterer_y_list_m=None,
                  scatterer_rot_list_deg=None,
+                 # --- solver: auto-shutoff threshold (convergence study knob) ---
+                 auto_shutoff_min=None,
                  # --- NEW: sidewall-corrugation phase offset (null-steering study) ---
                  wall_phase_offset_deg=0.0,
                  # --- NEW: corrugation profile shape (tooth-shape study) ---
@@ -386,6 +388,9 @@ class PiShiftBraggFDTD:
         self.scatterer_mirrored_y = bool(scatterer_mirrored_y)
         self.scatterer_height_m = (float(scatterer_height_m) if scatterer_height_m
                                    else self.core_height)
+        # None -> the project default 1e-7 set at solver build (see fdtd.set below).
+        self.auto_shutoff_min = (float(auto_shutoff_min) if auto_shutoff_min
+                                 else None)
         if self.scatterer_shape == "rect":
             _rect_on = bool(self.scatterer_x_span_m) and bool(self.scatterer_y_span_m)
             self._has_scatterer = bool(scatterer_enabled) and _rect_on
@@ -722,7 +727,7 @@ class PiShiftBraggFDTD:
         # Sim time stays 2000 ps project-wide; OPT-IN override via TM_SIM_TIME_PS
         # for one-off convergence checks only (empty/unset -> unchanged default).
         fdtd.set("simulation time", (float(os.environ.get("TM_SIM_TIME_PS") or "2000")) * 1e-12)
-        fdtd.set("auto shutoff min", 1e-7)
+        fdtd.set("auto shutoff min", self.auto_shutoff_min or 1e-7)
 
         fdtd.set("mesh type", "custom non-uniform")
         fdtd.set("define x mesh by", "maximum mesh step")

@@ -225,6 +225,7 @@ class MeshConfig:
     n_periods_dist_to_port: int = 20            # Distance from grating edge to port (in periods)
     n_wls_dist_port_to_pml: float = 5.0         # Distance from port to PML (in wavelengths)
     simulation_mode: str = "optimization"            # "accurate" (dx≈35nm) or "optimization" (dx=50nm)
+    auto_shutoff_min: Optional[float] = None    # None = builder default 1e-7; convergence knob
 
     @property
     def cells_per_half_period(self) -> int:
@@ -352,6 +353,11 @@ class MonitorConfig:
     downsample_yz: int = 1                      # Spatial downsampling factor for monitors
     record_3d_fields: bool = False              # Record full 3D field volume
     field_3d_span_m: Optional[float] = None     # X span for 3D monitor (None = full device)
+    # Frequency points for the always-on 1D core-tracking "field_profile" monitor
+    # (builder hardcodes 501). None = leave at 501 (all existing runs unchanged).
+    # Set small (e.g. 3) for mm-scale devices: at N=1300 the 501-point dataset is
+    # ~28 GB and segfaults lumapi's getresult (job 127321, 2026-07-31).
+    field_profile_freq_points: Optional[int] = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -598,6 +604,7 @@ class SimulationConfig:
             tanh_steepness=ap.tanh_steepness,
             cells_per_half_period=me.cells_per_half_period,
             simulation_mode=me.simulation_mode,
+            auto_shutoff_min=me.auto_shutoff_min,
             use_symmetry=sy.use_y_symmetry,
             use_z_symmetry=sy.use_z_symmetry,
             polarization=self.source.polarization,

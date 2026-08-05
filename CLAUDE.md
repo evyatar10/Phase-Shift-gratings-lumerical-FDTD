@@ -158,6 +158,20 @@ Over-testing never once cost anything. So:
   server code**: restrictive dir perms on remote `project/` can make rsync silently skip
   root `*.py` files (`rsync --inplace` is the known fix — verify the deploy's itemized
   output actually updated the files you edited).
+- **License starvation has TWO signatures, one per cluster (measured 2026-08-04).**
+  IGUM (native): loud instant death, bare `in run:` + "Unable to checkout". Athena
+  (container): SILENT no-op — log shows `Simulation time: ~1 s` and the pipeline later
+  crashes with "Can not find result 'expansion for port monitor'". That port-expansion
+  error therefore has TWO possible causes: shared-.h5 clobber (see above) OR a license
+  no-op — **check the log's "Simulation time" first** to tell them apart (~1 s = license;
+  normal solve time = clobber). More rules from the same incident: (a) the 6-concurrent-
+  solve ceiling is an UPPER BOUND, not a guarantee — the pool is faculty-shared and both
+  our queues being empty proves nothing (4 IGUM + 2 Athena died on seats that "should"
+  have existed); (b) N tasks cold-starting an array in the same second can race the
+  checkout/ansyscl daemon and the losers die instantly — casualties are cheap, recover
+  with a staggered `--array-tasks=<dead indices>` resubmit once the queue drains;
+  (c) when opening a SECOND cluster or resuming after any license anomaly, send ONE
+  canary task first and confirm a real solve time before committing the fleet.
 - **Cluster scripts are a maintained PAIR: athena/ + igum/.** Any edit to
   `athena/scripts/*` or `athena/jobs/*` is either mirrored to `igum/` in the same
   change or explicitly reported as not mirrored. **`dgx/` is FROZEN legacy — do

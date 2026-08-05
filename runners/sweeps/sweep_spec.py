@@ -121,6 +121,7 @@ class SweepSpec:
     # ── Domain-size knobs (convergence studies) ───────────────────────────────
     y_span_um:                  Optional[List[float]] = None     # absolute Y box (um; single-device)
     span_mult:                  Optional[List[float]] = None     # y/z multiplier override (None = default 1.8)
+    auto_shutoff_min:           Optional[List[float]] = None     # solver early-termination threshold; None entry = builder 1e-7
 
     # ── Behavior ────────────────────────────────────────────────────────────
     mode: Literal["cartesian", "zipped"] = "cartesian"
