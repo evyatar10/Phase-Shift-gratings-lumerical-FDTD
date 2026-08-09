@@ -10,8 +10,11 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
 
 ## 1. Where things run
 
-- **Default: run FDTD on Athena**, dispatched via `bash athena/deploy_athena.sh`.
-  Athena has good availability and is far faster than the local machine.
+- **Both clusters work; ASK which one before dispatching** (user rule 2026-08-07):
+  a plain one-line question ("Athena or IGUM?") — unless the user already named the
+  cluster for this task, in which case just do what they said. (The older
+  "Athena-by-default, don't ask" convention is superseded by this rule.)
+- Athena dispatch: `bash athena/deploy_athena.sh`.
 - **IGUM (ECE faculty cluster) is a second, coexisting option** — `bash
   igum/deploy_igum.sh`. Native Lumerical (NO containers there), submission needs
   `--account`+matching QOS, `part-preempt` is preemptible (sweeps OK, long stateful
@@ -108,9 +111,22 @@ Over-testing never once cost anything. So:
   - MATLAB: `checkcode` lint + headless `exportgraphics` render.
 - **Skip** re-verifying known-good baselines and re-linting untouched code. Don't invent
   extra test passes for mechanical edits.
+- **All local verification runs are SILENT** (user rule 2026-08-07): lumapi always
+  `hide=True` (set in `bragg_device`; pass it in ad-hoc scripts too), MATLAB always
+  `-batch`. Nothing opens a window on the user's screen during automatic
+  build/smoke/plot steps.
 
 ## 6. Server safety
 
+- **A run is never a trivial action — think first, run second** (user rule 2026-08-07,
+  after the flush-ladder mesh artifact burned ~20 GPU-h). Before ANY dispatch or long
+  run: state what the run will decide and why existing results can't answer it; prefer
+  the smallest discriminating experiment. After ANY anomaly (unexpected λ/T/fwhm,
+  <30 s crash, off-family value): NO new runs until the cause is understood via free
+  diagnostics first (stored .mat comparisons, scene diffs, job/solver logs, local
+  build-only rebuilds). Runs must be consistent with the program's existing
+  measurements — a run at silently different effective numerics (e.g. a changed mesh)
+  is worse than no run.
 - **ssh/scp command form.** Always write remote commands host-first:
   `ssh evyatarrubin@athena.technion.ac.il "..."`. Never env-var-prefixed forms
   (`SSHHOST=... ssh "$SSHHOST" ...`) — they evade the permission-rule pattern matching

@@ -86,6 +86,7 @@ _CARD_FIELD_MAP = {
     "scatterer_y_list_nm":      ("scatterer.y_list_m",                   lambda v: None if v is None else [float(x) * 1e-9 for x in v]),  # per-site y (arc/diagonal)
     "scatterer_rot_list_deg":   ("scatterer.rot_list_deg",               None),  # per-site z-rotation (rect only; corner-array retro)
     "scatterer_height_nm":      ("scatterer.height_m",                   lambda v: None if v is None else v * 1e-9),  # z-height (None = core height); tall-variant diagnostics
+    "scatterer_z_min_um":       ("scatterer.z_min_m",                    lambda v: None if v is None else v * 1e-6),  # absolute z floor (µm, e.g. -3.975); needs use_z_symmetry=False
     "auto_shutoff_min":         ("mesh.auto_shutoff_min",                None),  # solver early-termination threshold (None = builder 1e-7); convergence studies
     # Domain-size knobs (convergence studies). y_span_um sets the ABSOLUTE Y box
     # (single-device only); span_mult scales the default y/z multiplier — with

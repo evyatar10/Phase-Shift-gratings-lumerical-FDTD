@@ -95,6 +95,7 @@ class PiShiftBraggFDTD:
                  scatterer_x_list_m=None,
                  scatterer_y_list_m=None,
                  scatterer_rot_list_deg=None,
+                 scatterer_z_min=None,
                  # --- solver: auto-shutoff threshold (convergence study knob) ---
                  auto_shutoff_min=None,
                  # --- NEW: sidewall-corrugation phase offset (null-steering study) ---
@@ -388,6 +389,16 @@ class PiShiftBraggFDTD:
         self.scatterer_mirrored_y = bool(scatterer_mirrored_y)
         self.scatterer_height_m = (float(scatterer_height_m) if scatterer_height_m
                                    else self.core_height)
+        # Explicit z floor for the scatterer/trench (fab-stack family): the
+        # BOTTOM face moves to this absolute z while the top face stays at
+        # +height/2 (e.g. height=core + z_min=-3.975e-6 -> trench flush with
+        # the SiN top, 3.8 um deep).
+        self.scatterer_z_min = (float(scatterer_z_min)
+                                if scatterer_z_min is not None else None)
+        if self.scatterer_z_min is not None and self.use_z_symmetry:
+            raise ValueError("scatterer_z_min is z-asymmetric — set "
+                             "symmetry.use_z_symmetry=False for these rows "
+                             "AND their identical-numerics controls.")
         # None -> the project default 1e-7 set at solver build (see fdtd.set below).
         self.auto_shutoff_min = (float(auto_shutoff_min) if auto_shutoff_min
                                  else None)
@@ -558,7 +569,7 @@ class PiShiftBraggFDTD:
         self.lam_min = self.lambda_B - half_w
         self.lam_max = self.lambda_B + half_w
 
-        self.fdtd = lumapi.FDTD()
+        self.fdtd = lumapi.FDTD(hide=True)   # never open the GUI (user rule 2026-08-07)
         self._setup_materials()
 
     def _setup_materials(self):
@@ -707,7 +718,11 @@ class PiShiftBraggFDTD:
 
         if self.use_z_symmetry:
             fdtd.set("z min bc", "Symmetric" if self.polarization == "TE" else "Anti-Symmetric")
-            fdtd.set("force symmetric z mesh", 1)
+        # Anchor the z mesh at z=0 ALWAYS, BC or not: with z-sym OFF the graded
+        # z mesh is a rounding knife-edge (178 vs 179 cells shifted n_eff by
+        # +0.0022 -> +1.6 nm band shift, job 128925 incident 2026-08-07); the
+        # anchor makes z-off runs mesh-identical to the z-on program.
+        fdtd.set("force symmetric z mesh", 1)
 
         if self.n_devices == 2:
             # The side-by-side pair has no y-symmetry plane (only device 1 is driven);
@@ -1229,6 +1244,10 @@ class PiShiftBraggFDTD:
                     fdtd.set("y", y_c)
                 fdtd.set("z", 0.0)
                 fdtd.set("z span", self.scatterer_height_m)
+                if self.scatterer_z_min is not None:
+                    # Setting "z min" keeps "z max" fixed: the top face stays
+                    # at +height/2, the bottom extends (or shrinks) to the floor.
+                    fdtd.set("z min", self.scatterer_z_min)
                 fdtd.set("override mesh order from material database", 1)
                 fdtd.set("mesh order", 1)         # wins overlaps (needed for in-core holes)
                 n_drawn += 1

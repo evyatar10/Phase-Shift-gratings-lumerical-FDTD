@@ -327,6 +327,11 @@ class ScattererConfig:
     material: Optional[str] = None
     mirrored_y: bool = True
     height_m: Optional[float] = None            # None → core height (z-centered)
+    # Absolute z floor for the scatterer/trench (fab-stack family): moves the
+    # object's BOTTOM face to this z (e.g. -3.975e-6 = 3.8 um below the core
+    # bottom) while the top face stays at +height/2. Asymmetric in z →
+    # requires symmetry.use_z_symmetry = False (enforced in bragg_device).
+    z_min_m: Optional[float] = None
     # Multi-scatterer array (coherent-recycling study): when set, draws one
     # scatterer (or ±y pair) at EACH x in the list — same radius/index for all.
     # Overrides x_m. Positions in meters, e.g. the measured 540-nm winner comb.
@@ -646,6 +651,7 @@ class SimulationConfig:
             scatterer_x_list_m=self.scatterer.x_list_m,
             scatterer_y_list_m=self.scatterer.y_list_m,
             scatterer_rot_list_deg=self.scatterer.rot_list_deg,
+            scatterer_z_min=self.scatterer.z_min_m,
         )
 
     def to_simple_device_kwargs(self) -> dict:

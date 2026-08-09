@@ -11,6 +11,19 @@ expensive mistake class in this project's history.
 
 ## 1. Before dispatching (gate, in order)
 
+0. **Think first, run second** (user rule 2026-08-07). State in one line what this run
+   will DECIDE and why stored results can't answer it; prefer the smallest
+   discriminating experiment. If the previous run of this program produced ANY
+   anomaly (off-family λ/T/fwhm, instant crash, implausible timing), no new dispatch
+   until the cause is understood from free diagnostics (stored .mat, scene diffs,
+   job + solver `_p0.log` logs, local silent rebuilds). Verify the new run's effective
+   numerics (incl. the solver's actual mesh — z-grid count in `_p0.log`) match the
+   stored family it will be compared against.
+
+0b. **Ask which cluster** (user rule 2026-08-07): both Athena and IGUM work — ask a
+   plain one-line question ("Athena or IGUM?") before dispatching, unless the user
+   already named the cluster for this task.
+
 1. **Scope is confirmed** — an exploratory question is NOT authorization to dispatch
    (CLAUDE.md §8). For TM work, confirm height + pitch + corrugation first (§4).
 2. **One line stating target resonance λ and scan-window width**, sanity-checked
