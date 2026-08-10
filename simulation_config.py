@@ -339,6 +339,9 @@ class ScattererConfig:
     # Optional per-site y (same length as x_list_m) for arc / diagonal-ray
     # placements; None → all sites at y_m. Each site still mirrors to ±y_i.
     y_list_m: Optional[list] = None
+    # Optional per-site radii (same length as x_list_m; cylinders only) —
+    # envelope-apodized comb study. None → all sites at radius_m.
+    r_list_m: Optional[list] = None
     # Optional per-site in-plane rotation (deg about z; rect strips only) —
     # corner-array (sawtooth retro) study. -y mirror copies auto-negate.
     rot_list_deg: Optional[list] = None
@@ -650,6 +653,7 @@ class SimulationConfig:
             scatterer_height_m=self.scatterer.height_m,
             scatterer_x_list_m=self.scatterer.x_list_m,
             scatterer_y_list_m=self.scatterer.y_list_m,
+            scatterer_r_list_m=self.scatterer.r_list_m,
             scatterer_rot_list_deg=self.scatterer.rot_list_deg,
             scatterer_z_min=self.scatterer.z_min_m,
         )

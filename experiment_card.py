@@ -84,6 +84,7 @@ _CARD_FIELD_MAP = {
     "scatterer_material":       ("scatterer.material",                   None),  # named DB material (PEC / metal); overrides index
     "scatterer_x_list_nm":      ("scatterer.x_list_m",                   lambda v: None if v is None else [float(x) * 1e-9 for x in v]),  # array of x centers
     "scatterer_y_list_nm":      ("scatterer.y_list_m",                   lambda v: None if v is None else [float(x) * 1e-9 for x in v]),  # per-site y (arc/diagonal)
+    "scatterer_r_list_nm":      ("scatterer.r_list_m",                   lambda v: None if v is None else [float(x) * 1e-9 for x in v]),  # per-site radii (apodized comb)
     "scatterer_rot_list_deg":   ("scatterer.rot_list_deg",               None),  # per-site z-rotation (rect only; corner-array retro)
     "scatterer_height_nm":      ("scatterer.height_m",                   lambda v: None if v is None else v * 1e-9),  # z-height (None = core height); tall-variant diagnostics
     "scatterer_z_min_um":       ("scatterer.z_min_m",                    lambda v: None if v is None else v * 1e-6),  # absolute z floor (µm, e.g. -3.975); needs use_z_symmetry=False

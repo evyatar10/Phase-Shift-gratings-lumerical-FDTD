@@ -115,6 +115,7 @@ class SweepSpec:
     scatterer_material:         Optional[List[str]]   = None     # named Lumerical DB material (PEC/metal); None entry = dielectric index path
     scatterer_x_list_nm:        Optional[List[list]]  = None     # per-task LIST of x centers (nm) — multi-scatterer array
     scatterer_y_list_nm:        Optional[List[list]]  = None     # per-task LIST of per-site y (nm; None entry = shared y_m) — arc/diagonal rows
+    scatterer_r_list_nm:        Optional[List[list]]  = None     # per-task LIST of per-site radii (nm; None entry = shared radius) — apodized comb
     scatterer_rot_list_deg:     Optional[List[list]]  = None     # per-task LIST of per-site z-rotations (deg; rect only) — corner-array retro rows
     scatterer_height_nm:        Optional[List[float]] = None     # z-height (nm); None entry = core height (350) — tall-variant diagnostics
     scatterer_z_min_um:         Optional[List[float]] = None     # absolute z floor (µm, e.g. -3.975); None entry = symmetric ±height/2; needs use_z_symmetry=False

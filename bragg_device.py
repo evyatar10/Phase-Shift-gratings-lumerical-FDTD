@@ -94,6 +94,7 @@ class PiShiftBraggFDTD:
                  scatterer_height_m=None,
                  scatterer_x_list_m=None,
                  scatterer_y_list_m=None,
+                 scatterer_r_list_m=None,
                  scatterer_rot_list_deg=None,
                  scatterer_z_min=None,
                  # --- solver: auto-shutoff threshold (convergence study knob) ---
@@ -364,6 +365,19 @@ class PiShiftBraggFDTD:
                 raise ValueError(
                     "scatterer_y_list_m requires scatterer_x_list_m of the same length."
                 )
+        # Per-site radii (envelope-apodized comb study) — cylinders only.
+        self.scatterer_r_list_m = ([float(v) for v in scatterer_r_list_m]
+                                   if scatterer_r_list_m is not None else None)
+        if self.scatterer_r_list_m is not None:
+            if self.scatterer_x_list_m is None or \
+                    len(self.scatterer_r_list_m) != len(self.scatterer_x_list_m):
+                raise ValueError(
+                    "scatterer_r_list_m requires scatterer_x_list_m of the same length."
+                )
+            if self.scatterer_shape != "cylinder":
+                raise ValueError("scatterer_r_list_m is cylinder-only.")
+            if min(self.scatterer_r_list_m) <= 0.0:
+                raise ValueError("scatterer_r_list_m radii must be positive.")
         # Per-site in-plane rotation (deg, about z) — rect strips only; used by
         # the corner-array (sawtooth retro) study. The -y mirror copy gets the
         # NEGATED angle so the V-corners stay mirror-symmetric about y=0.
@@ -415,9 +429,13 @@ class PiShiftBraggFDTD:
                 self._scat_half_x = _diag
                 self._scat_half_y = _diag
         else:
-            self._has_scatterer = bool(scatterer_enabled) and self.scatterer_radius_m > 0.0
-            self._scat_half_x = self.scatterer_radius_m
-            self._scat_half_y = self.scatterer_radius_m
+            self._has_scatterer = bool(scatterer_enabled) and (
+                self.scatterer_radius_m > 0.0 or self.scatterer_r_list_m is not None)
+            # Domain/PML/teeth checks bound by the LARGEST site radius.
+            _r_max = (max(self.scatterer_r_list_m) if self.scatterer_r_list_m
+                      else self.scatterer_radius_m)
+            self._scat_half_x = _r_max
+            self._scat_half_y = _r_max
         if (self._has_scatterer and not self.scatterer_mirrored_y
                 and abs(self.scatterer_y_m) > 0.0 and self.use_symmetry):
             # A single off-axis scatterer breaks the y=0 mirror plane; with the TM
@@ -1198,9 +1216,11 @@ class PiShiftBraggFDTD:
         rot_sites = (self.scatterer_rot_list_deg
                      if self.scatterer_rot_list_deg is not None
                      else [None] * len(x_centers))
+        r_sites = (self.scatterer_r_list_m if self.scatterer_r_list_m is not None
+                   else [self.scatterer_radius_m] * len(x_centers))
         n_drawn = 0
-        for j, (x_c, y_s, rot_s) in enumerate(
-                zip(x_centers, y_sites, rot_sites), start=1):
+        for j, (x_c, y_s, rot_s, r_s) in enumerate(
+                zip(x_centers, y_sites, rot_sites, r_sites), start=1):
             if abs(x_c) + self._scat_half_x > 0.5 * self.fdtd_x_span:
                 raise ValueError(
                     f"Scatterer at x={x_c*1e6:.2f} µm extends outside the domain "
@@ -1239,7 +1259,7 @@ class PiShiftBraggFDTD:
                         fdtd.set("material", self.core_material)
                         if self._object_index_mode:
                             fdtd.set("index", n_scat)
-                    fdtd.set("radius", self.scatterer_radius_m)
+                    fdtd.set("radius", r_s)
                     fdtd.set("x", x_c)
                     fdtd.set("y", y_c)
                 fdtd.set("z", 0.0)
@@ -1260,7 +1280,10 @@ class PiShiftBraggFDTD:
                   f"W={self.scatterer_y_span_m*1e9:.0f} nm, "
                   f"{mat_str}, sites(x,y µm): {sites_str}")
         else:
-            print(f"  [scatterer] {n_drawn}x cylinder r={self.scatterer_radius_m*1e9:.0f} nm, "
+            r_str = (f"{min(r_sites)*1e9:.0f}-{max(r_sites)*1e9:.0f}"
+                     if self.scatterer_r_list_m is not None
+                     else f"{self.scatterer_radius_m*1e9:.0f}")
+            print(f"  [scatterer] {n_drawn}x cylinder r={r_str} nm, "
                   f"{mat_str}, sites(x,y µm): {sites_str}")
 
     def _add_source_and_monitors(self):

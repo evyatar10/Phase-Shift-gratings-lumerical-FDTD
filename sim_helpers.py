@@ -506,7 +506,15 @@ def generate_file_tag(sim):
             w_nm = round(sim.scatterer_y_span_m * 1e9)
             head = f"_scRECT_L{l_nm}xW{w_nm}"
         else:
-            head = f"_scR{round(sim.scatterer_radius_m * 1e9)}"
+            r_list = getattr(sim, 'scatterer_r_list_m', None)
+            if r_list:
+                # Apodized comb: min/max radius (nm). NOTE: two different
+                # envelope SHAPES with equal min/max would collide — extend
+                # the tag if that case ever exists.
+                head = (f"_scR{round(min(r_list) * 1e9)}"
+                        f"to{round(max(r_list) * 1e9)}")
+            else:
+                head = f"_scR{round(sim.scatterer_radius_m * 1e9)}"
         x_list = getattr(sim, 'scatterer_x_list_m', None)
         y_list = getattr(sim, 'scatterer_y_list_m', None)
         if x_list:
