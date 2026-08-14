@@ -1,11 +1,24 @@
-# Apptainer recipe for Lumerical 2026 R1.1 on CUDA 12 (Ubuntu 22.04).
+# Apptainer recipe for Lumerical 2026 R1.3 on CUDA 12 (Ubuntu 22.04).
+#
+# ⚠ NOT THE ROUTINE UPGRADE PATH. This is the canonical from-scratch build, kept
+# for the day the live image must be recreated. To put a NEW Lumerical version
+# into the existing image, use the `update-container` skill instead — on-Athena
+# sandbox surgery, ~1 h, and the 5 GB .sif never crosses the VPN. This recipe
+# ends in a 5.5 GB upload over that link.
 #
 # APPROACH: copies the already-installed Lumerical directory from the WSL2
 # build host directly into the container — no installer download or browser
 # auth required at build time.
 #
-# Build (from WSL2, after Lumerical is installed at ~/ansys_incS/v261/Lumerical):
-#   cd hpc_gpu/container
+# R1.3 source tree = the LINX64 package the user downloads from the Ansys portal:
+# one ~1.1 GB RPM at <pkg>/rpm_install_files/Lumerical-2026R1-3-*.el8.x86_64.rpm.
+# Extract it (`rpm2cpio <rpm> | cpio -idm`, needs rpm2cpio — present on Rocky/RHEL,
+# NOT on Ubuntu/WSL by default: `sudo apt install rpm2cpio cpio`) and stage the
+# resulting opt/lumerical/v261 at ~/ansys_incS_R13/v261/Lumerical (2026-08-12).
+# The tree keeps licensingclient INSIDE v261 — the %files line below points there.
+#
+# Build (from WSL2, after the R1.3 tree is staged at ~/ansys_incS_R13/v261/Lumerical):
+#   cd container
 #   apptainer build lumerical-2026R1.sif lumerical.def
 #
 # Convert to Enroot .sqsh for Athena's Pyxis (run on Athena login node):
@@ -25,10 +38,10 @@ From: nvcr.io/nvidia/cuda:12.2.2-devel-ubuntu22.04
     # Copy the already-installed Lumerical directory from the WSL2 host.
     # Destination is /opt/lumerical_src (NOT /tmp — tmpfs is too small for 3.7 GB).
     # Moved to final location in %post.
-    /home/evyatar10/ansys_incS/v261/Lumerical /opt/lumerical_src
+    /home/evyatar10/ansys_incS_R13/v261/Lumerical /opt/lumerical_src
     # ANSYS License Client — required for license checkout (ansyscl).
     # Engine binary has /ansys_inc/v261/licensingclient hardcoded as lookup path.
-    /home/evyatar10/ansys_incS/v261/licensingclient /opt/licensingclient_src
+    /home/evyatar10/ansys_incS_R13/v261/Lumerical/licensingclient /opt/licensingclient_src
 
 %post
     set -e
@@ -144,13 +157,13 @@ From: nvcr.io/nvidia/cuda:12.2.2-devel-ubuntu22.04
 
 %labels
     Maintainer evyatar10.rubin@gmail.com
-    Lumerical 2026-R1.1
+    Lumerical 2026-R1.3
     BaseImage nvcr.io/nvidia/cuda:12.2.2-devel-ubuntu22.04
     CUDA 12.2 (forward-compat over R470 host driver via /usr/local/cuda/compat)
     GPU A100-compatible (compute capability >=5.0)
 
 %help
-    Lumerical 2026 R1.1 with CUDA 12 support for Technion Athena (DGX A100).
+    Lumerical 2026 R1.3 with CUDA 12 support for Technion Athena (DGX A100).
     Built by copying a pre-installed Lumerical tree from the WSL2 host.
 
     Engine-only run (Option 1):

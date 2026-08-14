@@ -15,8 +15,21 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
   cluster for this task, in which case just do what they said. (The older
   "Athena-by-default, don't ask" convention is superseded by this rule.)
 - Athena dispatch: `bash athena/deploy_athena.sh`.
+- **Athena runs Lumerical from a container** (`~/containers/lumerical-2026R1.sif`,
+  filename fixed — ~6 job scripts hardcode it; engine inside = **2026 R1.3 build
+  4572 since 2026-08-12**, matching IGUM and the local Windows install). To put a
+  new Lumerical version in it, use the **`update-container` skill** — the 5 GB
+  `.sif` never crosses the VPN, and never delete an old version's artifacts (old
+  sifs are renamed: `lumerical-2026R1.2.sif`, `lumerical-2026R1.1.sif`, plus the
+  parked `~/lum_r1*_parked_*` trees). An engine bump is a §2 named-numerics
+  change: it ends with a canary vs a stored control, on **both** clusters.
 - **IGUM (ECE faculty cluster) is a second, coexisting option** — `bash
-  igum/deploy_igum.sh`. Native Lumerical (NO containers there), submission needs
+  igum/deploy_igum.sh`. Native Lumerical — **containers are impossible there**
+  (no apptainer/singularity, docker daemon denied; verified 2026-08-12), so a
+  version bump means an extracted RPM tree we own:
+  `~/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261` is the live
+  `LUM_HOME` (the admins' `/apps/ansys/Lumerical-2026-R1.2` stays as fallback).
+  IGUM has no `rpm2cpio` — extract on Athena, tar-stream over the LAN. Submission needs
   `--account`+matching QOS, `part-preempt` is preemptible (sweeps OK, long stateful
   optimizations stay on Athena), and **license seats are SHARED with Athena** —
   probe both before big runs. Athena stays the default. See `igum/README.md`.
@@ -127,6 +140,17 @@ Over-testing never once cost anything. So:
   build-only rebuilds). Runs must be consistent with the program's existing
   measurements — a run at silently different effective numerics (e.g. a changed mesh)
   is worse than no run.
+- **Never re-measure a stored result — CONTROLS above all** (user rule 2026-07-26,
+  hardened 2026-08-10: "if we have a result somewhere don't do again — very
+  important"). Before any dispatch, enumerate which requested points already exist
+  (results_from_athena/, results_from_igum/, memory) and cut them; the dispatch note
+  says "point X reused from <job/file>". Default = NO control row — cite the stored
+  baseline file. Cross-cluster reproducibility is PROVEN (2026-08-10: Athena
+  corr-325 N165 ctrl T 0.4906 / Q 13930 ≡ IGUM-stored, exact), so a cluster switch
+  alone does NOT justify a control re-run. The only valid justification is a NAMED
+  §2 numerics change (box, window/points, mesh, symmetry/BCs) vs every stored
+  baseline, written in the runner docstring. A stored identical-numerics control
+  satisfies §2's in-study-control requirement.
 - **ssh/scp command form.** Always write remote commands host-first:
   `ssh evyatarrubin@athena.technion.ac.il "..."`. Never env-var-prefixed forms
   (`SSHHOST=... ssh "$SSHHOST" ...`) — they evade the permission-rule pattern matching
@@ -234,6 +258,12 @@ them; when a convergence study finishes, state where the files live.
 - **Dropped parameters stay dropped.** A parameter/constraint the user removed earlier
   in the session must not reappear in any later plan revision (real incident: tooth
   shift re-added to a TM plan after an explicit "don't do shifts anymore").
+- **THE PILLAR PAIR IS PERMANENTLY DROPPED (user rule 2026-08-10, "pillar pair no
+  more").** In this project "pillars" means the PERIODIC row of tens of posts (a
+  photonic-crystal-like structure) — never the 2-pillar pair. Do not dispatch,
+  propose, analyze, or headline the pair in any polarization or study; its stored
+  results are historical data only. (Incident: a pair row was included in the TE
+  far-field wave 51469 after the user had removed the sparse/pair device.)
 - Keep changes minimal and match surrounding code. Don't propose snapshot/auto-save/
   helper-CLI layers on top of workflows that already work via plain file edits.
 - Start optimizers from a known-good baseline (regular grating), not multi-start LHS.

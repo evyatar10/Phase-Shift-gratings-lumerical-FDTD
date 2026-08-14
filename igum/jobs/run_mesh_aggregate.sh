@@ -33,10 +33,12 @@ DATA_DIR="${WORK_DIR}/data"
 RESULTS_DIR="${WORK_DIR}/results"
 LOGS_DIR="${WORK_DIR}/logs"
 
-# NATIVE Lumerical install on IGUM — containers are NOT supported on this
-# cluster. The aggregator only needs the bundled python (bragg_device imports
-# lumapi at module load, so we still use Lumerical's python + LUMAPI_PATH).
-LUM_HOME="/apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261"
+# NATIVE Lumerical install on IGUM — containers are NOT supported here (no
+# apptainer/singularity). 2026 R1.3 is OUR own RPM-extracted tree on the
+# research volume; the admins' R1.2 stays at /apps/ansys as fallback. The
+# aggregator only needs the bundled python (bragg_device imports lumapi at
+# module load, so we still use Lumerical's python + LUMAPI_PATH).
+LUM_HOME="/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261"
 
 PHASE="${PHASE:?PHASE env var required (X or YZ)}"
 

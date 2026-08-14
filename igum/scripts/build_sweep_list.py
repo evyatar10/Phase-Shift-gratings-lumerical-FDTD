@@ -168,6 +168,16 @@ def _values_fd_gradient_design(module_name: str):
     return [f"{i}" for i in range(len(starts))]
 
 
+def _values_lumopt2_design(module_name: str):
+    """Import a lumopt2-design study (exposes SPEC + main(task_idx));
+    one line per task (module N_TASKS, default 1)."""
+    module = importlib.import_module(module_name)
+    for attr in ("SPEC", "main"):
+        if not hasattr(module, attr):
+            raise RuntimeError(f"Module {module_name!r} has no top-level {attr}")
+    return [f"{i}" for i in range(int(getattr(module, "N_TASKS", 1)))]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--kind", required=True,
@@ -175,7 +185,7 @@ def main():
                                  "shutoff_conv_shutoff", "spec", "cards",
                                  "inverse_design", "gradient_free_design",
                                  "lumerical_native_optimization",
-                                 "fd_gradient_design"])
+                                 "fd_gradient_design", "lumopt2_design"])
     parser.add_argument("--output", required=True,
                         help="Path to sweep_list.txt (one line per array task)")
     parser.add_argument("--module", default=None,
@@ -219,6 +229,12 @@ def main():
             print("ERROR: --module is required for --kind fd_gradient_design")
             sys.exit(1)
         lines = _values_fd_gradient_design(args.module)
+        meta["spec_module"] = args.module
+    elif args.kind == "lumopt2_design":
+        if not args.module:
+            print("ERROR: --module is required for --kind lumopt2_design")
+            sys.exit(1)
+        lines = _values_lumopt2_design(args.module)
         meta["spec_module"] = args.module
     elif args.kind == "cards":
         if not args.module:

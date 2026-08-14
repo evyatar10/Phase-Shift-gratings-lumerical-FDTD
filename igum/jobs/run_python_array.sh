@@ -39,10 +39,12 @@ DATA_DIR="${WORK_DIR}/data"
 RESULTS_DIR="${WORK_DIR}/results"
 LOGS_DIR="${WORK_DIR}/logs"
 
-# NATIVE Lumerical install on IGUM — containers are NOT supported on this
-# cluster; Lumerical 2026 R1.2 is provided by the admins under /apps/ansys.
+# NATIVE Lumerical install on IGUM — containers are NOT supported here (no
+# apptainer/singularity, docker daemon denied). 2026 R1.3 is OUR own
+# RPM-extracted tree on the research volume; the admins' R1.2 stays at
+# /apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261 as fallback.
 # (numpy/scipy in the bundled python + system libgfortran verified working.)
-LUM_HOME="/apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261"
+LUM_HOME="/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261"
 
 LICENSE="${ATHENA_LICENSE:-}"
 INTERCONNECT="${ATHENA_INTERCONNECT:-}"

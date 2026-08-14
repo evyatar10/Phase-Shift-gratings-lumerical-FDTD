@@ -33,11 +33,13 @@ FSP_FILE="${FSP_FILE:-layout_REPLACE_ME.fsp}"
 FSP_STEM="${FSP_FILE%.fsp}"
 FSP_DIR="${RESULTS_ROOT}/${FSP_STEM}"
 
-# NATIVE Lumerical install on IGUM — containers are NOT supported on this
-# cluster; Lumerical 2026 R1.2 is provided by the admins under /apps/ansys.
+# NATIVE Lumerical install on IGUM — containers are NOT supported here (no
+# apptainer/singularity, docker daemon denied). 2026 R1.3 is OUR own
+# RPM-extracted tree on the research volume; the admins' R1.2 stays at
+# /apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261 as fallback.
 # NOTE: the -ompi-lcl engine variant needs libmpi.so.40 which the RPM-extracted
 # install does NOT ship — use the plain single-process engine (fine for 1 GPU).
-LUM_HOME="/apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261"
+LUM_HOME="/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261"
 ENGINE="${LUM_HOME}/bin/fdtd-engine"
 LMUTIL="${LUM_HOME}/licensingclient/linx64/lmutil"
 # License values come from deploy_igum.sh via --export=ALL,ATHENA_LICENSE=...

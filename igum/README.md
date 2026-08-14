@@ -61,8 +61,21 @@ srun/sbatch under every account/partition/QOS combination returns
 
 ## 4. Lumerical: NATIVE (containers are NOT supported on IGUM)
 
-- Install: **`/apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261`** (2026 R1.2 —
-  one patch newer than Athena's 2026 R1 container).
+- **Containers are impossible here, verified 2026-08-12:** no `apptainer` and no
+  `singularity` binary anywhere on igum-login1, no Lmod/module system, and while
+  `docker-ce` is installed and the user is in the `docker` group, `docker info` is
+  denied (daemon not usable). So IGUM gets new Lumerical versions as **extracted
+  RPM trees**, exactly the way the admins install them.
+- Install in use: **`/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261`**
+  (2026 R1.3, build 4572 — our own extracted RPM on the research volume, matching
+  the Athena container). `LUM_HOME` in the 6 `igum/jobs/*.sh` scripts and the
+  `--license-probe` lmutil path in `deploy_igum.sh` point here.
+- Fallback / admin install, kept: **`/apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261`**
+  (2026 R1.2). Nothing was deleted; revert by restoring that path in `LUM_HOME`.
+- **Adding a future version:** `/apps/ansys` is group-writable (`igum-research-groups`)
+  so a shared install there is possible, but IGUM has **no `rpm2cpio`** (Ubuntu, only
+  `cpio`) — extract the RPM on Athena (Rocky 9, has `rpm2cpio`) and tar-stream the
+  tree over the Technion LAN, which is what the R1.3 install did.
 - Lmod modulefile exists (`module load lumerical` on nodes with Lmod init), but our job
   scripts set the env explicitly — no module dependency.
 - **Verified working on igum-login1 (2026-07-05):**
@@ -75,7 +88,9 @@ srun/sbatch under every account/partition/QOS combination returns
 - **Gotcha:** `fdtd-engine-ompi-lcl` (the MPI-wrapped engine Athena uses) fails with
   missing `libmpi.so.40` — the RPM-extracted install doesn't ship OpenMPI. The job
   scripts use the **plain `fdtd-engine`** instead (fine for single-GPU runs).
-- lmutil: `/apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261/licensingclient/linx64/lmutil`.
+- lmutil: `~/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/licensingclient/linx64/lmutil`
+  (this is what `deploy_igum.sh --license-probe` calls; the R1.2 copy under
+  `/apps/ansys/...` still works too).
 
 ## 5. License — SHARED with Athena
 
@@ -125,7 +140,7 @@ The `athena-*` skills are NOT forked; use the table above as the IGUM equivalent
 | GPU request | `--gpus=1` | `--gres=gpu:1` (+ mandatory `--account`) |
 | QOS | `24h_1g` (100 submit / 4 run caps) | `qos-preempt` (must match partition; no wall cap found) |
 | Partitions | per-GPU-type queues, incl. non-preemptible `-public` | one `part-preempt` pool (A100/RTXPRO6000), **preemptible (REQUEUE)** |
-| Runtime | apptainer container `lumerical-2026R1.sif` | **native** `/apps/ansys/Lumerical-2026-R1.2` |
+| Runtime | apptainer container `lumerical-2026R1.sif` (2026 R1.3) | **native** extracted RPM `~/research/lumerical/Lumerical-2026-R1.3` (2026 R1.3) |
 | Headless display | Xvfb inside container | `QT_QPA_PLATFORM=offscreen` |
 | License DNS | hosts-file hack required | resolves natively; lmstat reliable (no `-96` lore) |
 | Engine binary | `fdtd-engine-ompi-lcl` | plain `fdtd-engine` (no libmpi.so.40 on IGUM) |
@@ -149,8 +164,8 @@ The `athena-*` skills are NOT forked; use the table above as the IGUM equivalent
 
 ## 9. Cleanup candidates on IGUM (pending user approval — do NOT delete silently)
 
-- `~/containers/lumerical-2026R1.sif` (5.4 GB) — transferred before we learned
-  containers are unsupported; unused by the native pipeline.
+- ~~`~/containers/lumerical-2026R1.sif`~~ — the directory no longer exists (checked
+  2026-08-12); nothing to clean up.
 - `~/scilibs/` — unused natively (system libgfortran exists).
 
 ## 10. Validation record

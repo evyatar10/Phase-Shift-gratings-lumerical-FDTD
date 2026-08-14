@@ -30,9 +30,10 @@ DATA_DIR="${WORK_DIR}/data"
 RESULTS_DIR="${WORK_DIR}/results"
 LOGS_DIR="${WORK_DIR}/logs"
 
-# NATIVE Lumerical install on IGUM — containers are NOT supported on this
-# cluster; only the bundled python (scipy/matplotlib) is needed here.
-LUM_HOME="/apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261"
+# NATIVE Lumerical install on IGUM — containers are NOT supported here (no
+# apptainer/singularity). 2026 R1.3 is OUR own RPM-extracted tree on the
+# research volume; only the bundled python (scipy/matplotlib) is needed here.
+LUM_HOME="/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261"
 
 # Sweep results subfolder. config puts run output under <RUN_NAME>/results, so
 # the .mat (and the PNGs this job writes) live in ${RESULTS_DIR}/tm_te_shift/results.

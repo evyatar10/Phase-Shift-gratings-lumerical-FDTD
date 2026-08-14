@@ -86,6 +86,7 @@ for arg in "$@"; do
         --gradient-free-design=*) OPTION="3"; SWEEP_KIND="gradient_free_design"; SPEC_MODULE="${arg#--gradient-free-design=}" ;;
         --lumerical-native=*) OPTION="3"; SWEEP_KIND="lumerical_native_optimization"; SPEC_MODULE="${arg#--lumerical-native=}" ;;
         --fd-gradient-design=*) OPTION="3"; SWEEP_KIND="fd_gradient_design"; SPEC_MODULE="${arg#--fd-gradient-design=}" ;;
+        --lumopt2-design=*)   OPTION="3"; SWEEP_KIND="lumopt2_design"; SPEC_MODULE="${arg#--lumopt2-design=}" ;;
         --max-concurrent=*)   MAX_CONCURRENT="${arg#--max-concurrent=}" ;;
         --keep-h5)            KEEP_H5=1 ;;
         --gpu=*)              GPU_TYPE="${arg#--gpu=}" ;;
@@ -762,7 +763,7 @@ if [[ "${LICENSE_PROBE}" == "true" ]]; then
     # lmutil ships inside the NATIVE Lumerical install on IGUM (no container).
     # NOTE: seats are SHARED with Athena — check athena --status before big runs.
     ssh "${SSH}" "
-        lmutil=/apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261/licensingclient/linx64/lmutil
+        lmutil=/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/licensingclient/linx64/lmutil
         if [ -x \"\$lmutil\" ]; then
             echo \"Using: \$lmutil\"
             \"\$lmutil\" lmstat -a -c '${ATHENA_LICENSE}' \
@@ -1025,6 +1026,13 @@ else
         fi
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/igum/scripts/build_sweep_list.py" \
             --kind fd_gradient_design --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
+    elif [[ "${SWEEP_KIND}" == "lumopt2_design" ]]; then
+        if [[ -z "${SPEC_MODULE}" ]]; then
+            echo "ERROR: --lumopt2-design=<module> is required for kind=lumopt2_design."
+            exit 1
+        fi
+        BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/igum/scripts/build_sweep_list.py" \
+            --kind lumopt2_design --module "${SPEC_MODULE}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
     else
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/igum/scripts/build_sweep_list.py" \
             --kind "${SWEEP_KIND}" --output "${LOCAL_SWEEP_LIST}" 2>&1)

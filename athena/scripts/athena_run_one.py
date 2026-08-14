@@ -48,7 +48,7 @@ SWEEP_INDEX = os.environ.get("SWEEP_INDEX", os.environ.get("SLURM_ARRAY_TASK_ID"
 
 VALID_KINDS = {"shift", "inner_size", "generic", "mesh_conv_x", "mesh_conv_yz",
                "shutoff_conv_shutoff", "spec", "cards",
-               "inverse_design", "gradient_free_design",
+               "inverse_design", "gradient_free_design", "lumopt2_design",
                "lumerical_native_optimization",
                "fd_gradient_design"}
 if SWEEP_KIND not in VALID_KINDS:
@@ -353,6 +353,21 @@ def _run_kind_inverse_design(line: str) -> None:
         )
 
 
+def _run_kind_lumopt2_design(line: str) -> None:
+    """One lumopt2-engine task from a runners/lumopt2_design study module.
+
+    The module exposes SPEC (CampaignSpec) and main(task_idx); the array task
+    index selects the validation step / campaign task. Line content unused.
+    Required env: SWEEP_SPEC_MODULE.
+    """
+    import importlib
+    module_name = os.environ.get("SWEEP_SPEC_MODULE", "")
+    if not module_name:
+        raise RuntimeError("SWEEP_SPEC_MODULE env var required for kind=lumopt2_design")
+    module = importlib.import_module(module_name)
+    module.main(task_idx=idx)
+
+
 def _run_kind_gradient_free_design(line: str) -> None:
     """One Lumerical-PSO run from a GradientFreeDesignSpec module."""
     import importlib
@@ -451,6 +466,7 @@ _DISPATCH = {
     "spec":                           _run_kind_spec,
     "cards":                          _run_kind_cards,
     "inverse_design":                 _run_kind_inverse_design,
+    "lumopt2_design":                 _run_kind_lumopt2_design,
     "gradient_free_design":           _run_kind_gradient_free_design,
     "lumerical_native_optimization":  _run_kind_lumerical_native_optimization,
     "fd_gradient_design":             _run_kind_fd_gradient_design,

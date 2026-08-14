@@ -3,7 +3,7 @@
 # SLURM job: run the full Python/lumapi pipeline on the real Athena cluster with GPU.
 # This is the real-Athena analog of athena/jobs/run_python_gpu.sh (dgx-master).
 #
-# Runtime: NATIVE Lumerical 2026 R1.2 under /apps/ansys (IGUM: no containers).
+# Runtime: NATIVE Lumerical 2026 R1.3 under ~/research/lumerical (IGUM: no containers).
 #
 #
 #
@@ -43,9 +43,11 @@ DATA_DIR="${WORK_DIR}/data"
 RESULTS_DIR="${WORK_DIR}/results"
 LOGS_DIR="${WORK_DIR}/logs"
 
-# NATIVE Lumerical install on IGUM — containers are NOT supported on this
-# cluster; Lumerical 2026 R1.2 is provided by the admins under /apps/ansys.
-LUM_HOME="/apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261"
+# NATIVE Lumerical install on IGUM — containers are NOT supported here (no
+# apptainer/singularity, docker daemon denied). 2026 R1.3 is OUR own
+# RPM-extracted tree on the research volume; the admins' R1.2 stays at
+# /apps/ansys/Lumerical-2026-R1.2/opt/lumerical/v261 as fallback.
+LUM_HOME="/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261"
 
 # License values come from deploy_athena.sh via --export=ALL,ATHENA_LICENSE=...
 # Defaults below let the script also be invoked manually with sbatch directly.

@@ -1,14 +1,23 @@
 #!/bin/bash
 #
-# Build the Lumerical Apptainer image, convert to Enroot .sqsh, and upload
-# to DGX. Run this from the hpc_gpu/container/ directory inside WSL2.
+# Build the Lumerical Apptainer image and upload it to Athena. Run this from
+# the container/ directory inside WSL2.
+#
+# ⚠ NOT THE ROUTINE UPGRADE PATH — this ends in a 5.5 GB upload over the VPN.
+# To put a new Lumerical version into the EXISTING image, use the
+# `update-container` skill (on-Athena sandbox surgery; the .sif never moves).
+# Use this script only to recreate the image from scratch.
 #
 # Prerequisites:
 #   1. Apptainer installed in WSL2  (sudo add-apt-repository ppa:apptainer/ppa
 #                                    sudo apt install apptainer)
-#   2. Lumerical 2026 R1.1 already installed at ~/ansys_incS/v261/Lumerical/
-#      (done — the %files section of lumerical.def copies it from there)
-#   3. Your Athena SSH key is loaded  (ssh-add ~/.ssh/id_rsa)
+#   2. Lumerical 2026 R1.3 tree staged at ~/ansys_incS_R13/v261/Lumerical/
+#      (source: the LINX64 package's single RPM,
+#       <pkg>/rpm_install_files/Lumerical-2026R1-3-*.el8.x86_64.rpm, extracted
+#       with `rpm2cpio <rpm> | cpio -idm` → opt/lumerical/v261;
+#       the %files section of lumerical.def copies it from there)
+#   3. Windows ssh config has the `athena` alias (upload uses Windows
+#      ssh.exe/scp.exe — Athena's hostname does not resolve from WSL)
 #
 # Usage:
 #   bash build.sh
@@ -16,15 +25,14 @@
 set -euo pipefail
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-DGX_USER="evyatarrubin"
-DGX_HOST="dgx-master.technion.ac.il"
-REMOTE_CONTAINER_DIR="/home/${DGX_USER}/containers"
+ATHENA_ALIAS="athena"            # Windows ~/.ssh/config alias
+REMOTE_CONTAINER_DIR="containers"
 
 IMAGE_NAME="lumerical-2026R1"
 SIF="${IMAGE_NAME}.sif"
 DEF="lumerical.def"
 
-LUM_SRC="${HOME}/ansys_incS/v261/Lumerical"
+LUM_SRC="${HOME}/ansys_incS_R13/v261/Lumerical"
 # ─────────────────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -34,7 +42,7 @@ echo "============================================================"
 echo "  Lumerical container build + deploy"
 echo "  Source dir : ${LUM_SRC}"
 echo "  Image      : ${SIF}"
-echo "  Target     : ${DGX_USER}@${DGX_HOST}:${REMOTE_CONTAINER_DIR}/"
+echo "  Target     : ${ATHENA_ALIAS}:${REMOTE_CONTAINER_DIR}/${SIF}.new"
 echo "============================================================"
 
 # ── 1. Verify Lumerical source ────────────────────────────────────────────────
@@ -43,7 +51,7 @@ if [[ ! -x "${LUM_SRC}/bin/fdtd-engine-ompi-lcl" ]]; then
     echo "ERROR: Lumerical not found or engine missing at:"
     echo "  ${LUM_SRC}/bin/fdtd-engine-ompi-lcl"
     echo ""
-    echo "Install Lumerical 2026 R1.1 to ~/ansys_incS/v261/ first."
+    echo "Stage the Lumerical 2026 R1.3 tree at ~/ansys_incS_R13/v261/ first."
     exit 1
 fi
 echo "Source check OK: fdtd-engine-ompi-lcl found."
@@ -61,27 +69,25 @@ echo ""
 echo "=== Smoke test: fdtd-engine-ompi-lcl ==="
 apptainer run "${SIF}" /opt/lumerical/v261/bin/fdtd-engine-ompi-lcl -v 2>&1 || true
 
-# ── 4. Upload .sif to DGX ──────────────────────────────────────────────────
-# We use Apptainer's `--nv` runtime exclusively (no Pyxis/Enroot). The .sqsh
-# conversion that used to live here was dropped: it produced a redundant second
-# image format and Pyxis NVIDIA injection on DGX does not handle the CUDA
-# forward-compat shim ordering we need for the R470 host driver.
+# ── 4. Upload .sif to Athena ──────────────────────────────────────────────────
+# Uploaded as ${SIF}.new — the live image is swapped deliberately afterwards
+# (queue must be checked first; old image kept as .bak until the canary passes).
+# Windows ssh.exe/scp.exe are used because Athena's hostname only resolves via
+# the pinned alias in the Windows ~/.ssh/config.
 echo ""
-echo "=== Uploading ${SIF} to DGX (this may take a while; ~5.5 GB) ==="
-SSH="${DGX_USER}@${DGX_HOST}"
-ssh "${SSH}" "mkdir -p ${REMOTE_CONTAINER_DIR}"
-scp "${SIF}" "${SSH}:${REMOTE_CONTAINER_DIR}/${SIF}"
+echo "=== Uploading ${SIF} to Athena as ${SIF}.new (~5.5 GB, slow link) ==="
+SIF_WIN="$(wslpath -w "${SCRIPT_DIR}/${SIF}")"
+ssh.exe "${ATHENA_ALIAS}" "mkdir -p ${REMOTE_CONTAINER_DIR}"
+scp.exe "${SIF_WIN}" "${ATHENA_ALIAS}:${REMOTE_CONTAINER_DIR}/${SIF}.new"
 
 echo ""
 echo "============================================================"
-echo "Upload complete: ${REMOTE_CONTAINER_DIR}/${SIF}"
+echo "Upload complete: ${REMOTE_CONTAINER_DIR}/${SIF}.new"
 echo ""
-echo "CUDA forward-compat sanity test (should print 'CUDA Version: 12.2'):"
-echo "  ssh ${SSH}"
-echo "  srun --gpus=1 --time=00:02:00 apptainer exec --nv \\"
-echo "       ${REMOTE_CONTAINER_DIR}/${SIF} nvidia-smi | head -3"
+echo "To activate (AFTER checking squeue is empty of container jobs):"
+echo "  ssh ${ATHENA_ALIAS} \"cd ${REMOTE_CONTAINER_DIR} && \\"
+echo "      mv ${SIF} ${IMAGE_NAME}.prev.sif && mv ${SIF}.new ${SIF}\""
 echo ""
-echo "Engine smoke test:"
-echo "  srun --gpus=1 apptainer exec --nv \\"
-echo "       ${REMOTE_CONTAINER_DIR}/${SIF} fdtd-engine-ompi-lcl -v"
+echo "Then send ONE canary task and compare to a stored control before"
+echo "dispatching anything else (engine change = named numerics change)."
 echo "============================================================"
