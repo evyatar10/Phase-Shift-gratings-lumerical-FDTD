@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import config
 from runners.lumopt2_design import lumopt2_design as eng
 
-SIGMA0_UM = None      # <- REQUIRED: same value as seed A (B2b canary)
+SIGMA0_UM = 17.493    # MEASURED gate B2b at PVA (job 132654), same value as seed A
 
 # Dip at the cusp (teeth 1-4), payback just outside (teeth 5-12), frozen-level
 # beyond. mean(corr)/325 = 0.9926 — inside the deadband by construction.
@@ -37,6 +37,7 @@ SPEC = eng.CampaignSpec(
     box_y_um=6.8, box_z_mult=4.14,       # z=6.8, identical to seed A (gate A0)
     corr_seed_nm=DIP_PROFILE_NM,
     max_iter=30, max_feval=55,
+    adj_phase_fix=True, adj_fix_re=1.0561, adj_fix_im=0.1239,  # C-fix (see seed A)
 )
 
 

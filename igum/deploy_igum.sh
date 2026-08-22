@@ -92,6 +92,14 @@ for arg in "$@"; do
         --gpu=*)              GPU_TYPE="${arg#--gpu=}" ;;
         --gpu-status)         GPU_STATUS=true ;;
         --array-tasks=*)      ARRAY_TASKS="${arg#--array-tasks=}" ;;
+        --after=*)            AFTER_JOB_ID="${arg#--after=}" ;;
+        --qos=*)              QOS_OVERRIDE="${arg#--qos=}" ;;
+        --time=*)             TIME_OVERRIDE="${arg#--time=}" ;;
+        # Unknown flags ABORT (2026-08-16, mirrored from deploy_athena.sh:
+        # invented flags were silently ignored and the deploy submitted anyway).
+        *)  echo "ERROR: unknown flag '${arg}' — aborting before any submission."
+            echo "       (code-only push: --upload-only)"
+            exit 1 ;;
     esac
 done
 
@@ -1037,9 +1045,11 @@ else
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/igum/scripts/build_sweep_list.py" \
             --kind "${SWEEP_KIND}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
     fi
+    BUILD_RC=$?   # capture BEFORE echo — `echo` used to overwrite $? and the
+                  # check never fired (Athena job 133394 submitted on a failed build)
     echo "${BUILD_OUT}"
-    if [[ $? -ne 0 ]]; then
-        echo "ERROR: build_sweep_list.py failed."
+    if [[ ${BUILD_RC} -ne 0 ]]; then
+        echo "ERROR: build_sweep_list.py failed — aborting before any submission."
         exit 1
     fi
 
@@ -1073,9 +1083,15 @@ else
         ARRAY_RANGE="0-${ARRAY_END}"
     fi
 
-    echo "Uploading sweep_list.txt to Athena cluster..."
+    # PER-STUDY sweep list — mirrored from athena/deploy_athena.sh (see the
+    # comment there; user-approved §6 amendment 2026-08-15).
+    STUDY_TAG="${SPEC_MODULE##*.}"
+    STUDY_TAG="${STUDY_TAG:-default}"
+    # native paths on IGUM (no container /work bind)
+    REMOTE_SWEEP_LIST="${REMOTE_BASE}/data/sweep_list_${STUDY_TAG}.txt"
+    echo "Uploading sweep list as data/sweep_list_${STUDY_TAG}.txt ..."
     ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/data"
-    scp "${LOCAL_SWEEP_LIST}" "${SSH}:${REMOTE_BASE}/data/sweep_list.txt"
+    scp "${LOCAL_SWEEP_LIST}" "${SSH}:${REMOTE_BASE}/data/sweep_list_${STUDY_TAG}.txt"
 
     echo "Array: ${ARRAY_RANGE}%${K}  (${N_TASKS} tasks total, max ${K} concurrent)"
     if [[ -n "${SWEEP_PARAM}" ]];        then echo "  SWEEP_PARAM=${SWEEP_PARAM}"; fi
@@ -1163,6 +1179,27 @@ else
         echo "Array will start after prelim job ${PRELIM_ID} succeeds."
     fi
 
+    # --qos= / --time= per-dispatch overrides — mirrored from athena (QOS must
+    # match the account on IGUM; qos-preempt is the default lane here).
+    if [[ -n "${QOS_OVERRIDE:-}" ]]; then
+        ARRAY_QOS="${QOS_OVERRIDE}"
+        echo "[--qos] ${ARRAY_QOS}"
+    fi
+    if [[ -n "${TIME_OVERRIDE:-}" ]]; then
+        ARRAY_TIME="${TIME_OVERRIDE}"
+        echo "[--time] ${ARRAY_TIME}"
+    fi
+
+    # --after=<jobid> — mirrored from athena/deploy_athena.sh (see there).
+    if [[ -n "${AFTER_JOB_ID:-}" ]]; then
+        if [[ -n "${DEP_FLAG}" ]]; then
+            DEP_FLAG="${DEP_FLAG}:${AFTER_JOB_ID}"
+        else
+            DEP_FLAG="--dependency=afterok:${AFTER_JOB_ID}"
+        fi
+        echo "[--after] array starts after job ${AFTER_JOB_ID} completes OK"
+    fi
+
     # SBATCH_MEM=<size> overrides the array script's 128G default — mirrored
     # from athena/deploy_athena.sh (the forks had drifted: igum only honored it
     # for --option2).
@@ -1171,6 +1208,20 @@ else
         MEM_OPT="--mem=${SBATCH_MEM}"
         echo "[--mem] requesting ${SBATCH_MEM} host RAM for this array"
     fi
+
+    # lumopt2 campaign drivers are LONG STATEFUL jobs — mirrored from
+    # athena/deploy_athena.sh (see the comment there). On IGUM pick a
+    # PreemptMode=OFF group partition for campaigns; QOS must match the account.
+    if [[ "${SWEEP_KIND}" == "lumopt2_design" ]]; then
+        if [[ -n "${LUMOPT2_QOS:-}" ]]; then
+            ARRAY_QOS="${LUMOPT2_QOS}"
+            echo "[lumopt2] QOS override: ${ARRAY_QOS}"
+        fi
+        if [[ -n "${LUMOPT2_TIME:-}" ]]; then
+            ARRAY_TIME="${LUMOPT2_TIME}"
+            echo "[lumopt2] walltime override: ${ARRAY_TIME}"
+        fi
+    fi
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch ${MEM_OPT} \
             --array=${ARRAY_RANGE}%${K} ${DEP_FLAG} \
@@ -1178,7 +1229,7 @@ else
             --time=${ARRAY_TIME:-00:50:00} \
             --qos=${ARRAY_QOS} --account=${SLURM_ACCOUNT} \
             --partition=${ARRAY_PARTITIONS} \
-            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=${REMOTE_BASE}/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},CONV_POL=${CONV_POL:-TE},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT},WORK_DIR=${REMOTE_BASE} \
+            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=${REMOTE_SWEEP_LIST},SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},CONV_POL=${CONV_POL:-TE},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT},WORK_DIR=${REMOTE_BASE} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_array.sh")
 fi

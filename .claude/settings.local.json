@@ -5,7 +5,14 @@
       "Bash(echo \"ssh_rc=$?\")",
       "Read(//c/Users/evyat/**)",
       "Bash(timeout 45 ssh -o BatchMode=yes -o ConnectTimeout=20 evyatarrubin@athena.technion.ac.il \"echo ATHENA_OK\")",
-      "Bash(echo \"login_rc=$?\")"
+      "Bash(echo \"login_rc=$?\")",
+      "Bash(grep -vE \"post-quantum|openssh|may need to be upgraded|store now|^\\\\.\\\\.\\\\.$\")",
+      "Bash(SBATCH_MEM=160G bash igum/deploy_igum.sh --lumopt2-design=runners.lumopt2_design.campaign_c325_seedB)",
+      "Bash(ssh evyatarrubin@132.68.58.101 \"scontrol update job 54310 dependency=afterok:54896 && scontrol show job 54310 | grep -oE 'Dependency=[^ ]+'; squeue -u evyatarrubin -h -o '%.10i %.2t %.8M'\")",
+      "Bash(python -m compileall -q runners/lumopt2_design/)",
+      "Bash(ssh evyatarrubin@132.68.58.101 \"scontrol update job 54310 dependency=afterok:54964 && scontrol show job 54310 | grep -oE 'Dependency=[^ ]+'; squeue -u evyatarrubin -h -o '%.10i %.2t'\")",
+      "Bash(SBATCH_MEM=160G LUMOPT2_QOS=4d_1g LUMOPT2_TIME=96:00:00 bash athena/deploy_athena.sh --lumopt2-design=runners.lumopt2_design.campaign_c325_seedA)",
+      "Bash(ssh evyatarrubin@athena.technion.ac.il \"squeue -u evyatarrubin -h -r -o '%.12i %.2t'\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\evyat\\.claude\\projects\\c--Users-evyat-Lumerical-phase-shift-grating-FTDT-codes\\memory"

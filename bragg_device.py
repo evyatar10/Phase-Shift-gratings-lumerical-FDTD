@@ -66,6 +66,7 @@ class PiShiftBraggFDTD:
                  cavity_width_m=None,
                  innermost_tooth_shift_m=0.0,
                  lengthen_cavity=True,
+                 shift_target="narrow",
                  n_free_inner_teeth=1,
                  inner_dw_nm=None,
                  inner_shift_nm=None,
@@ -186,6 +187,12 @@ class PiShiftBraggFDTD:
 
         self.innermost_tooth_shift_m = float(innermost_tooth_shift_m)
         self.lengthen_cavity = bool(lengthen_cavity)
+        # Which segment the shift shortens. Either way the local period becomes
+        # pitch - shift and the cavity absorbs 2*sum(shift), so "narrow" and
+        # "wide" differ ONLY in which side of duty-cycle 0.5 the tooth lands on.
+        if shift_target not in ("narrow", "wide"):
+            raise ValueError(f"shift_target must be 'narrow' or 'wide', got {shift_target!r}.")
+        self.shift_target = shift_target
         half_pitch_val = pitch / 2.0
 
         # Generalized per-tooth DW and shift for the inverse-design path.
@@ -1101,13 +1108,15 @@ class PiShiftBraggFDTD:
                     w_ln = avg_width
                 else:
                     w_ln = W_narrow_L[d]
-                add_core_segment(x, x + half_pitch - s_d, w_ln, name_prefix=f"L_narrow_{d}", y_center=y_center)
-                x += half_pitch - s_d
+                ln_narrow = half_pitch - (s_d if self.shift_target == "narrow" else 0.0)
+                ln_wide = half_pitch - (s_d if self.shift_target == "wide" else 0.0)
+                add_core_segment(x, x + ln_narrow, w_ln, name_prefix=f"L_narrow_{d}", y_center=y_center)
+                x += ln_narrow
                 if featured and getattr(self, '_has_shaped_teeth', False) and d <= self.n_shaped_inner_teeth:
-                    add_shaped_tooth(x, x + half_pitch, W_narrow_L[d], W_wide_L[d], "L", d, y_center)
+                    add_shaped_tooth(x, x + ln_wide, W_narrow_L[d], W_wide_L[d], "L", d, y_center)
                 else:
-                    add_core_segment(x, x + half_pitch, W_wide_L[d], name_prefix=f"L_wide_{d}", y_center=y_center)
-                x += half_pitch
+                    add_core_segment(x, x + ln_wide, W_wide_L[d], name_prefix=f"L_wide_{d}", y_center=y_center)
+                x += ln_wide
 
             # Cavity (length expanded by 2*Σ shifts to keep x_grating_end constant)
             if featured and self.cavity_width_m is not None:
@@ -1173,13 +1182,15 @@ class PiShiftBraggFDTD:
                     w_rn = avg_width
                 else:
                     w_rn = W_narrow_R[d]
-                add_core_segment(x, x + half_pitch - s_prev, w_rn, name_prefix=f"R_narrow_{d}", y_center=y_center)
-                x += half_pitch - s_prev
+                rn_narrow = half_pitch - (s_prev if self.shift_target == "narrow" else 0.0)
+                rn_wide = half_pitch - (s_prev if self.shift_target == "wide" else 0.0)
+                add_core_segment(x, x + rn_narrow, w_rn, name_prefix=f"R_narrow_{d}", y_center=y_center)
+                x += rn_narrow
                 if featured and getattr(self, '_has_shaped_teeth', False) and d <= self.n_shaped_inner_teeth:
-                    add_shaped_tooth(x, x + half_pitch, W_narrow_R[d], W_wide_R[d], "R", d, y_center)
+                    add_shaped_tooth(x, x + rn_wide, W_narrow_R[d], W_wide_R[d], "R", d, y_center)
                 else:
-                    add_core_segment(x, x + half_pitch, W_wide_R[d], name_prefix=f"R_wide_{d}", y_center=y_center)
-                x += half_pitch
+                    add_core_segment(x, x + rn_wide, W_wide_R[d], name_prefix=f"R_wide_{d}", y_center=y_center)
+                x += rn_wide
 
             if draw_feed:
                 add_core_segment(x, x_domain_half + 1e-6, self.width_port,

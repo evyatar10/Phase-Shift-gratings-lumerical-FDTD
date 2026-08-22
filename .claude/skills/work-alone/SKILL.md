@@ -40,6 +40,38 @@ you will PARK for the user. Then stop asking — everything after this is action
   early-exit on >N FAILED tasks.
 - After each milestone, immediately arm the next watcher or start the next step.
   Poll interval ~300 s; never tight-loop.
+- **★Monitor wakes must carry INFORMATION (2026-08-16 token lesson): every
+  monitor event costs a full model turn, so the change-detection key must
+  contain ONLY decision-relevant state** — job IDs + run-states, result/eval
+  counts, last-result physics, error counts, resource bands. NEVER include
+  always-changing fields (elapsed time, timestamps, load) in the key: a
+  clock in the key = a wake every sweep = ~90 no-op turns/day (measured;
+  the fix cut wakes ~75% with zero protection lost). Same principle for the
+  wake handler: a no-change wake gets a one-line hold, not a re-analysis.
+  Polls themselves (ssh/shell) are token-free — only wakes cost; so poll
+  as often as robustness wants, but WAKE only on change. Debounce the
+  unreachable state (one wake per outage, not per sweep).
+- **★POLLS ARE TOKEN-FREE BUT NOT SERVER-FREE — keep a connection budget
+  (burned 2026-08-17).** A monitor raised to 24 ssh/h against IGUM got our
+  key REFUSED ~80 min later ("Permission denied (publickey,password)" with
+  port 22 open and the key offered = server-side rejection, not a network
+  or VPN fault); ~45 min of ZERO connections restored it untouched — a
+  rate-limit/fail2ban trip. Budget ≤3-6 connections/hour per host, make
+  ONE ssh per poll (fold extra probes such as lmstat into that same
+  connection, never open a second), and on ANY auth refusal STOP automated
+  contact for ≥45 min instead of retrying — retries deepen a ban. Cluster
+  JOBS are unaffected by login-node auth (they run on compute nodes and
+  afterok chains still fire), so an outage costs visibility, not science.
+- **★An unreachable cluster must be LABELLED, never omitted (burned
+  2026-08-17).** A monitor that drops a cluster's block when its ssh fails
+  produces an event that is INDISTINGUISHABLE from "the job disappeared" —
+  a false FATAL alarm (seedA looked preempted; it was RUNNING 11 h with
+  Restarts=0, the ssh had blipped). Emit an explicit
+  `<CLUSTER>_UNREACHABLE` token into the change key instead: it reads
+  correctly AND debounces for free, since the key stays constant for the
+  whole outage. Handle EACH source separately — the common bug is guarding
+  only the all-sources-down case (`if [ -z "$A" ] && [ -z "$B" ]`), which
+  leaves single-source outages silently mangling the event.
 - If a run fails while alone: diagnose from task LOGS (not just sacct states), apply
   the known failure signatures (license cascade → `%3` throttle + resubmit failed
   range; quota hang; stale server code), resubmit the targeted range once. If the
@@ -58,3 +90,43 @@ version: what ran (job IDs, task counts, states), what was measured (numbers +
 file paths, labeled MEASURED/DERIVED/EXPECTED), decisions taken + the rule applied,
 failures and how they were handled, and the parked list. Full absolute local paths
 for every artifact. The user should need to read exactly one message to catch up.
+
+## Live monitoring doctrine (user rule 2026-08-16 — supersedes drain-only watchers)
+
+Drain-watchers detect COMPLETION, not TROUBLE: a requeued job still "is in the
+queue" (B4's 8.9 h preemption sat invisible until the user asked), and an
+early crash sits undiscovered for hours. For every active batch run a LIVE
+EVENT MONITOR instead (Monitor tool, event stream), emitting on:
+- any per-job STATE/NODE change (R→PD = requeue; node swap = migration),
+- any NEW error signature in the task logs (Traceback | TASK FAILED |
+  LumApiError | Unable to checkout | dead device | DIVERGED),
+- implausibly early completion (license no-op suspect),
+- final drain.
+Plus the T+5-10 min post-dispatch log peek for every new-code dispatch (the
+first minutes catch build/import/geometry errors before GPU-hours burn).
+Errors are to be SEEN AS THEY HAPPEN, not reconstructed when the user asks —
+"the user asking is what surfaced the problem" counts as a monitoring failure
+to fix, not a status quo.
+
+## The trouble-finder (user doctrine 2026-08-16) — triage table + lesson capture
+
+The live monitor is a TROUBLE-FINDER with decision authority, not a pager.
+On every event, investigate within one cycle and classify:
+
+| Class | Signature examples | Prescribed response |
+|---|---|---|
+| benign-recovered | license blip + LocalRunner retry succeeded; transient ssh loss | log it, note the systemic signal (e.g. seat pressure), no action |
+| degraded-retrying | repeated retries, slow node, requeue of a resume-protected job | keep watching at tighter cadence; pre-stage the recovery command |
+| FATAL-branch | task FAILED, dead-device guard, DIVERGED, exhausted retries, requeue of an UNPROTECTED long job | stop that branch NOW, root-cause from logs (free diagnostics first), fix, redispatch; report severity-first (§9) |
+
+License seats are part of the watch (bands ≥35/50 HIGH, ≥45/50 CRITICAL from
+the IGUM lmstat probe): before any fan-out, seat-probe; during, the monitor
+bands it; LocalRunner's 2 retries are blip-cover only.
+
+★LESSON-CAPTURE DUTY (user, 2026-08-16 — "so I don't have to keep telling
+you"): during intensive phases, every incident, surprise, measured limit, or
+correction gets written into the relevant rule/skill/memory THE SAME SESSION,
+unprompted. At every safe-compact checkpoint ask explicitly: "what did we
+learn since the last checkpoint that is not yet in a rule or skill?" — and
+write it. The user prompting a lesson that was already visible in the data
+counts as a capture failure.

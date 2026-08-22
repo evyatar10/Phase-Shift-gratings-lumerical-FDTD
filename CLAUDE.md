@@ -6,6 +6,18 @@ hours. Read `README.md` for architecture and `runners/README.md` for the study p
 
 The device is a **pi-shift Bragg grating** (use this term in discussion/writeups).
 
+> ## ★★★CURRENT PROGRAM STATE — READ BEFORE ANY INVERSE-DESIGN WORK
+> **`runners/lumopt2_design/HANDOFF.md`** is the live, self-contained state of the
+> lumopt2 inverse-design programme (2026-08-18). Read it before touching that
+> programme, quoting any of its numbers, or resuming a campaign.
+> **The one fact that changes how you read everything else:** the engine's mode-
+> profile extraction never integrated over y, so **every `sigma` and `FWHM`
+> logged before 2026-08-18 is VOID** (T / λ / Q / R / loss are unaffected). Mode
+> width is measured ONE way only — `sim_helpers.extract_and_process_field_profile`,
+> the same convention as `post_processing`'s `fwhm_m`. A raw-line variant, fitted
+> width slopes, and a coupled-mode-theory model were all tried, all wrong, and all
+> deleted by user order; do not reintroduce them.
+
 ---
 
 ## 1. Where things run
@@ -112,6 +124,11 @@ Over-testing never once cost anything. So:
   builder / parametric scaffold, (3) inverse-design / gradient equations, (4) source or
   boundary-condition setup. Especially for anything **new**.
   - Lumapi: local build-only `save_fsp` (<1 min) + eyeball the geometry.
+  - **Config-override trap (burned 2026-08-13):** SimulationConfig dataclasses accept
+    UNKNOWN attributes silently — `cfg.grating.corrugation_depth_m = ...` creates a
+    dead attribute (corrugation lives on `cfg.geometry.*`) and the device builds at
+    the default. After any direct-attribute override, verify the built values via
+    `SPEC.expand()` / `describe()` / a build printout before dispatch.
   - **Any edit to `bragg_device.py` geometry/monitor code:** run
     `python debug_fsp_compare/scene_snapshot.py --out <tmp>` and diff against
     the committed `debug_fsp_compare/snapshots/` references (6 configs spanning
@@ -121,6 +138,13 @@ Over-testing never once cost anything. So:
     doesn't match, the builder is broken (use `rebuild_per_particle`).
   - New gradient method: finite-difference `check_gradient` on a tiny problem before
     scaling (hard gate: `vec_error` must be small).
+  - **Designed recovery paths get an END-TO-END smoke through the real wrapper
+    stack** (2026-08-16: both campaigns died because a guard exception was
+    tested at its raise site but lumopt2 double-wraps exceptions —
+    scipy_optimizer.py:583 without `from e`, optimization.py:852 with — and
+    the catch never matched; walk BOTH `__cause__` and `__context__`).
+    Replicate the third-party raise chain locally and assert the handler
+    engages before trusting any except-and-recover design.
   - MATLAB: `checkcode` lint + headless `exportgraphics` render.
 - **Skip** re-verifying known-good baselines and re-linting untouched code. Don't invent
   extra test passes for mechanical edits.
@@ -151,6 +175,29 @@ Over-testing never once cost anything. So:
   §2 numerics change (box, window/points, mesh, symmetry/BCs) vs every stored
   baseline, written in the runner docstring. A stored identical-numerics control
   satisfies §2's in-study-control requirement.
+- **★Never let one cluster hold UNIQUE results — fetch early (2026-08-17).**
+  A long campaign's incremental log (eval jsonl / params history) is unique
+  data the moment it is written; IGUM went unreachable for hours holding the
+  only copy of seedB's best geometry. Rule: pull the small state files
+  (jsonl/csv, ~KB) on every milestone check, not at study end — cost is
+  seconds, and CLAUDE.md §6's "reduce field data server-side" concerns the
+  BIG .mat/field volumes, never these. Cluster-choice corollary (measured
+  this program): both clusters earn their keep via PARALLEL throughput
+  (two seeds in one night = the convergence evidence), and IGUM adds
+  no-preemption; but IGUM's INFRASTRUCTURE is the weak link (slurmdbd down,
+  login flaps, hand-maintained Lumerical tree) while its COMPUTE is fine —
+  so give IGUM long self-contained resume-protected runs, keep interactive
+  / closely-monitored / fast-iterating work on Athena.
+- **★Login-node connection budget (burned 2026-08-17): ≤~3-6 ssh/hour per
+  cluster for automated polling, ONE connection per poll** (fold lmstat/log/
+  queue probes into the same ssh, never open a second). IGUM began refusing
+  our key ~80 min after a monitor polled it 24×/h; ~45 min of zero contact
+  restored it. On ANY auth refusal ("Permission denied" with port 22 open):
+  STOP all automated contact ≥45 min, then ONE probe — never retry-loop
+  (retries deepen rate-limit bans, and IGUM's sshd also flaps on its own —
+  refusal ≠ proof of ban). Cluster JOBS are unaffected by login-node auth
+  (compute-side, afterok chains still fire) — an outage costs visibility,
+  not science, so never panic-redispatch because the login node is refusing.
 - **ssh/scp command form.** Always write remote commands host-first:
   `ssh evyatarrubin@athena.technion.ac.il "..."`. Never env-var-prefixed forms
   (`SSHHOST=... ssh "$SSHHOST" ...`) — they evade the permission-rule pattern matching
@@ -163,14 +210,22 @@ Over-testing never once cost anything. So:
   dispatching: **check `--status` / `squeue`**; don't launch a second `--option3` sweep
   while another has pending tasks; ensure per-config unique output filenames
   (`generate_file_tag()`), and **serialize** jobs that share mutable state.
-  **NO exceptions to the serialize rule** — a DIFFERENT study, "just a 4-task job",
-  or a re-deploy of an already-running study's code all rewrite the shared
-  `data/sweep_list.txt`, and every pending array task bounds-checks its index against
-  that file *at task start*: tasks beyond the new length die instantly with
-  "SWEEP_INDEX out of range" while `sacct` can still show early tasks COMPLETED
-  (2026-07-02: hole-scan tasks 13–97 killed this way by a 4-task demo deploy; check
-  task LOGS, not just states). Recovery: wait for queue-empty, redeploy the clobbered
-  study, resubmit the dead range via `--array-tasks=<lo>-<hi>`.
+  **AMENDED 2026-08-15 (user-approved): sweep lists are now PER-STUDY** —
+  deploys write `data/sweep_list_<study>.txt` and export that path, so one
+  study's deploy can no longer rewrite the list another study's pending or
+  preemption-REQUEUEd task will re-read (the 2026-07-02 killer: hole-scan
+  tasks 13–97 died at task-start bounds-check against a 4-task demo's list;
+  worse, an in-range index would silently run the WRONG study's row; REQUEUE
+  makes even "running-only" queues vulnerable — that is why the old rule was
+  absolute). **Parallel deploys are therefore allowed IFF (1) both studies are
+  on per-study lists AND (2) the new deploy touches ONLY its own study's
+  files** (verify in rsync's itemized output — swapping shared engine/builder
+  code under an in-flight study still risks a REQUEUEd task silently re-running
+  at different numerics). Any edit to shared code ⇒ serialize as before.
+  `--after=<jobid>` chains a dispatch behind an in-flight job (afterok) —
+  queue whole stage-sequences in one sitting. Recovery from a clobbered
+  legacy-shared list: wait for queue-empty, redeploy, resubmit the dead range
+  via `--array-tasks=<lo>-<hi>`.
 - **QOS `24h_1g` caps: 100 submitted / 4 running tasks per user.** Arrays >100 tasks
   must go in chunks (`--array-tasks=1-100`, then the rest as the queue drains).
   Count queued tasks with `squeue -r` — plain `squeue` collapses a pending array to
@@ -192,12 +247,52 @@ Over-testing never once cost anything. So:
   submitted job/array ID and the task count — or a prominent "NOT dispatched because Y".
   (Real incidents: a requested run silently never submitted, hours lost; a "2-sim"
   comparison quietly dispatched as 5 sims.)
+- **★Deploy flags: verify against the parser; code-only push = `--upload-only`.**
+  Invented flags were silently ignored TWICE on 2026-08-16 (`--no-submit` →
+  stray 10-task array 133070; `--no-dispatch` → duplicate campaign driver
+  54440, an hour after the first lesson) while the legitimate `--upload-only`
+  existed all along. STRUCTURAL FIX (same day): both deploy scripts now ABORT
+  on unknown flags. Residual habit: read the parser before passing a flag you
+  haven't used before, and check the queue after every deploy.
 - **Silent no-ops.** A license outage makes `fdtd.run()` return instantly with no
   results. If a run finishes implausibly fast / empty, check the license before
   re-dispatching. If a job crashes <30 s right after a config change, suspect **stale
   server code**: restrictive dir perms on remote `project/` can make rsync silently skip
   root `*.py` files (`rsync --inplace` is the known fix — verify the deploy's itemized
   output actually updated the files you edited).
+- **Preemption + long drivers (measured 2026-08-14): EVERY Athena GPU partition is
+  `PreemptMode=REQUEUE`** — there is no non-preemptible partition. Array sim tasks
+  are idempotent (requeue = harmless re-run); any LONG STATEFUL DRIVER (lumopt2
+  campaign, optimization loop) must cold-start-resume from its own persisted log.
+  Jobs needing >23:30 walltime must submit with `--qos=4d_1g` (or 72h_8g/contrib) —
+  the default `ARRAY_QOS=24h_1g` kills them. ★`ARRAY_TIME=...` as an env override is
+  **silently IGNORED** (`athena.conf` plain-assigns it after sourcing; `SBATCH_MEM`
+  DOES work) — change times via the conf knobs and verify with
+  `sacct --format=TimeLimit` after submitting. A third port-expansion-error cause
+  (beyond clobber/license below): the sim genuinely never ran or its files landed in
+  the container's EPHEMERAL overlay — write sim outputs only under bind mounts.
+  Slurm commands work INSIDE the container when needed (recipe + lumslurm configs:
+  `memory/project_slurm_container_fixes.md`).
+- **★CRITICAL (user rule 2026-08-16, after B4 lost 8.9 h to a REQUEUE): any job
+  whose expected runtime exceeds ~2 h MUST persist its progress incrementally
+  and resume from it on a cold restart — loss budget on preemption ≤ 1
+  evaluation/solve.** Every Athena partition preempts (REQUEUE), so this is
+  not optional hardening; an unprotected long job is a DEFECT at dispatch
+  time, and losing hours to preemption is a critical incident to be
+  root-caused, not shrugged off. The BALANCE (also user): do NOT retreat to
+  non-preemptible-only/queue-waiting either — WITH resume, preemptible lanes
+  are fine (bounded loss) and short tasks (≤~3 h) may run anywhere,
+  preferring the high-priority short-QOS lanes. Resume ≥ lane choice.
+- **★LICENSE SEAT CHECK IS MANDATORY before any dispatch of more than one task
+  (user rule 2026-08-16), and REACHABILITY ≠ AVAILABILITY.** Ports 1055/2325
+  open only proves the server answers; the seat count is what kills runs
+  (measured: pool oscillated 39-46/50 within hours). Probe the count from
+  IGUM (Athena lmstat is the false negative):
+  `$LUM/licensingclient/linx64/lmutil lmstat -c 1055@132.68.48.51 -f lum_fdtd_solve`.
+  Budget concurrency vs FREE seats (array task ≈ 1 seat; lumopt2 iteration
+  ≈ 2); for long batches keep the trouble-finder seat bands running (≥35/50
+  HIGH = hold fan-outs; ≥45/50 CRITICAL = no new dispatches). LocalRunner's
+  2 auto-retries are blip-cover, not a plan.
 - **License starvation has TWO signatures, one per cluster (measured 2026-08-04).**
   IGUM (native): loud instant death, bare `in run:` + "Unable to checkout". Athena
   (container): SILENT no-op — log shows `Simulation time: ~1 s` and the pipeline later

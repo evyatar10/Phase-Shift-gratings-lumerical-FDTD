@@ -336,6 +336,11 @@ def generate_file_tag(sim):
     shift_m = float(getattr(sim, 'innermost_tooth_shift_m', 0.0) or 0.0)
     if shift_m > 0.0:
         shift_tag = f"_S{round(shift_m * 1e9):.0f}"
+        # "w" = the shift shortens the WIDE segment instead of the narrow one.
+        # Same s and same local period as the narrow-target row, so without this
+        # marker the two would share a .fsp/.h5/.mat name and clobber each other.
+        if getattr(sim, 'shift_target', 'narrow') == 'wide':
+            shift_tag += "w"
         if not bool(getattr(sim, 'lengthen_cavity', True)):
             fc_tag = "_fc"
 

@@ -60,3 +60,17 @@ first (this is the harness-level encoding of CLAUDE.md §6 "stopping runs is a
 confirm-first action"). Keep it that way, and always write ssh commands in the plain
 `ssh evyatarrubin@athena.technion.ac.il "..."` form (no `SSHHOST=...` env-var prefixes,
 which evade the pattern match).
+
+## 1b. License SEATS, not just reachability (user rule 2026-08-16 — mandatory
+## for any dispatch of more than one task)
+
+Ports open ≠ seats free. Probe the actual count from IGUM (reliable vantage;
+Athena lmstat is the documented false negative):
+```bash
+ssh igum '$HOME/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/licensingclient/linx64/lmutil lmstat -c 1055@132.68.48.51 -f lum_fdtd_solve' | grep "Users of lum_fdtd_solve"
+```
+Budget: each array task ≈ 1 seat while solving; each lumopt2 iteration ≈ 2
+(fwd+adj concurrent). Bands (measured oscillation 39-46/50 in single hours):
+≥35/50 in use = HIGH → hold new fan-outs; ≥45/50 = CRITICAL → no new
+dispatches, tighten the trouble-finder. The pool is faculty-shared: a snapshot
+is not a promise — for long batches keep the seat-band monitor running.

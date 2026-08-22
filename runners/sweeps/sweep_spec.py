@@ -79,6 +79,7 @@ class SweepSpec:
     cavity_length_nm:           Optional[List[float]] = None
     cavity_width_nm:            Optional[List[float]] = None
     lengthen_cavity:            Optional[List[bool]]  = None
+    shift_target:               Optional[List[str]]   = None     # "narrow" (legacy) | "wide" — which segment the shift shortens
 
     # ── Apodization ─────────────────────────────────────────────────────────
     apod_method:                Optional[List[str]]   = None     # 'none' | 'linear' | 'tanh'

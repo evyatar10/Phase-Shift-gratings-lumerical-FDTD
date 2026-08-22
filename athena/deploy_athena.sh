@@ -90,6 +90,15 @@ for arg in "$@"; do
         --gpu=*)              GPU_TYPE="${arg#--gpu=}" ;;
         --gpu-status)         GPU_STATUS=true ;;
         --array-tasks=*)      ARRAY_TASKS="${arg#--array-tasks=}" ;;
+        --after=*)            AFTER_JOB_ID="${arg#--after=}" ;;
+        --qos=*)              QOS_OVERRIDE="${arg#--qos=}" ;;
+        --time=*)             TIME_OVERRIDE="${arg#--time=}" ;;
+        # Unknown flags ABORT (2026-08-16: two invented flags were silently
+        # ignored and the deploy submitted anyway — jobs 133070, 54440).
+        # Code-push without a run = --upload-only.
+        *)  echo "ERROR: unknown flag '${arg}' — aborting before any submission."
+            echo "       (code-only push: --upload-only)"
+            exit 1 ;;
     esac
 done
 
@@ -1045,9 +1054,11 @@ else
         BUILD_OUT=$("${LOCAL_PYTHON}" "${LOCAL_PROJECT}/athena/scripts/build_sweep_list.py" \
             --kind "${SWEEP_KIND}" --output "${LOCAL_SWEEP_LIST}" 2>&1)
     fi
+    BUILD_RC=$?   # capture BEFORE echo — `echo` used to overwrite $? and the
+                  # check never fired (job 133394 submitted on a failed build)
     echo "${BUILD_OUT}"
-    if [[ $? -ne 0 ]]; then
-        echo "ERROR: build_sweep_list.py failed."
+    if [[ ${BUILD_RC} -ne 0 ]]; then
+        echo "ERROR: build_sweep_list.py failed — aborting before any submission."
         exit 1
     fi
 
@@ -1081,9 +1092,17 @@ else
         ARRAY_RANGE="0-${ARRAY_END}"
     fi
 
-    echo "Uploading sweep_list.txt to Athena cluster..."
+    # PER-STUDY sweep list (2026-08-15, user-approved §6 amendment): each study
+    # gets its own remote list file, so a deploy can never rewrite the list an
+    # in-flight (or preemption-REQUEUEd) task of ANOTHER study will re-read —
+    # the 2026-07-02 task-killer becomes structurally impossible. The task-side
+    # SWEEP_LIST env has always been parameterized; we finally use it.
+    STUDY_TAG="${SPEC_MODULE##*.}"
+    STUDY_TAG="${STUDY_TAG:-default}"
+    REMOTE_SWEEP_LIST="/work/data/sweep_list_${STUDY_TAG}.txt"
+    echo "Uploading sweep list as data/sweep_list_${STUDY_TAG}.txt ..."
     ssh "${SSH}" "mkdir -p ${REMOTE_BASE}/data"
-    scp "${LOCAL_SWEEP_LIST}" "${SSH}:${REMOTE_BASE}/data/sweep_list.txt"
+    scp "${LOCAL_SWEEP_LIST}" "${SSH}:${REMOTE_BASE}/data/sweep_list_${STUDY_TAG}.txt"
 
     echo "Array: ${ARRAY_RANGE}%${K}  (${N_TASKS} tasks total, max ${K} concurrent)"
     if [[ -n "${SWEEP_PARAM}" ]];        then echo "  SWEEP_PARAM=${SWEEP_PARAM}"; fi
@@ -1180,6 +1199,53 @@ else
         MEM_OPT="--mem=${SBATCH_MEM}"
         echo "[--mem] requesting ${SBATCH_MEM} host RAM for this array"
     fi
+
+    # --qos= / --time= per-dispatch overrides (2026-08-15, measured QOS table):
+    # priority is INVERSE to walltime (2h_2g prio 1000 / 12h_4g 500 / 24h_1g
+    # 300 / 4d_1g 50) and GPU caps are PER-QOS lanes (2/4/1g/…) — pick the
+    # smallest QOS whose MaxWall covers the task and request an honest --time
+    # for backfill. Read here, AFTER the conf sourcing, so they take effect.
+    if [[ -n "${QOS_OVERRIDE:-}" ]]; then
+        ARRAY_QOS="${QOS_OVERRIDE}"
+        echo "[--qos] ${ARRAY_QOS}"
+    fi
+    if [[ -n "${TIME_OVERRIDE:-}" ]]; then
+        ARRAY_TIME="${TIME_OVERRIDE}"
+        echo "[--time] ${ARRAY_TIME}"
+    fi
+
+    # --after=<jobid>: chain this dispatch behind an in-flight job (afterok).
+    # With per-study sweep lists this is safe to submit while other studies
+    # run; the array starts only when <jobid> finishes successfully. Lets a
+    # whole night of stages be queued in one sitting (laptop-independent).
+    if [[ -n "${AFTER_JOB_ID:-}" ]]; then
+        if [[ -n "${DEP_FLAG}" ]]; then
+            DEP_FLAG="${DEP_FLAG}:${AFTER_JOB_ID}"
+        else
+            DEP_FLAG="--dependency=afterok:${AFTER_JOB_ID}"
+        fi
+        echo "[--after] array starts after job ${AFTER_JOB_ID} completes OK"
+    fi
+
+    # lumopt2 campaign drivers are LONG STATEFUL jobs: the default
+    # ARRAY_QOS=24h_1g (23:30 cap) kills them mid-run, and every partition is
+    # PreemptMode=REQUEUE (CLAUDE.md §6). For kind=lumopt2_design only, the env
+    # knobs LUMOPT2_QOS / LUMOPT2_TIME override QOS and walltime — read HERE
+    # (after athena.conf sourcing) so they actually take effect, unlike a bare
+    # ARRAY_TIME env which the conf silently overwrites. Example (campaign):
+    #   LUMOPT2_QOS=4d_1g LUMOPT2_TIME=96:00:00 SBATCH_MEM=160G \
+    #       bash athena/deploy_athena.sh --lumopt2-design=<module>
+    # Leave unset for short validation tasks (keeps the backfill-friendly QOS).
+    if [[ "${SWEEP_KIND}" == "lumopt2_design" ]]; then
+        if [[ -n "${LUMOPT2_QOS:-}" ]]; then
+            ARRAY_QOS="${LUMOPT2_QOS}"
+            echo "[lumopt2] QOS override: ${ARRAY_QOS}"
+        fi
+        if [[ -n "${LUMOPT2_TIME:-}" ]]; then
+            ARRAY_TIME="${LUMOPT2_TIME}"
+            echo "[lumopt2] walltime override: ${ARRAY_TIME}"
+        fi
+    fi
     JOB_ID=$(ssh "${SSH}" \
         "cd ${REMOTE_BASE} && sbatch ${MEM_OPT} \
             --array=${ARRAY_RANGE}%${K} ${DEP_FLAG} \
@@ -1187,7 +1253,7 @@ else
             --time=${ARRAY_TIME:-00:50:00} \
             --qos=${ARRAY_QOS} \
             --partition=${ARRAY_PARTITIONS} \
-            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=/work/data/sweep_list.txt,SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},CONV_POL=${CONV_POL:-TE},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
+            --export=ALL,SWEEP_KIND=${SWEEP_KIND},SWEEP_LIST=${REMOTE_SWEEP_LIST},SWEEP_PARAM=${SWEEP_PARAM},SWEEP_FIXED_DYZ_NM=${SWEEP_FIXED_DYZ_NM},SWEEP_FIXED_CELLS=${SWEEP_FIXED_CELLS},SWEEP_SPEC_MODULE=${SWEEP_SPEC_MODULE},ATHENA_LICENSE=${ATHENA_LICENSE},ATHENA_INTERCONNECT=${ATHENA_INTERCONNECT},REQUIRE_GPU=${REQUIRE_GPU:-1},KEEP_H5=${KEEP_H5:-0},CONV_POL=${CONV_POL:-TE},NTFY_TOPIC=${NTFY_TOPIC}${EXTRA_EXPORT} \
             --chdir=${REMOTE_BASE}/jobs \
             jobs/run_python_array.sh")
 fi

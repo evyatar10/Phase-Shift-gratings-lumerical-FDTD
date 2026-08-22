@@ -25,13 +25,23 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import config
 from runners.lumopt2_design import lumopt2_design as eng
 
-SIGMA0_UM = None      # <- REQUIRED: measured sigma of the seed device from the
+SIGMA0_UM = 17.493    # MEASURED gate B2b at PVA (job 132654): seed-comb sigma at the
                       #    B2b canary (same estimator, same N — ratio rule)
 
 SPEC = eng.CampaignSpec(
     label="lumopt2_c325_seedA",
-    box_y_um=6.8, box_z_mult=4.14,       # z=6.8; update to 8.0/5.42 if gate A0 says so
+    box_y_um=6.8, box_z_mult=4.14,       # z=6.8 CONFIRMED by gate A0 (job 132623)
     max_iter=60, max_feval=100,
+    # ★Gradient fix (2026-08-16, root cause found + FD-validated at TWO
+    # operating points, 14 params total): the adjoint's projection phase is
+    # off by a UNIVERSAL 6.7° (measured 6.71°/6.67° at the two points);
+    # multiplying the scaled adjoint fields by C corrects it. With the best
+    # within-point C: all 14 signs correct (incl. the ×29-wrong cavity),
+    # per-param magnitudes ×0.84-1.67. C's amplitude varies ~×1.5 between
+    # points; the value here = geometric mean of the two measured amplitudes
+    # (0.874, 1.292) at the universal phase — worst-case global bias ×1.22.
+    # bc_patch/colocate measured ineffective (≤0.04% / never engaged), off.
+    adj_phase_fix=True, adj_fix_re=1.0561, adj_fix_im=0.1239,
 )
 
 

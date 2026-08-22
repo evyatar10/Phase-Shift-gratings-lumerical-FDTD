@@ -96,6 +96,9 @@ class GratingConfig:
     cavity_width_m: Optional[float] = None       # Numeric override for cavity-segment width; if None, falls back to cavity_width_option
     innermost_tooth_shift_m: float = 0.0         # X-shift of the tooth nearest the cavity (0 = no shift). Legacy single-tooth path; superseded by inner_shift_nm when that is set.
     lengthen_cavity: bool = True                  # When shift>0, lengthen cavity by 2*shift; else fix cavity length
+    shift_target: str = "narrow"                  # Which segment the shift SHORTENS: "narrow" (default, legacy) or "wide".
+                                                  # Both keep the local period at pitch - shift, so the two differ ONLY in
+                                                  # which side of duty-cycle 0.5 the tooth lands on (2026-08-19 sign test).
 
     # ── Inverse-design freed inner teeth (mirror-symmetric per-side) ───────────
     # When inner_dw_nm or inner_shift_nm are set, the d ∈ [1, n_free_inner_teeth]
@@ -587,6 +590,7 @@ class SimulationConfig:
             cavity_width_m=gr.cavity_width_m,
             innermost_tooth_shift_m=gr.innermost_tooth_shift_m,
             lengthen_cavity=gr.lengthen_cavity,
+            shift_target=gr.shift_target,
             n_free_inner_teeth=gr.n_free_inner_teeth,
             inner_dw_nm=gr.inner_dw_nm,
             inner_shift_nm=gr.inner_shift_nm,
