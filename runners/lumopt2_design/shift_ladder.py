@@ -88,10 +88,18 @@ def main(task_idx=0):
         pass                                                 # ladder reports, never gates
     with open(os.path.join(out_dir, f"{spec.label}_evals.jsonl")) as f:
         row = json.loads(f.readlines()[-1])
+    # ★Read the verdict from T and fwhm_env ONLY (audit 2026-08-24). FOM is NOT
+    # comparable across these rungs: these specs use the default penalty stack
+    # (rho_band=True), and BEST_T9636's mcorr 357.95 => rho 1.1014 charges every
+    # rung ~0.119, with x1.5 taking a further ~0.062 for elong 198.9 > 120 nm.
+    # T / lam / fwhm_env are untouched by that. fwhm_env is the spec observable;
+    # sigma is the retired 2nd-moment metric (HANDOFF §0) and is not the
+    # authority here.
     print(f"[shift_ladder {idx} x{SCALES[idx]:.1f}] 2Ss={2*p[eng.SL_SHIFT].sum():.1f} nm  "
-          f"FOM {fom:.5f}  T {row.get('t_pk')}  lam {row.get('lam_pk_nm')}  "
-          f"Q_i {row.get('q_i')}  sigma {row.get('sigma_um')} um "
-          f"| control x1.0 stored: T 0.9635, sigma 17.7952")
+          f"T {row.get('t_pk')}  lam {row.get('lam_pk_nm')}  "
+          f"fwhm_env {row.get('fwhm_env_um')} um  Q {row.get('q_loaded')} "
+          f"| control x1.0 = BEST_T9636 (136465 ev12, pitch-locked): "
+          f"T 0.96361, fwhm_env 18.35309 um  [FOM omitted: penalty-contaminated]")
 
 
 if __name__ == "__main__":
