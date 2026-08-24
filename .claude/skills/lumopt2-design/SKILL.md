@@ -963,3 +963,63 @@ Q_loaded = (1-sqrt(T))*Q_i = 0.2953*Q_i. Current best projects ~41,000
     just finished can lose the ansyscl checkout ("ANSYSLI exited or could not
     read server port ansyscl.<node>…"). Casualty is cheap — resubmit that one
     index with `--array-tasks=<i>` after the queue drains.
+
+34. ★RANK-DEFICIENT-SURROGATE trap (2026-08-24, Fable audit; the reason
+    2-param hand rules beat the 51-param optimizer): any penalty built on a
+    SCALAR summary of a param block (mean corr, total elongation) gives
+    L-BFGS-B an identical gradient across that block — every direction that
+    redistributes within the block is unpriced, and the optimizer converges
+    to the wrong fixed point (not slowly to the right one). Measured: wall
+    said −0.82 µm for the see-saw move, truth −0.015 µm. Fix pattern =
+    per-parameter measured weights (`fw_tooth_w`/`FW_TOOTH_W`, anchor gains
+    `corr_vec`). Rule: when a hand-designed move beats the optimizer, check
+    FIRST whether that move lies in a surrogate's null space. Corollary: an
+    unpriced free channel (wcav) is the same hole at rank 0 — the measured
+    guard owns it, but list such channels explicitly in the campaign
+    docstring. PSO is not the answer to "optimizer stuck" here (~85 min/eval
+    kills population methods; the gradient was fine — the prices were wrong).
+
+35. ★★ITEM 24 REPEATED ON A NEW SURROGATE — RE-ANCHORING IS NOT
+    RE-FITTING (2026-08-24). Item 24 taught TWO things about the sigma-hat
+    wall: (a) re-anchor at measurement cadence, (b) the surrogate DOES NOT
+    TRANSFER BETWEEN BASINS. When sigma was retired and `fwhm_wall` built to
+    replace it, only (a) was carried over. Its constants (FW_A_MCORR,
+    FW_CURVE_C, FW_TOOTH_W) are all fitted on the UNIFORM corr-325 device and
+    then applied to apodized ones. MEASURED consequence: on BEST_T9636
+    (mcorr 357.95) the elongation curve predicts 2.748 um of widening for
+    e=132.6 where the truth is 1.4994 um — over-taxing by 1.83x, on a
+    campaign whose entire purpose is exploring elongation.
+    WHY RE-ANCHORING DOES NOT SAVE YOU: the anchor is an OFFSET. It pins
+    fhat to a measured width at the current point, so the model is exact AT
+    the anchor and wrong as soon as you step — with an error set by the
+    SLOPE, which no amount of re-anchoring touches. A delta-anchored wall
+    with a wrong slope is a correct value and a wrong gradient, and the
+    gradient is the only part the optimizer uses.
+    RULE: every surrogate constant carries the device class it was fitted on.
+    Before reusing a width/coupling constant on a device from a different
+    class (uniform vs apodized vs shifted), either re-measure it there (2-3
+    forwards) or state the transfer as an EXPECTED assumption in the runner
+    docstring. Physical reason it cannot transfer, from the user
+    (2026-08-24): once the device is not uniform the envelope is no longer a
+    single exponential -- there is no one kappa to put in the exponent, so no
+    one constant describes the decay. Corollary for the FIX itself: the
+    3-block FW_TOOTH_W is fitted on the uniform seed too, so it inherits this
+    caveat -- it is right about ORDERING (inner teeth cost ~10x outer, which
+    is what the rank-1 wall got wrong) and provisional about MAGNITUDE.
+
+36. ★THE JANITOR DIES — CHECK IT EVERY POLL, NOT ONCE (2026-08-24, twice in
+    one day). `~/h5_roll_clean.sh` was found DEAD at the start of the session
+    (quota 267/300 G with ~3.5 h of runway), restarted with plain
+    `nohup ... &` — and was dead AGAIN ~2 h later, during which quota climbed
+    214 → 235 G. Plain nohup from an ssh session does not reliably survive on
+    the Athena login node. Restart it DETACHED:
+      `nohup setsid ~/h5_roll_clean.sh >> ~/h5_roll_clean.log 2>&1 < /dev/null &`
+    and put `pgrep -c -f h5_roll_clean.sh` in the SAME ssh as every status
+    poll — it costs nothing and this is the failure that silently hangs jobs
+    at container init. Item 31 said "verify a cleaner deletes, don't trust
+    it"; the 2026-08-24 addendum is "verify it is still ALIVE, every time" —
+    a cleaner that ran once is not a cleaner that is running.
+    ALSO measured this day: the janitor caps GROWTH but cannot reclaim dead
+    studies (it keeps newest-2 per `*_files` dir, and each finished study has
+    only 1-2). Reclaiming ~85 GB of cancelled-campaign `*_output.h5` needed
+    an explicit purge (283 → 203 G) — ask the user, it is a deletion.
