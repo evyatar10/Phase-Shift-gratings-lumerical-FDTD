@@ -90,6 +90,40 @@
 > (b) **reaching 0.96 needed MORE shift than that** — e = 132.6 is double the
 > knee, and the part above the knee cost 1.5 µm of width for +0.0207 T.
 >
+> ### ★"IS FWHM IN THE GRADIENT?" — SETTLED 2026-08-24, THE RECURRING QUESTION
+> **NO — the true FWHM is not. A MODEL of it is, and that model says nothing
+> while the device is in spec.** There are TWO width paths in the engine;
+> check which one you are looking at before answering this again.
+> - **Path A, the real one — BUILT, VALIDATED, SWITCHED OFF.** `softW`
+>   (differentiable mode envelope from the field) + `width_band_penalty`
+>   (augmented Lagrangian) + `make_fct_v2`. `width_grad=True` appears ONLY in
+>   `validate_c325.py` and behind `EXACT_WIDTH_GRAD=False`; **`ADJ_FIX_FIELD`
+>   is None — the field-adjoint C was never fitted** (an assert fires if you
+>   enable it). MEASURED cost 8.7 h/solve ⇒ priced out.
+> - **Path B, what actually runs — `make_fwhm_wall`.** An analytic model of
+>   width (per-tooth corr + total elongation). It IS autograd-differentiated
+>   and IS added to the FOM gradient. But it is a pure QUADRATIC hinge, so its
+>   derivative is exactly zero everywhere inside the band AND zero AT the band
+>   edge; force only appears once you are measurably past it. MEASURED:
+>   |∂pen/∂shift| = 0.000e+00 for e ≤ 81 nm, 2.1e-3 just past, 0.136 at e=90.
+> ★**The AL is NOT the cure for the in-band blindness** (said in session,
+> corrected): `λ·max(0,g)` is also zero when the constraint is satisfied —
+> correct and unavoidable for an inequality constraint. Its real advantage is
+> narrower: the LINEAR term gives a nonzero slope AT the boundary where the
+> quadratic hinge gives zero, so it bites on contact instead of only after
+> overshoot. Worth adopting for that reason; it will not produce an in-band
+> width-reducing direction, because no constraint acts when satisfied.
+> ★**What the user asks for — "a step that minimises FWHM", i.e. the see-saw —
+> is a move gradient descent CANNOT make from a local optimum.** The see-saw
+> narrows AND raises T in order to free width budget to respend on shifts:
+> a TWO-STEP move whose first step looks locally worse. `BEST_T9636` sits at a
+> local T max with 0.36 µm of slack, so a descent method will not take it.
+> Not a bug in the wall — outside what the method does.
+> ★**What DOES serve that goal, and shipped today: `FW_TOOTH_W`.** When the
+> design is against the ceiling and wants more T, the gradient now knows which
+> directions are width-cheap (inner teeth cost ~11× outer). That is the
+> see-saw knowledge, in the gradient, engaging exactly where it is needed.
+>
 > ### WHAT THE USER FORGOT (raise these unprompted)
 > 1. **PRODUCTION CONFIRM is the biggest gap.** 0.96361 is a surrogate-N,
 >    PVA-mesh OPTIMIZER number — not a device number. N≈169 + accurate mesh,
