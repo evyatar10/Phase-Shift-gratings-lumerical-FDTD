@@ -72,6 +72,13 @@ C0 = 299792458.0
 
 # ── Device family (corr-325, TM h350 — CLAUDE.md §4) ─────────────────────────
 PITCH_NM        = 516.83
+# ★Pitch-locked region mesh (2026-08-23, plan §24): the standing wave has the
+# pitch period, so dx MUST divide the pitch by an integer or fwhm_env's
+# sampling phase drifts across the mode (measured: up to 3.9% width error at
+# dx=50.0 vs +0.006% pitch-locked). DERIVED from the pitch by user order —
+# never hardcode the quotient: if PITCH_NM changes, this follows.
+CELLS_PER_PITCH = 10             # dx = pitch/10 ≈ 51.683 nm ≈ optimization mode
+DX_PITCHLOCK_NM = PITCH_NM / CELLS_PER_PITCH
 CORR_NM         = 325.0          # frozen outer-tooth corrugation
 AVG_W_NM        = 800.0          # nominal average width (W800)
 EPS_CORE        = 1.97 ** 2      # 3.8809 (SiN)
@@ -94,7 +101,14 @@ WIN_FWHM_MULT   = 2.5            # FOM window = ±2.5 × measured FWHM
 BETA_UP         = 18.0           # widening side of the rho deadband (the T-cheat)
 BETA_DN         = 5.0            # narrowing side
 RHO_UP          = 1.02           # +2 % deadband edge (user 2026-08-17: program-wide consistent 2% — the live gen-5 drivers loaded 1.02, and a retro-tightening to 1.01 would discard their >1.01 bests at the next reload; supersedes the 08-16 1.01 tightening. Width honesty is enforced at readout: Q_i/sigma^2 decomposition + fixed-width production re-trim)
-RHO_DN          = 0.95           # −5 % deadband edge
+RHO_DN          = 0.98           # ★SYMMETRIC −2 % (user 2026-08-23, was −5 %).
+# The spec is a FIXED interaction width for acousto-optic sensing: a narrower
+# mode does not help, so an asymmetric band let the optimizer spend width it
+# has no use for — and width is worth transmission (MEASURED payback 0.0030
+# T/µm, jobs 136296 vs mx_retrim). Symmetric ±2 % keeps the tolerance that
+# exists for measurement noise (the 0.002-T / 0.03-% width floor, §20) while
+# removing the free narrowing. Applies to the fwhm_env band (the authority),
+# the fwhm_wall hinge, and the retired rho penalty alike.
 DEAD_T_FLOOR    = 0.02           # dead-device guard (dead ≈ 0.0008, healthy ≥ 0.5)
 BETA_ELONG      = 1e-5           # cavity-elongation guard (per nm²; see kappa_penalty)
 ELONG_DEADBAND_NM = 120.0        # allowed |2Σshift| before the guard engages
@@ -253,6 +267,26 @@ class CampaignSpec:
     # user challenge 2026-08-22: test before accepting the CPU tax.
     # Normalization differences are absorbed by C_field (that is its job).
     wg_source: str = "fieldregion"
+    # ★wg_track_resonance (2026-08-23 review; §23 user ruling "softW ON
+    # RESONANCE, always" — hard precondition for exact mode): when True, the
+    # parametrization func ALSO emits "field_profile_adj::wavelength center"
+    # = the latest measured lam_pk (previous eval; scan center until the
+    # first eval lands), so the single-λ twin — and the import-source λ-pin,
+    # which follows the twin's RECORDED λ (setup_adjoint_simulation reads
+    # sim_result.wavelengths, set by get_results from the twin data) —
+    # tracks the CURRENT resonance instead of the static scan center.
+    # Mechanism: the documented parametrization-props channel, re-applied by
+    # lumopt2 at EVERY project (re)generation — unlike a setnamed after
+    # generate(), which is wiped. Restarts already rebuild the twin at the
+    # recentered scan_center (build_base_fsp); this closes the WITHIN-segment
+    # gap: RECENTER_NM=2.0 nm = 2.7 linewidths worst case before a restart,
+    # ~1.4 linewidths after one accepted step. With tracking, the offset is
+    # one eval's λ drift (≲0.3 linewidths at accepted cadence; a big
+    # line-search probe mis-samples only its own eval and self-corrects).
+    # Same-eval exactness is impossible without a second forward — lam_pk is
+    # not known until the forward has run. Default False (nothing running
+    # changes); exact mode must re-gate with this ON (§23).
+    wg_track_resonance: bool = False
     # ★2026-08-22 (user caught it): the DEVICE's own mesh override is
     # PITCH-LOCKED (dx = pitch/10 = 51.683 nm for TM — bragg_device puts mesh
     # edges exactly on the tooth transitions). The region's historical 50.0
@@ -275,6 +309,23 @@ class CampaignSpec:
     # anchor tracks truth, the slopes only steer between measurements.
     # Zero extra solves. NOT the deleted void-era FWHM_A_* slopes.
     fwhm_wall: bool = False
+    # ★2026-08-23: True → the wall's elongation term is the CONVEX FW_C_ELONG
+    # fit (6 corrected fspw points) instead of the [0,130.6] nm FW_A_ELONG
+    # secant. Default False so in-flight campaigns survive a REQUEUE unchanged;
+    # turn it on in the next campaign's spec. See make_fwhm_wall.
+    fw_convex: bool = False
+    # ★2026-08-23: True → the wall's elongation term is the MEASURED 6-point
+    # threshold curve (_fw_elong_curve), which is the only form consistent with
+    # jobs 61742/61782. Supersedes fw_convex; both default False so campaigns
+    # already in flight are bit-identical after a REQUEUE.
+    fw_curve: bool = False
+    # ★2026-08-24: saturate the width hinge at this many FOM units (tanh), so a
+    # steep fw_curve cannot hand L-BFGS-B an unnavigable cliff and abort the
+    # line search (the 136640 failure). None = uncapped = legacy behaviour, so
+    # campaigns already in flight are unaffected by a REQUEUE. ~2.0 is ample:
+    # FOM is O(0.7) here, so a capped out-of-band score still loses to every
+    # in-band one. Small-excess behaviour is unchanged (tanh x ~ x).
+    fw_pen_cap: float = None
     fw_anchor: dict = None      # {"fwhm","mcorr","elong"} set by runner+callback
     wg_mu: float = 8.0               # per µm²: 0.05 µm over-band ⇒ 0.01 FOM
     wg_lam_hi: float = 0.0           # AL multipliers, updated per restart on
@@ -403,6 +454,8 @@ def make_func(spec):
     x_out = cav_l0 / 2.0 + N_FREE * PITCH_NM      # |x| of the free-region outer edge
     names, cavity = tooth_names(spec.n_periods_side)
     comb_free = spec.free_comb and not spec.bare
+    track_twin = (getattr(spec, "width_grad", False)
+                  and getattr(spec, "wg_track_resonance", False))
 
     def func(p):
         corr, avg, shift = p[SL_CORR], p[SL_AVG], p[SL_SHIFT]
@@ -434,6 +487,15 @@ def make_func(spec):
                 props[f"{top}::radius"] = props[f"{bot}::radius"] = p[SL_R][j] * NM
                 props[f"{top}::x"] = props[f"{bot}::x"] = p[SL_X][j] * NM
                 props[f"{top}::y"], props[f"{bot}::y"] = d_c, -d_c
+        if track_twin:
+            # wg_track_resonance: pin the single-λ twin to the last measured
+            # resonance (read PER CALL — the log callback advances it every
+            # eval). A CONSTANT to autograd (no p dependence): zero Jacobian
+            # row, zero dEps, survives regeneration because func props are
+            # re-applied at every eval — see the CampaignSpec note.
+            props["field_profile_adj::wavelength center"] = float(
+                getattr(spec, "_wg_lam_track", 0.0)
+                or spec.scan_center_nm) * NM
         return props
 
     return func
@@ -545,19 +607,81 @@ _elong_penalty_grad = autograd.grad(elong_penalty)
 
 
 FW_A_MCORR = -0.0470     # um FWHM per nm of MEAN free-tooth corr (MEASURED 136051)
-FW_A_ELONG = 0.01355     # um FWHM per nm of 2*sum(shift) (corrected fspw pair)
+# ★2026-08-23 audit (trigger: 136466 eval 2 predicted 22.29 um, MEASURED 32.27):
+# width-vs-elongation is CONVEX, not linear. The old FW_A_ELONG = 0.01355 was
+# the [0, 130.6] nm secant of ONE pair (fspw_noshift -> fspw_best) applied as
+# a local slope. Six corrected fspw points (noshift/best/d020-d080, corr-
+# corrected via FW_A_MCORR) show the local slope rising 0.0135 -> 0.061 um/nm
+# across elong 0 -> 211 nm; the uniform seed's own 0 -> 287.5 nm secant is
+# 0.0484. dW = FW_C_ELONG * elong^2 fits all six to <= 0.25 um (best LINEAR
+# fit leaves 0.96 um = 2.6 half-bands); anchored form is exact at each
+# re-anchor. Still under-predicts the far tail (8.9 vs 13.9 um at 287.5) —
+# acceptable: that regime is grossly over-band and self-rejecting either way.
+FW_C_ELONG = 1.07e-4     # um FWHM per nm^2 of (2*sum(shift))^2 (6-pt fspw fit)
+FW_A_ELONG = 0.01355     # um FWHM per nm of 2*sum(shift) — the OLD secant, kept
+# as the DEFAULT so this file stays REQUEUE-safe for campaigns already in flight
+# (136465/136466/136468): every Athena partition preempts, a requeued driver
+# cold-restarts against whatever engine is deployed, and swapping the wall
+# formula mid-campaign would be a silent numerics change (CLAUDE.md §6). Opt in
+# per spec with fw_convex=True on the NEXT campaign, not by editing this line.
 BETA_FW = 4.0            # per um^2 — 0.05 um over-band => ~0.01 FOM
+
+# ★MEASURED elongation curve (IGUM 61742 + 61782, 2026-08-23) — 6 rungs on the
+# UNIFORM corr-325 seed, pure common mode, pitch-locked mesh:
+#   e (nm)   0       60       120      180      240      287.5
+#   fwhm  18.3452  18.3108  20.4825  24.0150  28.7675  32.6984
+# The response is FLAT to ~65 nm (e=60 measured -0.034 um, i.e. NO cost) and
+# then knees into a steep rise. A threshold power law fits ALL SIX to
+# <=0.106 um (half-band 0.367). Both earlier forms are refuted by this data:
+# FW_A_ELONG over-taxes small shifts ~10x (predicts +0.813 um at e=60 where the
+# truth is zero — this is what paralysed campaign 136466), and FW_C_ELONG
+# under-taxes the tail (8.84 vs 14.35 at e=287.5).
+FW_E0_NM   = 65.0        # knee (nm of 2*sum(shift)); below it shifts are free
+FW_CURVE_N = 1.39
+FW_CURVE_C = 7.8654e-3   # um per nm^N above the knee
+
+
+def _fw_elong_curve(e):
+    """Measured width cost of elongation, um. Zero below the knee; the n>1
+    power keeps it C1 there, so the gradient is continuous for L-BFGS-B."""
+    return FW_CURVE_C * anp.maximum(0.0, e - FW_E0_NM) ** FW_CURVE_N
 
 
 def make_fwhm_wall(spec):
     def pen(p):
         anc = spec.fw_anchor
+        elong = 2.0 * anp.sum(p[SL_SHIFT])
+        if spec.fw_curve:
+            d_elong = _fw_elong_curve(elong) - _fw_elong_curve(anc["elong"])
+        else:
+            d_elong = (FW_C_ELONG * (elong ** 2 - anc["elong"] ** 2) if spec.fw_convex
+                       else FW_A_ELONG * (elong - anc["elong"]))
         fhat = (anc["fwhm"] + FW_A_MCORR * (anp.mean(p[SL_CORR]) - anc["mcorr"])
-                + FW_A_ELONG * (2.0 * anp.sum(p[SL_SHIFT]) - anc["elong"]))
+                + d_elong)
         hi, lo = RHO_UP * spec.fwhm0_um, RHO_DN * spec.fwhm0_um
-        return (BETA_FW * anp.maximum(0.0, fhat - hi) ** 2
-                + BETA_FW * anp.maximum(0.0, lo - fhat) ** 2
-                + elong_penalty(p))
+        band = (BETA_FW * anp.maximum(0.0, fhat - hi) ** 2
+                + BETA_FW * anp.maximum(0.0, lo - fhat) ** 2)
+        cap = getattr(spec, "fw_pen_cap", None)
+        if cap:
+            # ★2026-08-24: SATURATE the hinge. Campaign 136640 died at eval ~6
+            # with ABNORMAL_TERMINATION_IN_LNSRCH because fw_curve makes the
+            # out-of-band penalty enormous (e=287 -> 793) while the shift block's
+            # wide bounds (0-200 nm/tooth) put L-BFGS-B's unit-norm scaled probe
+            # right there — no acceptable decrease exists along the ray, so the
+            # line search aborts. tanh keeps the SMALL-excess behaviour
+            # identical (tanh x = x - x^3/3 ...; at the band edge the penalty is
+            # ~1e-3 of the cap, so in-band and near-band gradients are
+            # unchanged) and saturates far out, leaving a bounded, navigable
+            # landscape. Rejection is preserved: any FOM here is O(0.7), so a
+            # cap of ~2 still scores an out-of-band design well below every
+            # in-band one. The MEASURED fwhm_env guard (WidthTrip) and the
+            # fail-closed _best_from_log remain the actual authority.
+            # Rational saturation, not tanh: identical as band->0 (cap*b/(cap+b)
+            # = b - b^2/cap + ...), saturates at `cap`, and has NO exponential,
+            # so it cannot overflow the way tanh's cosh^2 derivative does at
+            # large excess (measured: RuntimeWarning at e>=163).
+            band = cap * band / (cap + band)
+        return band + elong_penalty(p)
     return pen, autograd.grad(pen)
 
 # ── Stage-3 sigma-hat wall constants (MEASURED, tangent probe job 133512 +
@@ -716,6 +840,15 @@ def attach_penalty(project, spec=None):
                 g[cal_slices[name]] *= float(factor)
         return g - pen_grad(np.asarray(pp, dtype=float))
 
+    # Keep the UNPENALIZED handles for the gate entry points: lumopt2's
+    # validate_gradient FDs through fom.calculate_fom (RAW — no penalty) but
+    # takes its adjoint from project.compute_gradient (wrapped) — an
+    # asymmetry that is invisible while pen_grad = 0 at the probe point, and
+    # a contamination whenever it isn't (found 2026-08-23 review: at the
+    # detune-1 gate point elong = 1000 nm > the 120 nm deadband, so the
+    # kappa/elong guard adds 0.0352 per shift param — same order as
+    # d(softW)/dshift itself).
+    project.compute_fom_raw, project.compute_gradient_raw = fom0, grad0
     project.compute_fom, project.compute_gradient = compute_fom, compute_gradient
 
 
@@ -1172,6 +1305,11 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                                                        # results carry no "T" key
                 wl = np.squeeze(t2["lambda"]) / NM
                 lam_pk, t_pk, fwhm = measure_peak(wl, T)
+                if getattr(spec, "wg_track_resonance", False):
+                    # advance the twin's λ-pin for the NEXT eval (make_func
+                    # reads it per call; every eval, probes included, so
+                    # consecutive line-search probes chain correctly)
+                    spec._wg_lam_track = float(lam_pk)
                 i_pk = int(np.argmin(np.abs(wl - lam_pk)))
                 q_l = lam_pk / fwhm if fwhm else None
                 try:
@@ -1439,6 +1577,32 @@ def make_fct_v2(wl_nm, spec):
     return fct
 
 
+def check_import_src_injects(src_plane):
+    """★ROOT CAUSE of the exactly-zero width gradients (136189/136190,
+    diagnosed 2026-08-23, plan §27): the twin/source plane sits at z=0 = the
+    ANTI-symmetric (PEC-like) BC, where tangential E ≡ 0 by parity — the TM
+    field there is Ez-only. A plane import source with injection axis z
+    consumes ONLY the tangential (x, y) field components to build its
+    equivalence currents; Ez in the dataset injects NOTHING. So the imported
+    W·conj(E) sheet was ~empty and the adjoint solved noise → gradient 0.
+    (The FieldRegion 'source mode' object is dipole-based — z-polarized
+    dipoles allowed — which is why only the import route zeroes out.)
+    This guard turns the silent 6-GPU-h zero into a 1-second loud failure."""
+    s = np.abs(np.asarray(src_plane))
+    tan = float(max(s[..., 0].max(), s[..., 1].max()))
+    nrm = float(s[..., 2].max())
+    if tan < 1e-3 * max(nrm, 1e-300):
+        raise RuntimeError(
+            f"width-adjoint import source would inject ~nothing: tangential "
+            f"source components max {tan:.3e} vs Ez {nrm:.3e}. The z=0 twin "
+            f"plane lies on the anti-symmetric BC (tangential E = 0) and a "
+            f"z-injection import source uses ONLY tangential fields — root "
+            f"cause of the zero gradients in jobs 136189/136190 (plan §27). "
+            f"Use wg_source='fieldregion' (CPU-only) or re-design the twin "
+            f"off the mirror plane (re-gate required).")
+    return tan, nrm
+
+
 def make_width_classes(lmpt, spec):
     """(WidthResults, MixedFom) — lazy, like make_bc_parametrization.
 
@@ -1555,6 +1719,7 @@ def make_width_classes(lmpt, spec):
             if getattr(spec, "wg_source", "fieldregion") == "import":
                 # standard import source carries the weighted sheet; the
                 # FieldRegion stays a pure monitor (source mode stays off)
+                check_import_src_injects(src[..., i, :])   # fail LOUD (§27)
                 fdtd_session.fdtd.setnamed("width_adj_src", "enabled", True)
                 # pin the source spectrum to the twin's λ (audit 2026-08-22:
                 # override=1 with unset wavelengths risks an off-λ spectrum;
@@ -1885,6 +2050,13 @@ def run_validate_gradient(spec, out_dir, indices, perturbation=2.0, detune=1):
         p[SL_R.start + COMB_N_HALF] = 115.0
         p[SL_X.start + COMB_N_HALF] -= 40.0
         p[I_DCOMB] = 1820.0
+    # RAW-vs-RAW (fix 2026-08-23): lumopt2's FD side never sees the attached
+    # penalty (it calls fom.calculate_fom), so the adjoint side must not
+    # either — at the detune points the elong guard's pen_grad is NONZERO
+    # (0.0352/shift) and would contaminate the printed vector / C fit.
+    # Vectors printed by jobs ≤136190 predate this fix: correct them offline
+    # (fit_c_field.py PEN_GRAD) before fitting.
+    project.compute_gradient = project.compute_gradient_raw
     res = lmpt.validate_gradient(project, p, indices, perturbation)
     print(f"[validate_gradient detune={detune} colocate={spec.colocate_fields} "
           f"bc_patch={spec.bc_patch}] {res}")
@@ -1914,8 +2086,18 @@ def run_adjoint_only(spec, out_dir, indices, detune=1):
         p[SL_R.start + COMB_N_HALF] = 115.0
         p[SL_X.start + COMB_N_HALF] -= 40.0
         p[I_DCOMB] = 1820.0
-    grad = project.compute_gradient(params=p)
+    # RAW gradient (fix 2026-08-23): the stored FD tables these prints are
+    # compared against are penalty-free (see run_validate_gradient) — the
+    # wrapped gradient would subtract a nonzero pen_grad at the detune
+    # points (0.0352/shift) and skew the quadrature/C fit.
+    grad = project.compute_gradient_raw(params=p)
     out = np.asarray([grad[i] for i in indices])
+    # header prints BOTH C knobs (2026-08-23: the old header showed only the
+    # PORT C, so a width-path quadrature run at C_field=(0,1) printed
+    # "C=(1.0,0.0)" and read like the rotation was never consumed — it is,
+    # via MixedFom._compute_adjoint_fields_phased; the print was cosmetic)
     print(f"[adjoint_only detune={detune} adj_phase_fix={spec.adj_phase_fix} "
-          f"C=({spec.adj_fix_re},{spec.adj_fix_im}) indices={indices}] {out!r}")
+          f"C_port=({spec.adj_fix_re},{spec.adj_fix_im}) "
+          f"C_field=({spec.adj_fix_field_re},{spec.adj_fix_field_im}) "
+          f"indices={indices}] {out!r}")
     return out

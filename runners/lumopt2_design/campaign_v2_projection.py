@@ -32,19 +32,41 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 from runners.lumopt2_design.best_designs import BEST_T9635
 
-RETRIM_DELTA_NM = 52.5           # the verdict-row payback (job 136051)
+RETRIM_DELTA_NM = 42.0           # ★DERIVED for the SYMMETRIC band: lands the
+                                 # seed at the band CENTRE 18.346 um (from the
+                                 # two pitch-locked points, jobs 136296 and
+                                 # mx_retrim: dW/ddelta -0.04704 um/nm). The old
+                                 # +52.5 seed sat at ratio 0.9731 = OUTSIDE the
+                                 # new +/-2% band, and cost T for width we have
+                                 # no use for (predicted T 0.9609 vs 0.9594).
 
 SPEC = eng.CampaignSpec(
-    label="lumopt2_v2proj",
-    scan_width_nm=10.0, n_wl_points=501,      # v2 window (anchored by W2)
-    scan_center_nm=1566.38,                   # the seed's own measured peak
+    label="lumopt2_v2proj_s2",
+    scan_width_nm=10.0, n_wl_points=501,      # v2 window
+    # ★PITCH-LOCKED MESH (2026-08-23) — dx = PITCH/10 = 51.683 nm, NOT 50.0.
+    # Measured this night on real profiles: the standing wave has exactly the
+    # pitch period (516.6 nm measured), so dx=50 gives 10.34 samples/period —
+    # a NON-integer ratio whose sampling phase drifts across the mode, and
+    # fwhm_env (built through standing-wave PEAKS) then mis-reads by up to
+    # 700 nm (3.9%) purely from where the wave sits on the grid. Against a
+    # +2%/-5% band that is most of the tolerance, and it is DESIGN-dependent
+    # (tooth shifts translate the wave), so it does NOT cancel in a ratio —
+    # exactly the +3.6%/+0.6%/+2.6% spread §11 measured across MX rows.
+    # At dx = pitch/10 the ratio is EXACTLY 10.00: on a known-truth synthetic
+    # the error falls to +0.1 nm and is phase-INDEPENDENT. Anchors below are
+    # the MEASURED corrected-mesh rows (job 136077 t15/t16), so nothing here
+    # is extrapolated. softW is immune either way (3 nm spread) — it is
+    # fwhm_env, the AUTHORITY, that needed this.
+    region_dx_nm=eng.DX_PITCHLOCK_NM,
+    scan_center_nm=1566.398,                  # DERIVED for the +42.0 nm seed
     free_comb=False,                          # user: comb fixed at winner
     rho_band=False,                           # retired; fwhm guard owns width
-    fwhm0_um=17.713551,                       # MEASURED origin, W2 135971_10
+    fwhm0_um=18.3460,                         # MEASURED corrected ORIGIN width
+                                              # (mx_origin) = the band reference
     adj_phase_fix=True, adj_fix_re=1.0561, adj_fix_im=0.1239,
     trust_nm={"corr": 12.0, "avg": 10.0, "shift": 12.0, "wcav": 12.0},
     fwhm_wall=True,
-    fw_anchor={"fwhm": 17.7550,          # MEASURED, retrim d+52.5 row (136051)
+    fw_anchor={"fwhm": 18.3460,          # DERIVED seed width; re-anchors to the
                "mcorr": 368.5,           # set exactly in main() from the seed
                "elong": 130.6},
     max_iter=40, max_feval=70,

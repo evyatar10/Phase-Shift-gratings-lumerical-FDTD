@@ -36,7 +36,7 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 
 SPEC = eng.CampaignSpec(label="lumopt2_val_c325")
-N_TASKS = 21         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
+N_TASKS = 27         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
                      # gradient-fix experiment matrix (all B3-style, point 1
                      # unless noted, gates = per-class α vs FD):
                      # 4=α-stability point 2 | 5=co-location (option 3)
@@ -74,11 +74,27 @@ PROV_FWHM0_UM = 17.713551
 
 def _w_spec(suffix, **kw):
     """V2 gate spec: width_grad on, wider recording window (±5 nm @ 20 pm =
-    501 pts — the adopted v2 window, a NAMED §2 change anchored by task 10)."""
+    501 pts — the adopted v2 window, a NAMED §2 change anchored by task 10).
+
+    ★n_wl_points is overridable because lumopt2 holds the FULL
+    (nx,ny,nz,3,n_wl) forward AND adjoint optimization-region arrays for
+    EVERY fom entry at once (base_fom.py:473-511 — phase 1 collects all
+    e_fwd, phase 2 adds each e_adj), and a MixedFom adds a third cached
+    region read (the width adjoint's own file, which records the same 501
+    λ even though only one is used). That extra ~25 GB is what OOM-killed
+    the 160 G FD gate (job 136122, exit 137) after the same contraction had
+    already blown the walltime (136108). For a wg_pure gate (J = −softW)
+    the T spectrum enters the FOM NOWHERE — softW is read from the
+    single-λ twin at the scan centre — so a coarser grid is the same
+    physics at a fraction of the memory. Keep the count ODD so the centre
+    λ stays on-grid, and keep enough points to resolve the 0.73 nm peak for
+    the logged diagnostics (151 → 66 pm, ~11 points across the FWHM).
+    """
     import dataclasses
+    kw.setdefault("n_wl_points", 501)
     return dataclasses.replace(
         SPEC, label=SPEC.label + suffix, width_grad=True,
-        scan_width_nm=10.0, n_wl_points=501,
+        scan_width_nm=10.0,
         fwhm0_um=PROV_FWHM0_UM,
         wg_anchor={"softw": PROV_SOFTW_UM, "fwhm": PROV_FWHM0_UM}, **kw)
 
@@ -485,14 +501,159 @@ def main(task_idx):
         # are forward-only (~50 min each on A100) => ~9 h for 5 params + the
         # adjoint. Feed the printed (fd, adjoint) into fit_c_field.py with
         # the task-13-style quadrature run for the phase.
+        # ★DISPATCH LANE (both prior attempts died on sizing, not physics —
+        # 136108 TIMEOUT at 1:55, 136122 OOM at 1:58 in a 2 h lane): central
+        # differences = 2 forwards PER INDEX, so 3 indices cost
+        # fwd + adj + 6 legs ~= 5-6 h at 151 points. Dispatch as
+        #   SBATCH_MEM=250G LUMOPT2_QOS=12h_4g LUMOPT2_TIME=09:00:00
+        # never in the 2 h lane.
         indices = [0, eng.SL_SHIFT.start, eng.I_CAV]   # 3 classes; quota-safe
         eng.run_validate_gradient(_w_spec("_w3gpufd", wg_pure=True,
                                           wg_source="import",
-                                          wg_adj_resource="GPU"),
+                                          wg_adj_resource="GPU",
+                                          n_wl_points=151),   # see _w_spec
                                   out_dir, indices, perturbation=4.0)
-        print("W3-GPU: FD FIRST. PASS = sign 5/5 and per-param residual <=10% "
+        print("W3-GPU: FD FIRST. PASS = sign 3/3 and per-param residual <=10% "
               "after the C_field fit; then the in-loop width gradient is LIVE "
-              "at GPU speed and campaign_v2_seesaw can replace v2proj.")
+              "at GPU speed (EXACT_WIDTH_GRAD switch in campaign_v2_uniform).")
+    elif task_idx == 21:
+        # W3-GPU-QUAD: the Im-quadrature partner of task 20 (same detune=1
+        # point, same import/GPU/151-pt config) — adj_fix_field=(0,1) makes
+        # the printed vector Im{Z}. fit_c_field.py needs FD (t20) + Re (t20's
+        # adjoint) + THIS. Chain behind task 20 with --after=<its job id>.
+        indices = [0, eng.SL_SHIFT.start, eng.I_CAV]
+        eng.run_adjoint_only(_w_spec("_w3gpuquad", wg_pure=True,
+                                     wg_source="import",
+                                     wg_adj_resource="GPU",
+                                     n_wl_points=151,
+                                     adj_fix_field_re=0.0,
+                                     adj_fix_field_im=1.0),
+                             out_dir, indices)
+    elif task_idx == 22:
+        # W2-DET: ONE forward at the exact detune-1 gate point, v2 window
+        # (user 2026-08-23: "be sure the field-profile point is really on
+        # the resonance"). The gate's softW twin sits at the SCAN CENTER
+        # (engine build, wavelength center = cfg.spectral center), while the
+        # detuned device's resonance is somewhere else in the window. This
+        # row measures that offset: lam_pk vs center 1564.21, plus softw
+        # (twin@center) vs fwhm_env (@lam_pk). Reading: offset ≲1 linewidth
+        # (0.73 nm) = the gate probed near-resonant physics, C fit transfers;
+        # offset ≫1 linewidth = the C fit was made on off-peak fields — flag
+        # it in §22 and re-gate at a corrected center before ANY exact-mode
+        # campaign. Chain: --after=<136190's job> (afterok).
+        spec = _w_spec("_w2det")
+        p = eng.seed_params(spec)
+        p[eng.SL_SHIFT] = 20.0
+        p[eng.SL_R.start + eng.COMB_N_HALF] = 100.0
+        p[eng.SL_X.start + eng.COMB_N_HALF] += 50.0
+        p[eng.I_DCOMB] = 1750.0
+        spec.seed_override = tuple(p)
+        row = eng.run_canary(spec, out_dir)
+        lam = row.get("lam_pk_nm")
+        # (fix 2026-08-23 review: the old f-string formatted None with +.3f
+        # → TypeError on a failed resonance read, masking the actual answer)
+        off = ("n/a (no resonance read)" if lam is None else
+               f"{lam - 1564.21:+.3f} nm ({abs(lam - 1564.21) / 0.73:.2f} linewidths)")
+        print(f"[w2det] lam_pk {lam} nm | twin/center 1564.21 | offset {off} | "
+              f"T {row.get('t_pk')} | fwhm_env {row.get('fwhm_env_um')} | "
+              f"softw_adj (twin@center) {row.get('softw_adj_um')} | "
+              f"softw (broadband@lam_pk) {row.get('softw_um')}")
+    elif task_idx == 23:
+        # MX-PRERETRIM (user question 2026-08-23: "how do we manage to reduce
+        # the mode width? check there is no hidden issue"). BEST_T9635 WITHOUT
+        # the +52.5 retrim, at the pitch-locked mesh — the one row missing
+        # from the width lineage. Everything else identical to task 16, so
+        # t23 vs t16 isolates the retrim's TRUE narrowing at a mesh whose
+        # width readings are phase-unbiased (§24); the historical "20.34 ->
+        # 17.70 = -14.9%" was measured at dx=50, where the SAME origin/retrim
+        # pair reads +0.23% but reads -2.69% corrected — i.e. the old mesh
+        # could not be trusted for cross-design width claims.
+        import dataclasses   # other branches import it locally => it is a
+                             # FUNCTION-local name for all of main() (job
+                             # 136283 died UnboundLocalError in 10 s)
+        from runners.lumopt2_design.best_designs import BEST_T9635
+        spec = dataclasses.replace(
+            SPEC, label=SPEC.label + "_mx_preretrim", scan_width_nm=10.0,
+            n_wl_points=501, region_dx_nm=eng.DX_PITCHLOCK_NM,
+            scan_center_nm=1566.9)   # ~+0.5 nm redder than retrim (shallower)
+        spec.seed_override = tuple(eng.replay_params(
+            spec, np.asarray(BEST_T9635, dtype=float)))
+        row = eng.run_canary(spec, out_dir)
+        fw = row.get("fwhm_env_um")
+        print(f"[mx_preretrim] T {row.get('t_pk')} λ {row.get('lam_pk_nm')} "
+              f"FWHM {fw} | vs retrim 17.8530 => retrim narrowed by "
+              f"{None if not fw else (1 - 17.8530 / fw) * 100:.2f}% | "
+              f"vs corrected origin 18.3460 => ratio "
+              f"{None if not fw else fw / 18.3460:.4f}")
+    elif task_idx in (24, 25):
+        # ── What is actually doing the work? (user 2026-08-23) ──────────────
+        # Every measurement so far changed the inner corrugation AND created
+        # the 46 nm step at the tooth-25/26 boundary at once. That step sits
+        # where the mode still carries 36% of peak intensity, so it cannot be
+        # dismissed. Both rows start from the SAME retrimmed best as t16
+        # (mx_retrim: T 0.95941, λ 1566.377, FWHM 17.8530) and change ONE
+        # thing, at the pitch-locked mesh:
+        #   24 = DE-STEPPED: teeth 21-25 ramp linearly down to the frozen
+        #        outer 325 nm, so the discontinuity is removed using only
+        #        free-block parameters (no engine change). Mean corr drops
+        #        ~1.3% ⇒ expect ~+1% width; normalise with 0.00224 T/µm
+        #        before reading T. T holds ⇒ the step is NOT the mechanism
+        #        (bulk inner-κ is); T drops ⇒ the step is load-bearing.
+        #   25 = COMB OFF at the retrimmed best (bare=True). The comb's
+        #        +0.0107 T / +14% Q_i was measured on the UNIFORM device;
+        #        whether it still pays on this much deeper, shifted design
+        #        has never been tested.
+        import dataclasses           # function-local elsewhere in main()
+        from runners.lumopt2_design.best_designs import BEST_T9635
+        p = np.asarray(BEST_T9635, dtype=float).copy()
+        p[eng.SL_CORR] = np.minimum(p[eng.SL_CORR] + 52.5, SPEC.corr_max_nm)
+        tag = "_destep" if task_idx == 24 else "_comboff"
+        if task_idx == 24:
+            c = p[eng.SL_CORR].copy()
+            ramp = np.linspace(c[19], eng.CORR_NM, 7)[1:]   # teeth 20→25 → 325
+            c[19:] = ramp[:len(c) - 19]
+            p[eng.SL_CORR] = c
+        spec = dataclasses.replace(
+            SPEC, label=SPEC.label + tag, scan_width_nm=10.0, n_wl_points=501,
+            region_dx_nm=eng.DX_PITCHLOCK_NM, scan_center_nm=1566.377,
+            bare=(task_idx == 25), free_comb=False)
+        spec.seed_override = tuple(eng.replay_params(spec, p))
+        row = eng.run_canary(spec, out_dir)
+        t, fw = row.get("t_pk"), row.get("fwhm_env_um")
+        norm = (t + 0.00224 * (17.8530 - fw)) if (t and fw) else None
+        print(f"[{tag[1:]}] T {t} λ {row.get('lam_pk_nm')} FWHM {fw} | "
+              f"T at the retrim width 17.8530: {norm} "
+              f"(retrim reference 0.95941; mean corr "
+              f"{float(np.mean(p[eng.SL_CORR])):.2f})")
+    elif task_idx == 26:
+        # ★COMB VALUE vs MODE WIDTH (user hypothesis 2026-08-23). The comb
+        # measured +0.0107 T on the ORIGIN (18.346 µm) but only +0.0030 on the
+        # re-trimmed best (17.853 µm) — but those differ in TWO ways: the
+        # design AND the width. The comb is a FIXED row of scatterers spanning
+        # ±15 µm, so a narrower mode overlaps it less (a tail effect, more
+        # width-sensitive than the 2.7% suggests). This row is comb-OFF at the
+        # +42 nm re-trim = the SAME design at the BAND-CENTRE width 18.346, so
+        # comb-on minus comb-off is measured at the benchmark width. Its
+        # comb-ON partner comes free: campaign 136465's iteration 0 is exactly
+        # this geometry with the comb in.
+        #   comb value at 18.35 >> 0.0030  ⇒ the comb's worth is WIDTH-driven,
+        #     and it earns its 114 posts whenever the mode sits on spec;
+        #   comb value ≈ 0.0030            ⇒ the DESIGN absorbed it, and the
+        #     comb is genuinely marginal now (fabrication decision).
+        import dataclasses           # function-local elsewhere in main()
+        from runners.lumopt2_design.best_designs import BEST_T9635
+        p = np.asarray(BEST_T9635, dtype=float).copy()
+        p[eng.SL_CORR] = np.minimum(p[eng.SL_CORR] + 42.0, SPEC.corr_max_nm)
+        spec = dataclasses.replace(
+            SPEC, label=SPEC.label + "_comboff42", scan_width_nm=10.0,
+            n_wl_points=501, region_dx_nm=eng.DX_PITCHLOCK_NM,
+            scan_center_nm=1566.398, bare=True, free_comb=False)
+        spec.seed_override = tuple(eng.replay_params(spec, p))
+        row = eng.run_canary(spec, out_dir)
+        print(f"[comboff42] T {row.get('t_pk')} λ {row.get('lam_pk_nm')} "
+              f"FWHM {row.get('fwhm_env_um')} — subtract from campaign 136465 "
+              f"iteration 0 (same design, comb ON) for the comb's value at the "
+              f"benchmark width; comb value at 17.853 was +0.0030")
     else:
         raise ValueError(f"no validation task {task_idx}")
 

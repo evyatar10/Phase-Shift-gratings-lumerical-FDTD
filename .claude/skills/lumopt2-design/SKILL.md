@@ -790,6 +790,26 @@ Q_loaded = (1-sqrt(T))*Q_i = 0.2953*Q_i. Current best projects ~41,000
     headroom before dispatching a gradient gate, and prefer fewer indices
     when a campaign is already running.
 
+30. **★A MULTI-ENTRY FOM COSTS ~25 GB MORE THAN A SINGLE-ENTRY ONE — SIZE
+    MEMORY BY ENTRY COUNT, NOT BY SIMULATION COUNT (job 136122 OOM-killed,
+    exit 137, 2026-08-23).** `base_fom.calculate_gradient_fields`
+    (base_fom.py:473-511) holds the forward region field array for EVERY fom
+    entry simultaneously (phase 1), then each entry's adjoint array (phase
+    2); each is (nx,ny,nz,3)×n_wl complex128 ≈ 50 MB per λ for a 25-period
+    optimization region. A MixedFom (port T + width) also drags in a third
+    cached region read — the width adjoint's own file, whose region monitor
+    records the FULL λ grid even when the FOM uses one λ. Port-only fits
+    160 G at 501 points; add the width entry and it does not.
+    RULES: (a) a wg_pure gate (J = −softW) may run a COARSE λ grid — the T
+    spectrum enters that FOM nowhere, so cut n_wl_points (keep it ODD so the
+    centre λ stays on-grid); (b) any campaign with a second fom entry gets
+    250-300 G, not the 160 G habit; (c) `validate_gradient` uses CENTRAL
+    differences = 2 forwards PER INDEX — size the lane as
+    fwd + adj + 2·n_indices forwards (3 indices ≈ 6 h here) and never put it
+    in the 2 h lane. Both failed attempts at this gate (136108 TIMEOUT,
+    136122 OOM) were LANE-SIZING errors, not physics errors — the physics
+    (GPU import-source adjoint, 3,135 s) passed both times.
+
 27. **★★★THE rho DEADBAND WAS THE HOLE — ALWAYS CONVERT A CONSTRAINT INTO THE
     SPEC'S OWN UNITS BEFORE TRUSTING IT (measured 2026-08-18, job 134217).**
     The audit's 3 rows form a clean 2-factor factorial:
@@ -870,3 +890,76 @@ Q_loaded = (1-sqrt(T))*Q_i = 0.2953*Q_i. Current best projects ~41,000
     windows. Everything else is "candidate".
 11. **Ops (unchanged, §6/CLAUDE.md):** resume >2 h, one array per decision
     point, fetch-early, in-study anchors, seat probe, per-study lists.
+
+31. **★THE DISK JANITOR NEVER WORKED — VERIFY A CLEANER DELETES, DON'T TRUST
+    THAT IT RUNS (root-caused 2026-08-23).** `h5_roll_clean.sh` grouped files
+    by the h5's OWN parent directory (`find … -printf '%h'`), but lumopt2
+    writes every `*_output.h5` into its own subdirectory
+    (`<label>_files/fwd_default_iter0/fwd_default_iter0_output.h5`). So
+    "keep the newest 2 per directory" always ran `tail -n +3` on a ONE-file
+    list and removed nothing — for weeks. Every quota event traces to it
+    (job 136090 killed at the 330 G hard limit; two further near-misses at
+    271 G and 287 G, each "fixed" by hand-deleting, which masked the bug).
+    FIXES, both needed: (a) group by the enclosing `*_files` directory so the
+    newest two — this iteration's forward + adjoint — survive and older
+    iterations are reaped; (b) run it from **cron** (`*/10`), never as a
+    login-node `nohup` daemon: it died with the session three times in one
+    day, and a dead janitor is invisible until the quota bites.
+    GENERAL RULE: a janitor is not "working" because the process exists —
+    verify it has actually deleted something (watch the quota fall, or dry-run
+    its selection). Pair with item 29: never key it to a study-name glob.
+    Steady-state arithmetic worth knowing: each concurrent campaign holds
+    ~12 GB of live scratch (fwd + adj ≈ 5.9 GB each), so four campaigns need
+    ~50 GB of headroom ON TOP of baseline occupancy.
+
+32. **★★THE WIDTH WALL'S SLOPES WERE BOTH SECANTS — MEASURE THE CURVE, DON'T
+    FIT A PAIR (2026-08-23/24).** `FW_A_ELONG = 0.01355 um/nm` was the secant
+    of ONE pair (fspw_noshift -> fspw_best, elong 0 -> 130.6) applied as a
+    local slope everywhere. Measured truth (IGUM 61742 + 61782, 6 rungs on the
+    uniform corr-325 seed, pure common mode, pitch-locked mesh):
+
+    | e = 2*sum(shift) nm | 0 | 60 | 120 | 180 | 240 | 287.5 |
+    |---|---|---|---|---|---|---|
+    | fwhm_env um | 18.345 | 18.311 | 20.483 | 24.015 | 28.768 | 32.698 |
+
+    A THRESHOLD: flat to ~65 nm (e=60 measures NARROWER than the seed), then a
+    knee and a steep, still-accelerating rise. `dW = 7.8654e-3*max(0,e-65)^1.39`
+    fits all six to 0.106 um vs the 0.367 um half-band. Engine:
+    `_fw_elong_curve` + spec flag `fw_curve` (default False). The interim
+    quadratic `fw_convex` (FW_C_ELONG) is ALSO refuted — do not enable it.
+    CONSEQUENCE: the old wall charged +0.813 um of predicted widening at e=60
+    where the true cost is ZERO — a penalty ~0.795 against a whole FOM of
+    ~0.67. Campaign 136466 was thereby FORBIDDEN from its own subject: it
+    oscillated e = 0 -> 287 -> 0.3 -> 144 -> 0.7, never probing 1-100 nm, and
+    gained +0.0005 T in 7 h while shift-FROZEN 136468 gained +0.0076.
+    `FW_A_MCORR = -0.0470` is the same failure class: it is the full-range
+    secant of the 9-row retrim curve (mcorr 315.97 -> 375.97, verified), whose
+    LOCAL slopes run -0.044 to -0.029, and campaign 136468 measured -0.0666 at
+    mcorr 295 — outside the fitted range entirely. GENERAL RULE: any steering
+    slope in the FOM must record the RANGE it was fitted over, and a campaign
+    that operates outside that range is running on an extrapolation.
+
+33. **★OPERATIONAL TRAPS FROM THE 2026-08-23/24 RESTART (each cost real time).**
+    (a) RESULTS PATH: outputs live at `results/<study>/results/<label>/…` — a
+    glob on `results/<label>*` matches the STUDY directory and silently finds
+    nothing. This produced a false "tasks failed" alarm when the tasks had in
+    fact exited 0.
+    (b) DEPLOY + PERMISSION CLASSIFIER: the compound form
+    `cd … && ENV=… bash deploy | grep | head` was BLOCKED; the plain
+    `ENV=… bash athena/deploy_athena.sh --lumopt2-design=…` (no cd, no pipes)
+    went through. The block landed AFTER the campaign had already been
+    scancelled, briefly stranding an empty slot — order a restart so the
+    cancel happens only once the dispatch path is known clear.
+    (c) MONITOR STALENESS: a monitor keyed to a campaign LABEL keeps reporting
+    the dead log after a relabel (s2 -> s3) and you go blind to the live one.
+    Re-point the monitor in the SAME turn as the restart. And never put raw
+    resource numbers (quota GB, seat counts) in the change key — band them, or
+    every janitor sweep costs a model turn.
+    (d) WALLTIME SIZING: size it from JOB START to row, not from the solve
+    time. The steady-state forward solve is ~33 min, but project setup pushes
+    the first row to ~2 h on Athena; a 1:30 walltime sized off "33 min" left
+    far less margin than intended.
+    (e) IGUM LICENSE RACE: a task cold-starting on a node where sibling tasks
+    just finished can lose the ansyscl checkout ("ANSYSLI exited or could not
+    read server port ansyscl.<node>…"). Casualty is cheap — resubmit that one
+    index with `--array-tasks=<i>` after the queue drains.

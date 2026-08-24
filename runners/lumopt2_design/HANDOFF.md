@@ -1,4 +1,58 @@
-# HANDOFF — lumopt2 corr-325 inverse design — updated 2026-08-19 01:30 IDT
+# HANDOFF — lumopt2 corr-325 inverse design — updated 2026-08-24 IDT
+
+> ## ★★★STATE AS OF 2026-08-24 — THREE CAMPAIGNS ARE RUNNING. §0a BELOW
+> ## ("EVERYTHING IS STOPPED, NOTHING IS PENDING") IS SUPERSEDED AND WRONG.
+>
+> Live jobs (Athena): **136465** `lumopt2_v2proj_s2` (best-design seed,
+> retrim +42 nm) · **136468** `lumopt2_v2_noshift_s2` (uniform seed, shifts
+> FROZEN) · **136640** `lumopt2_v2_uniform_s3` (uniform seed, shifts FREE,
+> the corrected wall). 136466 = the s2 predecessor of 136640, CANCELLED
+> 2026-08-23 (its eval log is preserved as the old-regime record).
+> Full live state, every measured number, and all decisions:
+> `memory/project_v2_width_gradient_plan.md`.
+>
+> **THE ONE THING THAT CHANGES HOW YOU READ THE WIDTH MODEL:** the
+> fwhm_wall's elongation slope `FW_A_ELONG = 0.01355 um/nm` is a SECANT of a
+> single pair, and it is WRONG in both directions. The width-vs-elongation
+> law was MEASURED on 2026-08-23/24 (IGUM jobs 61742 + 61782, 6 rungs on the
+> uniform corr-325 seed, pure common mode, pitch-locked mesh):
+>
+> | e = 2*sum(shift), nm | 0 | 60 | 120 | 180 | 240 | 287.5 |
+> |---|---|---|---|---|---|---|
+> | fwhm_env, um | 18.345 | **18.311** | 20.483 | 24.015 | 28.768 | 32.698 |
+>
+> It is a THRESHOLD: **flat to ~65 nm** (e=60 measures NARROWER than the
+> seed), then a knee and a steep, still-accelerating rise. Fitted law
+> `dW = 7.8654e-3 * max(0, e-65)^1.39`, max residual **0.106 um** vs the
+> 0.367 um half-band. Engine: `_fw_elong_curve`, spec flag **`fw_curve`**
+> (default False; ON only for 136640). The older quadratic `fw_convex`
+> (FW_C_ELONG=1.07e-4) is ALSO refuted by these data — **do not enable it**.
+>
+> WHY IT MATTERED: the old linear wall charged +0.813 um of predicted
+> widening at e=60 where the true cost is ZERO — a penalty (~0.795) on the
+> order of the whole FOM (~0.67). Campaign 136466 was therefore effectively
+> FORBIDDEN from using shifts: it oscillated e = 0 → 287 → 0.3 → 144 → 0.7,
+> never probing the 1-100 nm range where shifts are free, and gained
+> +0.0005 T in ~7 h while shift-FROZEN 136468 gained +0.0076. That is why it
+> was restarted as s3/136640.
+>
+> WHAT ELONGATION PHYSICALLY IS (code-verified, make_func:445-476): it
+> LENGTHENS the central cavity block (`cavity::x span = pitch/2 + 2*sum(s)`)
+> AND shortens every free period by s (narrow segment `hp - s`, walk
+> `2*hp - s`), with both regions walked inward from FIXED outer edges so
+> total device length is constant. Cavity lengthening is linear and tiny
+> (0.29 um at e=287.5); the width blow-up is MIRROR DETUNING eroding
+> kappa_eff, and width ~ 1/kappa_eff is convex — hence the threshold shape.
+> ⇒ In this parametrization cavity-lengthening and mirror-detuning are THE
+> SAME MOVE, so "are tooth shifts necessary?" tests that COUPLED direction,
+> not cavity length in isolation. NOTE `I_CAV` is the cavity **WIDTH (y
+> span)**, 750-1150 nm — not a length.
+>
+> ALSO CLOSED 2026-08-23: the comb is worth **+0.0040 T** at benchmark width
+> (not width-driven; it narrows the mode only 0.34%, ~5% of its own gain) ⇒
+> a fabrication decision, not a physics necessity. And a CONCENTRATED shift
+> pattern widens LESS than a uniform one at matched elongation (0.385 um of
+> 14.35, i.e. 2.7%) ⇒ pattern is a minor correction, common mode dominates.
 
 > **UPDATE 2026-08-21 — the §6 fix now has a researched, offline-VALIDATED v2
 > design: `runners/lumopt2_design/V2_FWHM_PLAN.md`** (differentiable

@@ -66,7 +66,10 @@ def main(task_idx=0):
     out_dir = os.path.join(config.RESULTS_DIR, "retrim_decompose")
     row = eng.run_canary(spec, out_dir)
     t, fw = row.get("t_pk"), row.get("fwhm_env_um")
-    norm = (t + PAYBACK_T_PER_UM * (fw - 17.7136)) if (t and fw) else None
+    # sign: along the depth axis T and width move TOGETHER (deeper = narrower =
+    # lower T), so a rung measured narrow is credited the T it would gain on
+    # being let back out to the origin width.
+    norm = (t + PAYBACK_T_PER_UM * (17.7136 - fw)) if (t and fw) else None
     print(f"[rtdec {idx} {label}] T {t} FWHM {fw} um | T normalised to the "
           f"origin width 17.7136: {norm} (origin 0.89052, full design 0.95968)")
 
