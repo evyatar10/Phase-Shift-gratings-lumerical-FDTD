@@ -124,6 +124,70 @@
 > directions are width-cheap (inner teeth cost ~11× outer). That is the
 > see-saw knowledge, in the gradient, engaging exactly where it is needed.
 >
+> ### ★MESHER METHODOLOGY — USER RULE 2026-08-24. Binding.
+> "It is okay to use PVA if it is the only one that is differentiable, **as
+> long as the best device in PVA is also best in conformal**. If we use PVA,
+> **final devices must be verified in conformal against the INITIAL in
+> conformal**."
+> Both halves are load-bearing and the second is the stricter one: a
+> conformal number for the winner alone proves nothing, because the claim is
+> always a DELTA. Validation is a conformal-vs-conformal PAIR — final and
+> seed, same mesher, same everything — never a cross-mesher subtraction. This
+> is §2's identical-numerics rule applied to the mesher axis.
+> ★**THE RANKING-TRANSFER ASSUMPTION IS UNTESTED, AND FABLE'S OWN MECHANISM
+> SAYS IT IS NOT SAFE BY DEFAULT.** The verdict is that PVA's error comes from
+> scalar averaging over-weighting ε at material faces, and the over-weight per
+> unit length scales with the LOCAL CORE WIDTH — so wide (tooth) sections gain
+> more spurious n_eff than narrow ones. That makes the error a function of the
+> CORRUGATION PROFILE, which is exactly what the optimizer changes. A
+> profile-dependent error can in principle reorder two designs. Nobody has
+> ever measured two DIFFERENT devices under both meshers; the only paired
+> measurement is one device (MX-14/15).
+> ★**CHEAP CLOSER, serves BOTH halves of the rule at once (3 forwards):** run
+> the uniform seed, seesaw_d090 and `BEST_T9636` under CONFORMAL at
+> pitch-locked dx. Their PVA numbers already exist (0.90120 / 0.93790 /
+> 0.96361), so this immediately (a) tests whether the PVA ordering survives,
+> and (b) produces the conformal INITIAL that the user's validation rule
+> requires. Do this BEFORE quoting any conformal delta. If the ordering does
+> NOT transfer, PVA is disqualified as an optimization mesher and the whole
+> architecture needs revisiting — so this is a gate, not a nicety.
+> Related but separate: mode width has never been laddered vs dx under EITHER
+> mesher. Fable's 6-run closer (bare N=100, dx ∈ {51.68, 32.30, 25.84} ×
+> both meshers, ~12 GPU-h, per-hypothesis predictions, no new engine code) is
+> designed and unrun — it decides which mesher is right, whereas the 3-forward
+> check above decides whether it MATTERS for our rankings. The 3-forward one
+> is higher priority.
+>
+> ### ★UNITS TRAP THAT COST REAL CONFUSION (2026-08-24) — state them always
+> **`e` is the TOTAL, not the per-tooth shift**: `e = 2 × sum(25 shifts)`, so
+> per-tooth = **e/50**. The knee at e=65 is a per-tooth shift of just
+> **1.30 nm** (0.50% of the 258.4 nm segment); the largest rung ever run,
+> e=287.5, is still only 5.75 nm/tooth; `BEST_T9636` spans 0.89-6.43 nm/tooth.
+> The user reasonably remembered "width increases from the very first point"
+> — true if you scan TENS of nm per tooth, because 10 nm/tooth is e=500,
+> ~8× past the knee. Both readings are the same curve at different scales.
+> ⇒ Whenever quoting `e`, give the per-tooth equivalent alongside it.
+> ⇒ And note `shift_bounds` are (0, 200) nm PER TOOTH against a useful range
+> of ~0-7 nm — see the conditioning item below.
+>
+> ### ★THE TRANSMISSION CEILING — what any further gain actually costs
+> At the width spec Q_load is pinned near 2020 (MEASURED 1930-2109 across
+> every device this programme has built), so T is a function of RADIATION
+> Q_i alone. Q_i is DERIVED as `Q_L/(1-sqrt(T))`, so this is an exchange
+> rate, not a prediction — but it is the right accounting frame:
+> | target T | required Q_i | vs today's 110 087 |
+> |---|---|---|
+> | 0.965 | 114 500 | ×1.04 |
+> | 0.970 | 133 755 | ×1.21 |
+> | 0.975 | 160 711 | ×1.46 |
+> | 0.980 | 201 144 | ×1.83 |
+> | 0.990 | 403 307 | ×3.66 |
+> Brutally nonlinear. **0.97 is plausibly reachable** from envelope shape plus
+> the cavity-width headroom. **0.98 needs something structurally new**, and
+> the one candidate that used to be quoted for it (second comb row) is
+> measured dead three times — see the correction above. Device LENGTH is not
+> available: Q_i ~ L^2.5-3.6 but L saturates ~20 µm and the width spec pins it.
+>
 > ### WHAT THE USER FORGOT (raise these unprompted)
 > 1. **PRODUCTION CONFIRM is the biggest gap.** 0.96361 is a surrogate-N,
 >    PVA-mesh OPTIMIZER number — not a device number. N≈169 + accurate mesh,
