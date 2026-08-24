@@ -399,9 +399,27 @@ def param_bounds(spec):
         for name, r in spec.trust_nm.items():
             for i in range(*blocks[name].indices(N_PARAMS)):
                 lo, hi = b[i]
-                r_eff = min(r, p0[i] - lo, hi - p0[i])
-                if r_eff > 0 and (hi - lo) > 2 * r_eff:
-                    b[i] = (p0[i] - r_eff, p0[i] + r_eff)
+                # ★FIX 2026-08-24: was min(r, p0-lo, hi-p0) + a symmetry
+                # requirement, which silently did NOTHING whenever the seed sat
+                # ON a bound — i.e. exactly when the clamp matters most. The
+                # uniform seed's shifts are 0.0 = the lower bound, so r_eff
+                # collapsed to 0 and the shift block kept its full 0-200 box.
+                # MEASURED consequence (136709 ev2): L-BFGS-B's unit-norm
+                # scaled probe is ~0.0575 per param, which over a 100 nm
+                # half-range is 5.75 nm/tooth = elongation 287.4 nm, width
+                # 32.27 um — 13.6 um out of band, one wasted 90-min eval, and
+                # the same 0->287 lurch that crippled campaigns 136466/136640.
+                # Now clamps ASYMMETRICALLY against the box: the trust region
+                # is a SEARCH-STEP control that re-centres on the best design
+                # every restart, NOT a tightening of the physical shift_bounds
+                # (which stay 0-200 per the standing rule — no region of the
+                # design space is made permanently unreachable).
+                # Cost of dropping the centring: x0 no longer maps to scaled 0,
+                # so a duplicate-x0 evaluation can reappear (item 21d) — one
+                # eval, against the many an out-of-band lurch burns.
+                lo_n, hi_n = max(lo, p0[i] - r), min(hi, p0[i] + r)
+                if hi_n - lo_n < hi - lo:
+                    b[i] = (lo_n, hi_n)
     return b
 
 
