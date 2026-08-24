@@ -55,6 +55,17 @@ SPEC = eng.CampaignSpec(
     trust_nm={"corr": 40.0, "avg": 15.0},
     fwhm_wall=True,
     fw_curve=True,
+    # ★This seed is APODIZED (inner-8 235 / outer-17 393, mcorr 342.44), so the
+    # elongation coefficient fitted on the UNIFORM seed over-taxes it 1.87x
+    # (MEASURED on BEST_T9636 by the shiftw ladder, job 136710). Without this
+    # the campaign's 0.382 um of band headroom buys only e=81 nm of shift
+    # instead of e=91 — and, worse, the whole narrow-with-corrugation vs
+    # spend-on-shifts trade is priced wrong for four days. EXPECTED (stated as
+    # an assumption per skill item 35): the coefficient measured on BEST_T9636
+    # (mcorr 357.95, shifted) transfers to this seed (mcorr 342.44, unshifted)
+    # because both are apodized; it is much closer to that device than to the
+    # uniform one, but it is still a transfer and is not measured here.
+    fw_curve_c=eng.FW_CURVE_C_APOD,
     fw_pen_cap=2.0,
     fw_tooth_w=eng.FW_TOOTH_W,
     fw_anchor={"fwhm": 18.33113,                  # MEASURED d090 fwhm_env

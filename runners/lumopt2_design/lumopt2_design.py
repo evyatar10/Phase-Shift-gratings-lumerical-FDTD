@@ -334,6 +334,12 @@ class CampaignSpec:
     # KeyError otherwise — no silent fallthrough, V2 plan bug-D class).
     # None = legacy mean-corr path, bit-identical for campaigns in flight.
     fw_tooth_w: tuple = None
+    # ★2026-08-24: elongation-curve coefficient for THIS spec's device class.
+    # None = FW_CURVE_C (fitted on the uniform seed — correct for uniform-seeded
+    # campaigns). Apodized-seeded campaigns must pass FW_CURVE_C_APOD or the
+    # wall over-taxes elongation by 1.87x (MEASURED, shiftw ladder 136710).
+    # Constants carry their device class — see skill item 35.
+    fw_curve_c: float = None
     fw_anchor: dict = None      # {"fwhm","mcorr","elong"[,"corr_vec"]} set by
                                 # the runner (initial) + callback (re-anchor)
     wg_mu: float = 8.0               # per µm²: 0.05 µm over-band ⇒ 0.01 FOM
@@ -669,10 +675,28 @@ FW_CURVE_C = 7.8654e-3   # um per nm^N above the knee
 FW_TOOTH_W = (-2.925e-3,) * 8 + (-2.384e-3,) * 9 + (-0.268e-3,) * 8
 
 
-def _fw_elong_curve(e):
+# ★2026-08-24 — THE COEFFICIENT DOES NOT TRANSFER BETWEEN DEVICE CLASSES
+# (skill item 35; the user's point: once the device is not uniform the envelope
+# is no longer a single exponential, so no one constant describes the decay).
+# FW_CURVE_C above is fitted on the UNIFORM corr-325 seed. MEASURED on the
+# APODIZED best device (BEST_T9636, mcorr 357.95) by the shiftw ladder
+# (Athena 136710, pitch-locked, v2 numerics):
+#     e (nm)    0        66.3      132.6     198.9
+#     fwhm_env  16.85373 16.83672  18.35309  20.62662
+# The KNEE TRANSFERS (e=66.3 measures 0.017 um NARROWER than e=0, same as the
+# uniform seed's e=60), so FW_E0_NM and FW_CURVE_N keep their 6-point support
+# and only C is refitted: least squares on the two above-knee points gives
+# 4.1993e-3, residuals -0.040/+0.015 um against a 0.367 um half-band.
+# The uniform constant over-taxes this device class by 1.87x.
+FW_CURVE_C_APOD = 4.1993e-3   # um per nm^N, apodized devices
+
+
+def _fw_elong_curve(e, c=None):
     """Measured width cost of elongation, um. Zero below the knee; the n>1
-    power keeps it C1 there, so the gradient is continuous for L-BFGS-B."""
-    return FW_CURVE_C * anp.maximum(0.0, e - FW_E0_NM) ** FW_CURVE_N
+    power keeps it C1 there, so the gradient is continuous for L-BFGS-B.
+    `c` selects the device-class coefficient (None = uniform FW_CURVE_C)."""
+    return ((FW_CURVE_C if c is None else c)
+            * anp.maximum(0.0, e - FW_E0_NM) ** FW_CURVE_N)
 
 
 def make_fwhm_wall(spec):
@@ -680,7 +704,9 @@ def make_fwhm_wall(spec):
         anc = spec.fw_anchor
         elong = 2.0 * anp.sum(p[SL_SHIFT])
         if spec.fw_curve:
-            d_elong = _fw_elong_curve(elong) - _fw_elong_curve(anc["elong"])
+            cc = getattr(spec, "fw_curve_c", None)   # device-class coefficient
+            d_elong = (_fw_elong_curve(elong, cc)
+                       - _fw_elong_curve(anc["elong"], cc))
         else:
             d_elong = (FW_C_ELONG * (elong ** 2 - anc["elong"] ** 2) if spec.fw_convex
                        else FW_A_ELONG * (elong - anc["elong"]))
