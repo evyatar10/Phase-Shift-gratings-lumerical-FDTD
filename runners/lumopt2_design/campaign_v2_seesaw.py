@@ -52,7 +52,16 @@ SPEC = eng.CampaignSpec(
     fwhm0_um=18.3460,        # band reference = the ORIGIN width (program-wide
                              # spec band, NOT this seed's own width)
     adj_phase_fix=True, adj_fix_re=1.0561, adj_fix_im=0.1239,
-    trust_nm={"corr": 40.0, "avg": 15.0},
+    # ★shift trust box added 2026-08-24 after ev2 of the first dispatch lurched
+    # to e=281.8 / W 36.18 um (FOM -1.527), a wasted 90-min eval. L-BFGS-B's
+    # first probe is a uniform ~0.0575 step in bounds-scaled space, so the
+    # shift block's 200 nm range turned it into 5.6 nm/tooth. Note corr, which
+    # already had a box, moved only 0.1 nm in the same eval — the mechanism
+    # isolated in one row. 30 nm puts the first probe at e~29, inside the
+    # MEASURED free zone (shifts cost no width below e=65). The box re-centres
+    # on the best design at every restart, so nothing is made unreachable and
+    # the physical shift_bounds stay 0-200 per the standing rule.
+    trust_nm={"corr": 40.0, "avg": 15.0, "shift": 30.0},
     fwhm_wall=True,
     fw_curve=True,
     # ★This seed is APODIZED (inner-8 235 / outer-17 393, mcorr 342.44), so the

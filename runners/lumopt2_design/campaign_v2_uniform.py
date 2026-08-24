@@ -112,7 +112,17 @@ SPEC = eng.CampaignSpec(
                           # from e=27.5 to e=81.0 nm before the band edge.
     fw_anchor={"fwhm": FWHM0_UM, "mcorr": eng.CORR_NM, "elong": 0.0,
                "corr_vec": (eng.CORR_NM,) * eng.N_FREE},
-    max_iter=60, max_feval=100,                   # seedA budgets; no trust_nm
+    # ★shift trust box added 2026-08-24. The "no trust_nm" precedent above was
+    # written so a uniform seed could TRAVEL, and that still holds for the
+    # geometry blocks — corr/avg/wcav stay unbounded here. But ev2 of the first
+    # dispatch showed the shift block does not need freedom, it needs SCALE:
+    # L-BFGS-B's uniform ~0.0575 probe in bounds-scaled space became 5.75
+    # nm/tooth over the 200 nm range, i.e. e=287.4 and W 32.27 um (FOM -1.554),
+    # skipping clean over the 1-65 nm window the ladder measures to be FREE.
+    # 30 nm lands the same probe at e~29. The box re-centres on the best design
+    # at every restart, so the seed can still travel anywhere over the run.
+    trust_nm={"shift": 30.0},
+    max_iter=60, max_feval=100,                   # seedA budgets
 )
 N_TASKS = 1
 
