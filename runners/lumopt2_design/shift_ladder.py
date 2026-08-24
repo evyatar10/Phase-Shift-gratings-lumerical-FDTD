@@ -39,19 +39,33 @@ import numpy as np
 
 import config
 from runners.lumopt2_design import lumopt2_design as eng
-from runners.lumopt2_design.best_designs import BEST_T9635
+from runners.lumopt2_design.best_designs import BEST_T9635, BEST_T9636
 
-SCAN_CENTER_NM = 1566.0
-SCALES = [0.0, 0.5, 1.5]        # x1.0 control = BEST_T9635 itself, stored
+# ★PASS 2 — WIDTH RECOVERY (2026-08-24). The pass-1 rows (shift_x000/050/150,
+# run overnight on BEST_T9635) used the DEFAULT spec: +-3 nm/301 window and
+# dx=50 nm — the non-pitch-locked mesh whose fwhm_env mis-reads by up to 3.9%
+# (plan §24), so their WIDTHS are VOID (T/lambda stand). This pass re-runs the
+# three scales at the v2 numerics on the CURRENT best (BEST_T9636, the
+# converged 136465 design) with fresh labels; the x1.0 control is that
+# campaign's own eval-12 row (T 0.96361 / W 18.35309, pitch-locked — stored,
+# NOT re-run, CLAUDE.md §6). This is the experiment that turns the shift
+# verdict (apodization saturates ~0.938; shifts worth +0.025) from strong to
+# FINAL: if T falls toward ~0.938 as shifts scale to 0 while width stays in
+# band, shifts are PROVEN to buy transmission at constant width on the best
+# device itself.
+SCAN_CENTER_NM = 1566.444       # MEASURED eval-12 resonance; x0 expected ~-0.6 nm
+SCALES = [0.0, 0.5, 1.5]        # x1.0 control = the campaign's own eval-12 row
 
 
 def scaled_vector(f):
-    p = np.asarray(BEST_T9635, dtype=float).copy()
+    p = np.asarray(BEST_T9636, dtype=float).copy()
     p[eng.SL_SHIFT] *= f
     return p
 
 
-SPECS = {i: eng.CampaignSpec(label=f"shift_x{int(f*100):03d}",
+SPECS = {i: eng.CampaignSpec(label=f"shiftw_x{int(f*100):03d}",
+                             scan_width_nm=10.0, n_wl_points=501,
+                             region_dx_nm=eng.DX_PITCHLOCK_NM,
                              scan_center_nm=SCAN_CENTER_NM,
                              seed_override=tuple(scaled_vector(f)))
          for i, f in enumerate(SCALES)}

@@ -86,7 +86,18 @@ SPEC = eng.CampaignSpec(
     # the width hinge SATURATED (fw_pen_cap) so the line search cannot be handed
     # an unnavigable cliff. New label because FOM values are not comparable
     # across a penalty change — s3's log stays as the record of that run.
-    label="lumopt2_v2_uniform_s4",
+    # ★s5 (2026-08-24, Fable audit + user "fix all bugs"): s4 cancelled at
+    # ~1.5 h / 0 rows (136695) — superseded before its first eval by the
+    # per-tooth width price. The rank-1 mean-corr wall told the optimizer all
+    # 25 teeth cost the same width per nm; the see-saw direction (inner down /
+    # outer up, MEASURED +0.037 T at constant width) sat in its null space,
+    # which is why uniform-seeded campaigns pinned at the band ceiling near
+    # T 0.917. s5 = same seed, same saturated hinge, corr term now the
+    # MEASURED 3-block FW_TOOTH_W. THE EXPERIMENT: if the optimizer now finds
+    # the see-saw basin from uniform on its own, the stalls were wrong prices,
+    # not local minima.
+    label="lumopt2_v2_uniform_s5",
+    fw_tooth_w=eng.FW_TOOTH_W,
     fw_pen_cap=2.0,
     scan_width_nm=10.0, n_wl_points=501,          # v2 window (plan §5a)
     region_dx_nm=eng.DX_PITCHLOCK_NM,             # ★pitch-locked (plan §24)
@@ -99,7 +110,8 @@ SPEC = eng.CampaignSpec(
     fw_curve=True,        # ★MEASURED 6-point elongation curve (61742/61782),
                           # not the secant. Opens the explorable shift range
                           # from e=27.5 to e=81.0 nm before the band edge.
-    fw_anchor={"fwhm": FWHM0_UM, "mcorr": eng.CORR_NM, "elong": 0.0},
+    fw_anchor={"fwhm": FWHM0_UM, "mcorr": eng.CORR_NM, "elong": 0.0,
+               "corr_vec": (eng.CORR_NM,) * eng.N_FREE},
     max_iter=60, max_feval=100,                   # seedA budgets; no trust_nm
 )
 N_TASKS = 1

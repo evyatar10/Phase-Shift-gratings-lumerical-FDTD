@@ -326,7 +326,16 @@ class CampaignSpec:
     # FOM is O(0.7) here, so a capped out-of-band score still loses to every
     # in-band one. Small-excess behaviour is unchanged (tanh x ~ x).
     fw_pen_cap: float = None
-    fw_anchor: dict = None      # {"fwhm","mcorr","elong"} set by runner+callback
+    # ★2026-08-24 (Fable audit): per-tooth width price for the corr block — a
+    # tuple of N_FREE slopes (um FWHM per nm of that tooth's corr, negative =
+    # raising narrows), normally FW_TOOTH_W. Replaces the rank-1 mean-corr
+    # term whose gradient was identical on all 25 teeth and hid the see-saw
+    # direction from the optimizer. Requires fw_anchor["corr_vec"] (loud
+    # KeyError otherwise — no silent fallthrough, V2 plan bug-D class).
+    # None = legacy mean-corr path, bit-identical for campaigns in flight.
+    fw_tooth_w: tuple = None
+    fw_anchor: dict = None      # {"fwhm","mcorr","elong"[,"corr_vec"]} set by
+                                # the runner (initial) + callback (re-anchor)
     wg_mu: float = 8.0               # per µm²: 0.05 µm over-band ⇒ 0.01 FOM
     wg_lam_hi: float = 0.0           # AL multipliers, updated per restart on
     wg_lam_lo: float = 0.0           # the MEASURED best-row violation
@@ -640,6 +649,25 @@ FW_E0_NM   = 65.0        # knee (nm of 2*sum(shift)); below it shifts are free
 FW_CURVE_N = 1.39
 FW_CURVE_C = 7.8654e-3   # um per nm^N above the knee
 
+# ★2026-08-24 (Fable audit, 136468 vs the hand see-saw): the wall's corr term
+# was RANK-1 — mean(corr) only — so its gradient was identical on all 25 teeth
+# and the per-tooth width price (the entire content of the see-saw rule) sat in
+# its null space. The optimizer, told every tooth costs the same width per nm,
+# rode to the band ceiling at T 0.917 (3 of its last 6 probes out of band)
+# while the see-saw reached 0.938 IN band in one solve: the mean-corr model
+# mis-scores that exact move by 0.82 um predicted vs 0.015 um measured.
+# 3-block per-tooth slopes, um FWHM per nm of ONE tooth's corr (negative =
+# raising narrows), MEASURED on the uniform corr-325 seed, pitch-locked mesh:
+#   inner-8    -2.925e-3   in265, IGUM 61901: 1.4038 um / 480 tooth*nm
+#                          (see-saw buy leg agrees: 0.02335/8 = 2.92e-3)
+#   outer-8    -0.268e-3   out385, same job: 0.1285 um / 480 tooth*nm
+#   middle-9   -2.384e-3   DERIVED so a uniform move reproduces FW_A_MCORR
+#                          exactly (sum w_i = -0.0470)
+# Known residual: the see-saw pay leg suggests the outer-17 average is ~30%
+# higher than this profile — the per-accepted-best re-anchor and the measured
+# fwhm_env guard (WidthTrip / _best_from_log) absorb errors of that scale.
+FW_TOOTH_W = (-2.925e-3,) * 8 + (-2.384e-3,) * 9 + (-0.268e-3,) * 8
+
 
 def _fw_elong_curve(e):
     """Measured width cost of elongation, um. Zero below the knee; the n>1
@@ -656,8 +684,13 @@ def make_fwhm_wall(spec):
         else:
             d_elong = (FW_C_ELONG * (elong ** 2 - anc["elong"] ** 2) if spec.fw_convex
                        else FW_A_ELONG * (elong - anc["elong"]))
-        fhat = (anc["fwhm"] + FW_A_MCORR * (anp.mean(p[SL_CORR]) - anc["mcorr"])
-                + d_elong)
+        if spec.fw_tooth_w is not None:
+            # per-tooth price (see FW_TOOTH_W) — anchor must carry corr_vec
+            d_corr = anp.sum(anp.asarray(spec.fw_tooth_w)
+                             * (p[SL_CORR] - anp.asarray(anc["corr_vec"])))
+        else:
+            d_corr = FW_A_MCORR * (anp.mean(p[SL_CORR]) - anc["mcorr"])
+        fhat = anc["fwhm"] + d_corr + d_elong
         hi, lo = RHO_UP * spec.fwhm0_um, RHO_DN * spec.fwhm0_um
         band = (BETA_FW * anp.maximum(0.0, fhat - hi) ** 2
                 + BETA_FW * anp.maximum(0.0, lo - fhat) ** 2)
@@ -780,7 +813,17 @@ def check_sigma_surrogate(row):
 
 
 def make_sigma_wall(spec):
-    """(penalty, grad) closures for the single sigma-hat hinge."""
+    """(penalty, grad) closures for the single sigma-hat hinge.
+
+    ★DORMANT + CARRIES THE RANK-DEFICIENCY BUG (audit 2026-08-24). No live spec
+    sets sigma_wall (sigma was retired as the width authority — HANDOFF §0), and
+    this surrogate prices corr by anp.mean(p[SL_CORR]) and shifts by
+    anp.sum(p[SL_SHIFT]) — the exact collapse that made fwhm_wall blind to the
+    see-saw (skill item 34). Do NOT enable it without porting the per-tooth
+    price (see FW_TOOTH_W / spec.fw_tooth_w); a scalar block summary gives
+    L-BFGS-B one identical gradient across 25 teeth and converges to the wrong
+    fixed point, not slowly to the right one.
+    """
     anc = spec.sig_anchor
 
     def pen(p):
@@ -1383,7 +1426,9 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                     # accepted-best cadence (probes never move it)
                     spec.fw_anchor = {"fwhm": float(row["fwhm_env_um"]),
                                       "mcorr": float(np.mean(p[SL_CORR])),
-                                      "elong": float(2.0 * p[SL_SHIFT].sum())}
+                                      "elong": float(2.0 * p[SL_SHIFT].sum()),
+                                      "corr_vec": tuple(float(v)
+                                                        for v in p[SL_CORR])}
                 if row.get("lam_pk_nm") and abs(row["lam_pk_nm"] - spec.scan_center_nm) > RECENTER_NM:
                     raise RecenterNeeded(f"peak {row['lam_pk_nm']:.3f} vs center {spec.scan_center_nm}")
                 s = row.get("sigma_um")
@@ -1861,7 +1906,9 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                 pb = np.asarray(best["params"], dtype=float)
                 spec.fw_anchor = {"fwhm": float(rowf["fwhm_env_um"]),
                                   "mcorr": float(np.mean(pb[SL_CORR])),
-                                  "elong": float(2.0 * pb[SL_SHIFT].sum())}
+                                  "elong": float(2.0 * pb[SL_SHIFT].sum()),
+                                  "corr_vec": tuple(float(v)
+                                                    for v in pb[SL_CORR])}
                 print(f"[fwhm-wall {attempt}] re-anchored at measured "
                       f"{spec.fw_anchor['fwhm']:.4f} um "
                       f"(mcorr {spec.fw_anchor['mcorr']:.1f})")
