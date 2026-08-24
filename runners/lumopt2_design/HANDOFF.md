@@ -123,6 +123,35 @@
 > design is against the ceiling and wants more T, the gradient now knows which
 > directions are width-cheap (inner teeth cost ~11× outer). That is the
 > see-saw knowledge, in the gradient, engaging exactly where it is needed.
+> ★**"CAN'T THE WIDTH ADJOINT JUST RUN ON GPU?" — ASKED AND ANSWERED, NO.**
+> The 8.7 h IS a CPU number, so the question is the right one to ask; it was
+> chased and it failed for a physical reason, not a cost one. MEASURED (job
+> 136108, n310/A100, identical scene):
+>   - forward: 3,100.3 s
+>   - width adjoint via lumopt2's own **FieldRegion** object: CUDA `invalid
+>     configuration argument`, dies in seconds — 3 independent tasks. The GPU
+>     engine rejects that object outright.
+>   - workaround via a **standard import source**: 3,133.6 s (52 min) on GPU,
+>     which looked like a 10-14× win and was written up as
+>     "★★★GPU WIDTH-ADJOINT PROVEN".
+>   - **THAT CLAIM WAS THEN RETRACTED.** The adjoint source is an imported
+>     field sheet at z = 0, and an import source injects through TANGENTIAL
+>     components — but at z = 0 this TM mode is tangentially DEAD BY PARITY:
+>     MEASURED max|Ex| = 0.0, |Ey| = 0.0 EXACTLY, |Ez| = 8.41. So it injected
+>     nothing. The output h5 has EVERY monitor field EXACTLY 0.0 — a dead
+>     source at ratio 0, not 1e-4. The 52 min was an EMPTY SCENE integrating
+>     the full sim time (hence runtime ≈ the forward's). Every printed
+>     "adjoint" vector in that run was the penalty gradient alone.
+>   - the CPU FieldRegion timings (8.7-12.1 h) WERE real adjoints — dipole
+>     injection is unaffected — so the cost verdict stands.
+> ⇒ **Do not resurrect the 10-14× speed claim; it is void.** The one live
+> thread is the qualifier: the route is dead **at z = 0**. A weighted sheet on
+> a plane where the TM mode HAS tangential field (i.e. off the symmetry plane)
+> is untested and is the only remaining way this becomes affordable.
+> KEEP-FOREVER byproduct of that failure: job 136189's FD half is genuine
+> first-of-its-kind data — MEASURED d(softW)/dp at detune-1 =
+> [−0.00365 corr_1, +0.01825 shift_1, +0.02026 wcav]. FD is
+> config-independent, so it is valid for any future gate.
 >
 > ### ★MESHER METHODOLOGY — USER RULE 2026-08-24. Binding.
 > "It is okay to use PVA if it is the only one that is differentiable, **as
