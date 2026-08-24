@@ -1,15 +1,94 @@
 # HANDOFF — lumopt2 corr-325 inverse design — updated 2026-08-24 IDT
 
-> ## ★★★STATE AS OF 2026-08-24 — THREE CAMPAIGNS ARE RUNNING. §0a BELOW
-> ## ("EVERYTHING IS STOPPED, NOTHING IS PENDING") IS SUPERSEDED AND WRONG.
+> ## ★★★STATE AS OF 2026-08-24 EVENING — READ THIS WHOLE BOX FIRST.
+> ## Every earlier job list in this file is SUPERSEDED, including §0a
+> ## ("EVERYTHING IS STOPPED"), which is wrong.
 >
-> Live jobs (Athena): **136465** `lumopt2_v2proj_s2` (best-design seed,
-> retrim +42 nm) · **136468** `lumopt2_v2_noshift_s2` (uniform seed, shifts
-> FROZEN) · **136640** `lumopt2_v2_uniform_s3` (uniform seed, shifts FREE,
-> the corrected wall). 136466 = the s2 predecessor of 136640, CANCELLED
-> 2026-08-23 (its eval log is preserved as the old-regime record).
-> Full live state, every measured number, and all decisions:
-> `memory/project_v2_width_gradient_plan.md`.
+> **LIVE (Athena): 136752 `lumopt2_v2_seesaw` · 136753 `lumopt2_v2_uniform_s5`.**
+> Both re-dispatched this evening with the corrected wall AND a 30 nm shift
+> trust box. CANCELLED today, do not resume: 136465 (converged, its winner is
+> preserved as `BEST_T9636`), 136468, 136695, 136708, 136709.
+> Full measured state: `memory/project_v2_width_gradient_plan.md`.
+> Six fixes committed today: 7eb7d35, 0d2ff88, 30f8f77, 3c10524, 60e57f9, b0102dc.
+>
+> ### THE PROGRAMME HAS THREE JOBS. In the user's own priority order:
+>
+> **① THE UNIFORM SEED — TOP PRIORITY (user, 2026-08-24).** Why it matters:
+> `BEST_T9636` is NOT a clean research result. Its shifts (e≈130.6) were
+> inherited from stage-1 work fitted to a device that no longer exists, and
+> 136465 only nudged them 2 nm; the corrugation came through hand retrims. So
+> the headline number is a chain of adjustments plus partial gradient runs, not
+> one honest optimization. A uniform-seeded campaign that reaches a comparable
+> design IS that honest result, and it is what lets us claim we understand the
+> patterns rather than having stumbled into them.
+> ★**The stalls were NOT local minima** (Fable audit, task a5fddc5457850a073):
+> the fixed point was wrong because the PRICES were wrong (rank-deficient
+> wall), not because of multimodality. The seed is fixable.
+> ★**But it cannot "discover everything" from the seed, structurally.** From
+> uniform, the pure-T gradient says "lower every corrugation, spend width" —
+> ∂T/∂corr < 0 on every tooth. The see-saw REQUIRES raising outer teeth, which
+> locally costs T, so it is justified only once width has a price — and the
+> hinge gives width ZERO price until the band edge (MEASURED: penalty gradient
+> is exactly 0.000e+00 for e ≤ 81 nm). Therefore the uniform seed can only find
+> the see-saw AFTER walking to the band ceiling. That is exactly where 136468
+> was pinned, and exactly where the per-tooth fix bites. It also cannot
+> discover the comb (frozen) or N (fixed).
+> ★**Historical contrast worth keeping:** the sigma-era campaign DID travel
+> from uniform to a shaped design — because sigma put no price on the profile
+> at all — and its width blew up +14.9%. Sigma era = freedom without control;
+> FWHM era = control without freedom. Neither was right.
+> ★**If 136753 thrashes at the band edge, the next move is the AUGMENTED
+> LAGRANGIAN, not another patch.** The hinge gives width shadow price 0 inside
+> the band and ∞ outside, so the optimizer spends blindly then crashes. The AL
+> machinery (`wg_mu`, `wg_lam_hi`, `wg_lam_lo`) already exists in the engine —
+> it was built for the exact width-gradient path and orphaned when that path
+> was priced out at 8.7 h/solve. Applying it to the cheap surrogate is the
+> principled fix. A "soft shoulder" is a patch on the wrong architecture.
+>
+> **② THE BEST DESIGN — converged, but NOT proven optimal.** `BEST_T9636`
+> (in `best_designs.py`): T 0.96361 / λ 1566.444 / fwhm_env 18.35309 µm /
+> Q_load 2021.6 / Q_i 110 087 / mcorr 357.95 / e 132.6 / wcav 961.1.
+> Converged = L-BFGS-B zero-step, params off their bounds. **But it converged
+> to the optimum of a model now known wrong in two ways** (rank-1 corrugation
+> pricing; 1.87× elongation over-tax for its device class). Do NOT repeat the
+> line "it is converged so there is nothing to do" — that was said in session
+> and is misleading. Still available on it: 0.36 µm of unused width headroom;
+> a comb frozen at a tune fitted for a DIFFERENT device; 189 nm of unexplored
+> cavity width; and a restart under the corrected wall.
+>
+> **③ LEARN FROM THE DESIGNS ALREADY RUN.** The measured pattern inventory is
+> in §"WHAT WE MEASURED" below and in the plan memory. The two the user singled
+> out, both confirmed: (a) **many teeth × tiny shifts costs NO width and raises
+> T** — below ~1.3 nm/tooth (e ≤ 65) width is flat and T gains +0.0185;
+> (b) **reaching 0.96 needed MORE shift than that** — e = 132.6 is double the
+> knee, and the part above the knee cost 1.5 µm of width for +0.0207 T.
+>
+> ### WHAT THE USER FORGOT (raise these unprompted)
+> 1. **PRODUCTION CONFIRM is the biggest gap.** 0.96361 is a surrogate-N,
+>    PVA-mesh OPTIMIZER number — not a device number. N≈169 + accurate mesh,
+>    run OUTSIDE lumopt2 via a plain SweepSpec runner, is what makes it real.
+> 2. **Width conversion is now ×1.049** (PVA→conformal). The old 0.92 is
+>    RETIRED. Mesher arbitration settled 2026-08-24 (Fable, task
+>    a46f03072ddb16c77): conformal variant 0 is presumptively truthful, the
+>    ~20 µm spec is NOT an artifact, and the famous "−8%" gap was itself partly
+>    a grid-phase artifact — the clean matched-grid gap is −4.4 to −4.7%.
+>    Residual: mode width has never been laddered under either mesher; the
+>    6-run closer (~12 GPU-h) is designed and unrun.
+> 3. **The h5 janitor must be RUNNING** (`~/h5_roll_clean.sh`, nohup on the
+>    Athena login node). It was found DEAD today with ~3.5 h of quota runway
+>    left. Verify with `pgrep -af h5_roll_clean` at every check.
+> 4. **The bounds are badly conditioned.** `shift_bounds` are 0-200 nm PER
+>    TOOTH while the entire useful range is ~0-7 nm (BEST_T9636 spans
+>    0.89-6.43). That ~30× mismatch caused THREE failures: the 136640
+>    line-search abort and both first-step lurches to e≈285. The trust box
+>    papers over it; it does not fix it.
+> 5. **Two cheap untested experiments, both with plausible FREE gains:**
+>    (a) shift DISTRIBUTION in the free zone — nobody has compared shapes at
+>    matched e on the same device, and free-zone shifts are pure profit;
+>    (b) the SPLIT — above-knee shifts buy at 0.0136 T/µm while the see-saw
+>    appears to buy at ~0.021, so spending headroom on apodization instead may
+>    beat the current design. Both need ~3 forwards. (b) rests on a rate
+>    measured on a DIFFERENT device — treat as hypothesis, not result.
 >
 > **THE ONE THING THAT CHANGES HOW YOU READ THE WIDTH MODEL:** the
 > fwhm_wall's elongation slope `FW_A_ELONG = 0.01355 um/nm` is a SECANT of a
@@ -66,9 +145,21 @@
 > (two dispatch-time bug classes found & fixed en route, zero GPU lost —
 > skill item 28 lessons a-d). ALSO: mesher presumption FLIPPED to conformal
 > (see §5-4 below); chirp + sinc CLOSED by calibrated light-cone model;
-> N_FREE 25→40 = banked v2.1 candidate (~10× model headroom); second comb
-> ROW = live outside-box candidate (old 2-row negative shown non-transfer,
-> phasor ceiling ~2.2× Q_i DERIVED, δx fan needed); ★SEED-B FWHM NEVER
+> N_FREE 25→40 = banked v2.1 candidate (~10× model headroom); ★second comb
+> ROW = **MEASURED DEAD, three times — this line previously called it a "live
+> candidate with a ~2.2× Q_i phasor ceiling" and that was WRONG** (corrected
+> 2026-08-24 after the user pushed back). The 2.2× is a DERIVED bound from a
+> model the same handoff flags PRELIMINARY, and it stands against three
+> independent measured negatives, the last of which POSTDATES it and tested
+> this exact comb family: job 130154 (2026-08-10) multi-row 2D lattice —
+> single row **+0.0115**, 2row +0.0099, 4row +0.0087, 4row-r80 +0.0088, i.e.
+> EVERY multi-row variant BELOW single row, logged as "user's priority
+> question answered NO". Earlier: job 121392 (2026-07-15) row-2 columns ~10×
+> weaker than row-1, route CLOSED; job 123563 (2026-07-18) 2-row 1.139 vs
+> 1-row 1.150, "NO coherent row buildup ⇒ no N-row/bigger-post path". Only
+> surviving thread: those tests fixed the inter-row offset, so a δx fan is
+> UNTESTED — that is a speculative retry of a thrice-negative result, not a
+> candidate, and must be described as such. ★SEED-B FWHM NEVER
 > MEASURED (verified: no fwhm_env in any seedB/A4 log; .fsp gone on IGUM) —
 > `seed_width_audit.py` rebuilds ev0/best/seedB2-best from logged params,
 > 3 forwards, answers whether seed B started/ended in the FWHM band.
