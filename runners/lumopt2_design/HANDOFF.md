@@ -11,7 +11,35 @@
 > Full measured state: `memory/project_v2_width_gradient_plan.md`.
 > Six fixes committed today: 7eb7d35, 0d2ff88, 30f8f77, 3c10524, 60e57f9, b0102dc.
 >
-> ### THE PROGRAMME HAS THREE JOBS. In the user's own priority order:
+> ### ★★★PRIORITY ZERO — FIX THE FWHM GRADIENT ON GPU (user, 2026-08-24)
+> **This outranks the three jobs below, because it is the ROOT FIX for most of
+> what those jobs are fighting.** User's reasoning, and it is correct: a
+> working GPU width-adjoint "could solve for uniform seed and accelerate".
+> Full retry plan, four routes and the mandatory h5 gate: see the
+> **"RETRY THE GPU WIDTH-ADJOINT"** block further down. Start with route 1
+> (the CUDA `invalid configuration argument` is a kernel-LAUNCH error, very
+> plausibly a region-SIZE bound — one task to find out).
+> **Why it is priority zero — what it actually buys:**
+> - **Exact ∂W/∂p for all 191 parameters, re-measured on the ACTUAL device at
+>   every evaluation.** That single change retires, at the root, four separate
+>   defects this programme spent 2026-08-24 patching: the rank-deficient
+>   surrogate (skill 34), the device-class transfer error (skill 35), the
+>   1.87× elongation over-tax, and the shift-distribution blindness. They are
+>   all symptoms of standing a 2-parameter MODEL in for a 191-parameter truth.
+> - **Speed: ~1 h/solve instead of 8.7-12.1 h**, which is what moves it from
+>   "occasional calibration tool" to "in-loop".
+> - **It is the only route to what the user keeps asking for** — a gradient
+>   that acts on width itself rather than on a model of it.
+> ★**HONEST LIMIT — do not oversell it:** a true softW does NOT by itself fix
+> the in-band-zero-gradient problem. If it is wrapped in the same
+> inequality-constraint AL, that penalty is still zero while the design is in
+> spec (no constraint acts when satisfied). What changes is that with EXACT
+> ∂W/∂p in hand you can finally choose a better formulation — an active
+> shadow price, or an explicit T-vs-width trade — instead of being stuck with
+> a surrogate whose error you cannot bound. Fixing the adjoint is necessary,
+> not sufficient.
+>
+> ### THEN THE PROGRAMME'S THREE JOBS. In the user's own priority order:
 >
 > **① THE UNIFORM SEED — TOP PRIORITY (user, 2026-08-24).** Why it matters:
 > `BEST_T9636` is NOT a clean research result. Its shifts (e≈130.6) were
