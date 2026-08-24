@@ -40,6 +40,18 @@ RETRIM_DELTA_NM = 42.0           # ★DERIVED for the SYMMETRIC band: lands the
                                  # new +/-2% band, and cost T for width we have
                                  # no use for (predicted T 0.9609 vs 0.9594).
 
+# ★★CLOSED 2026-08-24 — CONVERGED, then cancelled (Athena 136465, 24 h).
+# Evals 10/11/12 are identical to 5 decimals (FOM 0.71405, W 18.35309) =
+# L-BFGS-B's zero-step termination. Its winner is preserved as BEST_T9636 in
+# best_designs.py (T 0.96361 / lam 1566.444 / W 18.35309 / Q 2021.6 / Q_i
+# 110079) and its .fsp is exported locally. THE SPEC BELOW IS LEFT EXACTLY AS
+# IT RAN — it is the record of that run, not a template.
+# ★DO NOT RE-DISPATCH AS-IS: this spec predates the per-tooth width price, so
+# its fwhm_wall is the RANK-1 version (mean-corr only, no fw_tooth_w, anchor
+# without corr_vec) that made profile shaping invisible to the optimizer
+# (skill item 34). Any new stage must add fw_tooth_w=eng.FW_TOOTH_W,
+# "corr_vec" in fw_anchor, fw_curve and fw_pen_cap — and take a NEW label,
+# since FOMs are not comparable across a penalty change.
 SPEC = eng.CampaignSpec(
     label="lumopt2_v2proj_s2",
     scan_width_nm=10.0, n_wl_points=501,      # v2 window
