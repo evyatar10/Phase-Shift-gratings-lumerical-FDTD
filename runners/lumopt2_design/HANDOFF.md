@@ -45,16 +45,43 @@
 > was priced out at 8.7 h/solve. Applying it to the cheap surrogate is the
 > principled fix. A "soft shoulder" is a patch on the wrong architecture.
 >
-> **② THE BEST DESIGN — converged, but NOT proven optimal.** `BEST_T9636`
-> (in `best_designs.py`): T 0.96361 / λ 1566.444 / fwhm_env 18.35309 µm /
-> Q_load 2021.6 / Q_i 110 087 / mcorr 357.95 / e 132.6 / wcav 961.1.
-> Converged = L-BFGS-B zero-step, params off their bounds. **But it converged
-> to the optimum of a model now known wrong in two ways** (rank-1 corrugation
-> pricing; 1.87× elongation over-tax for its device class). Do NOT repeat the
-> line "it is converged so there is nothing to do" — that was said in session
-> and is misleading. Still available on it: 0.36 µm of unused width headroom;
-> a comb frozen at a tune fitted for a DIFFERENT device; 189 nm of unexplored
-> cavity width; and a restart under the corrected wall.
+> **② THE BEST DESIGN — and the measurement that decides what to do with it.**
+> `BEST_T9636` (in `best_designs.py`): T 0.96361 / λ 1566.444 / fwhm_env
+> 18.35309 µm / Q_load 2021.6 / Q_i 110 087 / mcorr 357.95 / e 132.6 /
+> wcav 961.1.
+> ★**MEASURED 2026-08-24: campaign 136465 moved its seed by ≤0.26 nm in ANY of
+> the 191 params** (corr 0.059 / avg 0.263 / shift 0.169 / wcav 0.161 nm)
+> against trust radii of 10-12 nm — it used ~2% of its allowed travel.
+> **`BEST_T9636` is therefore `BEST_T9635` + the 42 nm hand retrim, and the
+> gradient method contributed essentially nothing to it.** That is the concrete
+> basis for the user's "this is not a full research way".
+> ★**AND THE WALL IS INACTIVE THERE: penalty 0.0016, |grad| 5.0e-4**, because
+> 18.353 µm sits well inside the 18.713 ceiling. Two consequences, both
+> important, and BOTH were stated wrongly in session before being checked:
+>   - "It is converged so there is nothing to do" — misleading, retracted.
+>   - "Restart it under the corrected wall and it may find more" — ALSO wrong,
+>     retracted. A term that is inactive cannot change the local landscape;
+>     a restart would very likely sit still exactly as 136465 did. Do not
+>     spend a campaign slot on it.
+> What we actually measured is that the optimizer probed and rejected
+> everything, NOT that no better nearby point exists — do not overstate it as
+> a proven local optimum.
+> ★**So the things worth trying on this design are the ones that CHANGE the
+> landscape, not search it harder** (all cheap, all forward-solve only):
+>   1. **Cavity width probe** — wcav 961 → ~1100 (bound 1150), 2 forwards.
+>      189 nm never explored, and it is the most width-efficient lever ever
+>      measured here (rtdec: +0.0409 T for +0.0305 µm). Highest value/cost.
+>   2. **Comb re-tune** — the 57-site comb is FROZEN at a tune fitted for the
+>      uniform seed, but the mode has moved a long way since (mcorr 325→358,
+>      e 0→132.6, wcav 800→961). Worth +0.0040 at its current tune; a small
+>      δx/r/d scan on the CURRENT mode is untested. NOTE: a second comb ROW is
+>      MEASURED DEAD three times — see the correction above.
+>   3. **Spend the 0.36 µm of unused headroom deliberately, then re-optimize
+>      from the new point.** The design stops short of the ceiling. A hand move
+>      (see-saw, or the split test) puts it somewhere the constraint is active,
+>      which is the only regime where the corrected wall does anything.
+>   4. **PRODUCTION CONFIRM** (see "what the user forgot") — the actual
+>      deliverable, and independent of all of the above.
 >
 > **③ LEARN FROM THE DESIGNS ALREADY RUN.** The measured pattern inventory is
 > in §"WHAT WE MEASURED" below and in the plan memory. The two the user singled
