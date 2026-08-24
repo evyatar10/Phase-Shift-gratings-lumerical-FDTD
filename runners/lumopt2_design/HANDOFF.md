@@ -144,14 +144,48 @@
 >     "adjoint" vector in that run was the penalty gradient alone.
 >   - the CPU FieldRegion timings (8.7-12.1 h) WERE real adjoints — dipole
 >     injection is unaffected — so the cost verdict stands.
-> ⇒ **Do not resurrect the 10-14× speed claim; it is void.** The one live
-> thread is the qualifier: the route is dead **at z = 0**. A weighted sheet on
-> a plane where the TM mode HAS tangential field (i.e. off the symmetry plane)
-> is untested and is the only remaining way this becomes affordable.
+> ⇒ **Do not resurrect the 10-14× speed claim; it is void.**
+>
+> ### ★★★RETRY THE GPU WIDTH-ADJOINT — USER PRIORITY 2026-08-24 ("very important")
+> **Do not treat this as closed.** The route failed for ONE specific,
+> understood reason — a source that could not inject at z=0 — not because GPU
+> adjoints are impossible. **The prize is the whole architecture:** a working
+> GPU width-adjoint (~1 h/solve instead of 8.7-12.1) makes the TRUE FWHM
+> gradient affordable in-loop, which replaces the hinge surrogate entirely and
+> is the only thing that can give the user what they have asked for repeatedly
+> — a gradient step that acts on width itself rather than a model of it.
+> **Attack routes, cheapest first:**
+> 1. **Diagnose the FieldRegion CUDA rejection — do this FIRST, it is one
+>    task.** `invalid configuration argument` is a CUDA *kernel-launch* error
+>    (grid/block dimensions out of range), NOT a "GPU can't do this" error.
+>    It is very plausibly SIZE-dependent. Shrink the optimization/field region
+>    (fewer cells, smaller y or z span) and re-launch. If a smaller region
+>    runs, the limitation is a launch-config bound and the fix is to tile or
+>    shrink the region, not to abandon the object.
+> 2. **Import sheet OFF the symmetry plane.** z=0 is tangentially dead BY
+>    PARITY for this TM mode (measured Ex=Ey=0.0 exactly). At z ≠ 0 inside the
+>    core the tangential components are non-zero. CAVEAT that must be handled,
+>    not ignored: the adjoint-source plane must match where the FOM SAMPLES
+>    the field, so moving the sheet means redefining softW to sample there (or
+>    summing a ±z pair). That is a FOM change and needs its own W0/W1 gate.
+> 3. **Two-sheet ±z pair**, summed — keeps the profile centred while giving
+>    each sheet non-zero tangential field to inject through.
+> 4. **Re-test on EVERY Lumerical version bump.** FieldRegion-on-GPU is an
+>    upstream limitation; Ansys may fix it. Add this to the version-bump
+>    checklist alongside the B3 gradient gate.
+> ★**MANDATORY GATE FOR ANY RETRY — this is what caught the fake result:**
+> a plausible RUNTIME IS NOT EVIDENCE OF A WORKING ADJOINT. Before believing
+> any timing, open the adjoint's output h5 and confirm the monitor fields are
+> NON-ZERO. The 52-minute "success" had every field EXACTLY 0.0 and matched
+> the forward's runtime precisely because an empty scene still integrates the
+> full simulation time. Then, and only then, run the FD gate — `ADJ_FIX_FIELD`
+> has never been fitted, so even a genuinely injecting adjoint is uncalibrated
+> until it passes.
 > KEEP-FOREVER byproduct of that failure: job 136189's FD half is genuine
 > first-of-its-kind data — MEASURED d(softW)/dp at detune-1 =
 > [−0.00365 corr_1, +0.01825 shift_1, +0.02026 wcav]. FD is
-> config-independent, so it is valid for any future gate.
+> config-independent, so it is valid for any future gate — including as the
+> reference the retry must reproduce.
 >
 > ### ★MESHER METHODOLOGY — USER RULE 2026-08-24. Binding.
 > "It is okay to use PVA if it is the only one that is differentiable, **as
