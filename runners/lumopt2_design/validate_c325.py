@@ -36,7 +36,7 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 
 SPEC = eng.CampaignSpec(label="lumopt2_val_c325")
-N_TASKS = 27         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
+N_TASKS = 46         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
                      # gradient-fix experiment matrix (all B3-style, point 1
                      # unless noted, gates = per-class α vs FD):
                      # 4=α-stability point 2 | 5=co-location (option 3)
@@ -60,6 +60,10 @@ N_TASKS = 27         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
                      #    (the old staircase verdict was measured at the
                      #    MISALIGNED 50nm grid; sane tooth alpha here => v2.1
                      #    campaigns can run in the production convention)
+                     # ── route-1 GPU FieldRegion size ladder (2026-08-24,
+                     #    PRIORITY ZERO, HANDOFF "RETRY THE GPU WIDTH-ADJOINT"):
+                     #    27-32 = _GFR_RUNGS below (27 control reproduces the
+                     #    CUDA error; 28-31 shrink the region; 32 thin-3D)
 
 # ── V2 anchors — MEASURED by W2 (job 135971 task 10, 2026-08-21): the
 # seed-comb device at the v2 window, through the full v2 stack.
@@ -287,6 +291,94 @@ def gate_b1(workdir=None):
     verdict = seed_ok and width_ok and shift_ok
     print(f"== B1 {'PASS' if verdict else 'FAIL'} ==")
     return verdict
+
+
+# ── route-1 GPU FieldRegion size ladder (tasks 27-32, 2026-08-24) ────────────
+# Diagnoses the CUDA "invalid configuration argument" that kills the FieldRegion
+# width-adjoint on GPU (job 136026, 3/3 tasks). That is cudaErrorInvalidConfig-
+# uration = kernel block/grid dims out of range — characteristically a SIZE
+# problem. The FieldRegion twin copies field_profile's spans (nearly the whole
+# grating). If a smaller region launches, the production fix is tiling, not
+# abandoning the object. Rung 32 keeps full spans but makes the region 3D
+# (a few z cells) to test the singleton-dimension hypothesis instead.
+# ★Rungs 31/32 may die in PYTHON (softW envelope on a tiny window; 3D array
+# shapes in _line_from_res) BEFORE the adjoint launches — a Python traceback is
+# an INCONCLUSIVE rung, only a CUDA error / a running solve is a verdict.
+# ★A running solve is NOT success either: h5-gate the adjoint output for
+# non-zero fields first (the 52-min all-zero fake is the precedent), then the
+# FD gate vs the stored 136189 vector [-0.00365, +0.01825, +0.02026].
+# Dispatch (short lane, ~1 seat/task):
+#   SBATCH_MEM=160G LUMOPT2_TIME=04:00:00 bash athena/deploy_athena.sh \
+#       --lumopt2-design=runners.lumopt2_design.validate_c325 --array-tasks=27-32
+
+_GFR_RUNGS = {
+    27: dict(tag="full"),                            # control — must reproduce
+    28: dict(tag="yhalf", scale_y=0.5),
+    29: dict(tag="xhalf", scale_x=0.5),
+    30: dict(tag="quart", scale_x=0.25, scale_y=0.25),
+    31: dict(tag="patch", x_span_um=6.0, y_span_um=0.8),
+    32: dict(tag="thin3d", z_span_um=0.16),          # ~3 dz cells, 3D region
+    33: dict(tag="small3d", scale_x=0.25, scale_y=0.5, z_span_um=0.16),
+    # ── MEASURED 2026-08-24: every PASS has x=528, every FAIL has x=2112,
+    #    regardless of y, z or total cells (33 passed at 22,176 cells while
+    #    28 failed at 29,568). 34 is the decisive test: x stays 528 but the
+    #    cell count goes to 45,936 — ABOVE every failure so far.
+    #    PASS ⇒ the bound is on X ALONE ⇒ tile in x only.
+    #    FAIL ⇒ it is a total-cell budget ⇒ tile in both axes.
+    34: dict(tag="xnarrow_big", scale_x=0.25, scale_y=1.0, z_span_um=0.16),
+    # ── MEASURED 2026-08-24 23:19: PERFECT separation on x alone —
+    #    x=528 PASS (3/3, cells 3,696-45,936) | x>=1056 FAIL (4/4, cells
+    #    29,568-183,744). The cell ranges OVERLAP, so cells is not the
+    #    variable; x is. ★MECHANISM HYPOTHESIS: CUDA's hard limit is 1024
+    #    threads per block, and the plugin carries the string "Total threads
+    #    per block %u exceeds device limit of %d" — 528 <= 1024 passes,
+    #    1056 > 1024 fails. 35/36 bracket it WITHOUT sitting on the exact
+    #    boundary (mesh snapping could tip a 1024-cell rung either way):
+    35: dict(tag="x1000", x_span_um=50.0),    # 1000 cells — safely under
+    36: dict(tag="x1080", x_span_um=54.0),    # 1080 cells — safely over
+}
+# 35 PASS + 36 FAIL ⇒ threshold in (1000, 1080), consistent with 1024 ⇒ a
+# 704-cell tile (3 tiles across the 2112-cell region) is safe with margin.
+# ★32 and 33 are the HIGH-VALUE PAIR after the 2026-08-24 binary/doc finding
+# (HANDOFF "ZERO-DIMENSION"): 32 = 3D at FULL size, 33 = 3D at quarter x.
+# 32 launches ⇒ z span 0 was the whole bug and no tiling is needed.
+# 32 dies "exceeds device limit" but 33 launches ⇒ dimension AND size both
+# bite ⇒ tiling. Both die ⇒ 3D is not the cure, fall back to routes 2/3.
+
+
+def _shrink_twin(tag, scale_x=1.0, scale_y=1.0, x_span_um=None, y_span_um=None,
+                 z_span_um=None):
+    """Wrap eng.build_base_fsp so the saved scene's field_profile_adj (monitor
+    AND adjoint source — addfieldregion is both) is resized before any run.
+    Scene-local: the engine and the running campaigns are untouched."""
+    orig = eng.build_base_fsp
+
+    def wrapped(spec, out_path):
+        wl = orig(spec, out_path)
+        sys.path.insert(0, os.path.dirname(config.LUMAPI_PATH))
+        import lumapi
+        with lumapi.FDTD(filename=out_path, hide=True) as f:
+            xs = float(np.squeeze(f.getnamed("field_profile_adj", "x span")))
+            ys = float(np.squeeze(f.getnamed("field_profile_adj", "y span")))
+            xs = x_span_um * 1e-6 if x_span_um else xs * scale_x
+            ys = y_span_um * 1e-6 if y_span_um else ys * scale_y
+            f.setnamed("field_profile_adj", "x span", xs)
+            f.setnamed("field_profile_adj", "y span", ys)
+            zs = 0.0
+            if z_span_um:
+                f.setnamed("field_profile_adj", "monitor type", "3D")
+                zs = z_span_um * 1e-6
+                f.setnamed("field_profile_adj", "z span", zs)
+            dx = spec.region_dx_nm * 1e-9
+            print(f"[gfr] rung={tag} x_span={xs * 1e6:.3f}um "
+                  f"y_span={ys * 1e6:.3f}um z_span={zs * 1e6:.3f}um "
+                  f"~cells {xs / dx:.0f} x {ys / dx:.0f}"
+                  f"{f' x {max(zs / dx, 1):.0f}' if z_span_um else ''}",
+                  flush=True)
+            f.save()
+        return wl
+
+    eng.build_base_fsp = wrapped
 
 
 # ═══ cluster tasks ═══════════════════════════════════════════════════════════
@@ -654,6 +746,303 @@ def main(task_idx):
               f"FWHM {row.get('fwhm_env_um')} — subtract from campaign 136465 "
               f"iteration 0 (same design, comb ON) for the comb's value at the "
               f"benchmark width; comb value at 17.853 was +0.0030")
+    elif task_idx in _GFR_RUNGS:
+        # route-1 ladder (header comment above _GFR_RUNGS): FieldRegion path
+        # (wg_source default), GPU lane, adjoint-only. 151 λ points = the
+        # memory-safe grid proven by the 136189 lane; region mesh stays the
+        # task-19/20 default (50 nm) so rung 27 reproduces the failing config.
+        rung = dict(_GFR_RUNGS[task_idx])
+        tag = rung.pop("tag")
+        _shrink_twin(tag, **rung)
+        indices = [0, eng.SL_SHIFT.start, eng.I_CAV]
+        print(f"[gfr] rung={tag}: verdicts — 'invalid configuration argument' "
+              f"= CUDA launch REJECTED at this size; a real solve time = "
+              f"LAUNCHED (then h5-gate + compare signs vs FD "
+              f"[-0.00365, +0.01825, +0.02026]); Python traceback before the "
+              f"adjoint = rung INCONCLUSIVE", flush=True)
+        eng.run_adjoint_only(_w_spec(f"_gfr_{tag}", wg_pure=True,
+                                     wg_source="fieldregion",
+                                     wg_adj_resource="GPU",
+                                     n_wl_points=151),
+                             out_dir, indices)
+        print(f"[gfr] rung={tag} adjoint RAN TO COMPLETION — now the h5 gate "
+              f"(non-zero fields) before believing it", flush=True)
+    elif task_idx == 37:
+        # ★★★THE PRODUCTION WIDTH GRADIENT — full-size region, adjoint source
+        # split into 4 x-tiles (2112/4 = 528 cells exactly = the highest
+        # MEASURED-PASS width), all injected in ONE adjoint run on GPU.
+        # Sources superpose linearly ⇒ this is the exact full-region gradient,
+        # not an approximation, at the cost of one adjoint.
+        # READ IN THIS ORDER: (1) the `[wg-tiles]` line — per-tile max|src|,
+        # the dead-tile detector; (2) the printed vector's SIGNS vs the
+        # keep-forever FD [-0.00365 corr_1, +0.01825 shift_1, +0.02026 wcav];
+        # (3) only then fit C_field (fit_c_field.py) — and fit it HERE, at the
+        # production tiling, never on a cropped rung (rung 30 vs 34 gave
+        # ratios 0.40 vs 1.5 from the crop alone).
+        # PREREQUISITE: gpu_probe task 1 (tiling identity) must have PASSED.
+        indices = [0, eng.SL_SHIFT.start, eng.I_CAV]
+        eng.run_adjoint_only(_w_spec("_wgtiled", wg_pure=True,
+                                     wg_source="fieldregion",
+                                     wg_adj_resource="GPU",
+                                     wg_src_tiles=4,
+                                     n_wl_points=151),
+                             out_dir, indices)
+    elif task_idx == 45:
+        # ★★★FD AT THE PRODUCTION NUMERICS — the missing reference (2026-08-25).
+        # WHY: C_field is MESH- AND λ-SPECIFIC (engine note :184 "C is
+        # mesh/device-specific — recalibrate for a new device"). The
+        # keep-forever FD [-0.00365,+0.01825,+0.02026] was measured at
+        # region_dx 50.0 and the DEFAULT scan centre (1564.21); the campaign
+        # runs pitch-locked 51.683 at centre 1564.614. Those centres are
+        # 0.404 nm = 0.55 LINEWIDTHS apart, so the twin samples softW at a
+        # different λ ⇒ a DIFFERENT FUNCTIONAL. Fitting the production adjoint
+        # against the old FD gave phi -16°→-65°, vector residual 0.001→0.013
+        # and corr_1 +9.6% — the fit absorbing a physics mismatch, not
+        # calibrating a constant.
+        # ★NOT the cause (checked, and my first hypothesis was WRONG):
+        # `wg_track_resonance` does nothing here — `_wg_lam_track` is advanced
+        # ONLY by the campaign log callback (:1501), which adjoint-only and
+        # validate runs never invoke, so the twin falls back to
+        # `scan_center_nm` (:562-568) in BOTH fits.
+        # THIS RUN gives FD_prod AND Re_prod together (validate_gradient prints
+        # both); Im_prod is already measured (task 43). Then refit.
+        # COST: central differences, 3 indices = 6 legs + fwd + adj ~ 8 solves
+        # ~ 7-8 h ⇒ needs LUMOPT2_QOS=12h_4g LUMOPT2_TIME=12:00:00.
+        import dataclasses
+        from runners.lumopt2_design.campaign_v2_proj import SPEC as PSPEC
+        spec = dataclasses.replace(
+            PSPEC, n_wl_points=151, wg_pure=True, wg_project=False,
+            free_comb=True, label=SPEC.label + "_cfit_fd")
+        indices = [0, eng.SL_SHIFT.start, eng.I_CAV]
+        eng.run_validate_gradient(spec, out_dir, indices, perturbation=4.0)
+        print("[cfit FD] FD FIRST in the printout. Paste FD + this run's "
+              "adjoint (Re) + task 43's Im into fit_c_field.py — ALL THREE now "
+              "at the SAME numerics, which the previous fit was not.")
+    elif task_idx == 44:
+        # ★★BEST DESIGN, LEVER 1: THE CAVITY-WIDTH HEADROOM (handoff item ②-1).
+        # `wcav` is the cavity's TRANSVERSE (y) width; fwhm_env measures energy
+        # along x, so confinement improves almost FREE in the metric. MEASURED
+        # (rtdec task0 vs task1): +0.0409 T for +0.0305 um of x-width ~ 1.3
+        # T/um — 50-60x the see-saw's 0.021 — BUT those rows were dx=50 and
+        # their dW sat under the +-3.9% sampling error, so the slope is a
+        # CANDIDATE, not a result (§2).
+        # BEST_T9636 sits at wcav 961.1 with the bound at 1150 ⇒ 189 nm never
+        # explored. This is ONE forward: the wcav-961 control is the STORED
+        # 136465 eval-12 row (T 0.96361 / W 18.35309), already at the SAME
+        # pitch-locked numerics, so §6 forbids re-running it.
+        # Needs NO width gradient — independent of the whole projection stack.
+        import dataclasses
+        from runners.lumopt2_design.best_designs import BEST_T9636
+        spec = dataclasses.replace(
+            SPEC, label=SPEC.label + "_wcav1100",
+            scan_width_nm=10.0, n_wl_points=501,
+            region_dx_nm=eng.DX_PITCHLOCK_NM, scan_center_nm=1566.444,
+            free_comb=False, rho_band=False)
+        p = np.asarray(BEST_T9636, dtype=float).copy()
+        p[eng.I_CAV] = 1100.0
+        _b = np.asarray(eng.param_bounds(spec), dtype=float)
+        p = np.clip(p, _b[:, 0], _b[:, 1])
+        spec.seed_override = tuple(eng.replay_params(spec, p))
+        row = eng.run_canary(spec, out_dir)
+        t, w = row.get("t_pk"), row.get("fwhm_env_um")
+        print(f"[wcav1100] T {t} | lam {row.get('lam_pk_nm')} | FWHM {w} | "
+              f"Q_i {row.get('q_i')}")
+        if t and w:
+            print(f"  vs STORED BEST_T9636 (wcav 961.1): T 0.96361 W 18.35309 "
+                  f"-> dT {t-0.96361:+.5f} over dW {w-18.35309:+.4f} um")
+            print(f"  T per um = {(t-0.96361)/(w-18.35309):+.4f}" if abs(w-18.35309) > 1e-6
+                  else "  width unchanged -> the lever is FREE in the metric")
+    elif task_idx in (42, 43):
+        # ★★★C_field RE-FIT AT THE PRODUCTION NUMERICS (audit B3, 2026-08-25).
+        # The passing fit (C = 0.4554 + 0.1336i) came from tasks 37/40, which
+        # ran `_w_spec` — i.e. region_dx_nm at the 50.0 DEFAULT and the default
+        # scan centre. The CAMPAIGN runs the pitch-locked mesh
+        # (DX_PITCHLOCK_NM = 51.683) at centre 1564.614 with resonance
+        # tracking ON. Mesh ALIGNMENT is not a detail here: job 132637 measured
+        # tooth-gradient scales moving 10-30x between mesh conventions, and
+        # V2_FWHM_PLAN §24 explicitly rules a 50-nm-mesh C "NOT for production".
+        # 42 = Re (C=(1,0)), 43 = Im (C=(0,1)); refit with fit_c_field.py.
+        # ★The FD reference stays the keep-forever [-0.00365, +0.01825,
+        # +0.02026] — it is config-independent (a finite difference of the
+        # SAME functional), which is what makes this re-fit meaningful.
+        import dataclasses
+        from runners.lumopt2_design.campaign_v2_proj import SPEC as PSPEC
+        quad = (task_idx == 43)
+        # ★free_comb=True is REQUIRED here (measured: 137017 both tasks died in
+        # 60 s, "Parameter 103 value 100.0 is outside bounds [79.999, 80.001]").
+        # run_adjoint_only's detune=1 point DETUNES THE COMB (centre post
+        # r 80->100, x +50, d 1750), and that is the operating point the
+        # keep-forever FD was measured at — so the fit MUST sit there. With the
+        # campaign's free_comb=False the comb bounds collapse and the seed is
+        # rejected. Freeing the comb changes only the BOUNDS, not the geometry
+        # at this explicitly-set point, and none of the three fitted indices
+        # (corr_1, shift_1, wcav) is a comb parameter.
+        spec = dataclasses.replace(
+            PSPEC, n_wl_points=151, wg_pure=True, wg_project=False,
+            free_comb=True,
+            label=SPEC.label + ("_cfit_im" if quad else "_cfit_re"),
+            adj_fix_field_re=(0.0 if quad else 1.0),
+            adj_fix_field_im=(1.0 if quad else 0.0))
+        indices = [0, eng.SL_SHIFT.start, eng.I_CAV]
+        eng.run_adjoint_only(spec, out_dir, indices)
+        print(f"[cfit {'Im' if quad else 'Re'}] production numerics: dx "
+              f"{spec.region_dx_nm} nm, centre {spec.scan_center_nm}, tiles "
+              f"{spec.wg_src_tiles}, track_res {spec.wg_track_resonance} — "
+              f"paste into fit_c_field.py with the SAME FD and refit")
+    elif task_idx == 41:
+        # ★★★DOES THE FIXED GRADIENT ACTUALLY HELP? (user question 2026-08-25)
+        # A SHORT projected campaign from the SAME uniform seed as 136753, so
+        # the comparison is like-for-like. Two jobs in one:
+        #   (a) the END-TO-END SMOKE of run_projected through the real wrapper
+        #       stack — resume, guards, logging, completion path (item 23: the
+        #       code that runs once is the least-tested code you own);
+        #   (b) THE MEASUREMENT. Baseline 136753 (MEASURED, 5 evals / 5.85 h):
+        #       W 18.409 -> 18.456 -> 18.508 -> 18.827, i.e. width EXPANDS
+        #       every iteration, 1 of 5 evals rejected out-of-band, and
+        #       +0.0016 T per hour.
+        #   PASS = width stays within +-0.05 um (margin/2) of the 18.613
+        #   target on EVERY accepted iterate, and NO eval is rejected for
+        #   width. Read <label>_proj.jsonl: phase / lam / dw_pred vs the
+        #   measured W in the evals jsonl — dw_pred vs actual dW is the
+        #   direct test of whether the gradient's width prediction is true.
+        import dataclasses
+        from runners.lumopt2_design.campaign_v2_proj import SPEC as PSPEC
+        # ★LANE: 4 iterates x ~2.7 h (3 solves each) = ~11 h, so this must be
+        # dispatched with LUMOPT2_QOS=12h_4g LUMOPT2_TIME=12:00:00
+        # SBATCH_MEM=300G — NOT the 4 h lane the other gates use (DERIVED
+        # 2026-08-25; the 4 h lane would kill it after ~1 iterate).
+        # ★max_iter 4 → 3 (2026-08-25): this run's job is to VALIDATE the
+        # wg_lam_chain fix, and that verdict lands in 1-2 stepped iterates
+        # (it0 = seed, so 3 iterates gives TWO ΔW values to compare against the
+        # uncorrected toy's +0.0110 / +0.0122 µm). The λ-chain adds two CPU
+        # assembly passes per iterate (~+15 min), so 4 would crowd the 12 h lane.
+        # ★LABEL CHANGED 2026-08-26: `lumopt2_v2_proj_toy` is the label the
+        # UNCORRECTED control (137075_41) already wrote under, and
+        # `run_campaign` cold-start-resumes via `_best_from_log`, which reads
+        # `<out_dir>/<label>_evals.jsonl`. Reusing the label would silently
+        # START THE CORRECTED RUN AT THE CONTROL'S BEST POINT (fom 0.669780,
+        # W 18.3684) instead of the uniform seed — destroying the very
+        # comparison this run exists to make, and burning ~8 GPU-h to do it.
+        # (Jobs 137267/137296 carried this flaw; neither reached an iterate.)
+        # A fresh label has no log ⇒ genuine cold start from the seed.
+        spec = dataclasses.replace(PSPEC, label="lumopt2_v2_projchain_toy",
+                                   max_iter=3, max_feval=6)
+        spec.adj_fix_field_re, spec.adj_fix_field_im = (0.4554, +0.1336)
+        best = eng.run_campaign(spec, out_dir)
+        print(f"[proj-toy] completed: best_fom {best['fom']:.5f} — now compare "
+              f"the width trajectory against 136753's 18.409->18.827")
+    elif task_idx == 40:
+        # ★THE QUADRATURE PARTNER of task 37 — same point, same TILED config,
+        # C_field = (0, 1) so the printed vector is Im{Z}. fit_c_field.py needs
+        # three vectors: FD (the keep-forever [-0.00365, +0.01825, +0.02026]),
+        # Re (task 37's), and THIS. Only then is C_field fitted AT the
+        # production tiling, which is the only place it is meaningful.
+        # Dispatch AFTER task 37 passes — if 37 is rejected this is wasted.
+        indices = [0, eng.SL_SHIFT.start, eng.I_CAV]
+        eng.run_adjoint_only(_w_spec("_wgtiledquad", wg_pure=True,
+                                     wg_source="fieldregion",
+                                     wg_adj_resource="GPU",
+                                     wg_src_tiles=4,
+                                     n_wl_points=151,
+                                     adj_fix_field_re=0.0,
+                                     adj_fix_field_im=1.0),
+                             out_dir, indices)
+    elif task_idx in (38, 39):
+        # ★★P2 / P3 — the KNOWN-ANSWER sign gates for the projected method.
+        # Each is ONE gradient evaluation whose PROJECTED DIRECTION must show a
+        # sign pattern the programme has already MEASURED physically. Together
+        # they falsify (or confirm) the whole formulation for ~2 evals, before
+        # any campaign is dispatched. Magnitudes are NOT gated here — C_field
+        # only rescales, it cannot flip a sign — so these run BEFORE the fit.
+        #   38 = P2 free-shift: at the UNIFORM seed, shifts below the e=65 knee
+        #        are MEASURED width-free, so projection should barely touch
+        #        them ⇒ the shift block must come out strongly POSITIVE.
+        #        PASS: >0 on >=20 of 25 teeth.
+        #   39 = P3 see-saw: at CEILING CONTACT the corrugation block must show
+        #        the inner/outer SIGN SPLIT (inner one way, outer the other),
+        #        matching the measured ~11x inner/outer width-price ratio.
+        #        PASS: split matches on >=20 of 25 teeth after grouping.
+        import dataclasses
+        from runners.lumopt2_design.campaign_v2_proj import (
+            SPEC as PSPEC, W_TARGET_UM)
+        # ★n_wl_points 501 -> 151 (MEASURED: job 137012 OOM-killed, exit 137,
+        # at "Computing gradient fields"). wg_project runs the field assembly
+        # TWICE, so two full (nx,ny,nz,3,n_wl) arrays are live at once on top
+        # of lumopt2's per-entry fwd+adj arrays; at 501 lambda that is ~21 GB
+        # EACH and blows 160 G. At 151 the same stack is ~32 GB total.
+        # Safe for THIS gate because it checks SIGNS of the projected
+        # direction, and spectral sampling cannot flip a gradient's sign.
+        # (The CAMPAIGN keeps 501 and must be dispatched at 300 G.)
+        # ★WINDOW + SAMPLING (fixed 2026-08-25 after the user asked whether the
+        # spectrum is resolved). 151 pts over 10 nm = 66 pm = only ~11 points
+        # across the 0.73 nm resonance ⇒ a ragged peak. NARROW the band instead
+        # of adding points: 5 nm at 251 pts = 20 pm = ~36 points across the
+        # FWHM — the SAME resolution as the campaign's 501/10 nm at half the
+        # memory (the double field assembly is what OOM-killed 137012).
+        # WIN_FWHM_MULT = 2.5 ⇒ the softmax window is ±1.825 nm, still inside
+        # ±2.5 nm, so the FOM window is NOT clipped.
+        # ★AND CENTRE ON THE RIGHT RESONANCE: the softW twin records AT THE
+        # SCAN CENTRE. P3 seeds from BEST_T9636 (λ 1566.444), so inheriting the
+        # uniform campaign's 1564.614 would sample 2.51 LINEWIDTHS off
+        # resonance — a §22 violation that would silently measure the wrong
+        # width. Lowering inner-8 by 30 nm moves λ by ~-0.035 nm (DERIVED at
+        # 0.0036 nm per nm of mean corr) ⇒ 1566.409.
+        centre = 1564.614 if task_idx == 38 else 1566.409
+        spec = dataclasses.replace(PSPEC, n_wl_points=251, scan_width_nm=5.0,
+                                   scan_center_nm=centre,
+                                   label=SPEC.label +
+                                   ("_p2shift" if task_idx == 38 else "_p3seesaw"))
+        p = eng.seed_params(spec)
+        if task_idx == 39:
+            # put the design AT the ceiling: spend width via the measured
+            # inner-lower lever so the constraint is active (P3 only bites in
+            # PHASE B — at the uniform seed the method is still climbing).
+            from runners.lumopt2_design.best_designs import BEST_T9636
+            p = np.asarray(BEST_T9636, dtype=float).copy()
+            # inner-8 down = widen toward the ceiling. SL_CORR is a SLICE, not
+            # a sequence — index it by its own start (measured: 137011 task 39
+            # died in 1 s on `SL_CORR[:8]`, 'slice' object is not subscriptable)
+            i0 = eng.SL_CORR.start
+            p[i0:i0 + 8] -= 30.0
+        # ★CLAMP to the spec's own bounds before seeding. BEST_T9636 stores the
+        # comb at r = 80.1386, but this spec freezes the comb (free_comb=False
+        # ⇒ bounds 80.000 ± 0.001), and lumopt2 rejects an out-of-bounds seed
+        # outright (measured, 137013: "Parameter 75 value 80.138566 is outside
+        # bounds [79.999, 80.001]"). The clamp moves the comb by 0.14 nm —
+        # sub-nm, i.e. inside the "comb unchanged" drift already measured.
+        _b = np.asarray(eng.param_bounds(spec), dtype=float)
+        p = np.clip(p, _b[:, 0], _b[:, 1])
+        spec.seed_override = tuple(eng.replay_params(spec, p))
+        lmpt = eng.import_lumopt2()
+        project, _ = eng.make_project(spec, out_dir, lmpt)
+        gT = np.asarray(project.compute_gradient(p), dtype=float)
+        gW = np.asarray(project.parametrization.compute_gradient_from_fields(
+            project.fom.gfields_W, project.fdtd_session, p), dtype=float)
+        b = np.asarray(eng.param_bounds(spec), dtype=float)
+        D = ((b[:, 1] - b[:, 0]) / 2.0) ** 2
+        # ★NO jsonl dependency: this task calls compute_gradient directly, so no
+        # eval row exists and `_row_of_params` would silently fall back to
+        # W = target — i.e. it would quietly test the RIDE phase whatever the
+        # true width. Evaluate BOTH phases explicitly instead; it is pure math
+        # on the same two gradients, so it costs nothing.
+        tag = f"P{2 if task_idx == 38 else 3}"
+        print(f"[{tag}] |gT|={np.linalg.norm(gT):.4g} |gW|={np.linalg.norm(gW):.4g}"
+              f"  (target {W_TARGET_UM:.4f} um)")
+        for wname, W in (("climb", W_TARGET_UM - 0.50), ("ride", W_TARGET_UM)):
+            step, phase, lam = eng._proj_step(gT, gW, D, W, W_TARGET_UM,
+                                              spec.wgp_margin_um, spec.wgp_step,
+                                              spec.wgp_step_max_nm)
+            nrm = np.linalg.norm(gW) * np.linalg.norm(step)
+            orth = abs(float(gW @ step)) / nrm if nrm else float("nan")
+            sh, corr = step[eng.SL_SHIFT], step[eng.SL_CORR]
+            print(f"  [{wname}] W={W:.4f} phase={phase} lam={lam:.4g} "
+                  f"orth={orth:.3e}")
+            print(f"     shift block >0 on {int((sh > 0).sum())}/25   "
+                  f"(P2 PASS >= 20)")
+            print(f"     corr inner-8 mean {corr[:8].mean():+.4g} | outer-17 "
+                  f"mean {corr[8:].mean():+.4g} | opposite = "
+                  f"{bool(corr[:8].mean() * corr[8:].mean() < 0)}   (P3 PASS)")
+            print(f"     corr signs: {np.sign(corr).astype(int).tolist()}")
     else:
         raise ValueError(f"no validation task {task_idx}")
 

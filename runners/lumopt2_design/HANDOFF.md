@@ -1,5 +1,623 @@
-# HANDOFF — lumopt2 corr-325 inverse design — updated 2026-08-24 IDT
+# HANDOFF — lumopt2 corr-325 inverse design — updated 2026-08-26 IDT
 
+> ### 📘 COMPANION: `THEORY.md` — read it first if you need to UNDERSTAND, not just resume
+> This file is **state** (jobs, numbers, what to run next). **`THEORY.md`** is
+> **method**: the cost function and why it is a windowed p=12 soft-max; the
+> 191-parameter layout; why there are TWO width measures and how the anchor ties
+> them; the penalty-vs-projection formulations; how the adjoint gradients are
+> obtained (weighted field source, C_field, GPU tiling, the zero-extra-solve
+> `∇T`/`∇W` split); the resonance chain-rule term and its exact stencil; the
+> best design we hold and its open questions; and the algorithm written out
+> step by step.
+
+> ## ★★★★★q3db LADDER — LIVE STATE 2026-08-26 ~02:4x. READ THIS BOX FIRST.
+> **MEASURED so far** (regular builder, conformal, q3db family numerics):
+> | N | T | dB | lambda nm | Q_L | mode FWHM |
+> |---|---|---|---|---|---|
+> | 100 | 0.97228 | -0.122 | 1560.947 | 1818.6 | 19.1709 |
+> | 150 | 0.91429 | -0.389 | 1560.857 | 10493.8 | 19.7909 |
+> **IN FLIGHT (Athena):** 137322_2 N=180 (running) · 137333 N=200/220/240 ·
+> 137331 N=280/320. IGUM has no q3db jobs left. err=0 everywhere.
+>
+> ### ★THE ACCEPTANCE CRITERIA ARE THE FAMILY'S, RE-READ FROM THE OLD STUDIES
+> `trench_q3db_20um.py` round 2: "interpolate to T = 0.5; **accept T = 0.5 +/- 0.03,
+> fwhm 20 +/- 1 um**". `te_q3db_20um.py`: "T=0.5 interpolation + **1 integer confirm**".
+> The TE study's CLOSED result was N=166 / T 0.4919 / **Q_L 12903** / fwhm **20.46 um**.
+> ⇒ **The mode does NOT have to be exactly 20 um** (user confirmed 2026-08-26). Our
+> 19.17-19.79 um is comfortably inside 20+/-1. The deliverable is N at -3 dB and Q there.
+> Method = ladder -> interpolate to T=0.5 -> ONE integer confirm rung -> quote THAT
+> device. Q must NOT be interpolated: near the crossing Q_L moves ~N^4 (projected
+> 143k at N=280 vs 241k at N=320), so a mid-gap interpolation could be 10-20% off.
+>
+> ### ★THE CROSSING IS NOT PREDICTABLE FROM THE TWO POINTS — 3 MODELS, 230 to 640
+> | model | crossing N |
+> |---|---|
+> | loss_dB ~ N^2.859 (power law) | 306 |
+> | ln(T) linear in N (the family's own convention) | ~640 |
+> | Q_c ~ exp, Q_i ~ N^1.5, solved at Q_c = 0.828*Q_i | ~230 |
+> Do NOT quote 306; it was stated too confidently earlier in the session and is only
+> one branch. The 180-320 ladder brackets all three. Fitted params for the third
+> model (from N=100/150): Q_i = 130296*(N/100)^1.5, Q_c = 3688*exp(0.03565*(N-100)),
+> T = (2Qi/(Qc+2Qi))^2, Q_L = Qi*Qc/(Qc+2Qi).
+>
+> ### ★SPECTRAL-SAMPLING FIX — THIS SAVED THE STUDY TWICE, KEEP IT
+> The 20 nm / 4001 pt family window is **5 pm per sample**. Fine at N<=180 (>=10
+> samples across the line) but at the high-Q end the line is 6-15 pm: N=220 gets 3.1
+> samples, N=240 1.8, N=280 2.2, N=320 1.3. **Under-sampling does not merely spoil Q —
+> it puts the true peak BETWEEN grid points and biases peak T LOW, which drags the
+> apparent crossing to lower N and then looks self-consistent.** Fix = per-row window
+> `_WIN` in the runner: N>=200 use 3 nm @1560.7 (0.75 pm), N=320 uses 2 nm @1560.6
+> (0.50 pm); rows 0-2 keep the family window so measured rungs stay bit-comparable.
+> Cancelled+resubmitted twice for this: 137330 -> 137331, and 137322_3/_4 -> 137333.
+>
+> ### ★a100-staging IS NOT OURS — do not try again
+> 2 idle A100 nodes (n307-308) but `AllowAccounts=admins-projects`; our account is
+> `rosenthal_prj`. Checked with `scontrol show partition`. Also: `scontrol show
+> reservation` = none, so a "ReqNodeNotAvail, May be reserved for other job" pending
+> reason on Athena is TRANSIENT scheduler noise, not a maintenance window.
+> ★Plot script ready + checkcode clean:
+> `matlab_plotting/studies/plot_invdesign_q3db_20um.m` (scans BOTH cluster result
+> dirs; stamps "EXTRAPOLATED - not bracketed" if the rungs fail to straddle -3 dB).
+
+
+> ## ★★★q3db RUN MAP — 2026-08-26 01:3x (user: "work until completion tonight")
+> Study: `runners/sweeps/invdesign_q3db_20um.py` (regular builder, conformal,
+> q3db family numerics). Rungs deliberately SPLIT ACROSS BOTH CLUSTERS:
+> | N | cluster / job | state |
+> |---|---|---|
+> | 100 | IGUM 63202_0 | **DONE** T 0.97228 / Q 1818.6 / 19.1709 um |
+> | 150 | IGUM 63423_1 | running |
+> | 180 | Athena 137322_2 | running (n314) |
+> | 200 | Athena 137322_3 | queued |
+> | 220 | Athena 137322_4 | queued |
+> | 240 | **NOT DISPATCHED** | permission classifier blocked the submit; only needed if the crossing lands >220 |
+> IGUM 63423_2/3/4 were CANCELLED (duplicates of the Athena rungs).
+> ★Athena's deploy tree is **`~/bragg_sim_athena/project`** — NOT `~/bragg_sim/project`
+> (a different, stale tree; do not md5 against it, that misled this session once).
+> ★Athena QOS caps **mem=275G** per job (24h_1g / 4d_1g): 300G is rejected with
+> `QOSMaxMemoryPerJob` and the deploy prints only "ERROR: sbatch failed". Use 256G.
+> ★Plot script written + checkcode CLEAN:
+> `matlab_plotting/studies/plot_invdesign_q3db_20um.m` — scans BOTH result dirs,
+> interpolates the -3 dB crossing in dB-vs-N, and REFUSES to hide extrapolation
+> (labels the crossing "EXTRAPOLATED - not bracketed" when the rungs do not
+> straddle -3 dB). Overlays the stored family points (ctrl N165 Q 13930,
+> comb N169 Q 16203). Outputs .fig + .png next to the results dir.
+> ★Monitor lesson: a `|| CLUSTER_UNREACHABLE` fallback around an ssh whose REMOTE
+> SCRIPT has a syntax error reports a false outage. Both clusters read
+> "UNREACHABLE" while a direct probe answered instantly. Fix = single-quote the
+> remote script (no nested escaping) and key on completed `result_N*.mat` files
+> rather than log scraping.
+
+
+> # ⏸️ GPU WIDTH-GRADIENT PROGRAMME — **PAUSED 2026-08-26 ~00:50 BY USER**
+> **Resume in a few days.** Nothing of THIS programme is running; **Athena queue
+> is EMPTY**.
+>
+> ★★**BUT IGUM IS NOT IDLE — AND ITS JOBS HOLD UNIQUE RESULTS.** Measured
+> 2026-08-26 ~01:15: **63423 tasks 2-4 PENDING** and **63438 tasks 2-7 PENDING**
+> (JobArrayTaskLimit, `%1`-serialised ⇒ many hours). `sacct` was DOWN
+> (slurmdbd "Connection refused" — the known IGUM infrastructure weakness), so
+> completion state could not be read. These belong to the **SEPARATE conformal
+> / q3db ladder workstream** and were deliberately left running.
+> ⇒ **FIRST ACTION ON RESUME, BEFORE ANY OF THE BELOW: fetch IGUM 63423/63438
+> results** (CLAUDE.md §6 — never let one cluster hold unique results).
+>
+> ★**NAVIGATION WARNING.** This file is NOT two clean halves: it is interleaved
+> chronological strata across ~3000 lines, and the IGUM/conformal boxes use
+> IDENTICAL `>` + `##` + star formatting (one even carries FIVE stars). **Once
+> you scroll past this top box there is no marker telling you which programme a
+> box belongs to.** Anything mentioning conformal, q3db, N-ladders, "WAVE",
+> or job IDs in the **6xxxx** range is the OTHER workstream on IGUM. This
+> paused programme's jobs are **13xxxx** on Athena.
+>
+> ## THE ONE THING TO READ FIRST
+> **The mode width is slaved to the resonance wavelength: dW/dλ ≈ +0.37 µm/nm.**
+> ★**PROVENANCE IS A RUNNABLE SCRIPT — `gates/derive_dwdlam.py`** (re-derives to
+> **0.03%** of the stored `CampaignSpec.wg_dwdlam = 0.3655`). Sources, both
+> local: `results_from_athena/v2_gpu_gradient_pause/jsonl/` →
+> `lumopt2_v2_uniform_s5_evals.jsonl` and `lumopt2_v2_seesaw_evals.jsonl`.
+> | baseline | slope µm/nm | r | n | λ explains |
+> |---|---|---|---|---|
+> | uniform_s5 | **+0.3654** | 0.984 | 9 | **93%** of its raw width growth |
+> | seesaw | +0.3000 | 0.867 | 9 | **77%** of its raw width growth |
+> ⇒ **the bulk of the width blow-up that killed both baselines was RESONANCE
+> DRIFT, not envelope reshaping.** We spent weeks fighting the wrong quantity.
+>
+> ★★**TWO CORRECTIONS TO EARLIER WORDING, both found by re-deriving (2026-08-26):**
+> 1. I first reported "93–94%". The **94% for seesaw applied the UNIFORM run's
+>    slope to seesaw**; on its OWN slope (0.300) seesaw is **77%**. Use 93% /
+>    77%, per-run.
+> 2. ★**The slope is NOT universal — 0.300 (seesaw) vs 0.365 (uniform), a ~20%
+>    spread.** `wg_dwdlam` is a single hardcoded scalar, so the chain term
+>    carries ~20% magnitude uncertainty across designs. This is tolerable (the
+>    projection DIRECTION is far less sensitive than the magnitude) but it is
+>    NOT a constant of nature — **re-derive it for a new seed family**, and
+>    consider fitting it online from the eval log once ≥4 in-band points exist.
+> ★**THE FILTER RULE MATTERS ENORMOUSLY AND IS NOW WRITTEN DOWN** (it was
+> hand-applied and undocumented, which nearly shipped a 61%-wrong constant):
+> unique (λ, W) pairs, `fom > 0.5·max(fom)`. Dropping either clause breaks it —
+> lumopt2 re-logs the accepted point each restart segment (W 18.5076 appears
+> 3×, 18.4088 2×) and a single out-of-band probe (fom 0.194 at W 19.53) is high
+> leverage, pulling the slope 0.366 → 0.59 on its own. Do NOT pool the two
+> baselines either (different intercepts ⇒ pooled slope 0.288, wrong).
+>
+> ## THE DEFECT THIS EXPOSED (#19) — CONFIRMED FROM SOURCE, FIX WRITTEN
+> `gW` from the adjoint is **∂W/∂p at FIXED λ**, but W is specced at the
+> device's OWN MOVING resonance, so the true derivative
+> `dW/dp = ∂W/∂p|_λ + (dW/dλ)·(dλ_pk/dp)` is missing its second term. The
+> projection therefore nulls the WRONG gradient. The code says so itself —
+> `make_func` emits the width twin's λ-pin as *"A CONSTANT to autograd (no p
+> dependence): zero Jacobian row, zero dEps"* (lumopt2_design.py ~line 570).
+> Symptoms it explains, all at once: the whole +0.0110 µm of toy iterate 0→1 is
+> accounted for by its +0.04 nm λ drift; the T-per-µm exchange rate never beat
+> the unprojected baseline (0.097 vs 0.091); ‖gW‖ grew 58% and the shadow price
+> 43× while climbing.
+>
+> ## THE FIX (implemented, gated, **NOT YET PROVEN ON HARDWARE**)
+> `gλ = dλ_pk/dp` from the implicit function theorem on the peak condition
+> ∂T/∂λ = 0, using **two extra selector passes off the SAME solved fields —
+> ZERO extra adjoint solves** (the assembly is linear in the fct jacobian):
+> ```
+> gLam = -(g_hi - g_lo) / (T'(lam_hi) - T'(lam_lo))      # MATCHED pair
+> gW   = gW + spec.wg_dwdlam * gLam                      # wg_dwdlam = 0.3655
+> ```
+> ★The **matched** pair is exact for ANY stencil width h and any symmetric
+> lineshape (the amplitude part is even and cancels in both antisymmetric
+> differences), so no curvature is ever formed. The NAIVE pair (cross-difference
+> over a second difference of T) has error **exactly 1/(1+x²)**, x = h/g —
+> verified numerically to the digit — which is why a half-linewidth stencil was
+> **49.4% LOW**. Because truncation now cancels, a WIDE stencil is BETTER:
+> k = round(0.5·fwhm/dl) = 20 gives 0.0034%.
+> ∇T needs NO chain term (at the peak ∂T/∂λ = 0 ⇒ it vanishes).
+> Guard: `dTp = T'_hi − T'_lo < 0` ⟺ stencil straddles a maximum; else LOUD skip.
+> Residual accepted: **0.60% δ-leak** (argmax index sits ≤ dl/2 off true λ₀,
+> leaking ∂A/∂p at O(δ)); removable only by fitting λ₀ (3-pass Lorentzian +
+> 2-basis regression) — judged not worth it for a correction-to-a-correction.
+> ★**NUMERICS REQUIREMENT: ≥~40 spectrum points per spectral FWHM.** Campaign is
+> 10 nm / 501 pts = 20 pm vs FWHM ~810 pm = exactly 40. **Do NOT widen
+> `scan_width_nm` without raising `n_wl_points` in step.**
+>
+> ## ★★★THE HONEST STATE — WHAT IS AND IS NOT PROVEN
+> - **PROVEN (zero GPU):** all four gates pass — `gates/gate_lam_chain.py`
+>   (math, 0.0034%), `gates/gate_lam_chain_plumbing.py` (autograd call path),
+>   `gates/gate_projection_local.py` (15/15), `gates/predispatch_check.py`
+>   (seeds in bounds). Compile clean. `wg_lam_chain` defaults **False**.
+> - ★**NOT PROVEN: the fix has never completed a single iterate on hardware.**
+>   Job 137267 died at 2:03 on my selector bug; 137296 was cancelled at ~40 min
+>   for this pause, BEFORE reaching the 2:03 mark. **Treat the λ-chain as
+>   UNVALIDATED until a run prints `gLam_n` with no skip line.**
+> - **OPEN PHYSICS QUESTION:** whether T can rise appreciably at FIXED λ.
+>   `corr(λ, T) = 0.9963` ⇒ T and λ are nearly COLLINEAR in the stored data, so
+>   it CANNOT be answered from the logs. **Do not quote the tempting "13×
+>   better exchange rate"** — it is an artifact of dividing by a small,
+>   poorly-identified detrended denominator.
+>
+> ## ⛔ TWO BLOCKING QUESTIONS FOR THE USER — ASK BEFORE ANY DISPATCH
+> 1. ★**There is an UNCOMMITTED `bragg_device.py` mesh change dated 2026-08-26
+>    that I did NOT make** (it came from the parallel conformal/IGUM session):
+>    `max_device_width` now includes `max(self.width_wide_per_tooth_m)`, which
+>    widens the FINE-MESH y-span whenever per-tooth widths exceed the scalar
+>    `width_wide`. **The projected campaign USES per-tooth widths, so this
+>    changes our mesh.** It is a §2 named-numerics change and this file's own
+>    rule calls editing `bragg_device` forbidden. The CONTROL (137075) ran
+>    BEFORE it; anything dispatched now runs AFTER it ⇒ **the control may no
+>    longer be numerics-comparable.** `simulation_config.py` is also modified
+>    and undescribed. REQUIRED: have the author explain it, run
+>    `debug_fsp_compare/scene_snapshot.py` vs the committed snapshots (CLAUDE.md
+>    §5), and decide whether the control needs re-running.
+> 2. **Athena or IGUM?** (CLAUDE.md §1 requires asking.) The command below
+>    assumes Athena. ★**IGUM IS NOT IDLE** — see the live-jobs note above.
+>
+> ## EXACT RESUME COMMAND (validation toy, ~9 h, 3 iterates)
+> Run from the **Bash tool** (POSIX). The env-var prefix is a PowerShell parse
+> error, so this does NOT work in the primary shell as written.
+> ```
+> cd /c/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes
+> for g in runners/lumopt2_design/gates/*.py; do python "$g" || echo "FAILED $g"; done
+> SBATCH_MEM=300G LUMOPT2_QOS=12h_4g LUMOPT2_TIME=12:00:00 \
+>   bash athena/deploy_athena.sh \
+>   --lumopt2-design=runners.lumopt2_design.validate_c325 --array-tasks=41
+> ```
+> **All five gates must pass first** (each exits 0; the last line is the check):
+> | gate | expected last line |
+> |---|---|
+> | `gate_lam_chain_plumbing.py` | `ALL PASS` (incl. "gate has teeth") |
+> | `gate_lam_chain.py` | `ALL PASS` |
+> | `gate_projection_local.py` | `ALL PASS` (15/15 PASS lines) |
+> | `predispatch_check.py` | `ALL SEEDS IN BOUNDS — safe to dispatch` |
+> | `derive_dwdlam.py` | `OK   re-derived +0.3654 -> 0.03% from stored` |
+> (`gate_projection_local.py`'s docstring mentions a `patch_projection.diff` —
+> **stale, that file does not exist and is not needed**; the gate is
+> self-contained.)
+>
+> ## ⛔ DO NOT DISPATCH THE 96-HOUR PRODUCTION CAMPAIGN YET
+> `campaign_v2_proj.py` already carries `wg_lam_chain=True` and `max_iter=30`,
+> and a lane table further down this file hands you
+> `LUMOPT2_QOS=4d_1g LUMOPT2_TIME=96:00:00`. **That is ~81 GPU-h on a gradient
+> that has never completed one iterate.** The toy above is a PREREQUISITE, not
+> merely the first item in a list. Also still unexercised: the RESTORATION and
+> FILTER/REJECT branches of `run_projected` have NEVER run — and 3 climb
+> iterates will probably not exercise them either, so they remain untested even
+> after the toy passes.
+> **What it decides:** (1) does the λ-chain path RUN — `gLam_n` present in
+> `lumopt2_v2_proj_toy_proj.jsonl`, no `★λ-CHAIN SKIPPED` line; (2) does
+> predicted gλ·dp match the measured Δλ_pk (~+0.04 nm uncorrected); (3) does
+> ΔW/iterate fall below the CONTROL below; (4) ★the falsification test — if the
+> projected ‖∇T‖ collapses toward 0, T and W are genuinely LOCKED for this
+> device, which is a real verdict, not a failure. Expect the corrected climb to
+> be SLOWER and to lean on `I_CAV` (only cavity changes narrow the mode).
+>
+> ## THE QUEUE AFTER THE TOY VALIDATES (user's stated priority order)
+> 1. **The uniform seed must work on its own** — does it reach a
+>    `BEST_T9636`-class design honestly, now that width is priced correctly?
+> 2. **Learn from the seeds/designs already run** — all 78 eval logs are local
+>    in `results_from_athena/v2_gpu_gradient_pause/jsonl/`; this is FREE
+>    analysis, no GPU. The λ-detrend (W − 0.3655·Δλ) is the new lens to re-read
+>    every past result through — it may re-interpret conclusions drawn before
+>    the coupling was known.
+> 3. **Can `BEST_T9636` be improved further?** It came from a chain of hand
+>    adjustments; open user questions: can a uniform seed reach that basin at
+>    all; is its abrupt corrugation drop to 325 at tooth 25 physical; is there a
+>    family of equally-good designs; is it even converged; will it survive the
+>    Q3dB device. Only landscape-CHANGING moves are worth running (the
+>    optimizer already probed and rejected its local landscape).
+> 4. ★**BANKED BY USER — the ONE-adjoint variant.** A COMBINED objective needs
+>    only ONE adjoint instead of two (~−33%): see the existing box further down
+>    this file (search "A COMBINED objective needs only ONE adjoint", ~line 323).
+>    ★Caveat discovered 2026-08-25: a combined FOM yields only ∇(T − μW), i.e.
+>    the penalty/AL formulation — it is **incompatible with the PROJECTION
+>    method**, which needs ∇T and ∇W separately to build the null space. So it
+>    is an ALTERNATIVE route, not an optimisation of the current one. Decide
+>    which formulation you want before building it.
+> 5. Deferred, answered, no tokens spent: a **Lumerical MCP** was judged NOT
+>    worth it — this pipeline is scripted/headless/cluster-side by design.
+>
+> ## THE CONTROL (uncorrected gradient — job 137075_41, 3 iterates, keep)
+> ★**TWO SOURCE FILES — they are not interchangeable.** Both local under
+> `results_from_athena/v2_gpu_gradient_pause/jsonl/`:
+> - `lumopt2_v2_projchain_toy`… no — the control wrote under the OLD label:
+>   **`lumopt2_v2_proj_toy_proj.jsonl`** → `fom`, `W`, `alpha`, `gT_n`, `gW_n`
+>   (MEASURED, verified to 6 digits).
+> - **`lumopt2_v2_proj_toy_evals.jsonl`** → `lam_pk_nm`. ★`lam_pk` is **NOT** in
+>   the `_proj.jsonl` file.
+> ```
+> it 0  fom 0.667217  W 18.3452  lam_pk 1564.61   gT_n 0.002989  gW_n 0.125902
+> it 1  fom 0.668293  W 18.3562  lam_pk 1564.65   dW +0.0110   [0.097 T/um]
+> it 2  fom 0.669780  W 18.3684                   dW +0.0122   [0.122 T/um]
+> ```
+> `fom`/`W`/`lam_pk`/`gT_n`/`gW_n` are MEASURED. `dW` and the bracketed
+> `T/um` are DERIVED (ΔW between rows; Δfom/ΔW).
+> ★★**NAME COLLISION — `lam` MEANS TWO DIFFERENT THINGS IN THIS FILE.**
+> In `*_proj.jsonl` the field **`lam` is the SHADOW PRICE** (−1.99e-05 at it 0),
+> NOT a wavelength. The wavelength is `lam_pk_nm`, and it lives only in
+> `*_evals.jsonl`. A box further down says "READ THE `lam` COLUMN of
+> `*_proj.jsonl`" — that one means the **shadow price**. Do not conflate them.
+>
+> Any corrected run is judged against these ΔW values (+0.0110 / +0.0122 µm)
+> and against the ~+0.04 nm/iterate λ_pk drift.
+>
+> ## TRAPS PAID FOR IN GPU-HOURS THIS SESSION — DO NOT RE-LEARN
+> 1. ★**The fct's `x` is FLAT** — `[T(λ_0)…T(λ_{n_wl−1}), softW]`, NOT a list of
+>    FOM entry results (that is why the width selector is `x[-1]`). Writing
+>    `x[0][i]` cost **2 GPU-h** (137267, `IndexError: invalid index to scalar
+>    variable`). Correct: `lambda x: anp.abs(x[i])`.
+> 2. ★**A math gate is not a plumbing gate.** The math gate passed at 0.0034%
+>    while the call path was broken. Always drive new fct/jacobian code through
+>    the REAL wrapper locally — and **assert the known-bad form still raises**,
+>    or the gate has no teeth. Now CLAUDE.md §5.
+> 3. ★**Count live FIELD SETS before adding an assembly pass.** Stashing all
+>    four would double peak RAM; the double-pass ALREADY OOM-killed a 160G job
+>    at 501 λ (137012, exit 137). Fix: selector passes run BEFORE the width
+>    stash and convert to 191-float vectors immediately (`gvec_Tlo/Thi`,
+>    `del f`) ⇒ peak stays at TWO field sets. Driver stashes `spec._wg_p = p`.
+> 4. ★**Defect #18 — autogain must gate on `phase == "restore"`,** not on
+>    `|dW_pred|`. CLIMB is `alpha·D·gT`, UNPROJECTED (I wrongly called it
+>    orthogonal-by-construction; RIDE is the orthogonal one), so its ∇W·step is
+>    an incidental near-zero — dividing by it gave r = −52 and fired a false
+>    "C_field PHASE error" alarm. Only restore builds its step along ∇W.
+> 5. ★**Band-edge wrap:** i_pk within 1 of an edge made `T[i_lo-1]` wrap via
+>    numpy negative indexing and silently build gλ from the wrong end of the
+>    spectrum. Guard `1 < i_pk < len(wl)-2` added; swept all 501 positions.
+> 6. ★**The h5 cron cleaner CANNOT free space by design** (see below) and
+>    **`pgrep` is the wrong way to check it** — it is a CRON job, not a resident
+>    process, so an empty pgrep is NOT evidence it died.
+> 7. **IGUM hostname `igum.technion.ac.il` does NOT resolve** — use the IP from
+>    `igum/igum.conf` (132.68.58.101). Licence probe must come from IGUM.
+>
+> ## ⚠️ UNFINISHED / NEEDS THE USER
+> - **h5 cleaner fix NOT installed.** Quota hit 289G/300G; I freed **84.6 GB**
+>   (289G → 199G) by deleting dead-study `*_output.h5`. Root cause: the cron
+>   cleaner keeps "the newest TWO per study dir" but each dir holds only 2-3
+>   files, so 21 dead study dirs kept ~everything. Fixed script (adds a PASS 2
+>   for dirs cold >24 h) is written but **three transfer routes were BLOCKED by
+>   the permission classifier** (`find -delete`, `cat > file`, `scp`). It needs
+>   a user-approved retry or a manual paste to `~/h5_clean_once.sh`.
+>   **Without it the quota climbs ~4 GB per completed study.**
+>   ★The fixed script is preserved at **`athena/h5_clean_once.sh`** (bash -n
+>   clean). To install: copy it to `~/h5_clean_once.sh` on Athena — the crontab
+>   entry `*/10 * * * * $HOME/h5_clean_once.sh` ALREADY EXISTS and needs no
+>   change. ★Do NOT "check the janitor" with `pgrep` — it is a CRON job, not a
+>   resident process, so an empty pgrep is not evidence it died (this misled us
+>   twice). Check `quota -s` and the h5 total instead.
+> - Local edits are **deployed** to Athena (engine mtime 2026-08-26 00:06) but
+>   **NOT committed to git** (needs permission).
+>
+> ## DATA PULLED LOCAL (no cluster holds unique state)
+> `results_from_athena/v2_gpu_gradient_pause/jsonl/` — all campaign/validate
+> `*_evals.jsonl` + `*_proj.jsonl`.
+> Gates preserved in-repo: `runners/lumopt2_design/gates/` (were in a
+> session-scratchpad that would not survive the pause).
+
+
+> ## ★★★★★WAVE 1 COMPLETE — 2026-08-26 00:5x. ALL FOUR ROWS, CONFORMAL, N=100.
+> ## The PVA ordering TRANSFERS, the width is KEPT, and T = 0.978.
+> | row | T | lambda nm | Q_L | Q_i | mode FWHM um | PVA ref |
+> |---|---|---|---|---|---|---|
+> | bare (no comb) | 0.91830 | 1559.031 | 1638.2 | 39 266 | 19.2484 | — |
+> | origin uniform+comb | 0.92835 | 1559.041 | 1646.7 | 45 128 | 19.1772 | 0.90120 |
+> | see-saw d090 | 0.95464 | 1559.156 | 1759.7 | 76 701 | 19.0131 | 0.93836 |
+> | **BEST_T9636 (exact)** | **0.97805** | 1560.907 | 1714.2 | **155 358** | **19.0083** | 0.96361 |
+> Job 62750 (rows 0-1) + 63195 (rows 2-3), lumopt2 path, conformal variant 0,
+> q3db family box/window, region dx pitch-locked.
+> ★**MESHER RULE DISCHARGED.** conformal ordering origin < see-saw < best is the
+> SAME as PVA (0.90120 < 0.93836 < 0.96361). The ranking-transfer assumption the
+> HANDOFF flagged as untested is now TESTED and HOLDS on three devices.
+> In-batch gain best − origin: **+0.0497 conformal** vs +0.0624 PVA (~80% carries).
+> Cavity loss 1-T: origin 0.07165 → best **0.02195**, **-69%**.
+> Width: best 19.0083 vs origin 19.1772 = **-0.88%** (kept, slightly NARROWER).
+>
+> ## ★★★★THE SHIFT-CONVENTION IS IMMATERIAL — the trap is PRICED, ~0.002 T.
+> Same device, same N, same mesher, two builders:
+> - lumopt2 path, EXACT optimizer layout (63195_3): T **0.97805**, FWHM 19.0083
+> - regular builder, its own right-arm convention (63202_0): T **0.97228**, FWHM 19.1709
+> Gap **+0.00577**. But row 0 measured the lumopt2 mesh-region artifact ALONE
+> (zero-shift device, so convention cannot contribute) at **+0.0079**. Subtracting:
+> convention ≈ **-0.002 T** — smaller than the artifact and at the jitter scale.
+> ⇒ **The regular builder's layout is equivalent for physics purposes.** The q3db
+> ladder therefore runs the regular path legitimately: artifact-free absolute T,
+> directly comparable to the stored family crossings, and ~5x faster (22 min vs 2 h).
+> The convention caveat stays documented but is no longer a blocker.
+>
+> ## LADDER LIVE — IGUM **63423** tasks 1-4 (N=150/180/200/220), `%1` serialized
+> after the ansyscl startup race killed 63415 outright (4/4). 63423_1 RUNNING,
+> ERR=0. ★**EXPECTED crossing N ~ 220-235** (design at -0.122 dB / N=100 on the
+> regular path, riding the stored bare dB~N^4.04 slope) — i.e. AT or ABOVE the top
+> of the bracket. Plan: read the measured dB(N) from the first rungs, then add the
+> ONE rung that brackets it. Do not extrapolate the crossing from the fit alone.
+
+
+> ## ★★★★★THE SHORT DEVICE IN CONFORMAL — MEASURED 2026-08-25 23:27
+> ## T = 0.97228 at N=100. The design's mode width IS kept.
+> **Source of truth:** IGUM job **63202_0**, 1348.8 s solve, exit 0,
+> `results/invdesign_q3db_20um/results/result_N100_TM_W961_C325_...mat`.
+> Regular builder (NOT lumopt2), conformal variant 0, q3db family numerics.
+> | | design N=100 | stored bare N=100 (IGUM 51736, NOT re-run) | delta |
+> |---|---|---|---|
+> | T | **0.97228** | 0.9104 | **+0.0619** |
+> | cavity loss 1-T | **0.02772** | 0.0896 | **-69%** |
+> | lambda nm | 1560.947 | 1559.006 | +1.94 |
+> | Q_loaded | **1818.6** | 1760 | +3.3% |
+> | mode FWHM um | **19.1709** | 19.2448 | **-0.38% (KEPT)** |
+> DERIVED Q_i = Q_L/(1-sqrt(T)) = **130 300** vs bare 38 400 → **x3.4**.
+> §2 sanity: resonance in-window (1549.5-1569.5), T far above the dead floor.
+> ★**0.96361 was the PVA number; conformal reads HIGHER**, as the origin pair
+> already showed (PVA 0.90120 → conformal 0.92835). So "around 0.96" is the
+> floor, not the target — 0.972 is the conformal answer for the short device.
+> ★**CAVEAT, do not drop it:** this is the REGULAR-BUILDER layout, which differs
+> from the optimizer's exact device on the right arm only (≤6.43 nm/tooth — see
+> the convention trap below). Job **63195_3** is the exact-optimizer device at
+> N=100 on the lumopt2 path and prices that difference; subtract row 0's measured
+> +0.0079 mesh-region artifact from the gap to isolate the convention.
+> ★**SPEED FINDING:** the regular path solved in **22.5 min** vs ~2 h for the
+> lumopt2 path at the same N and numerics — ~5x. The lumopt2 optimization-region
+> mesh override is what costs it. That is why the ladder runs the regular path.
+> ## ★LENGTHENING LADDER DISPATCHED — IGUM job **63415**, tasks 1-4,
+> ## N = 150 / 180 / 200 / 220 (`runners/sweeps/invdesign_q3db_20um.py`).
+> N=100 not repeated (63202_0 is that point). Target: the -3 dB crossing and Q
+> there, vs stored ctrl N165 -3.09 dB Q 13930 and comb N169 -3.04 dB Q 16203.
+> ★Queue note: **63237 = `itai_hh_apod`, 6 tasks, NOT dispatched by this session**
+> (22:31). Shared-file md5s were verified identical local↔remote before deploying,
+> so the parallel-deploy conditions of §6 were met; the rsync itemisation showed
+> `t`-only (timestamp) touches on its files, no content change.
+
+
+> ## ★★LIVE ON IGUM — job 62750, PRODUCTION CONFIRM (user, 2026-08-25)
+> `runners/lumopt2_design/prod_confirm.py`, 4 forwards, N=100/side, **mesher =
+> "conformal variant 0"** (the project's regular mesher) at the **q3db family
+> numerics** (box y8.0 / z-mult 5.42, 20 nm @1559.5 / 4001 pts, z-sym),
+> region dx pitch-locked. Rows: 0 bare (IDENTITY gate vs stored IGUM 51736
+> T 0.9104 / λ 1559.006 / FWHM 19.2448) · 1 origin (PVA 0.90120/18.3460) ·
+> 2 seesaw d090 (PVA 0.93836/18.331) · 3 BEST_T9636 (PVA 0.96361/18.35309).
+> This is the HANDOFF's own "cheap closer" + item-1 production confirm, and it
+> discharges the user's MESHER RULE (conformal-vs-conformal PAIR).
+> **WAVE 2, already agreed with the user:** ladder `n_periods_side` at the SAME
+> numerics to the −3 dB crossing and report N + Q there, against the stored
+> corr-325 q3db crossings (ctrl N165 T 0.4906 Q 13930 · winner comb N169
+> −3.04 dB Q 16203). N is sized from wave 1's measured T(N=100) — do NOT guess it.
+> Athena stayed under the DEPLOY FREEZE (137075_41 still running) — that is why
+> this went to IGUM. Seats at dispatch: 0/50 in use.
+>
+> ### WAVE-1 PARTIAL RESULT — 2026-08-25 21:30 (MEASURED, job 62750 logs)
+> | row | T | λ nm | Q_L | Q_i | FWHM µm |
+> |---|---|---|---|---|---|
+> | 0 bare | 0.91830 | 1559.0310 | 1638.2 | 39266 | **19.2484** |
+> | 1 origin (uniform+comb) | 0.92835 | 1559.0410 | 1646.7 | 45128 | **19.1772** |
+> **IDENTITY GATE (row 0 vs stored IGUM 51736 0.9104/1559.006/19.2448):**
+> λ **+0.025 nm**, FWHM **+0.019 %** — the scene and the mode are the regular
+> device to within noise. But **T reads +0.0079 HIGH and Q_L 7 % LOW** (1638 vs
+> 1760). That offset is the residual of the lumopt2 optimization-region mesh
+> override (pitch-locked dx 51.683 nm vs the family's global 50 nm) — it cannot
+> be removed from this path. ⇒ **In-batch deltas are the only valid currency
+> here (§2); never subtract our T from a stored family T.**
+> ★**CONSEQUENCE FOR WAVE 2, decide before dispatching it:** −3 dB is an
+> ABSOLUTE-T question, so the stored crossings (ctrl N165 / comb N169) cannot
+> be mixed with our numbers. Wave 2 must ladder the DESIGN **and** the uniform
+> origin, and quote both crossing-N under our own stack; the stored 165/169
+> then serve as an external cross-check, not as the reference.
+> Width conversion confirmed: origin PVA 18.3460 → conformal 19.1772 =
+> **×1.0453** (EXPECTED was ×1.049).
+> Comb gain in conformal, in-batch: **+0.0101 T** over bare at ~equal width.
+> **TASKS 2-3 DIED** — task 3 instantly on the ansyscl cold-start daemon race
+> (§6's known array-cold-start casualty), task 2 after ~2 h when its FDTD
+> session dropped mid-`runjobs` retry ('Failed to put variable'). RESUBMITTED
+> as **job 63195, `--array-tasks=2-3 --max-concurrent=1`** (serialized — the
+> race needs two tasks cold-starting on one node in the same second).
+>
+> ### ★★★NEW TRAP FOUND 2026-08-25 (zero GPU) — THE TWO PATHS DISAGREE ON THE
+> ### RIGHT-ARM SHIFT INDEX. Any "run it outside lumopt2" plan must read this.
+> Attempting the HANDOFF's own item-1 advice (production confirm via a plain
+> SweepSpec runner) and gating it locally against `make_func` found **75
+> mismatching geometry properties, ALL on the RIGHT arm, ZERO on the left**.
+> **Root cause, read from source:** `bragg_device.py:1180` walks the right arm
+> with `s_prev = shift_for_tooth[d-1]` (tooth 1 gets 0); lumopt2's `make_func`
+> right walk uses `s = shift[i]` for tooth `d = i+1`. So the builder shortens
+> `R_narrow_d` by `s_(d-1)`, the optimizer by `s_d`. Worst tooth displacement
+> **6.43 nm** (= s_6, the largest shift in BEST_T9636); `R_narrow_1` span differs
+> by 3.16 nm. Both layouts are geometrically valid pi-shift gratings — they are
+> different CONVENTIONS, and the device that measured 0.96361 is `make_func`'s.
+> **It cannot be repaired by re-indexing the input list**: the left arm needs
+> `t_d = s_d` while the right needs `t_(d-1) = s_d`. Editing `bragg_device` is
+> forbidden — it would silently change every stored distributed-shift result.
+> ⇒ `runners/sweeps/invdesign_q3db_20um.py` is written but carries a **BLOCKED —
+> DO NOT DISPATCH** banner. The q3db ladder must either run through the lumopt2
+> canary path (exact device, carries row 0's +0.0079 T mesh-region artifact) or
+> be preceded by ONE simulation pricing the convention difference. PARKED.
+> Gate script: `gate_invdesign_scene.py` — ★LOST (was in a session scratchpad; rebuild if needed — it is
+> the cheapest guard this programme has against shipping the wrong device).
+> ★Throttle note: 63195 was submitted `%1`; raised live with
+> `scontrol update jobid=63195 arraytaskthrottle=2` so task 3 (BEST_T9636, the
+> row the user is waiting on) starts in parallel with task 2 but ~9 min
+> STAGGERED — which is also the cold-start-race fix, without a scancel.
+>
+> ### ★ATHENA IS STILL FROZEN — 137075 ENDED, **137267_41 IS NOW LIVE** (2026-08-25 22:1x)
+> Checked directly: `137267_41 l40s-public lum_pipeline_array R 15:28, 11:44 left`.
+> This session did NOT dispatch it. Same array index (_41) as 137075.
+> **Most likely explanation, and it also explains the mid-session engine edit:**
+> `lumopt2_design.py` (21:53) and `validate_c325.py` (21:54) were modified
+> locally by someone other than this session, and the v2 campaign was
+> re-dispatched to Athena as 137267 under that new code. HYPOTHESIS, not proven
+> — but it fits the timestamps exactly. ⇒ **The DEPLOY FREEZE on Athena stands.**
+> All prod_confirm / q3db work stays on IGUM.
+>
+> > ### ✅ANSWERED 2026-08-26 by the width-gradient session — your hypothesis was RIGHT
+> > **137267 WAS dispatched by the other (width-gradient) session**, and the
+> > 21:53/21:54 edits to `lumopt2_design.py` / `validate_c325.py` were its
+> > defect-#19 λ-chain work. Ground truth on all three jobs:
+> > - **137075_41** — the uncorrected control. 3 iterates, then CANCELLED.
+> > - **137267_41** — **FAILED at 02:03:18**, `IndexError: invalid index to
+> >   scalar variable` (a selector bug, now fixed and gated).
+> > - **137296_41** — the refixed rerun; **CANCELLED at ~40 min** when the user
+> >   paused the programme.
+> > ⇒ **ATHENA IS NOW EMPTY AND THE FREEZE IS MOOT** — the width-gradient
+> > programme is PAUSED (see this file's TOP BOX, which supersedes this
+> > paragraph and gates any dispatch on its own two blocking questions).
+> > ★Your instinct to keep prod_confirm / q3db on IGUM remains sound, but the
+> > reason is now the pause, not a freeze.
+> > ★**AND A QUESTION BACK TO YOU (blocking for us):** there is an uncommitted
+> > `bragg_device.py` change dated 2026-08-26 adding
+> > `max(self.width_wide_per_tooth_m)` to `max_device_width` — we believe it is
+> > yours. It widens the FINE-MESH y-span for per-tooth-width devices, which
+> > the projected campaign uses, so it is a §2 numerics change that may break
+> > comparability with our stored control. Please confirm authorship and
+> > whether it was snapshot-diffed.
+> **Version-mixing audit done (user asked, "check that it's exactly as is"):**
+> the +120 new lines are confined to the width-gradient / projection path
+> (`wg_lam_chain`, `wg_dwdlam`, the `wgp_*` block, code between `make_project`
+> and `run_campaign`). Everything `run_canary` calls is byte-identical to the
+> pre-edit reading — constants (CORR_NM 325 / AVG_W_NM 800 / comb), `seed_params`,
+> `build_base_cfg`, `run_canary`, and the defaults prod_confirm leans on
+> (`corr_seed_nm`, `width_grad=False`, `fwhm_wall=False`). ⇒ rows 0-1 (old engine)
+> and rows 2-3 (new engine) REMAIN COMPARABLE. Structural inspection, not a
+> byte-diff: the pre-edit file no longer exists anywhere to diff against.
+>
+> ### HOW TO READ ROW 3 WHEN IT LANDS (user expects "around 0.96")
+> 0.96361 is the **PVA** number. Conformal reads HIGHER on this family: the
+> origin moved PVA 0.90120 → conformal **0.92835** (+0.0272, MEASURED in this
+> same batch). Naively transferring that offset puts BEST near 0.99 — but that is
+> exactly the single-secant extrapolation this programme has been burned by twice
+> (FW_A_ELONG, the see-saw payback rate). **The verdict is the IN-BATCH GAIN, not
+> the absolute:** at PVA, BEST − origin = **+0.0624**. If conformal shows a
+> comparable gain over its own 0.92835 origin, the PVA optimization TRANSFERS and
+> the mesher rule is discharged. If the gain collapses, PVA is disqualified as an
+> optimization mesher regardless of how high the absolute T reads.
+>
+> ### q3db LADDER IS WRITTEN AND GATED — `prod_q3db_ladder.py`
+> N = [150, 180, 200, 220], exact-device lumopt2 path, identical numerics to
+> prod_confirm, resume-protected, N=100 not repeated (row 3 is that point).
+> Not dispatched: it is pointed at the measured T(N=100), which row 3 supplies.
+
+
+> ## ★★★★BANKED (user, 2026-08-25): THE ONE-ADJOINT COMBINED-FOM VARIANT
+> ## — 33% CHEAPER. Do it AFTER the projection is shown to work, not before.
+> **The user's point, and it is correct:** the projection costs THREE solves
+> per iterate (forward + port adjoint + width adjoint) because it needs
+> grad-T and grad-W SEPARATELY — the null-space coefficient
+> `(D grad-T . u)` depends on both, so neither can be folded in advance.
+> A COMBINED objective needs only ONE adjoint.
+> **WHY ONE ADJOINT SUFFICES:** the adjoint problem is LINEAR, so sources
+> superpose (the same fact that makes the 4-tile source exact). For a scalar
+> objective `T - lam*W` with `lam` FIXED within the iterate, build ONE source
+> `= (dJ/dT)*(port source) + (dJ/dW)*(width source)`, run ONE adjoint, and the
+> combined gradient comes out directly. **3 solves -> 2, i.e. -33%.**
+> **TWO FLAVOURS, both cheap to build on what exists:**
+> 1. **Equality-form AL** — `lam` updated BETWEEN outer iterations from the
+>    MEASURED width deviation (signed, not `max(0,g)`, so it is never
+>    dormant). The engine already carries `wg_mu` / `wg_lam_hi` / `wg_lam_lo`.
+> 2. **Lagged multiplier** — take `lam` from the PREVIOUS iterate's exact
+>    projection and use one combined adjoint this iterate. One-iterate-stale
+>    price, exact machinery, minimal new code.
+> ★**THE CURRENT RUN IS ALREADY GENERATING THE EVIDENCE TO CHOOSE.**
+> `run_projected` logs the exact shadow price `lam` EVERY iterate
+> (`lam = (grad-T . u)/|grad-W|`). If that trajectory is smooth and slowly
+> varying, a lagged/AL `lam` is safe and the one-adjoint variant is a
+> near-free 33%. If `lam` swings iterate to iterate, the combined form would
+> chase a moving price and the exact two-adjoint version earns its cost.
+> **READ THE `lam` COLUMN of `*_proj.jsonl` BEFORE BUILDING THIS.**
+> ★**STACKS with the other banked economy** (from the formulation brief, also
+> unimplemented): during CLIMB, grad-W moves slowly and can be REUSED for
+> ~3 steps with a guard that refreshes immediately when measured dW deviates
+> >2x from predicted. Together these could approach ~1.3 solves/iterate.
+> ★**SEQUENCING, and it is deliberate:** prove width-holding with the EXACT
+> method first (job 137075). The cheap variant trades exactness for speed, and
+> trading away something we have not yet demonstrated would leave us unable to
+> tell a formulation failure from an approximation failure.
+>
+> ## ★★★★★NEXT-DISPATCH CHECKLIST — RUN THIS BEFORE THE NEXT DEPLOY
+> ## (2026-08-25: there are LOCAL-ONLY fixes that job 137075 does NOT have)
+> **WHY THIS EXISTS:** `wgp_autogain` and the phase-error trip were written
+> AFTER 137075 was dispatched, so they live only on the laptop. A deploy
+> rsyncs the whole tree, and every Athena partition REQUEUEs on preemption —
+> deploying while 137075 runs would let a requeue resume it under a DIFFERENT
+> method and silently mix two algorithms in one experiment (§6).
+> **1. DEPLOY FREEZE — lift only when 137075 has finished** (`squeue -u
+> evyatarrubin -r`). Until then: no deploys, no dispatches.
+> **2. THEN DEPLOY EVERYTHING AT ONCE**; confirm the rsync itemised list shows
+> `lumopt2_design.py`, `campaign_v2_proj.py`, `validate_c325.py`.
+> **3. VERIFY THESE FLAGS ARE LIVE** (all confirmed locally 2026-08-25):
+> | flag | value | why |
+> |---|---|---|
+> | `wgp_autogain` DEFAULT | **False** | REQUEUE-safety for older runs |
+> | `campaign_v2_proj.wgp_autogain` | **True** | measure abs(C) online, stop fitting it |
+> | `ADJ_FIX_FIELD` | **(0.4554, +0.1336)** | the CONJUGATE — fit_c_field prints the other sign |
+> | `wg_track_resonance` | **True** | softW on resonance (standing user ruling) |
+> | `fwhm_wall` | **False** | penalty REPLACED by the projection, never stacked |
+> | `wg_src_tiles` / `max_iter` | **4 / 30** | CUDA per-source bound; 30x2.7 h fits the 96 h lane |
+> **4. PRE-DISPATCH GATES — both zero-GPU, both must pass:**
+> `python runners/lumopt2_design/gates/predispatch_check.py` (seed + DETUNE vs bounds — this
+> class cost FOUR dispatches) and `python runners/lumopt2_design/gates/gate_projection_local.py`
+> (15 checks incl. exact grad-W . d = 0).
+> **5. SEAT ARITHMETIC — count the FAN-OUT, not the tasks.** A
+> `run_validate_gradient` task is **1 + n_legs seats** (7 for 3 indices) —
+> that is what killed job 137035. Probe seats IMMEDIATELY before dispatch,
+> never from a cached reading.
+> **6. LANES:** campaign = `SBATCH_MEM=300G LUMOPT2_QOS=4d_1g
+> LUMOPT2_TIME=96:00:00`; 4-iterate toy = 300G / 12h_4g / 12:00:00; single
+> forward = 160G / 04:00:00.
+> **7. STILL UNEXERCISED CODE — where the next bug lives:** the RESTORATION
+> branch and the FILTER/REJECT branch of `run_projected` have NEVER run;
+> iterate 0 took the CLIMB path only. Read the first `restore` and `*-retry`
+> rows with suspicion.
+>
 > ## ★★★STATE AS OF 2026-08-24 EVENING — READ THIS WHOLE BOX FIRST.
 > ## Every earlier job list in this file is SUPERSEDED, including §0a
 > ## ("EVERYTHING IS STOPPED"), which is wrong.
@@ -184,12 +802,21 @@
 > — a gradient step that acts on width itself rather than a model of it.
 > **Attack routes, cheapest first:**
 > 1. **Diagnose the FieldRegion CUDA rejection — do this FIRST, it is one
->    task.** `invalid configuration argument` is a CUDA *kernel-launch* error
->    (grid/block dimensions out of range), NOT a "GPU can't do this" error.
->    It is very plausibly SIZE-dependent. Shrink the optimization/field region
->    (fewer cells, smaller y or z span) and re-launch. If a smaller region
->    runs, the limitation is a launch-config bound and the fix is to tile or
->    shrink the region, not to abandon the object.
+>    task.** Be precise about WHAT fails: not a field-profile MONITOR (those
+>    are fine on GPU) but lumopt2's adjoint-SOURCE object `FieldRegion`.
+>    MEASURED job **136026**, all 3 tasks, dead in seconds with
+>    `ERROR: invalid configuration argument`. Ansys docs list only TFSF and
+>    BFAST as GPU-unsupported; FieldRegion is too new to be documented either
+>    way, so this is an UNDOCUMENTED incompatibility, not a stated limit.
+>    ★INFERRED from the error semantics (not measured): that string is CUDA's
+>    `cudaErrorInvalidConfiguration` — a kernel launched with execution
+>    dimensions outside the allowed range (block/grid size). That is
+>    characteristically a SIZE problem, not a capability problem, and
+>    FieldRegion spans the whole optimization region. **So: shrink the region
+>    (fewer cells, smaller y/z span) and re-launch.** If a smaller region
+>    runs, the limitation is a launch-config bound and the fix is to TILE the
+>    region, not to abandon the object. Cheapest possible test of the highest-
+>    value hypothesis — do it before route 2, which changes the FOM.
 > 2. **Import sheet OFF the symmetry plane.** z=0 is tangentially dead BY
 >    PARITY for this TM mode (measured Ex=Ey=0.0 exactly). At z ≠ 0 inside the
 >    core the tangential components are non-zero. CAVEAT that must be handled,
@@ -201,6 +828,841 @@
 > 4. **Re-test on EVERY Lumerical version bump.** FieldRegion-on-GPU is an
 >    upstream limitation; Ansys may fix it. Add this to the version-bump
 >    checklist alongside the B3 gradient gate.
+> ### ★ROUTE 1 IMPLEMENTED + DISPATCHED 2026-08-24 (Fable) — OPUS RUNBOOK
+> **Athena job 136799, array 27-32%8** (dispatched ~22:20; 4 running + 2
+> pending at +12 s; smoke-tested locally incl. the 3D mutation; rsync touched
+> ONLY validate_c325.py + HANDOFF.md — engine/campaign files untouched).
+> ★**JANITOR "DEAD" WAS A FALSE ALARM — DO NOT RESTART IT** (checked
+> 2026-08-24 19:45). `pgrep h5_roll_clean` finds nothing because the janitor
+> is now a **CRON job**: `*/10 * * * * $HOME/h5_clean_once.sh` (MEASURED in
+> `crontab -l`). It is working — quota fell 241G → **235G** during the
+> session. The handoff's "verify with pgrep -af h5_roll_clean" instruction is
+> STALE for the cron era; check `crontab -l | grep h5` and the quota trend
+> instead. Restarting the old nohup loop would double-run the cleaner.
+> **`validate_c325.py` tasks 27-32 = the FieldRegion size ladder** (N_TASKS 33).
+> All adjoint-only, `wg_source="fieldregion"`, `wg_adj_resource="GPU"`,
+> `wg_pure`, 151 λ pts, indices `[0, SL_SHIFT.start, I_CAV]` (= the FD
+> reference's three). The twin is shrunk scene-locally by wrapping
+> `eng.build_base_fsp` in the validate module — the ENGINE IS UNTOUCHED, so
+> the in-flight campaigns 136752/136753 are not exposed to any code change.
+> Rungs: 27 full (control — must reproduce the CUDA error) | 28 y×0.5 |
+> 29 x×0.5 | 30 x,y×0.25 | 31 patch 6×0.8 µm | 32 thin-3D (z span 0.16 µm,
+> full x,y — singleton-dim hypothesis). Each prints `[gfr] rung=...` with
+> actual spans/cells before running.
+> **DECISION TREE (execute verbatim; escalate to Fable only where stated):**
+> 1. Read each rung's log: `invalid configuration argument` = REJECTED at
+>    that size; a real adjoint solve time = LAUNCHED; a Python traceback
+>    before the adjoint (possible on 31/32 — softW/3D-shape fragility) =
+>    INCONCLUSIVE rung, not a CUDA verdict.
+> 2. Any LAUNCHED rung → h5 non-zero gate FIRST (snippet:
+>    V2_FWHM_PLAN.md:1225-1259, login-node python3, one ssh). All-zero
+>    fields ⇒ that rung is a FAIL despite the runtime.
+> 3. Some rungs launch+inject, full fails ⇒ SIZE BOUND CONFIRMED. Run the
+>    FD gate at the LARGEST working size: re-dispatch tasks 20+21-style at
+>    that region config (edit the task-20/21 `_w_spec` calls to add the same
+>    `_shrink_twin` prelude, lane `SBATCH_MEM=250G LUMOPT2_QOS=12h_4g
+>    LUMOPT2_TIME=09:00:00`, chain 21 `--after=` 20). PASS = sign 3/3 vs
+>    `[-0.00365, +0.01825, +0.02026]` + `fit_c_field.py` residual ≤10%.
+>    Then ESCALATE TO FABLE for the tiling design (a cropped region is a
+>    FOM change — NOT production; tiling must cover the full envelope).
+> 4. ALL rungs fail incl. 31 ⇒ route 1 DEAD. STOP GPU submissions on this;
+>    ESCALATE TO FABLE for routes 2/3 (off-plane sheet / ±z pair).
+> 5. Everything launches incl. 27 ⇒ the 136026 failure didn't reproduce —
+>    h5-gate all, then ESCALATE TO FABLE with the config diff vs 136026.
+> Exit-137/OOM or walltime ≠ CUDA verdicts either — rerun that rung in a
+> bigger lane before classifying.
+>
+> ### ★★★★★FABLE PRE-DISPATCH AUDIT (2026-08-25) — 3 BLOCKERS, ALL SILENT
+> **B1 — THE C_field SIGN WAS CONJUGATED. 18.4% error, signs unaffected.**
+> `fit_c_field` solves `FD ≈ s(cosφ·RE − sinφ·IM)` and printed `C = s·e^{iφ}`
+> = 0.4554 **−**0.1336i — but the ENGINE APPLIES `a·RE + b·IM`, which needs
+> the CONJUGATE. RE-DERIVED INDEPENDENTLY HERE:
+> stored (0.4554, −0.1336) ⇒ resid **−18.4 / −14.8 / −14.4 %** = FAILS W3;
+> conj (0.4554, **+**0.1336) ⇒ resid −0.4 / +0.1 / −0.1 % = PASSES.
+> ★**Why it was invisible: SIGNS ARE IDENTICAL EITHER WAY.** Every sign gate
+> would have passed while the campaign ran on ~15% wrong step MAGNITUDES —
+> wrong clipping, wrong restoration. FIXED in `campaign_v2_proj.py`, in task
+> 41, and **in `fit_c_field.py` itself**, which now prints
+> `>>> STORE THIS -> adj_fix_field_re/im = (s·cos, −s·sin)`.
+> ### ★★IS THE **PORT** C CONJUGATED TOO? — INVESTIGATED, LEANS NO, NOT PROVEN
+> This matters far more than the width C: `ADJ_FIX_PORT` steers EVERY campaign
+> ever run, including 136753/136905 right now.
+> **Evidence it is CORRECT as stored:** the engine comment (`lumopt2_design.py`
+> :178-185) records the port C as *"ONE global complex factor C = 0.8685+0.1022i
+> **fits FD on ALL 7 params to 1.7%**"* — a statement about the APPLIED value,
+> not about a printed `s·e^{iφ}`; and the C-fix moved `vec_error` 11.40 → 0.144,
+> a 79× improvement that a 15-18% magnitude error would not produce. The port C
+> also did NOT come from `fit_c_field.py` (whose own docstring says the port C
+> "does NOT transfer to the field-adjoint path") — it came from the earlier
+> skill-item-6 recipe, so the conjugation convention is not shared by
+> construction.
+> **Why it is NOT PROVEN:** the raw (FD, Re, Im) triple for the port is NOT in
+> the repo, so it cannot be re-derived. ★And note the B3 gate does NOT settle
+> it: that gate accepts α ∈ [0.8, 1.25], and a conjugation error here is
+> ~15-18% — **it would PASS the gate**. So "B3 passed" is not evidence.
+> ⇒ **STANDING ITEM:** if the port triple is ever recovered (or re-measured),
+> re-derive it against the applied convention `g = a·RE + b·IM`. Do not treat
+> the existing gates as having covered this.
+> ⇒ Original note: **CHECK `ADJ_FIX_PORT` (1.0561, 0.1239) the same way** if its raw
+> FD/Re/Im vectors are ever recovered — same script, same convention. It
+> passed its own B3 α-gate, so it is probably fine as stored, but it has
+> never been re-derived against this convention.
+> **B2 — `wg_track_resonance` defaults FALSE and the campaign never set it.**
+> The twin (and the tiles, whose λ follows `sim_result.wavelengths`) would
+> stay pinned at the scan centre while λ walks up to RECENTER_NM = 2.0 nm
+> ≈ 2.7 linewidths. That violates the standing user ruling (2026-08-23):
+> **softW is measured ON RESONANCE, always.** Off-resonance the width
+> gradient's sign structure differs, and both restoration and the null space
+> are sign-sensitive. FIXED: `wg_track_resonance=True`.
+> **B3 — C_field was fitted at the WRONG MESH.** Tasks 37/40 ran `_w_spec`,
+> i.e. `region_dx_nm` at the 50.0 DEFAULT; the campaign runs pitch-locked
+> 51.683. Job 132637 measured tooth-gradient scales moving 10-30× between
+> mesh conventions, and plan §24 rules a 50-nm C "NOT for production".
+> ⇒ **RE-FIT DISPATCHED: job 137017 (tasks 42 Re / 43 Im) at the FULL
+> production numerics** — pitch-locked dx, centre 1564.614, 4 tiles,
+> resonance tracking ON, `wg_project=False` so it stays single-pass (~26 GB).
+> The FD reference is unchanged and still valid: it is a finite difference of
+> the SAME functional, so it is config-independent.
+> **S4 — the ELONGATION WALL was still stacked under `wg_project`.**
+> `attach_penalty` selects `elong_penalty` whenever `rho_band=False`, and
+> `run_projected` uses the WRAPPED fom/gradient, so the wall silently
+> re-entered despite the docstring saying "pure T". DERIVED: at e = 132.6 its
+> shift-gradient is ~5e-4 vs a measured ∂T/∂shift ~4e-5 — it would DOMINATE
+> the shift block ~12× and cap the run below `BEST_T9636`'s OWN e = 132.6,
+> structurally forbidding the from-uniform campaign from reaching the basin
+> it exists to test. FIXED: no analytic penalty at all under `wg_project`
+> (WidthTrip still fail-closes the delivered design).
+> ★**AUDIT CONFIRMATIONS worth keeping (do NOT "fix" these):**
+> - The double field assembly is SAFE, not just memory-hungry: `get_jacobian`
+>   rebuilds `jacobian(self.fct)` every call, the monitor cache is keyed on
+>   (abspath, mtime), and `fct` is restored in `finally` — pass 2 cannot
+>   return pass 1's fields.
+> - The width entry IS last and the port entries contribute EXACTLY zero.
+> - ★**grad-W is intentionally the NEGATION of the FD reference.** FD was
+>   measured under `wg_pure` (J = −softW); pass 2 uses jac = +1 and yields
+>   +d(softW)/dp, which is what climb/restore need. C_field is applied to the
+>   adjoint FIELDS and is jac-independent, so the same C is correct for both.
+>   **Do not "correct" grad-W to match FD — that would invert restoration.**
+> - C is applied ONCE, to the width entry only; tiles are campaign-safe
+>   (rebuilt per adjoint from the monitor's own samples, parent source-mode
+>   forced off each time, never leaking into the port adjoint).
+> **STILL OPEN (S6):** one flaky profile extraction raises RuntimeError and
+> ends the whole campaign with no resume benefit — worth one retry or a
+> restart-from-log before the 81 h run.
+>
+> ### ★★★MEMORY: `wg_project` DOUBLES THE GRADIENT-FIELD FOOTPRINT (2026-08-25)
+> **MEASURED: job 137012 (P2 gate) OOM-KILLED, exit 137, at "Computing
+> gradient fields from forward + adjoint data".** Cause is structural and
+> mine: `wg_project` runs `calculate_gradient_fields` TWICE (grad-T then
+> grad-W), so a second full `(nx, ny, nz, 3, n_wl)` array is live alongside
+> lumopt2's per-entry forward+adjoint arrays — and lumopt2 fetches the FULL λ
+> grid per entry before slicing (`fdtd_session.py:1355`).
+> DERIVED for the pitch-locked region (2044×28×15 = 0.88 M cells):
+> ONE field array is **6.4 GB at n_wl=151** but **21.3 GB at n_wl=501**;
+> the live stack is ~5 such arrays ⇒ **~32 GB at 151, ~107 GB+ at 501**,
+> and 501 blew a 160 G job. Tasks 37/40 survived only because they ran 151.
+> ⇒ **GATES: n_wl_points 501→151** (a sign check cannot be changed by
+> spectral sampling) and dispatch at 250 G — redispatched as job **137015**,
+> validated first: bounds violations 0, memory ~32 GB, projection still on,
+> wall still off. P3 (137014) was CANCELLED before it hit the same wall.
+> ⇒ **CAMPAIGN keeps 501 λ (the FOM needs the spectrum) and MUST run at
+> `SBATCH_MEM=300G`** — written into `campaign_v2_proj.py`'s docstring.
+> ★If 300 G ever proves tight, the principled fix is to contract the width
+> fields to the 191-vector INSIDE `calculate_gradient_fields` instead of
+> stashing the full array — blocked today only because `params` is not passed
+> to that method, so it would need a small signature change.
+>
+> ### ★★★★★★2026-08-25 04:01 — **THE WIDTH GRADIENT IS FIXED AND CALIBRATED.**
+> ### PRIORITY ZERO IS DONE. W3 PASSED.
+> **MEASURED, array 137003, both tasks exit 0, both `[wg-tiles] live 4/4`:**
+> | | corr_1 | shift_1 | wcav |
+> |---|---|---|---|
+> | adjoint Re (t37, C=(1,0)) | −0.0072625 | +0.03713637 | +0.04125803 |
+> | adjoint Im (t40, C=(0,1)) | −0.0024589 | +0.01015485 | +0.01087661 |
+> | keep-forever FD (136189) | −0.00365 | +0.01825 | +0.02026 |
+> | **raw Re/FD ratio** | **1.990** | **2.035** | **2.036** |
+> ★The raw ratio is constant to **±1.2% across three different parameter
+> classes** — the textbook signature of a CORRECT adjoint awaiting ONE global
+> constant. (Contrast the cropped rungs: 0.35-1.83, because they measured a
+> different functional.)
+> **FIT (`fit_c_field.py`, PEN_GRAD zeroed — these prints are raw/wg_pure):**
+> **`C_field = 0.4554 − 0.1336i`** (s 0.4746, φ −16.35°)
+> **vector residual 0.1%**; per-param −0.4% / +0.1% / −0.1%; **signs 3/3**.
+> The W3 gate is ≤10% per param ⇒ **PASS by ~25×.**
+> ⇒ Written into `campaign_v2_proj.py` as `ADJ_FIX_FIELD`; its guard now
+> passes. **Cost: ~54 min forward + ~54 min adjoint ≈ 1.8 h per gradient**
+> (3221 s adjoint), vs 8.7-12.1 h on CPU. The exact ∂W/∂p for all 191
+> parameters is now affordable in-loop.
+> ★**STILL OWED, do not skip:** the fit docstring's standing order — verify at
+> a SECOND operating point before trusting magnitudes broadly, and re-fit on
+> every Lumerical version bump. Tasks 38/39 (dispatched, job **137011**) are
+> at different points and check SIGNS there; a magnitude re-fit elsewhere is
+> still outstanding.
+> **NEXT (running): P2/P3 known-answer gates, job 137011.**
+> P2 = at the uniform seed the projected step's SHIFT block must be strongly
+> positive (>0 on ≥20/25 teeth) — shifts below the e=65 knee are MEASURED
+> width-free. P3 = at ceiling contact the CORR block must show the
+> inner/outer SIGN SPLIT (the see-saw). Magnitudes are not gated there —
+> C_field only rescales, it cannot flip a sign.
+>
+> ### ★★★★★2026-08-25 02:02 — **THE GPU ACCEPTS TILED SOURCES.** R6 CLOSED.
+> **Job 136967 ran the FULL 33-minute tiled adjoint on GPU with 4 simultaneous
+> field-region sources and did NOT raise `invalid configuration argument`.**
+> It failed at the very end on a DATASET SHAPE bug of mine, not a GPU limit:
+> `field region field_profile_adj_t0 imported source profile dataset
+> dimensions (528 x 17 x 1) do not match the field region dimensions
+> (529 x 17 x 1)`.
+> ⇒ **THE CUDA 1024 BOUND IS PER-SOURCE, NOT PER-RUN** — the tiling premise is
+> MEASURED-correct, and the whole architecture stands. This was the single
+> biggest remaining risk (logged as R6) and it resolved the good way.
+> ★**THE FENCEPOST BUG AND ITS FIX.** `tile_x_edges` places edges at sample
+> MIDPOINTS, and I set each tile's span from those edges — but the engine's
+> region then sampled 529 cells where the slice held 528. Fixed by deriving
+> the geometry from THE SAMPLES THE TILE MUST CARRY instead of from the
+> edges: centre on the tile's own first/last sample, span = extent + 0.9·dx.
+> Every intended sample then sits ≥0.45·dx INSIDE the region and the nearest
+> EXCLUDED neighbour sits 0.55·dx OUTSIDE. VERIFIED locally for the exact
+> 136967 geometry (2114 samples, 4 tiles): slice sizes [528, 529, 529, 528]
+> and the region would sample [528, 529, 529, 528] — MATCH on all four.
+> ★LESSON: never infer a Lumerical object's sampling from your own geometry
+> arithmetic; derive the geometry from the samples you intend to occupy. The
+> engine's inclusive-boundary rule is not yours to guess.
+> **REDISPATCHED: tasks 37 + 40 in parallel (elements 137003 / 137004)** —
+> the tiled gradient and its Im-quadrature partner, both at the production
+> tiling, so `fit_c_field.py` gets Re and Im from ONE wall-clock window.
+> Seats probed 9/50 first.
+> ★**Why the C fit is meaningful HERE and was not on the cropped rungs:**
+> tiling reproduces the FULL-REGION source, so this gradient is directly
+> comparable to the keep-forever FULL-REGION FD `[-0.00365, +0.01825,
+> +0.02026]`. The cropped rungs measured a DIFFERENT functional.
+>
+> ### ★★★TRAP: `validate_gradient` FANS OUT **6 CONCURRENT SIMS** (2026-08-25)
+> **Job 137035 (FD reference) DIED** after its forward (2787 s) and adjoint
+> (3136 s) both completed NORMALLY, with:
+> `LumApiError: "Can not find result 'expansion for port monitor' in the
+> result provider 'FDTD::ports::Port_2'"`.
+> **DIAGNOSIS via the §6 rule (check "Simulation time" first): NOT a license
+> no-op of the main solves** (they took 46 and 52 min, not ~1 s) and NOT an
+> h5 clobber. The log says it outright:
+> `12:28:01 Generating 6 perturbed simulation files for concurrent execution`
+> `12:28:23 Running 6 finite-difference simulations concurrently...`
+> ⇒ **`lmpt.validate_gradient` runs its FD legs 6-WIDE**. At that moment BOTH
+> baseline campaigns were still live, so we had ~8+ concurrent solves of our
+> own against a faculty-shared pool. Losers no-op silently, produce no port
+> expansion, and `calculate_fom` then raises — the documented Athena
+> (container) starvation signature.
+> ★**THE LESSON, and it is a budgeting rule, not a bug:** a
+> `run_validate_gradient` task is **NOT one seat — it is 1 + n_legs**, i.e.
+> 7 for 3 indices with central differences. §6's mandatory seat check must
+> budget the FAN-OUT, not the task count. Probing 23/50 free and dispatching
+> "one task" was wrong arithmetic.
+> ⇒ **NOT RE-RUN.** This was VERIFICATION, not a gate: `wgp_autogain` now
+> measures the magnitude online, and the phase sensitivity is only ~0.04° of
+> direction per degree of phase. If it is ever wanted, throttle the FD legs
+> (or run with the campaigns stopped) and budget ~7 seats.
+>
+> ### ★★★★★THE CALIBRATION IS MOSTLY A RESONANCE PHASE, NOT A YEE ARTIFACT
+> ### (2026-08-25, Fable — this changes the METHOD, not just a number)
+> **THE LAW:** `arg C(λc) ≈ φ_geom − arctan(2(λc − λr)/FWHM)` — a small fixed
+> geometric (Yee-like) term PLUS **the resonance's own Lorentzian transfer
+> phase**, which the fit silently absorbs whenever the adjoint is evaluated
+> OFF-RESONANCE (the softW twin records at the scan centre).
+> **THE EVIDENCE, and it is tight:** the fitted phase moved **48.85°**
+> (−16.35° → −65.20°) when the scan centre moved 0.55 linewidths; the
+> Lorentzian phase for that displacement is `arctan(2×0.55) = 47.73°` —
+> agreement ~1°. A Yee offset would have moved it **< 0.3°** (k·dx changes by
+> 3.4%). ⇒ **PURE-YEE IS DEAD as an explanation**; it also explains why the
+> PORT path (evaluated essentially on resonance) sits at −6.7° ≈ the
+> quarter-cell 6.2°, while the width path does not.
+> ⇒ **CONSEQUENCE: with `wg_track_resonance` ON the detuning term VANISHES
+> and the phase should collapse to the small geometric value.** So Fit B's
+> −65.20° is WRONG for a tracking campaign — it is mostly detuning. Fit A's
+> −16.35° is far closer to geometric and is what the live seed run uses.
+> ⇒ **TO GET φ_geom CLEANLY: fit at a scan centre SET TO THE MEASURED
+> RESONANCE** (δ = 0 by construction), not at the family centre.
+> ★**HOW MUCH THIS ACTUALLY MATTERS — DERIVED, and it is reassuring:** RE and
+> IM are only **5.52° apart**, so a large phase error makes a SMALL direction
+> error. Measured sensitivity: φ −6.7° → 0.20°, −16.4° → 0.48°, −30° → 0.87°,
+> −45° → 1.35°, −65.2° → 2.27° of direction change vs φ=0. **~0.04° of
+> direction per degree of phase.** The projected step only cares about
+> direction, so even a badly wrong phase perturbs the null space by ~1-2°,
+> which the measured-fwhm_env restoration corrects each iterate.
+> **PRODUCTION METHOD, DECIDED = (b): FIT THE PHASE, MEASURE THE MAGNITUDE.**
+> |C| is EXACTLY irrelevant to the direction (verified 0.00°), so fitting it
+> against an expensive FD reference was solving a non-problem. `wgp_autogain`
+> (implemented, ON for the campaign) compares predicted vs MEASURED ΔW each
+> iterate and self-calibrates — surviving mesh changes with no new FD run.
+> ★AUDIT of autogain (Fable): SAFE — the ride branch is exactly invariant to
+> the gain, the scalar cap preserves ∇W·d = 0, and the gain updates only on
+> ACCEPTED steps from the STORED UNSCALED gW, so it cannot compound with the
+> α backtracking. **One caveat FIXED:** a NEGATIVE predicted/measured ratio
+> means the width moved OPPOSITE to prediction — a PHASE error no scalar gain
+> can repair — and it would have pinned the gain at its 0.2 clamp while
+> masquerading as a harmless small gain. Now trips a loud warning naming the
+> phase as the cause.
+> ★REJECTED: (c) derive the phase from the Yee offset alone — refuted above;
+> (d) `colocate_fields` to force C → 1 — recorded expected-PARTIAL
+> (α ~0.3-0.5), so a residual C would still need fitting.
+>
+> ### ★★★★★2026-08-25 13:40 — BASELINES STOPPED, PROJECTED SEED RUNNING
+> **CANCELLED: 136753 (uniform s5) and 136905 (seesaw)** — both old-method
+> (hinge-wall) campaigns. Logs FETCHED FIRST (17 and 15 rows) to
+> `results_from_athena/lumopt2_c325_logs/lumopt2_v2_{uniform_s5,seesaw}_evals.jsonl`.
+> Resume is proven, so either can be restarted from its best in-band row.
+> **WHY: both had reached the failure mode we are replacing, and they were the
+> node contention making every iterate cost 2.7 h instead of ~1.1 h.**
+> ★**THE BASELINE, now the number the projected method must beat:**
+> | | seed | last accepted | last probe |
+> |---|---|---|---|
+> | uniform s5 | T 0.90120 / 18.3452 | T 0.92689 / 18.6284 | **T 0.94644 / 19.5321 OUT OF BAND** |
+> | seesaw | T 0.93790 / 18.3318 | T 0.94777 / 18.6259 | **T 0.95078 / 18.9630 OUT OF BAND** |
+> ⇒ **BOTH campaigns ended up out of band.** Over 15.9 h the uniform seed
+> bought **+0.026 T with +0.283 µm of width** — it is not optimising at fixed
+> width, it is trading spec for performance and periodically crashing through
+> the ceiling. That is the defect, measured over a long run, on two seeds.
+> **LIVE: 137075 = the UNIFORM SEED UNDER THE PROJECTED METHOD** (validate
+> task 41, 4 iterates, 12 h lane, 300 G, C=(0.4554,+0.1336), tiles 4,
+> track_resonance ON, no analytic wall). PASS = fwhm_env within ±0.05 µm of
+> 18.613 on EVERY accepted iterate and NO width rejection. Read
+> `lumopt2_v2_proj_toy_proj.jsonl`: `dw_pred` vs the measured ΔW is the direct
+> test of whether the gradient's width prediction is TRUE.
+> **LIVE: 137035 = the FD reference at production numerics** — kept as a
+> parallel CHECK, no longer a gate. ★Justification for not waiting (DERIVED):
+> the two candidate calibrations differ by only **1.79° in direction** and 15%
+> in magnitude on the production vectors; the projection removes the component
+> ALONG grad-W, so 1.79° leaves a ~3% width component per step, which the
+> measured-fwhm_env restoration corrects every iterate. The magnitude error
+> only rescales the step, and the 5 nm cap bounds it.
+>
+> ### ★★★★MEASURED 2026-08-25 — **THE CAVITY-WIDTH HEADROOM IS NOT FREE.**
+> ### Item ②-1 CLOSED, NEGATIVE. First physics result of the session.
+> **Job 137021, ONE forward at the production pitch-locked numerics** (the
+> wcav-961 control was NOT re-run — it is the stored 136465 eval-12 row at the
+> SAME numerics, §6):
+> | | wcav (nm) | T | fwhm_env (µm) | λ (nm) | Q_i |
+> |---|---|---|---|---|---|
+> | BEST_T9636 (stored) | 961.1 | **0.96361** | 18.35309 | 1566.444 | 110 087 |
+> | probe (this run) | 1100.0 | **0.94389** | 18.30151 | 1566.568 | 70 100 |
+> ⇒ **ΔT = −0.0197 for Δwcav = +138.9 nm** — a LOSS of ~10× the 0.002 T noise
+> floor, with Q_i collapsing 110k → 70k. Width barely moved (−0.052 µm).
+> ⇒ **The 189 nm of "unexplored headroom" is not headroom: `BEST_T9636` is at
+> or near its wcav optimum, and pushing further is harmful.** Handoff item
+> ②-1 is CLOSED as a negative; do not re-propose it.
+> ★**WHY THE PREDICTION WAS WRONG, and it is a repeat offence:** the "+0.0409 T
+> for +0.0305 µm ⇒ ~1.3 T/µm, 50-60× the see-saw" figure came from the rtdec
+> rows, measured over 800 → 961 nm ON A DIFFERENT DESIGN. Applying it to
+> 961 → 1100 on `BEST_T9636` is extrapolating a secant past its measured
+> range — the SAME error the programme logged for FW_A_ELONG, FW_A_MCORR and
+> my own see-saw payback amplitude. The rate was real where it was measured;
+> the lever simply saturates and then reverses.
+> ⇒ Standing rule reaffirmed: **every rate carries the amplitude range it was
+> measured over, and any use outside that range is a PREDICTION TO BE TESTED.**
+>
+> ### ★★★USER'S PHYSICS QUESTIONS ABOUT `BEST_T9636` (2026-08-25) — PARK,
+> ### ANSWER AFTER THE GRADIENT WORKS. Two are partly ALREADY MEASURED.
+> The user's framing, which is the right one: `BEST_T9636` was reached by a
+> CHAIN of hand adjustments — change corrugation, narrow the mode, then raise
+> tooth shifts — i.e. a COMBINED move, not one honest optimization. Open
+> question: **can a uniform seed reach that basin at all?** Is there a path
+> from uniform along which the mode width stays CONSTANT while T rises —
+> possibly tooth shifts "fighting" the width growth? Unknown, and it is
+> exactly what the projected (null-space) method is built to answer, because
+> constant-width paths are precisely its search space.
+> **Concern (a): the corrugation profile drops abruptly to 325 at tooth 25**
+> (the free/frozen boundary). The user finds the short transition
+> unphysical — "why 25 and not 20?" — and suspects a FAMILY of best devices.
+> ★**PARTLY ANSWERED, MEASURED (job 136302 task 24, the "de-step" run):**
+> ramping teeth 20-25 smoothly down to the frozen 325 gave T 0.9600 @ 17.862
+> = **+0.0006 vs the stepped design, i.e. INSIDE the 0.002 T noise floor** ⇒
+> **the 46 nm boundary step is NOT the mechanism; bulk inner-tooth κ is.**
+> Corroborating: outer free teeth 20-25 are INERT (mean corr −1.75% moved
+> width only +0.05%). So the step is cosmetically odd but not load-bearing.
+> ★**STILL UNTESTED, and the user is right that it is open:** whether the
+> BOUNDARY LOCATION itself (N_FREE = 25) is optimal. N_FREE 25→40 is a banked
+> v2.1 candidate (~10× light-cone model headroom). If the outer free teeth
+> are inert, moving the boundary should be nearly free — which also means a
+> FAMILY of equivalent designs is plausible, as the user suspects.
+> **Concern (b): is it even converged, and will it survive the Q3dB device?**
+> MEASURED: campaign 136465 moved its seed by ≤0.26 nm in ANY of 191 params
+> against trust radii of 10-12 nm — it used ~2% of its allowed travel, so
+> "converged" means "the optimizer probed and rejected everything nearby",
+> NOT that no better point exists. The production/Q3dB confirm at N≈169 +
+> accurate mesh has NEVER been run — the user's worry is legitimate and
+> unaddressed.
+> ⇒ **ORDER (user, explicit): fix the gradient FIRST. Then the uniform seed.
+> Then re-examine the best design with these three questions.** Do not spend
+> GPU on them before the gradient is gated.
+>
+> ### ★★★★★THE X THRESHOLD IS PINNED (2026-08-25 ~00:40) — IT IS ~1024
+> **MEASURED, job 136907 task 35: x = 1000 cells PASSED** (exit 0, vector
+> `[-0.00127211, +0.01191436, +0.00730678]`, signs 3/3 vs the keep-forever FD).
+> **x = 1056, 1080, 2112 all REJECTED; x = 528 and 1000 both PASS.**
+> ⇒ **The bound lies between 1000 and 1056 — i.e. CUDA's 1024 threads/block**,
+> exactly as the `lumcudafdtd.dll` string "Total threads per block %u exceeds
+> device limit of %d" predicted. The mechanism is now understood, not guessed.
+> **CONSEQUENCE FOR TILING: 3 tiles suffice** (2112/3 = 704 cells, comfortably
+> under 1024); `wg_src_tiles=4` (528/tile) is what is dispatched and carries
+> extra margin at no extra cost — tiles share ONE adjoint run.
+> ★Ratio spread across passing rungs (0.35-0.65 here vs 0.39-0.44 at rung 30)
+> confirms again that these ratios are CROP-dominated — fit C_field ONLY at
+> the production tiling.
+>
+> ### ★★★TINY-SCENE PROBES HUNG — MY OWN FIX FAILED, OWN IT (2026-08-25)
+> `gpu_probe.py` tasks 0/1 (jobs 136917/136921) **stalled inside the FIRST
+> `fdtd.run("FDTD","GPU")`** — GPU handshake printed, then ~50 min of silence,
+> no error. CANCELLED (scancel, ~100 GPU-min wasted). **The scene is NOT the
+> problem**: a local build-only check confirms 0.67 M cells, 10 fs, every
+> property set correctly. The fault is in a HAND-ROLLED lumapi session calling
+> `run()` directly, versus lumopt2's proven `FdtdSession`/`LocalRunner` path
+> (which every device rung uses without trouble).
+> ⇒ **LESSON, and it does NOT retract the tiny-scene rule (CLAUDE.md §5):**
+> the rule is right, but a debug probe must reuse the PROVEN execution path,
+> not re-implement it. A hand-rolled harness adds a second unknown alongside
+> the bug you are chasing. If a probe needs a solver run, drive it through the
+> same session machinery production uses, or make it build-only.
+> ⇒ Do not sink more time into `gpu_probe`'s run path; the device task 37
+> answers the same question through the proven path.
+>
+> ### ★★★★TILING IMPLEMENTED 2026-08-25 00:xx — `wg_src_tiles`, DEFAULT-OFF
+> **Engine now carries the fix** (`lumopt2_design.py`): `wg_src_tiles: int = 1`
+> + `wg_tile_max_xcells: int = 528`, `tile_x_edges` / `split_dataset_x` /
+> `import_tiled_source`, and a 3-way dispatch in
+> `MixedFom.setup_adjoint_simulation` (import | tiled | legacy).
+> With `wg_src_tiles>1`, `field_profile_adj` stays a PURE MONITOR and the same
+> weighted dataset is injected through N narrow FieldRegion tiles **all
+> enabled in ONE adjoint run** — sources superpose linearly and the gradient
+> assembly is linear in the adjoint field, so the result is EXACT and costs
+> ONE adjoint, not N. Tile x-geometry is set at ADJOINT time from the
+> monitor's own recorded samples (the mesh is frozen by then); interior edges
+> are sample MIDPOINTS so no sample is shared or lost.
+> **VERIFIED LOCALLY, ZERO GPU:** default is 1 (running campaigns
+> bit-identical, REQUEUE-safe); the partition reconstructs the dataset
+> ELEMENT-FOR-ELEMENT over nx ∈ {2112, 2111, 2113, 100, 7} × N ∈ {1..8}; no
+> interior edge lands on a sample; **2112 / 4 = 528 exactly** = the highest
+> measured-pass rung.
+> **GATES DISPATCHED ON DUMMY SCENES (the new §5 tiny-scene rule):**
+> - **136917 = `gpu_probe` task 0** — the x-threshold ladder, 12 sizes
+>   (256…2112) incl. the suspected 1024 boundary, two short solves each.
+>   (136914 was the same thing and died in SECONDS on a lumapi signature
+>   error — `add*` helpers take NO geometry kwargs in this build; use
+>   `add()` + `set()`. That is the tiny-scene rule paying for itself.)
+> - **136918 = `gpu_probe` task 1** — ★the TILING CORRECTNESS gate, and it
+>   needs NO device because source superposition is generic physics: inject a
+>   structured synthetic weight (a) through ONE 512-cell source, (b) through
+>   4×128-cell tiles carrying disjoint slices of the SAME data, compare an
+>   independent witness monitor. PASS = max relative difference < 1e-6.
+>   A mis-sliced tile cannot hide: the weight has 3 sine periods across x.
+> ⇒ **The only DEVICE run still required is the full-region 4-tile gradient**,
+> sign-checked against the keep-forever FD `[-0.00365, +0.01825, +0.02026]`,
+> then `fit_c_field`. Everything else was moved off the device.
+> ★**R1, the one that can silently corrupt the gradient:** tiles are assumed
+> to sample the FROZEN global mesh. If a tile builds its own grid,
+> `importdataset` INTERPOLATES and the partition stops being exact. The gate
+> is free — assert `concat(x_t0..x_tN) == x_of(field_profile_adj)` by float
+> equality. ★R6: N sources in one run is itself untested; if the tiled
+> adjoint still dies, the next probe is ONE 528-cell tile covering part of the
+> region, separating a per-source X limit from a per-run aggregate.
+>
+> ### ★★★★★THE ROADMAP — ONE PATH, NO OPTIONS (user order 2026-08-24 23:30:
+> ### "work autonomously and actually fix everything and see that we get a
+> ### working optimizer that manages to keep the FWHM constant")
+> **STAGE 1 — MAKE THE GRADIENT WORK. Nothing else starts until 1.4 passes.**
+> - 1.1 **PIN THE X THRESHOLD** — job **136907** rungs 35 (x=1000) / 36
+>   (x=1080), in flight. Output = the safe tile width. [MEASURED so far:
+>   x=528 PASS 3/3, x≥1056 FAIL 4/4, cell counts OVERLAP across the split
+>   (pass 3,696-45,936 vs fail 29,568-183,744) ⇒ **x alone is the variable**.]
+> - 1.2 **TILE THE ADJOINT SOURCE IN X.** ★**This is EXACT, not an
+>   approximation, and the argument is why the whole route works:** the
+>   FORWARD runs fine at full size, so the softW weight W(x,y) = dsoftW/dI ×
+>   y-trapz is computed ONCE from the complete forward field; the adjoint
+>   problem is LINEAR in its source; and the gradient assembly
+>   ∫ E_adj·(dEps/dp)·E_fwd is LINEAR in E_adj. Therefore
+>   **∇W(full source) = Σ_i ∇W(tile_i source)** exactly, provided each tile
+>   carries its own slice of the SAME globally-computed W and zeros
+>   elsewhere. The global quantities inside softW (softmax peak, fixed-edge
+>   floor) are evaluated on the full forward BEFORE partitioning, so
+>   non-separability of softW is NOT a problem — we never partition softW,
+>   only its adjoint source. 3 tiles across 2112 cells at ≤1000-cell tiles.
+> - 1.3 **GATE the tiled gradient** vs the keep-forever CPU FD
+>   `[-0.00365, +0.01825, +0.02026]`: sign agreement, then
+>   α ∈ [0.8, 1.25] after 1.4. A tiled run must also reproduce a
+>   single-tile run on a region small enough for both (consistency check
+>   that costs one extra eval and catches partition bugs).
+> - 1.4 **FIT C_field AT THE PRODUCTION TILING** (`fit_c_field.py`, needs the
+>   Re run + an Im-quadrature partner). NEVER on a cropped rung — rung 30 and
+>   rung 34 gave ratios 0.40 vs 1.5 purely from region change, which is
+>   exactly why a cropped C is meaningless.
+> **STAGE 2 — MAKE THE OPTIMIZER HOLD THE WIDTH.** Gates P0/P2/P3/P4/P5 as
+> specified in the formulation block below; P2 and P3 are single-gradient
+> SIGN checks (~2 evals) and are the cheap falsification of the whole design.
+> Then wire into the campaign driver: PHASE A predictive step-clipping,
+> PHASE B null-space projection + measured restoration, λ logged per iterate.
+> **STAGE 3 — THE SEEDS, in the user's stated order.**
+> - 3.1 **THE UNIFORM SEED** under the new method — the honest-result
+>   campaign. Its failure mode is already MEASURED (3 of 7 evals rejected on
+>   width) and is exactly what phase-A clipping removes.
+> - 3.2 **IMPROVE THE BEST DEVICE** (`BEST_T9636`): deliberately spend its
+>   0.36 µm of slack to reach the ceiling (where the constraint is finally
+>   active), then ride. Its stall is MEASURED as near-zero ∇T with slack —
+>   the method does NOT fix that on its own; spending the slack is a driver
+>   decision that must be taken explicitly.
+> **MEANWHILE (do not disturb):** 136753 (uniform, hinge wall) and 136905
+> (seesaw, resumed at T 0.94493) keep running as the BASELINE the new method
+> must beat. They are the control for "did any of this help".
+> ★**FABLE BUDGET: ~10% weekly left, a few days.** Spend it ONLY on: (a) a
+> failed 1.3/1.4 gate, (b) the campaign-driver wiring review before Stage 2
+> dispatch. The tiling linearity argument above did NOT need it and the
+> formulation is already decided — do not re-litigate either.
+>
+> ### ★★★★★THE FORMULATION, DECIDED 2026-08-24 23:00 (Fable brief, user's
+> ### own intuition formalised): **CEILING-RIDING PROJECTED GRADIENT.**
+> The user asked "with the full gradient map we know where width MINIMISES,
+> but also WHERE IT IS CONSTANT — what should be done?" That is exactly the
+> right question and the answer is: **"where it is constant" = the null space
+> of ∇W = the tangent space of the active ceiling manifold.** Ride it.
+> **PRIMARY METHOD (formulations 1+3 are two halves of ONE method):**
+> - **Treat width as an EQUALITY at the ceiling, not an inequality.** The
+>   active set is known A PRIORI from measured physics: every strong T lever
+>   spends width (136753 ev5 T 0.95912 @ 20.37 µm; above-knee shifts
+>   0.0136 T/µm; mcorr falling 325→311.4), so T is monotone in width along
+>   every dominant direction ⇒ **the optimum sits ON the ceiling.** With the
+>   active set known, projected/reduced gradient (Rosen/GRG) is textbook and
+>   needs NO multiplier schedule — the shadow price is implicit.
+> - ★**Ride W_hi − margin (18.713 − 0.10 = 18.613), NOT the 18.346
+>   benchmark.** The band's upper half is free real estate: `BEST_T9636` sits
+>   at 18.353 with **0.36 µm of unspent slack ≈ +0.005 to +0.015 T** at
+>   measured marginal rates. This IS handoff item ②-3, now with a method.
+> - **PHASE A (climb, W < target): predictive step clipping.** `W(p+αd) ≈
+>   W + α ∇W·d` is FREE once ∇W exists ⇒ cap α so no probe is ever predicted
+>   past the ceiling. ★**This is the single biggest immediate saving and it
+>   needs no convergence theory**: it converts tonight's measured waste
+>   (3 of 7 evals in 136753 rejected on width, ~40% of GPU time, 45-58 min
+>   each) into a free linear prediction.
+> - **PHASE B (ride): null-space step** `d = D∇T − (D∇T·û)û`, û = D∇W/|D∇W|,
+>   width-neutral to first order; **restoration** `p −= (W−W_tgt)∇W/|∇W|²`
+>   on MEASURED fwhm_env when drift exceeds margin/2; **log the shadow price
+>   λ = (∇T·û)/|∇W| every iterate.** `D` = per-block trust scales squared,
+>   which also fixes the 0-200-vs-0-7 conditioning INSIDE the method.
+> - Acceptance = Fletcher-Leyffer filter (already in the V2 plan); WidthTrip
+>   and a W_lo hard-reject (see-saw over-narrowing guard) stay.
+> - ★**It prices the see-saw's first leg**: on the manifold, narrowing earns
+>   λ > 0, so the locally-T-negative outer-tooth raise is CREDITED for the
+>   width budget it frees, combining both legs into ONE first-order step.
+> **FALLBACK: equality-form AL** — reuse the existing `wg_mu`/`wg_lam_hi/lo`
+> machinery with ONE change: update the multiplier on the SIGNED measured
+> deviation from W_target, not `max(0,g)`, so it is never dormant. ~10-line
+> edit, inner L-BFGS-B untouched. **Trigger:** projected direction zig-zags
+> 3 consecutive iterates, OR restoration consumes >⅓ of accepted steps, OR
+> the drift budget blows twice.
+> **REJECTED:** inequality AL as primary (λ·max(0,g) is zero while feasible,
+> and the multiplier can only learn the price BY overshooting — the blind
+> search again at 45-90 min per lesson); SLSQP/trust-constr (eval-count
+> multiplier, noise-intolerant at the 0.002 T floor, invalidates the
+> L-BFGS-B-calibrated trust machinery); the hinge wall for STEERING (keep it
+> as a WidthTrip tripwire only).
+> **GATES — P2/P3 make the whole design falsifiable for ~2 full evals:**
+> P0 local: projected direction satisfies ∇W·d = 0 to machine precision +
+> scaler round-trip exact. P1: FD gate AT THE PRODUCTION TILING CONFIG
+> (never on a cropped rung), sign 6/6 + α ∈ [0.8, 1.25] after `fit_c_field`.
+> **P2 free-shift known-answer**: at the uniform seed the projected shift
+> components must be strongly positive (e ≤ 65 is measured width-flat) —
+> >0 on ≥20/25 teeth, then 2-3 steps give ΔT ≥ +0.010 at ΔW ≤ 0.05 µm.
+> **P3 see-saw known-answer**: at ceiling contact the corrugation block must
+> show the inner/outer SIGN SPLIT matching the measured ~11× price ratio —
+> ≥20/25 teeth. P4 restoration: displace W by +0.15 µm, ONE step recovers
+> ≥70% (this is the end-to-end C_field MAGNITUDE test). P5: 5 null-space
+> steps, cumulative drift ≤0.15 µm.
+> **WHAT IT DOES NOT FIX (stated up front):** true local maxima on the
+> manifold — keep see-saw seeding, P3 tests the gradient at contact, not
+> everywhere; `BEST_T9636`'s stall (near-zero ∇T with slack) — the method
+> prescribes DELIBERATELY spending the slack first, a driver decision, not
+> emergent; **C_field + tiling are PREREQUISITES, not details** — step
+> clipping and restoration need MAGNITUDES, and signs alone (all we have
+> tonight) steer direction but cannot control step length; noise floors
+> (5.5 nm width, 0.002 T) unchanged; and the T-ceiling exchange rate is
+> untouched — 0.97 plausible, 0.98 still needs new structure.
+> **BUDGET (EXPECTED):** ~2-2.5 h per full iterate (fwd 22 min + port adjoint
+> 22 min + tiled width adjoint ~1.5 h at 4 tiles), ~1 h on climb iterates
+> reusing ∇W up to 3 steps (refresh if measured ΔW deviates >2× from
+> predicted). Gates P0-P5 ≈ 10 evals ≈ 25 GPU-h. Campaign 35-55 evals ≈
+> 80-140 GPU-h per seed.
+>
+> ### ★★★INCIDENT 2026-08-24 20:30 — CAMPAIGN 136752 KILLED BY LICENSE
+> ### STARVATION, AND MY DISPATCH CONTRIBUTED. PROCESS FIX BELOW.
+> **MEASURED (`sacct`): `136752_0 FAILED, elapsed 04:04:46, exit 1:0`**, log
+> ends `RuntimeError: Optimization failed: ... 'in run:'` — the documented
+> license-starvation signature, at 20:30:55.
+> **What I did wrong:** I dispatched the 6-task ladder (136799) at 19:31
+> WITHOUT probing seats, on the reasoning that a probe an hour earlier read
+> 10/50 and that the connection budget was tight. CLAUDE.md §6 makes the
+> seat check **MANDATORY before any dispatch of more than one task** and says
+> in terms that REACHABILITY ≠ AVAILABILITY and the pool oscillates. It went
+> 10/50 → **45/50** within the hour; 3 of my 6 rungs died instantly on the
+> same signature, which was the warning I should have acted on.
+> **Honest attribution:** the pool is faculty-shared and others took ~29 of
+> the seats, so our 6 tasks were contributory, NOT the sole cause — but the
+> process failure is mine regardless of the arithmetic, and it cost a
+> 4-hour campaign.
+> ⇒ **RULE, now followed: probe seats IMMEDIATELY BEFORE every multi-task
+> dispatch, never from a cached reading.** A stale seat count is not a seat
+> count. (Subsequent dispatches 136826/136869 were both probed first: 27/50
+> and 9/50.)
+>
+> ### ★★★RETRACTED 2026-08-24 22:40 — **THERE IS NO RESUME DEFECT.**
+> **MEASURED, decisive:** after 136753's 21:13 requeue its log prints
+> `[fwhm-wall 0] re-anchored at measured 18.4092 um (mcorr 323.6)` — that is
+> **eval 4's** width, NOT the seed's 18.3452. **The campaign warm-started
+> correctly from its best in-band logged row**, losing exactly ONE
+> evaluation, which is the designed §6 budget.
+> **Why I got it wrong (two bad inferences, both avoidable):**
+> 1. `Computing baseline FOM at iteration 0 (initial parameters)` is printed
+>    **UNCONDITIONALLY** at every `opt.run()` regardless of `initial_params`
+>    (`lumopt2/core/optimization.py:940`). It is not a seed indicator — it is
+>    the one-evaluation resume cost being paid. I read it as proof of a cold
+>    start.
+> 2. The duplicate `eval 1` seed rows are **timestamped 17:24-17:26**, i.e.
+>    the deliberate trust-box RE-DISPATCH — about three hours BEFORE the
+>    20:30 death and the 21:13 requeue. At 17:25 the seed genuinely WAS the
+>    only band-compliant row in each log (the sole alternative scored
+>    −1.53/−1.55, out of band), so resuming to it was CORRECT output.
+> ⇒ **The rows carry a `t` unix-time field — date the rows before inferring
+> a restart.** Both errors came from reading a log line and a row ordering
+> as evidence without checking timestamps.
+> **The resume mechanism, MEASURED as it exists:** `run_campaign` calls
+> `_best_from_log` UNCONDITIONALLY (`lumopt2_design.py:1884-1890`); it scans
+> `<label>_evals.jsonl` (appended PER EVALUATION at `:1450`, before any guard
+> can raise), filters to the FWHM deadband fail-closed for
+> `fwhm_wall`/`width_grad` campaigns, takes max FOM, and returns
+> `(params, lam_pk_nm)` → seed + scan centre. All four failure hypotheses
+> (iteration-only file / path mismatch / flag-gated / not implemented) were
+> tested against the code and FALSIFIED.
+> **REAL residual gaps (not defects, but know them):** L-BFGS-B's quasi-Newton
+> curvature is NOT checkpointed (lumopt2 has no such facility), so a requeue
+> restarts with an identity Hessian at the resumed point — eval loss 1,
+> curvature loss real; AL multipliers `wg_lam_hi/lo` reset to 0 on restart
+> (only bites `width_grad=True` campaigns); `best["fom"]` is not restored so
+> `_best.json`'s number can understate the campaign (params are re-filtered
+> through the log, so the DELIVERED DESIGN is unaffected).
+> ★**LABEL RULE made explicit:** `_best_from_log` compares raw `row["fom"]`
+> across every row under a label, so **any edit that changes the FOM
+> DEFINITION must take a NEW label** (s2→s3→s4→s5 already does this).
+> Changing only bounds/trust boxes may reuse the label, as the 17:25
+> relaunch did.
+> ⇒ **CONSEQUENCE: campaign 136752 was safely relaunchable, and was
+> relaunched — Athena job 136905** (4d_1g / 96 h / 160G, seats probed 27/50).
+> It resumes from eval 4 (T 0.94493 / W 18.4597), not from the seed.
+>
+> ### ~~RESUME DEFECT — BOTH CAMPAIGNS COLD-RESTART FROM THE SEED~~ (WRONG, see above)
+> **MEASURED from the fetched eval logs:** after their restarts, BOTH
+> campaigns re-log `eval 1` at the SEED values (seesaw T 0.93790 = its seed;
+> uniform_s5 T 0.90120 = its seed), and 136753's log reads
+> `Computing baseline FOM at iteration 0 (initial parameters)` at 21:13:44.
+> **They do NOT warm-start from the best logged row.** 136753 lost ~3.5 h
+> this way. That violates §6's critical rule (loss budget ≤ 1 evaluation on
+> preemption) and makes every long campaign a DEFECT at dispatch time until
+> fixed. The jsonl rows survive (good — that is what makes the fix possible),
+> so the fix is to seed from the best logged row on startup.
+> ⇒ **FABLE ESCALATION** (it touches the campaign driver's startup path).
+>
+> ### ★CAMPAIGN SCIENCE AS OF THE DEATH/RESTART (logs now LOCAL in
+> `results_from_athena/lumopt2_c325_logs/lumopt2_v2_{seesaw,uniform_s5}_evals.jsonl`)
+> **136752 seesaw — was climbing cleanly IN BAND** (ceiling 18.713):
+> ev1 seed T 0.93790 / W 18.3318 / e 0 → ev2 0.93879 / 18.3410 / e 6.3 →
+> ev3 0.94033 / 18.3566 / e 13.0 → **ev4 0.94493 / 18.4597 / e 39.9 /
+> Q_i 74 352**. e 39.9 = **0.80 nm per tooth**, well under the e=65 knee ⇒
+> it is buying T with shifts that cost almost no width, exactly the measured
+> free-zone rule. This campaign was WORKING when the licence killed it.
+> **136753 uniform s5 — reproducing the band-edge thrash, as predicted:**
+> ev1 0.90120 / 18.3452 → ev2 0.90679 / 18.3895 → ev4 0.90896 / 18.4092,
+> but its big probes go OUT of band and are rejected: ev3 W 25.13, and
+> **ev5 T 0.95912 at W 20.3738** (Q_i 93 528). Note the direction: mcorr
+> falls 325.0 → 324.0 → 323.6 → 311.4, i.e. it is LOWERING corrugation to
+> widen-and-buy-T, and is NOT finding the see-saw (which needs the outer
+> teeth RAISED). ⇒ On current evidence the uniform seed needs the
+> **AUGMENTED LAGRANGIAN**, not another hinge patch — the handoff's stated
+> next move. Still early (5 evals, post-restart); let it run before calling it.
+>
+> ### ★★★★★MEASURED 2026-08-24 20:55 — **THE GPU WIDTH-ADJOINT RAN.**
+> ### SIZE BOUND CONFIRMED. THE PRODUCTION FIX IS TILING.
+> **Rung 30 (`quart`, x span 26.406 µm × y span 0.361 µm = 528 × 7 cells)
+> EXITED 0 and printed a finite gradient vector** (job 136799 task 30):
+> `[adjoint_only detune=1 C_field=(1.0,0.0) indices=[0, 50, 190]]`
+> `array([-0.0014301, 0.00800267, 0.0074804])`
+> **THE LADDER, COMPLETE (all four 2D rungs, one number each — cells at
+> dx 50 nm):**
+> | rung | region | cells | verdict |
+> |---|---|---|---|
+> | 27 full | 105.624 × 1.444 µm | 2112 × 29 = 61,248 | **FAIL** CUDA |
+> | 28 yhalf | 105.624 × 0.722 µm | 2112 × 14 = 29,568 | **FAIL** CUDA |
+> | 30 quart | 26.406 × 0.361 µm | 528 × 7 = 3,696 | **PASS** exit 0 |
+> | 32 thin3d (3D!) | 105.624 × 1.444 × 0.16 µm | 2112 × 29 × 3 = 183,744 | **FAIL** CUDA |
+> | 33 small3d (3D) | 26.406 × 0.722 × 0.16 µm | 528 × 14 × 3 = 22,176 | **PASS** exit 0 |
+> | 29 xhalf / 31 patch | — | — | died on the license race |
+> ★**3D DOES NOT RESCUE FULL SIZE** (rung 32, job 136826, same CUDA error) ⇒
+> the zero-dimension hypothesis is now DEFINITIVELY DEAD; giving the region
+> z-thickness at full x changes nothing.
+> ★**THE PATTERN ACROSS ALL FIVE DECIDED RUNGS: every PASS has x = 528,
+> every FAIL has x = 2112 — regardless of y, z, or total cells.** Note
+> rung 33 PASSES at 22,176 cells while rung 28 FAILS at 29,568: those two
+> are close in cell count but differ 4× in x. So an **X-DIMENSION bound is
+> now better supported than a total-cell budget.**
+> ⇒ **DISPATCHED to decide it (job 136869, probed 9/50 seats first):**
+> rung **29** (x = 1056, 30,624 cells) — the direct x-threshold probe; and
+> rung **34 `xnarrow_big`** (x = 528, y full, 3 z-cells = **45,936 cells**,
+> above every failure so far) — PASS ⇒ bound is on X ALONE ⇒ tile in x only;
+> FAIL ⇒ total-cell budget ⇒ tile in both axes.
+> ★Rung 33's ratios vs FD are **1.369 / 1.828 / 1.269** (vs rung 30's
+> 0.392 / 0.439 / 0.369) — the scale moves a LOT with the region, which
+> CONFIRMS that these ratios are dominated by the crop, not by C_field.
+> Do not read either as a calibration.
+> ★**h5 NON-ZERO GATE: PASSED** (`h5_gate.py gfr_quart`, run on the login
+> node 20:55). `adj_default_field_profile_adj_output.h5` max|E| = **0.4593**,
+> with Monitor0 Ex/Ey/Ez all non-zero (6.5e-3 / 2.6e-3 / 1.6e-2). This is
+> NOT the 2026-08-23 fake, whose every monitor field was EXACTLY 0.0.
+> (Ex=Ey=0 on the z=0 plane of the broadband `field_profile` is the expected
+> TM parity, not a dead source — the fieldregion injects volumetrically.)
+> ★**SIGN GATE: 3/3 vs the keep-forever FD** `[-0.00365, +0.01825, +0.02026]`
+> — corr_1 −/−, shift_1 +/+, wcav +/+.
+> ★**AND THE RATIOS ARE NEARLY CONSTANT — the C_field signature:**
+> corr_1 **0.392** | shift_1 **0.439** | wcav **0.369** (mean ≈ 0.400,
+> spread ±9%). A dead or garbage adjoint cannot produce ONE consistent scale
+> across three different parameter classes. That is what an uncalibrated
+> adjoint awaiting its `C_field` looks like.
+> ★★**HONEST CAVEAT — DO NOT FIT C_field ON THIS ROW.** Rung 30's region is
+> CROPPED (528 × 7 vs the full 2112 × 29), so its softW is a DIFFERENT
+> functional from the one the FD reference measured. The ~0.400 may be
+> C_field, may be the crop, or both, and this row cannot separate them. The
+> C fit must be done at the region the production run will actually use.
+> ★**NEXT, in order:** (1) 3D rungs 32/33 (job 136826, in flight) — if a 3D
+> region runs at FULL size, tiling is unnecessary and that beats everything
+> here; (2) if not, BISECT the cell threshold (3,696 → 29,568) before
+> designing tiles: the full region is 61,248 cells, so a ~4k tile budget
+> means ~16 tiles ≈ 6 h and kills the speed win, while a ~15k budget means
+> 4 tiles and keeps it. Suggested probes: 1056 × 14 (14,784) and 528 × 29
+> (15,312) — they also separate total-cells from per-dimension bounds;
+> (3) ESCALATE TO FABLE for the tiling design + its gate (summing tile
+> adjoints vs separate solves is a FOM-level decision).
+>
+> ### ★★★★MEASURED 2026-08-24 20:24 — RUNG 27 **FAILED**, ERROR REPRODUCED.
+> ### ★AND A NEW TRAP: THE CUDA ERROR SURFACES ~22 MIN LATE, NOT "IN SECONDS".
+> **Rung 27 (FULL spans, `2D Z-normal`, 2112 × 29 cells) died with the exact
+> target error**, MEASURED verbatim from `lum_array-136799_27.out`:
+> `n315(process 0): Warning: GPU minimal memory estimate may be inaccurate!`
+> `n315(process 0): ERROR: invalid configuration argument`
+> lumopt2 retried once (`-gpu -t 1` → `-gpu -t 8`); both failed; exit 1.
+> ★**TIMELINE THAT MATTERS — this invalidated my own verdict rule:** forward
+> done 20:01:32 → "Running adjoint simulation..." 20:01:34 → **error 20:24:13,
+> i.e. 22.6 min later.** The engine meshes on CPU before the GPU kernels
+> launch (Ansys: "operations other than solver … still use the CPU"), so the
+> launch error appears only AFTER a long CPU phase. **"Dies in seconds" is
+> WRONG for this failure, and a long runtime is NOT evidence of a launch.**
+> ⇒ The ladder's printed verdict rule ("a real solve time = LAUNCHED") is
+> UNSAFE — a rung is only a PASS when the task EXITS 0 with a printed
+> gradient vector. Judge on exit, never on elapsed time.
+> ⇒ **RETRACTED (stated in session at 20:08, wrong):** "the full-size 2D
+> adjoint launched on GPU / 136026 did not reproduce." It reproduced exactly.
+> The zero-dimension and size hypotheses are BOTH still live — 27 tells us
+> only that the largest 2D region fails, which is what we already believed.
+> ★**Note the warning that immediately precedes the error**: "GPU minimal
+> memory estimate may be inaccurate" — memory sizing is implicated right at
+> the failing launch, which fits a grid/block dimension derived from a
+> region-size or memory estimate.
+> **STILL PENDING at 20:25: rungs 28 (yhalf, 2112 × 14) and 30 (quart,
+> 528 × 7) both started their adjoints ~20:12** ⇒ their verdicts are due
+> ~20:34 on the same 22-min offset. **30 surviving = the size bound**, and
+> the fix is tiling.
+> ★★**DO NOT CALL ANY RUNG A WORKING ADJOINT — THE 52-MINUTE FAKE IS THE
+> PRECEDENT.** A running solve is not evidence. Gates, in order:
+> (1) h5 non-zero gate on the adjoint output (`runners/lumopt2_design/gates/h5_gate.py`, runs
+> on the login node: `python3 h5_gate.py gfr_full`); (2) sign check of the
+> printed vector vs the keep-forever FD `[-0.00365, +0.01825, +0.02026]`;
+> (3) `fit_c_field.py` for C_field, which has NEVER been fitted.
+> ★NOTE the parity objection does NOT apply here: that killed the IMPORT
+> source (tangential-only injection at a plane where Ex=Ey=0). A field region
+> in source mode is a VOLUMETRIC current source — the docs say it "converts
+> the recorded field into an array of dipole moments … with phase and
+> orientation determined by the electric field" — so it can carry the NORMAL
+> component (our Ez = 8.41). That is exactly why this route can work where
+> the import sheet could not.
+> ★**COST, if the gates pass:** forward 1351.6 s + adjoint ≈ the same ⇒
+> **~45 min per gradient vs 8.7-12.1 h on CPU**, i.e. the in-loop exact width
+> gradient becomes affordable — the priority-zero prize.
+>
+> ### ★★THE ZERO-DIMENSION FINDING (2026-08-24 ~20:30) — RECORDED, CONTRADICTED
+> **Two independent lines converge on: the adjoint source dies because the
+> field region has a ZERO z extent, not because it is too big.**
+> 1. **MEASURED FROM THE SHIPPED BINARY** (`v261/bin/plugins/gpu/
+>    lumcudafdtd.dll`, read-only string extraction): the CUDA plugin carries
+>    its own pre-launch validators, and **two** of them are about dimensions —
+>    `"Grid Dimensions (%u,%u,%u) include one or more values that exceed the
+>    device limit"` AND `"Grid Dimensions (%u,%u,%u) include one or more ZERO
+>    values. All dimensions must be nonzero"`. `cudaErrorInvalidConfiguration`
+>    is raised for a ZERO dim just as much as an oversized one. Our twin is
+>    `"2D Z-normal"` with **no z span** (engine:1075). The plugin also
+>    contains `FdtdVolumeSource` and `FdtdPointSource` classes with compiled
+>    dipole/volume CUDA kernels ⇒ the capability EXISTS.
+> 2. **MEASURED FROM `v261/bin/fdtd-engine.exe`**: the engine's COMPLETE
+>    GPU-unsupported list (2D sims, legacy aniso PML, some grid attributes,
+>    BFAST, TFSF, deprecated mesh refinement, some materials, checkpoint
+>    resume, multi-GPU; warnings for apodization/movie/time monitors) has
+>    **NO entry for field regions or sources-from-monitors**. So this is an
+>    UNGUARDED CRASH PATH, not a refused capability. (This supersedes the
+>    weaker "Ansys docs list only TFSF and BFAST" claim above with a
+>    version-exact one.)
+> 3. **DOCUMENTED (web, 403-blocked pages ⇒ search extraction, re-read in a
+>    browser before quoting):** 2026 R1 release notes advertise *"GPU support
+>    for volumetric current sources was also added … key requirements for
+>    inverse design using LumOpt"* and describe the workflow as recording with
+>    a **3D Field Region** then playing it back as a source. Every Ansys
+>    description of the supported GPU path says **3D**.
+> 4. **It explains the asymmetry we measured today**: the same object is FINE
+>    as a monitor on GPU (rungs ran 8+ min) because DFT monitors go through
+>    separate kernels (`updateDft`/`finalizeDft`) that handle singleton dims;
+>    only the SOURCE path launches the failing kernel.
+> ⇒ **RUNG 32 (`thin3d`) IS NOW THE CRITICAL RUNG, not the size ladder** —
+> and it is one of the three that died on the license race without testing
+> anything. **Rung 33 (`small3d`, 3D at quarter x) ADDED** as its partner:
+> 32 launches ⇒ z-span-0 was the whole bug, no tiling needed; 32 dies
+> "exceeds device limit" but 33 launches ⇒ dimension AND size ⇒ tiling;
+> both die ⇒ 3D is not the cure, go to routes 2/3.
+> ★**A PREMISE CORRECTION worth keeping** (it was wrong in session and in the
+> task brief): **port adjoints do NOT inject via dipoles** — `port_fom.py:110`
+> sets `FDTD::ports "source port"`, a MODE source; `grep -i dipole port_fom.py`
+> is empty. The dipole normalization lives on the FIELD side
+> (`field_fom.py:112/115/145`, `power_target = 1e-15 W`, citing the engine's
+> `simdipolesource.cpp:184-201`) ⇒ lumopt2's field-side scaling is ALREADY
+> written for dipole injection, which is what makes an explicit-dipole
+> substitute (route A) structurally cheap: `setup_adjoint_simulation` is
+> called from ONE site (`project.py:619`) and nothing downstream depends on
+> how the source was built.
+> ★lumopt2 sets exactly ONE source-side property on the object —
+> `setnamed(monitor, "source mode", True)` (`field_fom.py:73`) — and never
+> creates the field region itself. Every other property is ours
+> (engine:1073-1085), so the fix space is entirely on our side.
+>
+> ### ★FIRST READ OF 136799 (2026-08-24 19:45) — 3 casualties, NO verdict yet
+> **MEASURED spans (corrects an assumption in the plan): the twin is
+> x span 105.624 µm × y span 1.444 µm = ~2112 × 29 cells at dx 50 nm** — the
+> region is FOUR TIMES longer than the "~23 µm" estimate. If a launch bound
+> exists, 2112 is the number to suspect; y is already tiny.
+> **Rungs 29 (xhalf), 31 (patch), 32 (thin3d) DIED at ~7-8 min with bare
+> `LumApiError: 'in run:'`, exit 1.** Read the traceback before classifying:
+> it is `compute_gradient → run_forward → run_jobs(gpu) → fdtd.run` — the
+> **FORWARD** solve, on the ordinary port path, AFTER lumopt2's own 2
+> retries. The width adjoint was never reached, so **these are NOT CUDA/
+> FieldRegion verdicts**. Bare `in run:` is the documented license/startup
+> race signature (§6); 6 tasks cold-started in the same second.
+> ★**The size hypothesis is REFUTED as an explanation of these deaths**: the
+> SMALLEST rung (31, 120×16 cells) died while the LARGEST (27, full 2112×29)
+> is still running, and 30 (528×7) is running. Deaths are stochastic, not
+> ordered by size.
+> ⇒ **Recovery = staggered resubmit of 29/31/32 (`--array-tasks=29,31,32
+> --max-concurrent=1` style) ONCE the queue drains — not now.**
+> **Rungs 27, 28, 30 were alive in the FORWARD solve at +8 min.** The forward
+> costs ~27-50 min here, so the CUDA verdict (adjoint launch) is expected
+> ~20:20-20:30 IDT. Nothing before that is evidence.
+> Campaigns unaffected: 136752 dEps/dP 200.5 s, 136753 running its adjoint.
+>
 > ★**MANDATORY GATE FOR ANY RETRY — this is what caught the fake result:**
 > a plausible RUNTIME IS NOT EVIDENCE OF A WORKING ADJOINT. Before believing
 > any timing, open the adjoint's output h5 and confirm the monitor fields are

@@ -267,6 +267,31 @@ class CampaignSpec:
     # user challenge 2026-08-22: test before accepting the CPU tax.
     # Normalization differences are absorbed by C_field (that is its job).
     wg_source: str = "fieldregion"
+    # ★wg_src_tiles (2026-08-24) — the GPU-rejection workaround. MEASURED
+    # (jobs 136799/136826/136869): the GPU engine accepts a FieldRegion
+    # ADJOINT SOURCE at x=528 cells (3/3 rungs, 3,696-45,936 total cells) and
+    # rejects it at x>=1056 (4/4 rungs, 29,568-183,744 cells) with "ERROR:
+    # invalid configuration argument". Total cells OVERLAP across the split,
+    # so the X extent alone is the variable — suspected CUDA 1024-threads/
+    # block ceiling (lumcudafdtd.dll carries "Total threads per block %u
+    # exceeds device limit of %d"). The same region is fine as a full-size
+    # MONITOR (2112 x 29 cells ran 22 min of forwards).
+    # >1 keeps field_profile_adj as the pure MONITOR (source mode never on)
+    # and injects the SAME weighted dataset W(x,y)*conj(E_fwd) through this
+    # many narrow FieldRegion tiles, x-partitioned with no gap and no
+    # overlap, all enabled in ONE adjoint run. FDTD sources superpose
+    # linearly, and both the adjoint problem and the gradient assembly are
+    # linear in the adjoint field, so the gradient is EXACT — not an
+    # approximation, not a sum of independent solves.
+    # 1 = the legacy single-source path, unchanged.
+    wg_src_tiles: int = 1
+    # Safe per-tile x-cell ceiling, asserted at build time.
+    # ★MEASURED 2026-08-25 (jobs 136799/136826/136869/136907): x = 528 and
+    # x = 1000 PASS; x = 1056, 1080, 2112 REJECT ⇒ the ceiling is CUDA's 1024
+    # threads/block, bracketed to (1000, 1056]. 1000 is the highest MEASURED
+    # pass, so that is the cap. (It was 528 — a placeholder from before the
+    # bracket existed — which failed task 37 at 529 cells/tile, off by one.)
+    wg_tile_max_xcells: int = 1000
     # ★wg_track_resonance (2026-08-23 review; §23 user ruling "softW ON
     # RESONANCE, always" — hard precondition for exact mode): when True, the
     # parametrization func ALSO emits "field_profile_adj::wavelength center"
@@ -347,6 +372,46 @@ class CampaignSpec:
     wg_lam_lo: float = 0.0           # the MEASURED best-row violation
     adj_fix_field_re: float = 1.0
     adj_fix_field_im: float = 0.0
+    # ★wg_project (2026-08-25, HANDOFF "THE FORMULATION, DECIDED 2026-08-24
+    # 23:00"): ceiling-riding projected gradient. Replaces ScipyOptimizer with
+    # run_projected: PHASE A predictive step-clipping while W < target, PHASE B
+    # null-space steps on the width manifold, restoration on MEASURED fwhm_env,
+    # shadow price logged every iterate. Requires width_grad=True. Default
+    # False = every existing path byte-identical (REQUEUE-safe).
+    wg_project: bool = False
+    wgp_target_um: float = None   # ride level W_tgt = W_hi − margin (18.613
+                                  # for the 18.346 family) — NOT the benchmark
+    wgp_margin_um: float = 0.10   # drift margin; restoration beyond margin/2
+    wgp_step: float = 0.25        # step scale in the D metric; gate P2 calibrates
+    wgp_step_max_nm: float = 5.0  # hard per-param step cap (C_field magnitude
+    # ★wgp_autogain (2026-08-25): STOP RELYING ON |C_field|. The projection's
+    # direction is EXACTLY scale-invariant (verified: scaling |C| changes the
+    # null space by 0.00 deg), so the magnitude of C only enters step-length
+    # PREDICTION and restoration GAIN — and both can be MEASURED instead of
+    # fitted. Each iterate compares the predicted width change with the
+    # measured one and updates a running gain, so the method self-calibrates
+    # and survives a mesh change without a new FD reference. Only the PHASE of
+    # C (a Yee-staggering artifact, ~quarter to half cell) still matters.
+    wgp_autogain: bool = False
+                                  # uncertainty guard; scalar cap keeps ∇W·d=0)
+    # ★wg_lam_chain (DEFECT #19, 2026-08-25): the width twin's λ-pin is emitted
+    # as a CONSTANT to autograd (make_func, "zero Jacobian row, zero dEps"), so
+    # ∇W is ∂W/∂p at FIXED λ — while W is SPECced at the device's own MOVING
+    # resonance. The chain term dW/dλ · dλ_pk/dp is therefore unpriced, and the
+    # projection nulls the wrong gradient. MEASURED on job 137075_41: the whole
+    # +0.0110 µm width change of iterate 0→1 is explained by the +0.04 nm λ
+    # drift (0.3655 × 0.04 = +0.0146), and the T-per-µm exchange rate did not
+    # improve over the unprojected baseline (0.097 vs 0.091). Unfixed, restore
+    # pushes along a fixed-λ ∇W that cannot undo λ-mediated growth while climb
+    # re-drifts λ — a treadmill.
+    # dλ_pk/dp comes from the SAME solved fields (zero extra adjoint solves):
+    # two selector passes give ∂T/∂p either side of the peak, then the implicit
+    # function theorem on ∂T/∂λ = 0 gives  gλ = −(∂²T/∂λ∂p)/(∂²T/∂λ²).
+    # ∇T needs no such term: at the peak ∂T/∂λ = 0, so its chain term vanishes.
+    wg_lam_chain: bool = False
+    wg_dwdlam: float = 0.3655     # µm/nm; MEASURED r=0.984 n=9 over the uniform
+                                  # baseline's in-band evals. Refreshed online
+                                  # from the eval log once ≥4 points accrue.
 
 
 def seed_params(spec):
@@ -902,7 +967,17 @@ def attach_penalty(project, spec=None):
     cal_slices = {"corr": SL_CORR, "avg": SL_AVG, "shift": SL_SHIFT,
                   "r": SL_R, "x": SL_X, "d": slice(I_DCOMB, I_DCOMB + 1),
                   "cav": slice(I_CAV, I_CAV + 1)}
-    if spec is not None and getattr(spec, "sigma_wall", False) and spec.sig_anchor:
+    if spec is not None and getattr(spec, "wg_project", False):
+        # ★PROJECTION MODE: NO analytic width penalty at all (audit S4,
+        # 2026-08-25). Width is steered by the null-space projection using the
+        # EXACT grad-W, so any wall here is double-pricing — and the
+        # elongation wall in particular would cap e near 120 nm, structurally
+        # below BEST_T9636's own e = 132.6, forbidding the from-uniform run
+        # from reaching the basin it exists to test. WidthTrip still
+        # fail-closes the DELIVERED design, so the spec is still enforced.
+        pen = lambda p: 0.0
+        pen_grad = lambda p: np.zeros_like(np.asarray(p, dtype=float))
+    elif spec is not None and getattr(spec, "sigma_wall", False) and spec.sig_anchor:
         pen, pen_grad = make_sigma_wall(spec)     # stage-3: one wall on sigma-hat
     else:
         if spec is not None and getattr(spec, "fwhm_wall", False):
@@ -1082,6 +1157,43 @@ def build_base_fsp(spec, out_path):
             f.set("wavelength center", lam_c)
             f.set("wavelength span", 0.0)
             f.set("source mode", 0)
+            n_tiles = int(getattr(spec, "wg_src_tiles", 1) or 1)
+            if n_tiles > 1:
+                # x-tiled adjoint sources — see CampaignSpec.wg_src_tiles.
+                # Clones of the twin, narrowed in x. What is built here is a
+                # PLACEHOLDER partition of the nominal span: the final x
+                # geometry is set at adjoint time from the monitor's own
+                # recorded x samples (import_tiled_source), once the mesh is
+                # frozen. Source mode OFF in the forward, so lumopt2's
+                # get_active_sources (fdtd_session.py:483-489) does not see
+                # them and its per-config `sources` list is untouched; they
+                # are not in sim_results either, so _verify_not_broadband
+                # (fdtd_session.py:806) and the symmetry-factor check
+                # (fdtd_session.py:699) never look at them.
+                dx = getattr(spec, "region_dx_nm", 50.0) * NM
+                cap = int(getattr(spec, "wg_tile_max_xcells", 528))
+                cells = int(np.ceil(geo["x span"] / dx / n_tiles))
+                assert cells <= cap, (
+                    f"wg_src_tiles={n_tiles} leaves ~{cells} x cells per tile "
+                    f"> {cap} (measured GPU FieldRegion-source ceiling) — "
+                    f"raise wg_src_tiles")
+                edges = np.linspace(geo["x"] - geo["x span"] / 2.0,
+                                    geo["x"] + geo["x span"] / 2.0, n_tiles + 1)
+                for t in range(n_tiles):
+                    f.addfieldregion()
+                    f.set("name", f"field_profile_adj_t{t}")
+                    f.set("monitor type", "2D Z-normal")
+                    f.set("y", geo["y"])
+                    f.set("y span", geo["y span"])
+                    f.set("z", geo["z"])
+                    f.set("x", 0.5 * (edges[t] + edges[t + 1]))
+                    f.set("x span", edges[t + 1] - edges[t])
+                    f.set("override global monitor settings", 1)
+                    f.set("use source limits", 0)   # broadband-validator trap
+                    f.set("frequency points", 1)
+                    f.set("wavelength center", lam_c)
+                    f.set("wavelength span", 0.0)
+                    f.set("source mode", 0)         # forward: pure monitor
             if getattr(spec, "wg_source", "fieldregion") == "import":
                 # geometry/span props are INACTIVE on an import source until
                 # a dataset is imported (measured, local W1.6) — the sheet's
@@ -1268,6 +1380,27 @@ def make_project(spec, out_dir, lmpt=None):
     )
     if spec.bc_patch:
         parametrization.bc_weights = boundary_weights(spec)
+    if getattr(spec, "wg_project", False):
+        assert getattr(spec, "width_grad", False), "wg_project needs width_grad=True"
+        assert spec.wgp_target_um, "wg_project needs wgp_target_um (= W_hi - margin)"
+        assert not spec.bc_patch, "wg_project memo assumes stock Parametrization"
+        # Single-slot dEps memo keyed on params: grad_W needs a SECOND
+        # compute_gradient_from_fields at the SAME params, and lumopt2 re-runs
+        # the mesher-FD jacobian on every call (parametrization.py:520-530).
+        for _name in ("compute_lumerical_to_permittivity_jacobian",
+                      "compute_opt_params_direct_to_permittivity_jacobian"):
+            _meth, _c = getattr(parametrization, _name), {}
+
+            def _memo(*a, __m=_meth, __c=_c, **kw):
+                p_kw = kw.get("params")
+                if p_kw is None:                      # positional call → no memo
+                    return __m(*a, **kw)
+                k = np.asarray(p_kw, dtype=float).tobytes()
+                if __c.get("k") != k:
+                    __c["k"], __c["v"] = k, __m(*a, **kw)
+                return __c["v"]
+
+            setattr(parametrization, _name, _memo)
     port_res = lmpt.PortResults("Port_2", "transmission", [w * NM for w in wl_nm])
     if getattr(spec, "width_grad", False):
         # V2 (skill item 28): second FOM entry = softW with a weighted
@@ -1398,6 +1531,46 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                     # consecutive line-search probes chain correctly)
                     spec._wg_lam_track = float(lam_pk)
                 i_pk = int(np.argmin(np.abs(wl - lam_pk)))
+                if (getattr(spec, "wg_lam_chain", False) and fwhm
+                        and 1 < i_pk < len(wl) - 2):
+                    # i_pk within 1 of a band edge would make i_lo-1 / i_hi+1
+                    # wrap (numpy negative indexing) and SILENTLY return a
+                    # gradient built from the wrong end of the spectrum. In
+                    # practice measure_peak already returns fwhm=None for a
+                    # clipped peak, but a wrap is too quiet to leave unguarded.
+                    # ★defect #19: hand the gradient pass the two λ indices that
+                    # straddle the peak by ~half a linewidth, plus the measured
+                    # spectral curvature there. Read per call, same contract as
+                    # _wg_lam_track. Curvature is free — it is the spectrum we
+                    # already solved for, and FDTD is deterministic (repeated
+                    # evals are bit-identical), so there is no noise floor here.
+                    # ★MATCHED-STENCIL pair. For any translating lineshape
+                    # T = A(p)·S(λ−λ₀(p)) with S even, the amplitude part is
+                    # EVEN and cancels in both antisymmetric differences:
+                    #   g_hi − g_lo    = −A·C·[S'(h) − S'(−h)]
+                    #   T'(λ_hi) − T'(λ_lo) =  A·[S'(h) − S'(−h)]
+                    # so gλ = −(g_hi−g_lo)/(T'_hi−T'_lo) is EXACT for any h and
+                    # any symmetric lineshape — the stencil truncation cancels
+                    # instead of merely being small. (The naive pair — central
+                    # difference of ∂T/∂p over a SECOND difference of T — does
+                    # NOT cancel: its error is 1/(1+x²), x = h/g, which cost a
+                    # 49.4% low bias at x≈1 before the gate caught it.)
+                    # Because truncation is gone, a WIDE stencil is now better:
+                    # bigger difference signal, less float cancellation.
+                    dl = float(wl[1] - wl[0])
+                    k = max(1, min(int(round(0.5 * fwhm / dl)),
+                                   i_pk - 1, len(wl) - 2 - i_pk))
+                    i_lo, i_hi = i_pk - k, i_pk + k
+                    # T' from the measured spectrum (free). Spacing is uniform
+                    # in FREQUENCY, so take it from the actual wl values.
+                    tp_lo = float(T[i_lo + 1] - T[i_lo - 1]) / float(
+                        wl[i_lo + 1] - wl[i_lo - 1])
+                    tp_hi = float(T[i_hi + 1] - T[i_hi - 1]) / float(
+                        wl[i_hi + 1] - wl[i_hi - 1])
+                    spec._wg_lam_idx = (i_lo, i_hi)
+                    # denom < 0 ⟺ the stencil straddles a MAXIMUM (T' falls
+                    # through zero); this replaces the curvature sign check.
+                    spec._wg_dTp = tp_hi - tp_lo
                 q_l = lam_pk / fwhm if fwhm else None
                 try:
                     px, pI = profile_line(fdtd, lam_pk, spec.n_periods_side)
@@ -1660,6 +1833,22 @@ def make_fct_v2(wl_nm, spec):
         # check isolates the weighted field-adjoint path with dJ/dsoftW = −1.
         return lambda x: -x[n_wl]
 
+    if getattr(spec, "wg_project", False):
+        # projection mode: objective = PURE windowed softmax T. Width steering
+        # lives in the projected step (run_projected), not a penalty. The width
+        # entry stays in the FOM list (its adjoint still runs, feeding grad_W)
+        # but its jacobian here is exactly 0.
+        # ★AND THE ELONGATION WALL MUST NOT BE STACKED ON TOP (audit S4,
+        # 2026-08-25): attach_penalty picks elong_penalty when rho_band=False,
+        # and run_projected uses the WRAPPED compute_fom/compute_gradient, so
+        # the wall would silently re-enter. DERIVED: d(pen)/dshift =
+        # 4*BETA_ELONG*(e-120) ~ 5e-4 at e=132.6 vs a measured dT/dshift ~ 4e-5
+        # — the wall would DOMINATE the shift block ~12x only 12 nm past its
+        # deadband, and cap the run below BEST_T9636's own e=132.6, i.e. it
+        # would structurally forbid the campaign from reaching the basin it is
+        # meant to test. The projection prices elongation exactly, via grad-W.
+        return lambda x: base(x[:n_wl])
+
     def fct(x):
         return base(x[:n_wl]) - width_band_penalty(spec, x[n_wl])
 
@@ -1690,6 +1879,106 @@ def check_import_src_injects(src_plane):
             f"Use wg_source='fieldregion' (CPU-only) or re-design the twin "
             f"off the mirror plane (re-gate required).")
     return tan, nrm
+
+
+def tile_x_edges(x_m, n_tiles):
+    """(edges, bounds): split a monitor's own x SAMPLES into n_tiles blocks.
+
+    x_m is the 1-D ascending x sample vector in metres. Block k holds samples
+    bounds[k]:bounds[k+1] and is bracketed by edges[k]..edges[k+1]. Interior
+    edges sit MIDWAY between the two samples that straddle the cut, never on
+    a sample: that is what makes each tile's own (frozen-mesh) sampling come
+    out as exactly its slice of the parent's samples, with no sample landing
+    in two tiles and none falling in the crack.
+    """
+    n = len(x_m)
+    assert n_tiles >= 1 and n >= n_tiles, "more tiles than x samples"
+    bounds = [int(round(k * n / n_tiles)) for k in range(n_tiles + 1)]
+    assert bounds[0] == 0 and bounds[-1] == n and \
+        all(b < a for b, a in zip(bounds, bounds[1:])), "degenerate tile split"
+    edges = [x_m[0] - 0.5 * (x_m[1] - x_m[0])]
+    edges += [0.5 * (x_m[i - 1] + x_m[i]) for i in bounds[1:-1]]
+    edges += [x_m[-1] + 0.5 * (x_m[-1] - x_m[-2])]
+    return np.asarray(edges, float), bounds
+
+
+def split_dataset_x(prof, bounds):
+    """The dataset sliced along x at `bounds` — one dict per tile.
+
+    Only the x-indexed arrays move; everything else (y, z, lambda, f, the
+    Lumerical_dataset descriptor) is shared. No interpolation and no shared
+    edge sample, so concatenating the slices returns the original array
+    element for element — this is the no-double-counting guarantee.
+    """
+    parts = []
+    for lo, hi in zip(bounds, bounds[1:]):
+        d = dict(prof)
+        d["x"] = np.asarray(prof["x"])[lo:hi]
+        d["E"] = np.asarray(prof["E"])[lo:hi]
+        parts.append(d)
+    return parts
+
+
+def import_tiled_source(fdtd, prof, n_tiles, lam_m, monitor_name):
+    """Inject the weighted adjoint source as n_tiles narrow FieldRegion
+    sources instead of one full-width one (CampaignSpec.wg_src_tiles).
+
+    field_profile_adj stays a pure MONITOR — it is what WidthResults reads.
+    The tiles carry disjoint x-slices of the SAME globally computed
+    W(x,y)*conj(E_fwd), enabled together in ONE adjoint run; sources
+    superpose linearly, so the injected field equals the full-region source
+    exactly and the gradient is exact.
+
+    Runs in LAYOUT mode with the mesh already frozen (project.generate ->
+    fdtd_session.lock_grid, fdtd_session.py:1618), which is why the tile x
+    geometry is set HERE, from the monitor's own recorded samples, and only
+    placeholder-sized at build time.
+    """
+    x_m = np.squeeze(np.asarray(prof["x"])).astype(float)
+    edges, bounds = tile_x_edges(x_m, n_tiles)
+    parts = split_dataset_x(prof, bounds)
+    dx = float(np.min(np.diff(x_m)))
+    fdtd.setnamed(monitor_name, "source mode", False)   # monitor stays a monitor
+    amps, live = [], 0
+    for t, part in enumerate(parts):
+        name = f"{monitor_name}_t{t}"
+        if not fdtd.getnamednumber(name):
+            raise RuntimeError(
+                f"wg_src_tiles={n_tiles} but '{name}' is not in the scene — "
+                f"the base .fsp was built with a different wg_src_tiles")
+        # ★Geometry from the SAMPLES the tile must carry, not from the
+        # midpoint edges (MEASURED, job 136967: edge-derived spans made the
+        # region sample 529 cells while the slice held 528, and the engine
+        # rejects a shape mismatch — "imported source profile dataset
+        # dimensions ... do not match the field region dimensions").
+        # Centre on the tile's own first/last sample and pad 0.45 dx a side:
+        # every intended sample sits >=0.45 dx inside, and the nearest
+        # EXCLUDED neighbour sits 0.55 dx outside. Fencepost-proof.
+        xs_t = np.squeeze(np.asarray(part["x"])).astype(float)
+        fdtd.setnamed(name, "x", 0.5 * (xs_t[0] + xs_t[-1]))
+        fdtd.setnamed(name, "x span", (xs_t[-1] - xs_t[0]) + 0.9 * dx)
+        fdtd.setnamed(name, "wavelength center", lam_m)
+        fdtd.setnamed(name, "wavelength span", 0.0)
+        a = float(np.abs(part["E"]).max())
+        amps.append(a)
+        if a == 0.0:            # outside the grating crop -> W is exactly 0
+            fdtd.setnamed(name, "source mode", False)
+            continue
+        fdtd.setnamed(name, "source mode", True)
+        fdtd.select(name)
+        fdtd.importdataset(part)
+        live += 1
+    if live == 0:
+        raise RuntimeError(
+            "tiled width-adjoint source is entirely zero — the adjoint would "
+            "solve noise (the 136189/136190 class of silent failure)")
+    # Per-tile amplitudes are THE dead-tile detector: read this line in the
+    # job log before trusting any tiled gradient.
+    print("[wg-tiles] cells/tile "
+          f"{[h - l for l, h in zip(bounds, bounds[1:])]} | live {live}/"
+          f"{n_tiles} | max|src| per tile "
+          f"{['%.3e' % a for a in amps]} | full {np.abs(prof['E']).max():.3e}",
+          flush=True)
 
 
 def make_width_classes(lmpt, spec):
@@ -1820,6 +2109,12 @@ def make_width_classes(lmpt, spec):
                                            "wavelength stop", lam_m)
                 fdtd_session.fdtd.select("width_adj_src")
                 fdtd_session.fdtd.importdataset(prof)
+            elif int(getattr(spec, "wg_src_tiles", 1) or 1) > 1:
+                # GPU workaround: same source, split across narrow x tiles.
+                import_tiled_source(
+                    fdtd_session.fdtd, prof,
+                    int(spec.wg_src_tiles), float(sim_result.wavelengths[0]),
+                    sim_result.monitor_name)
             else:
                 fdtd_session.fdtd.setnamed(sim_result.monitor_name,
                                            "source mode", True)
@@ -1849,6 +2144,54 @@ def make_width_classes(lmpt, spec):
                 e = [ei * fac for ei in e]
             return e
 
+        # ★wg_project (2026-08-25): split ∇T / ∇W from the SAME solved fields.
+        # The assembly (base_fom.py:497-513) is linear in jac_of_fom, so two
+        # passes with two fcts give the exact components — zero extra solves.
+        # Pass 1: self.fct is already pure-T under wg_project (width jac = 0).
+        # Pass 2: fct = x[-1] → raw d(softW)/dEps fields, stashed for the
+        # driver. Legacy (wg_project False): first statement = stock behavior.
+        def calculate_gradient_fields(self, fdtd_session, parametrization,
+                                      symmetry_factors=None):
+            sup = super(MixedFom, self).calculate_gradient_fields
+            if not getattr(spec, "wg_project", False):
+                return sup(fdtd_session, parametrization, symmetry_factors)
+            entries = self.config_map.get_filenames_in_order()
+            assert self._is_width(entries[-1]["sim_result"]), \
+                "wg_project assumes the width entry is LAST (fct = x[-1])"
+            keep = self.fct
+            idx = (getattr(spec, "_wg_lam_idx", None)
+                   if getattr(spec, "wg_lam_chain", False) else None)
+            try:
+                gT = sup(fdtd_session, parametrization, symmetry_factors)
+                # ★defect #19: the selector passes run BEFORE the width stash
+                # and are converted to 191-float PARAMETER VECTORS immediately,
+                # so each field set is freed before the next is built. Peak
+                # stays at TWO live field sets — exactly the proven double-pass
+                # footprint. Stashing all four would double peak RAM, and the
+                # double-pass ALREADY OOM-killed a 160G job at 501 λ
+                # (campaign_v2_proj.py:23, job 137012, exit 137).
+                # ★x IS FLAT — [T(λ_0) … T(λ_{n_wl−1}), softW] — NOT a list of
+                # entry results (make_fct_v2:1850 is `base(x[:n_wl])`, which is
+                # exactly why the width selector `x[-1]` works). Writing
+                # x[0][i_lo] cost job 137267 2 GPU-h with "IndexError: invalid
+                # index to scalar variable" — x[0] is the SCALAR T at λ_0.
+                self.gvec_Tlo = self.gvec_Thi = None
+                pp = getattr(spec, "_wg_p", None)
+                if idx is not None and pp is not None:
+                    for attr, i in (("gvec_Tlo", idx[0]), ("gvec_Thi", idx[1])):
+                        self.fct = (lambda j: (lambda x: anp.abs(x[j])))(i)
+                        f = sup(fdtd_session, parametrization, symmetry_factors)
+                        setattr(self, attr, np.asarray(
+                            parametrization.compute_gradient_from_fields(
+                                f, fdtd_session, pp), dtype=float))
+                        del f
+                self.fct = lambda x: x[-1]
+                self.gfields_W = sup(fdtd_session, parametrization,
+                                     symmetry_factors)
+            finally:
+                self.fct = keep
+            return gT          # combined == ∇T fields here (width jac was 0)
+
     return WidthResults, MixedFom
 
 
@@ -1874,6 +2217,202 @@ def _final_fom(result):
         if scalars:
             return float(scalars[-1])
     return -np.inf
+
+
+def _proj_step(gT, gW, D, W, W_tgt, marg, alpha, step_max_nm):
+    """Pure step math for the ceiling-riding projection (HANDOFF 2026-08-24
+    23:00) — tested by gate_projection_local.py (P0/clip/restore, zero GPU).
+    û lives in the D^{1/2}-scaled space: the only reading of "D = per-block
+    trust scales squared" whose null-space step gives ∇W·d = 0 exactly (the
+    literal û = D∇W/|D∇W| does not, since D² ≠ D — P0 arbitrates)."""
+    gT, gW, D = (np.asarray(v, dtype=float) for v in (gT, gW, D))
+    DgW = D * gW
+    nu, nW = np.linalg.norm(DgW), np.linalg.norm(gW)
+    lam = float(gT @ DgW) / (nu * nW) if nu > 0 and nW > 0 else 0.0
+    if W - W_tgt > marg / 2.0:                    # restoration on MEASURED W
+        step = -(W - W_tgt) * gW / max(float(gW @ gW), 1e-300)
+        phase = "restore"
+    elif W < W_tgt - marg / 2.0:                  # PHASE A: climb + clip
+        step = alpha * D * gT
+        dw = float(gW @ step)                     # predicted ΔW — free
+        if dw > 0.0 and W + dw > W_tgt:
+            step = step * ((W_tgt - W) / dw)      # land exactly on the ceiling
+        phase = "climb"
+    else:                                         # PHASE B: null-space ride
+        gd = float(gW @ DgW)                      # = |D^{1/2}∇W|²
+        coef = float(gT @ DgW) / gd if gd > 0 else 0.0
+        step = alpha * (D * gT - coef * DgW)      # ∇W·step = 0 exactly
+        phase = "ride"
+    m = float(np.max(np.abs(step)))
+    if m > step_max_nm:                           # scalar cap keeps ∇W·d = 0
+        step = step * (step_max_nm / m)
+    return step, phase, lam
+
+
+def run_projected(spec, project, cb, out_dir, p0):
+    """Ceiling-riding projected-gradient driver — REPLACES ScipyOptimizer when
+    spec.wg_project (L-BFGS-B's line search cannot be held to the null-space
+    direction). Trust/bounds survive as: (1) the param_bounds box — trust_nm
+    clamps included — np.clip'ed every step; (2) D = (bound half-range)² as
+    the metric (the 0-200-vs-sliver conditioning fix). Logging/guards/resume
+    UNCHANGED: the same CampaignLog writes the same <label>_evals.jsonl, so
+    _best_from_log / WidthTrip / RecenterNeeded work as before (raised raw
+    here; run_campaign's handler catches the direct instances).
+    Returns (params, fom), the R1.3 Optimization.run tuple shape."""
+    b = np.asarray(param_bounds(spec), dtype=float)
+    lo, hi = b[:, 0], b[:, 1]
+    D = ((hi - lo) / 2.0) ** 2
+    W_tgt, marg = float(spec.wgp_target_um), float(spec.wgp_margin_um)
+    ppath = os.path.join(out_dir, f"{spec.label}_proj.jsonl")
+    p = np.clip(np.asarray(p0, dtype=float), lo, hi)
+    alpha, acc = float(spec.wgp_step), None       # acc = last ACCEPTED point
+    a0, cap0 = float(spec.wgp_step), float(spec.wgp_step_max_nm)
+    # ★online width-gain (spec.wgp_autogain): gain ~ measured dW / predicted dW.
+    # Starts at 1 (= trust C) and is updated from MEASURED widths, so a wrong
+    # |C_field| is corrected within an iterate or two instead of biasing every
+    # step. Clamped so one noisy pair cannot run away.
+    wgain = 1.0
+    n_neg = 0        # consecutive opposite-sign width responses
+
+    def _cap(a):
+        """Effective per-param cap, shrinking WITH alpha.
+
+        ★Without this the retry is a no-op (MEASURED offline 2026-08-25): at
+        the real gradient magnitudes the raw step is ~73 nm, so the 5 nm cap
+        binds for the first FOUR halvings of alpha — the filter would re-propose
+        the IDENTICAL 5 nm move and have it rejected again, ~2.7 GPU-h each.
+        Scaling the cap by alpha/alpha0 (never ABOVE the base cap) makes a
+        halving genuinely halve the move. A scalar factor cannot rotate the
+        step, so the null-space property grad-W . d = 0 is preserved.
+        """
+        return cap0 * min(1.0, a / a0)
+    for it in range(spec.max_iter):
+        fom = float(project.compute_fom(p))
+        cb.on_function_eval(project, it, p, fom)  # same jsonl + guards
+        row = _row_of_params(spec, out_dir, p, need=("fwhm_env_um",))
+        if not row:
+            # ★A MISSING WIDTH IS A REJECTED STEP, NOT A DEAD CAMPAIGN (audit
+            # S6, 2026-08-25). profile extraction failures are swallowed into
+            # diag_error, so one flaky eval used to raise here and end an 81 h
+            # / 300 G run with nothing to resume from. We genuinely cannot take
+            # a projected step without the measured width — but we CAN back off
+            # and retry from the last accepted point, which is exactly what the
+            # filter already does for a rejected iterate.
+            if acc is None:
+                raise RuntimeError(
+                    "wg_project: no fwhm_env_um on the FIRST eval — the width "
+                    "pipeline is broken, not flaky; fix before rerunning")
+            alpha *= 0.5
+            step, phase, lam = _proj_step(acc["gT"], acc["gW"], D, acc["W"],
+                                          W_tgt, marg, alpha, _cap(alpha))
+            p = np.clip(acc["p"] + step, lo, hi)
+            print(f"[proj {it}] NO WIDTH READ — treating as a rejected step, "
+                  f"alpha -> {alpha:.4g}, retrying from the accepted point",
+                  flush=True)
+            with open(ppath, "a") as f:
+                f.write(json.dumps({"it": it, "t": time.time(), "fom": fom,
+                                    "W": None, "alpha": alpha,
+                                    "phase": "no-width-retry"}) + "\n")
+            continue
+        W = float(row["fwhm_env_um"])
+        h = abs(W - W_tgt)
+        rec = {"it": it, "t": time.time(), "fom": fom, "W": W, "alpha": alpha,
+               "cap_nm": _cap(alpha)}
+        if acc and not (fom > acc["fom"] - 1e-4 or h < acc["h"]):
+            # minimal Fletcher-Leyffer filter. Reject: re-step from the
+            # accepted point's STORED gradients at alpha/2 — no re-solve
+            # (the trial forward is the bounded loss).
+            alpha *= 0.5
+            step, phase, lam = _proj_step(acc["gT"], acc["gW"], D, acc["W"],
+                                          W_tgt, marg, alpha, _cap(alpha))
+            p = np.clip(acc["p"] + step, lo, hi)
+            rec.update(phase=phase + "-retry", lam=lam)
+        else:
+            # defect #19: the selector passes convert their own fields inside
+            # calculate_gradient_fields (to bound peak RAM), and need p there.
+            spec._wg_p = p
+            gT = np.asarray(project.compute_gradient(p), dtype=float)  # fwd cached
+            gW = np.asarray(project.parametrization.compute_gradient_from_fields(
+                project.fom.gfields_W, project.fdtd_session, p), dtype=float)
+            if getattr(spec, "wg_lam_chain", False):
+                # ★DEFECT #19: add the unpriced resonance-shift term, so the
+                # projection nulls the gradient of the width we actually SPEC
+                # (at the moving resonance) rather than at a frozen λ.
+                #   gλ = dλ_pk/dp = −(∂²T/∂λ∂p)/(∂²T/∂λ²)   [implicit function
+                #   theorem on the peak condition ∂T/∂λ = 0]
+                gfl = getattr(project.fom, "gvec_Tlo", None)
+                gfh = getattr(project.fom, "gvec_Thi", None)
+                dTp = float(getattr(spec, "_wg_dTp", 0.0))
+                if gfl is not None and gfh is not None and dTp < 0.0:
+                    gLam = -(gfh - gfl) / dTp                   # nm per param-nm
+                    gW = gW + float(spec.wg_dwdlam) * gLam      # µm per param-nm
+                    rec.update(gLam_n=float(np.linalg.norm(gLam)),
+                               dwdlam=float(spec.wg_dwdlam), dTp=dTp)
+                else:
+                    # dTp ≥ 0 means the stencil does NOT straddle a maximum —
+                    # off-resonance or a clipped band. Loud, because silently
+                    # reverting to the fixed-λ gradient is the defect we are
+                    # fixing.
+                    print(f"[proj {it}] ★λ-CHAIN SKIPPED (dTp {dTp:+.4g}) — "
+                          f"falling back to the FIXED-λ ∇W for this step; do "
+                          f"not trust its width control.", flush=True)
+                    rec.update(lam_chain="skipped")
+            if (getattr(spec, "wgp_autogain", False) and acc is not None
+                    and acc.get("phase") == "restore"):
+                # ★DEFECT #18 (2026-08-25): the old gate was `abs(dW_pred) >
+                # 1e-4`, which admits CLIMB steps — and climb is `alpha·D·gT`,
+                # whose ∇W·step is whatever ∇T's incidental overlap with ∇W
+                # happens to be (iterate 0 of job 137075_41: −2.1e-4, from a
+                # shadow price of −2e-5). Dividing a real measured ΔW by that
+                # near-zero gave r = −52 and fired the "C_field PHASE error"
+                # alarm falsely. Only RESTORE builds its step along ∇W, so only
+                # there is the prediction actual signal. (Deeper: until the
+                # λ-chain term above is on, dW_meas is dominated by the
+                # unpriced resonance drift and r is garbage in EVERY phase —
+                # that false alarm was defect #19 announcing itself.)
+                dW_pred = float(acc["gW"] @ (p - acc["p"]))
+                dW_meas = W - acc["W"]
+                if abs(dW_pred) > 1e-4:            # only when the step said something
+                    r = dW_meas / dW_pred
+                    # ★A NEGATIVE ratio means the width moved OPPOSITE to the
+                    # prediction — that is a PHASE error in C_field, which no
+                    # scalar gain can repair (audit 2026-08-25). Left unflagged
+                    # it would pin wgain at the 0.2 clamp and masquerade as a
+                    # harmless small gain while the null space stayed rotated.
+                    if r < 0:
+                        n_neg += 1
+                        print(f"[proj {it}] ★WIDTH MOVED OPPOSITE TO PREDICTION "
+                              f"(r={r:+.3f}, {n_neg} so far) — this is a C_field "
+                              f"PHASE error, not a gain error; autogain cannot "
+                              f"fix it. Re-fit the phase ON RESONANCE if this "
+                              f"repeats.", flush=True)
+                    else:
+                        n_neg = 0
+                    if 0.05 < abs(r) < 20.0:       # reject nonsense pairs
+                        wgain = float(np.clip(0.7 * wgain + 0.3 * r, 0.2, 5.0))
+                        print(f"[proj {it}] autogain: dW pred {dW_pred:+.4f} "
+                              f"meas {dW_meas:+.4f} ratio {r:+.3f} -> gain "
+                              f"{wgain:.3f}", flush=True)
+            gW_eff = gW * wgain if getattr(spec, "wgp_autogain", False) else gW
+            # gW_eff (not raw gW) is what the step is BUILT from, so it is also
+            # what the retry branch and the dw_pred audit must use — otherwise
+            # both silently disagree with the step whenever wgain ≠ 1.
+            acc = {"p": p.copy(), "fom": fom, "W": W, "h": h,
+                   "gT": gT, "gW": gW_eff}
+            step, phase, lam = _proj_step(gT, gW_eff, D, W, W_tgt, marg, alpha,
+                                          _cap(alpha))
+            acc["phase"] = phase        # defect #18: autogain gates on this
+            p = np.clip(p + step, lo, hi)
+            alpha = min(alpha * 1.2, float(spec.wgp_step) * 4.0)
+            rec.update(phase=phase, lam=lam, wgain=wgain,
+                       dw_pred=float(gW_eff @ (p - acc["p"])),  # post-clip audit
+                       gT_n=float(np.linalg.norm(gT)),
+                       gW_n=float(np.linalg.norm(gW_eff)))
+        with open(ppath, "a") as f:
+            f.write(json.dumps(rec) + "\n")
+        print(f"[proj {it}] {rec['phase']} fom {fom:.5f} W {W:.4f} "
+              f"lam {rec.get('lam', 0.0):.4g} alpha {alpha:.3g}", flush=True)
+    return (acc["p"] if acc else p), (acc["fom"] if acc else -np.inf)
 
 
 def run_campaign(spec, out_dir, sigma0_um=None):
@@ -1958,17 +2497,21 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                       f"(mcorr {spec.fw_anchor['mcorr']:.1f})")
         project, _ = make_project(spec, out_dir, lmpt)
         cb = make_log_callback(spec, out_dir, sigma0_um, lmpt)
-        optimizer = lmpt.ScipyOptimizer(method="L-BFGS-B", max_iter=spec.max_iter,
-                                        max_feval=spec.max_feval, ftol=1e-8,
-                                        gtol=1e-6, max_line_search=4,
-                                        bounds=param_bounds(spec))
-        # FileLogger added EXPLICITLY: passing a custom callbacks list replaces
-        # the auto-installed one (docs audit 2026-08-15, risk #1).
-        opt = lmpt.Optimization(project, optimizer,
-                                callbacks=[cb, lmpt.FileLogger()],
-                                store_all_simulations=True)
         try:
-            result = opt.run(initial_params=np.asarray(best["params"], dtype=float))
+            if getattr(spec, "wg_project", False):
+                result = run_projected(spec, project, cb, out_dir,
+                                       np.asarray(best["params"], dtype=float))
+            else:
+                optimizer = lmpt.ScipyOptimizer(method="L-BFGS-B", max_iter=spec.max_iter,
+                                                max_feval=spec.max_feval, ftol=1e-8,
+                                                gtol=1e-6, max_line_search=4,
+                                                bounds=param_bounds(spec))
+                # FileLogger added EXPLICITLY: passing a custom callbacks list
+                # replaces the auto-installed one (docs audit 2026-08-15, risk #1).
+                opt = lmpt.Optimization(project, optimizer,
+                                        callbacks=[cb, lmpt.FileLogger()],
+                                        store_all_simulations=True)
+                result = opt.run(initial_params=np.asarray(best["params"], dtype=float))
             # Final selection goes through the SAME width-compliant filter as
             # restarts (platform guarantee: a violating design can never be
             # delivered) — never trust an optimizer-internal optimum directly.

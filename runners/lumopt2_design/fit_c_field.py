@@ -17,9 +17,14 @@ operating point before any campaign.
 import numpy as np
 
 # ── paste measured vectors here (from the W3-GPU printouts) ─────────────────
-FD = []          # task 20: validate_gradient fd vector (FD FIRST in printout)
-RE = []          # task 20: its adjoint vector (naive C_field=(1,0))
-IM = []          # task 21: adjoint-only vector at C_field=(0,1)
+# ★★2026-08-25 — THE PRODUCTION TILED CONFIG (wg_src_tiles=4, GPU, full
+# region). Re = job 137003 task 37, Im = task 40, both exit 0, both with
+# `[wg-tiles] live 4/4`. FD is the keep-forever CPU FieldRegion vector
+# (job 136189) — comparable HERE because tiling reproduces the FULL-REGION
+# source, which the cropped rungs did not.
+FD = [-0.00365, 0.01825, 0.02026]        # job 136189 (CPU, full region)
+RE = [-0.00652518, 0.03027003, 0.03658102]  # 137019 t42 PRODUCTION numerics
+IM = [-0.00245131, 0.01082157, 0.01080934]  # 137019 t43 PRODUCTION numerics
 # Tasks 20/21 print indices [0, SL_SHIFT.start, I_CAV] — 3 rows, not the old
 # 5-row task-12 set (stale LABELS fixed 2026-08-23 review: zip() would have
 # mislabeled shift_1 as "corr_25" and wcav as "avg_1").
@@ -33,7 +38,10 @@ LABELS = ["corr_1", "shift_1", "wcav"]
 # (corr/wcav rows: 0 — rho = 1.0 sits inside its deadband). Add it back to
 # RE and IM before fitting. Set to zeros for vectors printed by the FIXED
 # engine (which prints raw directly).
-PEN_GRAD = [0.0, 0.0352, 0.0]
+# ★ZERO for the 2026-08-25 tiled vectors: run_adjoint_only calls
+# compute_gradient_raw (penalty-free) and wg_pure makes J = -softW alone, so
+# these prints carry no penalty term to add back.
+PEN_GRAD = [0.0, 0.0, 0.0]
 
 def fit(fd, re, im):
     fd, re, im = (np.asarray(v, float) for v in (fd, re, im))
@@ -56,8 +64,15 @@ def main():
               f"(pre-fix engine prints; see comment)")
     phi, s, r = fit(FD, re, im)
     c = s * np.exp(1j * phi)
-    print(f"C_field = {c.real:.4f}{c.imag:+.4f}i  (s {s:.4f}, phi {np.degrees(phi):+.2f} deg)"
-          f"  vec residual {r:.3f}")
+    # ★THE ENGINE APPLIES a*RE + b*IM (lumopt2_design MixedFom phasing), while
+    # the fit above solves FD ~= s*(cos*RE - sin*IM). So the coefficients to
+    # STORE are (s*cos, -s*sin) = the CONJUGATE of s*e^{i*phi}. Printing
+    # s*e^{i*phi} directly caused a 15% magnitude error that passed every
+    # SIGN check (2026-08-25, C_field). Print BOTH, and label which to store.
+    print(f"fit form   C = {c.real:.4f}{c.imag:+.4f}i  (s {s:.4f}, phi "
+          f"{np.degrees(phi):+.2f} deg)  vec residual {r:.3f}")
+    print(f">>> STORE THIS -> adj_fix_field_re/im = ({c.real:.4f}, {-c.imag:+.4f})"
+          f"   [conjugate: the engine applies a*RE + b*IM]")
     proj = s * (np.cos(phi) * re - np.sin(phi) * im)
     ok = True
     for name, f, p in zip(LABELS, FD, proj):

@@ -10,6 +10,13 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
 > **`runners/lumopt2_design/HANDOFF.md`** is the live, self-contained state of the
 > lumopt2 inverse-design programme (2026-08-18). Read it before touching that
 > programme, quoting any of its numbers, or resuming a campaign.
+> **`runners/lumopt2_design/THEORY.md`** is its companion: the METHOD, not the
+> state — what the cost function is, the 191-parameter layout, how the two width
+> measures relate, the projected-gradient algorithm, how the adjoint gradients
+> are obtained (tiling, C_field, the zero-extra-solve split), the resonance
+> chain-rule term, and the best design we hold. **Read THEORY.md before
+> reasoning about the optimizer or the gradients; read HANDOFF.md before
+> running anything.**
 > **The one fact that changes how you read everything else:** the engine's mode-
 > profile extraction never integrated over y, so **every `sigma` and `FWHM`
 > logged before 2026-08-18 is VOID** (T / λ / Q / R / loss are unaffected). Mode
@@ -138,6 +145,22 @@ Over-testing never once cost anything. So:
     doesn't match, the builder is broken (use `rebuild_per_particle`).
   - New gradient method: finite-difference `check_gradient` on a tiny problem before
     scaling (hard gate: `vec_error` must be small).
+  - **★A MATH GATE IS NOT A PLUMBING GATE — smoke the CALL PATH too (2026-08-26,
+    2 GPU-h).** Any new fct / jacobian / adjoint-assembly code must be driven
+    through the REAL wrapper (build the actual fct, call `autograd.jacobian` on
+    it) locally before dispatch, not merely verified as a formula. Job 137267
+    died at 2:03 on `IndexError: invalid index to scalar variable` while its
+    math gate passed at 0.0034%: the fct's `x` is the **FLAT** vector
+    `[T(λ_0)…T(λ_n), softW]`, NOT a list of FOM entry results — which is why
+    `x[-1]` is the width. A <1 s local gate
+    (`runners/lumopt2_design/gates/gate_lam_chain_plumbing.py`, asserting a
+    one-hot jacobian AND that the old broken form still raises) catches it.
+    That `gates/` dir also holds the math, projection and bounds gates — run
+    all four before any lumopt2 dispatch. Corollary: a gate that cannot fail proves nothing — assert the
+    known-bad form still errors. Second corollary from the same fix: count how
+    many FIELD SETS are live at once before adding an assembly pass (the
+    double-pass already OOM-killed a 160G job at 501 λ) — convert each to its
+    parameter vector and free it rather than stashing field sets.
   - **Designed recovery paths get an END-TO-END smoke through the real wrapper
     stack** (2026-08-16: both campaigns died because a guard exception was
     tested at its raise site but lumopt2 double-wraps exceptions —
@@ -146,6 +169,37 @@ Over-testing never once cost anything. So:
     Replicate the third-party raise chain locally and assert the handler
     engages before trusting any except-and-recover design.
   - MATLAB: `checkcode` lint + headless `exportgraphics` render.
+- **★DEBUG ON THE SMALLEST SCENE THAT CAN ANSWER THE QUESTION — never on the device
+  (user rule 2026-08-24, after a night of it).** Before dispatching a diagnostic, ask
+  what the question actually depends on. A question about **numerics, an API, a solver
+  limit, a crash signature, or a launch/config error does NOT depend on our grating** —
+  it needs an empty box, a dummy source, a short sim time, and it answers in SECONDS.
+  Only questions about the DEVICE PHYSICS (T, λ, Q, mode width, gradients of those)
+  need the real device, and even then prefer the smallest N that keeps the physics.
+  INCIDENT: the FieldRegion-on-GPU `invalid configuration argument` was chased with
+  FULL-DEVICE rungs at 45-70 min each across four jobs (136799/136826/136869/136907),
+  making every bisection step cost an hour — for a CUDA kernel-launch bound that has
+  nothing to do with the grating. `runners/lumopt2_design/gpu_probe.py` answers the
+  same question over 12 sizes in one short job. Cost of the lesson: ~6 GPU-h and most
+  of an evening.
+  Corollaries: (a) bisect a threshold in ONE array of cheap tasks, never one
+  expensive point per dispatch; (b) anything checkable with a build-only `save_fsp`
+  or a local dataset/shape assertion must be checked that way FIRST (zero GPU);
+  (c) this is the same principle as the existing `check_gradient`-on-a-tiny-problem
+  gate below — apply it to solver/API questions too, not just gradients.
+- **★VALIDATE THE PARAMETER VECTOR AGAINST ITS OWN BOUNDS BEFORE EVERY DISPATCH
+  (2026-08-25 — this class cost FOUR dispatches in one night).** lumopt2 rejects an
+  out-of-bounds seed outright (`parametrization.py:674 _check_params`), and the job
+  dies in ~60 s having queued behind everything else. The trap is always the same
+  shape: a spec that FREEZES something (e.g. `free_comb=False` ⇒ comb bounds collapse
+  to ±0.001 nm) combined with a seed or a DETUNE point that moves it — `BEST_T9636`
+  carries comb r = 80.1386, and `run_adjoint_only`'s detune=1 sets the centre post to
+  100.0. Reproduce the runner's exact vector locally (seed → detune → clamp) and check
+  it against `param_bounds(spec)`; it is a two-second numpy check with zero GPU.
+  Reusable checker: `runners/lumopt2_design/gates/predispatch_check.py`. Corollary: when a fit or gate
+  must sit at the SAME operating point as a stored reference, the spec must ALLOW that
+  point — freeing the comb changes only the bounds, not the geometry at an explicitly
+  set point.
 - **Skip** re-verifying known-good baselines and re-linting untouched code. Don't invent
   extra test passes for mechanical edits.
 - **All local verification runs are SILENT** (user rule 2026-08-07): lumapi always
