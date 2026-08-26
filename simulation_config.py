@@ -495,6 +495,22 @@ class SimulationConfig:
         return 5.0 if self.farfield.enabled else 1.8
 
     @property
+    def _max_drawn_wide_m(self) -> float:
+        """Widest tooth actually DRAWN, in m.
+
+        The scalar `width_wide_m` (avg + corr/2) is only the envelope value; a
+        per-tooth study can draw teeth far wider (Itai-HH: scalar 1.184 um vs a
+        real 1.632 um tooth). Sizing the domain from the scalar silently ate
+        448 nm of the intended PML standoff and inflated T at resonance above 1
+        (2026-08-26). Per-tooth arrays win when present.
+        """
+        w = self.geometry.width_wide_m
+        ptw = self.grating.width_wide_per_tooth_m
+        if ptw:
+            w = max(w, max(ptw))
+        return w
+
+    @property
     def y_span(self) -> float:
         """Simulation domain Y extent (derived from geometry + mesh + spectral).
 
@@ -506,7 +522,7 @@ class SimulationConfig:
         g = self.geometry
         pad = self._span_multiplier * self.spectral.center_wavelength_m
         if g.n_devices == 2:
-            s = g.device_gap_m + 0.5 * g.width_wide_m + 0.5 * g.width_wide_2_m
+            s = g.device_gap_m + 0.5 * self._max_drawn_wide_m + 0.5 * g.width_wide_2_m
             # Absolute y-box override (FW-BIC study): decouples the transverse
             # radiation standoff from the z-standoff (span_multiplier), which for
             # TM must stay large (≈5.4λ) or vertical loss reads unphysically —
@@ -524,10 +540,10 @@ class SimulationConfig:
                         f"(center-to-center {s*1e6:.2f} µm) with 1.2 µm PML clearance."
                     )
                 return self.y_span_override_m
-            return s + 0.5 * g.width_wide_m + 0.5 * g.width_wide_2_m + 2.0 * pad
+            return s + 0.5 * self._max_drawn_wide_m + 0.5 * g.width_wide_2_m + 2.0 * pad
         if self.y_span_override_m is not None:
             return self.y_span_override_m
-        return g.width_wide_m + pad
+        return self._max_drawn_wide_m + pad
 
     @property
     def z_span(self) -> float:

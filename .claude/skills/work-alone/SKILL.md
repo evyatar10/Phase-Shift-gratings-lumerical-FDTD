@@ -72,6 +72,22 @@ you will PARK for the user. Then stop asking — everything after this is action
   whole outage. Handle EACH source separately — the common bug is guarding
   only the all-sources-down case (`if [ -z "$A" ] && [ -z "$B" ]`), which
   leaves single-source outages silently mangling the event.
+- **★A DOWN SCHEDULER IS A THIRD STATE — ssh-up + slurm-down looks exactly like
+  "all jobs finished" (burned 2026-08-26).** `squeue` returns EMPTY (not an
+  error the shell sees) when slurmctld is unreachable, so a drain condition of
+  "no jobs in squeue" fires a FALSE DRAIN while jobs are still solving; `sacct`
+  and `scontrol` are dark at the same time, so the natural follow-up
+  ("what state did they end in?") returns nothing and invites a
+  preempted/crashed story that is pure fiction. Acting on it means RESUBMITTING
+  JOBS THAT ARE STILL RUNNING — duplicate GPU + doubled license draw.
+  Guard explicitly: capture squeue's stderr (`2>&1`) and test for
+  `Unable to contact|connect failure`, emitting a `SLURM_CTL_DOWN` token into
+  the change key. Then fall back to a scheduler-free liveness signal — job-log
+  BYTE COUNT and terminal markers (`Simulation time` / `Exit code`) — which
+  keeps working through a controller outage. NEVER resubmit or cancel while the
+  controller is unreachable: job state is unknowable, and an unknowable state is
+  not an idle one. Note that FDTD tasks emit NOTHING between "Saved layout" and
+  completion, so a log that stopped hours ago is normal mid-solve, not a crash.
 - If a run fails while alone: diagnose from task LOGS (not just sacct states), apply
   the known failure signatures (license cascade → `%3` throttle + resubmit failed
   range; quota hang; stale server code), resubmit the targeted range once. If the

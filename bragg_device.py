@@ -818,7 +818,10 @@ class PiShiftBraggFDTD:
             y_span_override = s + 0.5 * self.width_wide + 0.5 * self.width_wide_2 + 2.0 * margin
             dy_global = min(self.width_narrow, self.width_narrow_2) / 13.0
         else:
-            max_device_width = max(self.width_port, self.width_wide, self.width_narrow)
+            # Per-tooth studies draw teeth wider than the scalar width_wide; the
+            # fine-mesh override must still cover their sidewalls (2026-08-26).
+            max_device_width = max(self.width_port, self.width_wide, self.width_narrow,
+                                   max(self.width_wide_per_tooth_m or [0.0]))
             y_span_override = max_device_width * 1.2
             dy_global = self.width_narrow / 13.0
         z_span_override = self.core_height
