@@ -124,6 +124,10 @@ SPEC = dataclasses.replace(
     wgp_margin_um=MARGIN_UM,
     wgp_step=0.25,                   # calibrated by gate P2
     wgp_step_max_nm=5.0,             # C_field magnitude guard
+    # ★λ-drift step bound (2026-08-28): control drifted +0.04 nm/iterate;
+    # historical line-search probes jumped up to +2.6 nm and died at the band
+    # edge. 0.5 nm (~0.6 linewidth) never binds a healthy step.
+    wgp_lam_step_nm=0.5,
     # ★wgp_autogain: the projection direction is EXACTLY scale-invariant in
     # |C_field| (verified: scaling |C| moves the null space 0.00 deg), so the
     # magnitude only sets step-length prediction and restoration gain — and

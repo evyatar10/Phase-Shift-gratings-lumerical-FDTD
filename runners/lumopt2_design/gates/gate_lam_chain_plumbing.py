@@ -80,5 +80,30 @@ try:
 except IndexError:
     print("  OK   the old x[0][i] form still raises IndexError (gate has teeth)")
 
+# 5. SESSION-STATE hazard (job 137845_41, 2026-08-27): dEps conversion
+# (compute_gradient_from_fields -> update_structure) inside
+# calculate_gradient_fields runs while the CAD is in ANALYSIS mode and dies
+# with "use switchtolayout first". The fix stashes the summed field arrays
+# (gfields_Tlo/Thi) and converts at the DRIVER. Assert, from source, that the
+# conversion cannot creep back inside — and that the driver does convert.
+import inspect
+mod_src = inspect.getsource(eng)
+i0 = mod_src.index("def calculate_gradient_fields")
+cgf_src = mod_src[i0:mod_src.index("return gT", i0)]
+# strip comments — the hazard is a CALL, not a mention in a comment
+cgf_src = "\n".join(l.split("#", 1)[0] for l in cgf_src.splitlines())
+inside_clean = ("compute_gradient_from_fields" not in cgf_src
+                and "gfields_Tlo" in cgf_src and "gfields_Thi" in cgf_src)
+print(f"  {'OK  ' if inside_clean else 'FAIL'} calculate_gradient_fields "
+      f"stashes gfields_Tlo/Thi and does NOT convert in-place (analysis-mode "
+      f"dEps hazard, 137845_41)")
+ok &= inside_clean
+drv_src = inspect.getsource(eng.run_projected)
+drv_ok = ("gfields_Tlo" in drv_src
+          and "compute_gradient_from_fields" in drv_src)
+print(f"  {'OK  ' if drv_ok else 'FAIL'} run_projected converts the stashed "
+      f"selector fields at the driver (layout-mode site)")
+ok &= drv_ok
+
 print("\n" + ("ALL PASS" if ok else "*** GATE FAILED ***"))
 raise SystemExit(0 if ok else 1)

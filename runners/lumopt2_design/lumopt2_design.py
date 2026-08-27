@@ -383,6 +383,21 @@ class CampaignSpec:
                                   # for the 18.346 family) — NOT the benchmark
     wgp_margin_um: float = 0.10   # drift margin; restoration beyond margin/2
     wgp_step: float = 0.25        # step scale in the D metric; gate P2 calibrates
+    # ★wgp_rgp (2026-08-28): relaxed gradient projection (Antonau SMO 2021) —
+    # replaces the CLIMB/RIDE/RESTORE branches with one continuous formula
+    # (buffer-ramped projection weight + bounded rotating correction). Their
+    # measured 1.7× objective gain vs pure-restore stepping. Default False =
+    # every existing spec keeps the proven 3-phase law; adopt after the first
+    # projected campaign, or immediately on restore-thrash.
+    # See notes_relaxed_projection.md.
+    wgp_rgp: bool = False
+    wgp_rgp_bsf: float = 2.0   # their BSF_init; the buffer auto-sizes from
+                               # measured per-iterate |ΔW| history (eq 14)
+    # ★wgp_lam_step_nm (2026-08-28, lit item 1): reject any trial step whose
+    # measured λ_pk moved more than this from the accepted point (drift is the
+    # width leak a fixed-λ gW cannot see; published recipe = recentring PLUS a
+    # bandwidth bound). None = inert (every pre-existing spec unchanged).
+    wgp_lam_step_nm: float = None
     wgp_step_max_nm: float = 5.0  # hard per-param step cap (C_field magnitude
     # ★wgp_autogain (2026-08-25): STOP RELYING ON |C_field|. The projection's
     # direction is EXACTLY scale-invariant (verified: scaling |C| changes the
@@ -2163,28 +2178,29 @@ def make_width_classes(lmpt, spec):
                    if getattr(spec, "wg_lam_chain", False) else None)
             try:
                 gT = sup(fdtd_session, parametrization, symmetry_factors)
-                # ★defect #19: the selector passes run BEFORE the width stash
-                # and are converted to 191-float PARAMETER VECTORS immediately,
-                # so each field set is freed before the next is built. Peak
-                # stays at TWO live field sets — exactly the proven double-pass
-                # footprint. Stashing all four would double peak RAM, and the
-                # double-pass ALREADY OOM-killed a 160G job at 501 λ
-                # (campaign_v2_proj.py:23, job 137012, exit 137).
+                # ★defect #19 selector passes — STASH ONLY, convert at the
+                # DRIVER (2026-08-27, job 137845_41): calling
+                # compute_gradient_from_fields HERE crashed on hardware —
+                # dEps does update_structure while the CAD is still in
+                # ANALYSIS mode ("use switchtolayout first"). The driver
+                # site (right after compute_gradient returns) is where the
+                # width conversion provably works (137075, 3 iterates).
+                # RAM is a non-issue: sup() returns the already-summed
+                # (nx,ny,nz,3) region array (MB), not the per-λ monitor
+                # reads (those live and die inside sup regardless).
                 # ★x IS FLAT — [T(λ_0) … T(λ_{n_wl−1}), softW] — NOT a list of
                 # entry results (make_fct_v2:1850 is `base(x[:n_wl])`, which is
                 # exactly why the width selector `x[-1]` works). Writing
                 # x[0][i_lo] cost job 137267 2 GPU-h with "IndexError: invalid
                 # index to scalar variable" — x[0] is the SCALAR T at λ_0.
-                self.gvec_Tlo = self.gvec_Thi = None
-                pp = getattr(spec, "_wg_p", None)
-                if idx is not None and pp is not None:
-                    for attr, i in (("gvec_Tlo", idx[0]), ("gvec_Thi", idx[1])):
+                self.gfields_Tlo = self.gfields_Thi = None
+                if idx is not None:
+                    for attr, i in (("gfields_Tlo", idx[0]),
+                                    ("gfields_Thi", idx[1])):
                         self.fct = (lambda j: (lambda x: anp.abs(x[j])))(i)
-                        f = sup(fdtd_session, parametrization, symmetry_factors)
-                        setattr(self, attr, np.asarray(
-                            parametrization.compute_gradient_from_fields(
-                                f, fdtd_session, pp), dtype=float))
-                        del f
+                        setattr(self, attr,
+                                sup(fdtd_session, parametrization,
+                                    symmetry_factors))
                 self.fct = lambda x: x[-1]
                 self.gfields_W = sup(fdtd_session, parametrization,
                                      symmetry_factors)
@@ -2217,6 +2233,64 @@ def _final_fom(result):
         if scalars:
             return float(scalars[-1])
     return -np.inf
+
+
+def _rgp_step(gT, gW, D, W, W_tgt, marg, cap_nm, st, bsf_init=2.0):
+    """Relaxed gradient projection (Antonau/Hojjat/Bletzinger, SMO 63:1633,
+    2021) — opt-in via spec.wgp_rgp. One continuous formula replaces the
+    CLIMB/RIDE/RESTORE branches: the projection weight w_r ramps 0→1 through
+    a history-sized buffer below the band edge, and past the edge a bounded
+    correction w_c ROTATES the direction toward feasible instead of replacing
+    it (their measured payoff: 1.7× objective gain vs pure-restore GP).
+    Endpoint identity: at w_r=1, w_c=0 this is EXACTLY _proj_step's RIDE
+    (∇W·d = 0, same D metric) — asserted by gate_projection_local. Full
+    derivation + eq refs: notes_relaxed_projection.md (R1-R4).
+    `st` carries the adaptive state {bsf, cbv_hi, cbv_lo, Wh, w_prev}."""
+    gT, gW, D = (np.asarray(v, dtype=float) for v in (gT, gW, D))
+    lv_hi, lv_lo = W_tgt + marg / 2.0, W_tgt - marg / 2.0
+    # buffer size from measured per-iterate width history (eq 14)
+    dW_hist = [abs(b - a) for a, b in zip(st["Wh"], st["Wh"][1:])]
+    bs = st["bsf"] * max(dW_hist) if dW_hist else max(1e-3, 0.01 * marg)
+    # one-sided w (eq 12): ceiling g = W - cbv_hi, floor g = cbv_lo - W;
+    # only one side can be in its buffer (bs << marg)
+    g_hi, g_lo = W - st["cbv_hi"], st["cbv_lo"] - W
+    ceil_side = g_hi >= g_lo
+    g = g_hi if ceil_side else g_lo
+    w = float(np.clip(1.0 + g / bs, 0.0, 2.0))
+    w_r = min(w, 1.0)
+    w_c = float(np.clip(bsf_init * (w - 1.0), 0.0, bsf_init))  # w_max = 2
+    # zigzag (eq 19): 3 alternating ΔW signs ⇒ widen buffer (factor = 1)
+    if len(st["Wh"]) >= 4:
+        d1, d2, d3 = (st["Wh"][-1] - st["Wh"][-2],
+                      st["Wh"][-2] - st["Wh"][-3],
+                      st["Wh"][-3] - st["Wh"][-4])
+        if d1 * d2 < 0 and d2 * d3 < 0 and st["w_prev"] is not None:
+            st["bsf"] += abs(w - st["w_prev"])
+    # infeasible drift (eqs 20-21): two violated iterates, not improving ⇒
+    # recentre the working boundary inward (the published answer to "width
+    # creeps up every iterate")
+    if len(st["Wh"]) >= 2:
+        g_prev = (st["Wh"][-1] - st["cbv_hi"] if ceil_side
+                  else st["cbv_lo"] - st["Wh"][-1])
+        if g > 0 and g_prev > 0 and g >= g_prev:
+            if ceil_side:
+                st["cbv_hi"] -= (st["Wh"][-1] - lv_hi)
+            else:
+                st["cbv_lo"] += (lv_lo - st["Wh"][-1])
+    st["w_prev"] = w
+    # direction (eq 17 with our D metric; note R1)
+    DgW = D * gW
+    gd = float(gW @ DgW)
+    coef = float(gT @ DgW) / gd if gd > 0 else 0.0
+    p = D * gT - w_r * coef * DgW              # w_r=1 ⇒ today's RIDE exactly
+    sgn = 1.0 if ceil_side else -1.0           # ∇g = ±gW by active side
+    pm, um = float(np.max(np.abs(p))), float(np.max(np.abs(DgW)))
+    s = (p / pm if pm > 0 else p) - sgn * w_c * (DgW / um if um > 0 else DgW)
+    sm = float(np.max(np.abs(s)))
+    step = cap_nm * (s / sm) if sm > 0 else s  # cap = max-norm radius (§5)
+    nu, nW = np.linalg.norm(DgW), np.linalg.norm(gW)
+    lam = float(gT @ DgW) / (nu * nW) if nu > 0 and nW > 0 else 0.0  # same
+    return step, f"rgp(w={w:.2f})", lam, w_c        # shadow price as _proj_step
 
 
 def _proj_step(gT, gW, D, W, W_tgt, marg, alpha, step_max_nm):
@@ -2273,6 +2347,27 @@ def run_projected(spec, project, cb, out_dir, p0):
     # step. Clamped so one noisy pair cannot run away.
     wgain = 1.0
     n_neg = 0        # consecutive opposite-sign width responses
+    dTp0 = None      # first healthy stencil curvature — the floor reference
+    # ★RGP state (spec.wgp_rgp): buffer factor, working boundaries (recentred
+    # inward by the drift rule), ACCEPTED-width history, last buffer weight.
+    rgp = bool(getattr(spec, "wgp_rgp", False))
+    st = {"bsf": float(getattr(spec, "wgp_rgp_bsf", 2.0)),
+          "cbv_hi": W_tgt + marg / 2.0, "cbv_lo": W_tgt - marg / 2.0,
+          "Wh": [], "w_prev": None}
+    wc_last = 0.0
+
+    def _step_of(gTv, gWv, Wv, a, mutate=False):
+        """One step under the active law; retry calls must not mutate the
+        RGP adaptation state (they re-step from the same accepted point)."""
+        nonlocal wc_last
+        if rgp:
+            s, ph, lm, wc = _rgp_step(gTv, gWv, D, Wv, W_tgt, marg, _cap(a),
+                                      st if mutate else dict(st),
+                                      float(getattr(spec, "wgp_rgp_bsf", 2.0)))
+            if mutate:
+                wc_last = wc
+            return s, ph, lm
+        return _proj_step(gTv, gWv, D, Wv, W_tgt, marg, a, _cap(a))
 
     def _cap(a):
         """Effective per-param cap, shrinking WITH alpha.
@@ -2303,8 +2398,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                     "wg_project: no fwhm_env_um on the FIRST eval — the width "
                     "pipeline is broken, not flaky; fix before rerunning")
             alpha *= 0.5
-            step, phase, lam = _proj_step(acc["gT"], acc["gW"], D, acc["W"],
-                                          W_tgt, marg, alpha, _cap(alpha))
+            step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha)
             p = np.clip(acc["p"] + step, lo, hi)
             print(f"[proj {it}] NO WIDTH READ — treating as a rejected step, "
                   f"alpha -> {alpha:.4g}, retrying from the accepted point",
@@ -2318,19 +2412,29 @@ def run_projected(spec, project, cb, out_dir, p0):
         h = abs(W - W_tgt)
         rec = {"it": it, "t": time.time(), "fom": fom, "W": W, "alpha": alpha,
                "cap_nm": _cap(alpha)}
-        if acc and not (fom > acc["fom"] - 1e-4 or h < acc["h"]):
+        # ★λ-drift step bound (lit item 1, 2026-08-28: published recipe is
+        # recentring PLUS an explicit bandwidth bound; drift is also how width
+        # leaks past a fixed-λ gW). Opt-in knob, default None = inert.
+        lam_pk_row = row.get("lam_pk_nm")
+        lam_bound = getattr(spec, "wgp_lam_step_nm", None)
+        lam_jump = (lam_bound is not None and acc is not None
+                    and acc.get("lam_pk") is not None and lam_pk_row is not None
+                    and abs(lam_pk_row - acc["lam_pk"]) > float(lam_bound))
+        if lam_jump:
+            rec["lam_jump_nm"] = lam_pk_row - acc["lam_pk"]
+            print(f"[proj {it}] ★λ STEP BOUND: peak moved "
+                  f"{rec['lam_jump_nm']:+.3f} nm > {lam_bound} nm — rejecting "
+                  f"the step like a filter fail.", flush=True)
+        if acc and (lam_jump or
+                    not (fom > acc["fom"] - 1e-4 or h < acc["h"])):
             # minimal Fletcher-Leyffer filter. Reject: re-step from the
             # accepted point's STORED gradients at alpha/2 — no re-solve
             # (the trial forward is the bounded loss).
             alpha *= 0.5
-            step, phase, lam = _proj_step(acc["gT"], acc["gW"], D, acc["W"],
-                                          W_tgt, marg, alpha, _cap(alpha))
+            step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha)
             p = np.clip(acc["p"] + step, lo, hi)
             rec.update(phase=phase + "-retry", lam=lam)
         else:
-            # defect #19: the selector passes convert their own fields inside
-            # calculate_gradient_fields (to bound peak RAM), and need p there.
-            spec._wg_p = p
             gT = np.asarray(project.compute_gradient(p), dtype=float)  # fwd cached
             gW = np.asarray(project.parametrization.compute_gradient_from_fields(
                 project.fom.gfields_W, project.fdtd_session, p), dtype=float)
@@ -2340,12 +2444,53 @@ def run_projected(spec, project, cb, out_dir, p0):
                 # (at the moving resonance) rather than at a frozen λ.
                 #   gλ = dλ_pk/dp = −(∂²T/∂λ∂p)/(∂²T/∂λ²)   [implicit function
                 #   theorem on the peak condition ∂T/∂λ = 0]
-                gfl = getattr(project.fom, "gvec_Tlo", None)
-                gfh = getattr(project.fom, "gvec_Thi", None)
+                ffl = getattr(project.fom, "gfields_Tlo", None)
+                ffh = getattr(project.fom, "gfields_Thi", None)
                 dTp = float(getattr(spec, "_wg_dTp", 0.0))
-                if gfl is not None and gfh is not None and dTp < 0.0:
+                # ★curvature floor (lit item 2, 2026-08-28): the IFT gain
+                # 1/dTp is UNBOUNDED as the peak flattens — a sign check alone
+                # lets a near-zero denominator rotate the null space wildly.
+                # Relative floor vs the first healthy iterate; no absolute
+                # constant to mis-tune.
+                flat = (dTp < 0.0 and dTp0 is not None
+                        and abs(dTp) < 0.05 * dTp0)
+                if flat:
+                    print(f"[proj {it}] ★λ-CHAIN CURVATURE COLLAPSED "
+                          f"(|dTp| {abs(dTp):.3g} < 5% of it-0 {dTp0:.3g}) — "
+                          f"skipping the chain term this step.", flush=True)
+                    rec.update(lam_chain="curvature-floor")
+                if ffl is not None and ffh is not None and dTp < 0.0 \
+                        and not flat:
+                    if dTp0 is None:
+                        dTp0 = abs(dTp)
+                    elif abs(dTp) < 0.25 * dTp0:
+                        print(f"[proj {it}] ★λ-CHAIN CURVATURE THINNING: |dTp| "
+                              f"{abs(dTp):.3g} < 25% of it-0 {dTp0:.3g} — gλ "
+                              f"gain rising, watch it.", flush=True)
+                    # convert HERE, not inside calculate_gradient_fields —
+                    # the CAD is back in layout at this point (job 137845_41
+                    # died on the in-analysis-mode dEps; this is the same
+                    # session state where the gW conversion above works).
+                    gfl, gfh = (np.asarray(
+                        project.parametrization.compute_gradient_from_fields(
+                            f, project.fdtd_session, p), dtype=float)
+                        for f in (ffl, ffh))
                     gLam = -(gfh - gfl) / dTp                   # nm per param-nm
-                    gW = gW + float(spec.wg_dwdlam) * gLam      # µm per param-nm
+                    chain = float(spec.wg_dwdlam) * gLam        # µm per param-nm
+                    # ★coefficient-sensitivity audit (lit item 3, 2026-08-28):
+                    # wg_dwdlam is PATH-FITTED (±20%+, and meaningless on
+                    # shift-frozen paths — detrend audit). Log how far the
+                    # projected direction rotates when the coefficient swings
+                    # x0.8 -> x1.2; small angle = projection robust to the fit.
+                    dirs = []
+                    for eta in (0.8, 1.2):
+                        u = gW + eta * chain
+                        u = u / (np.linalg.norm(u) or 1.0)
+                        d = gT - (gT @ u) * u
+                        dirs.append(d / (np.linalg.norm(d) or 1.0))
+                    rec["proj_rot_deg"] = float(np.degrees(np.arccos(
+                        np.clip(dirs[0] @ dirs[1], -1.0, 1.0))))
+                    gW = gW + chain
                     rec.update(gLam_n=float(np.linalg.norm(gLam)),
                                dwdlam=float(spec.wg_dwdlam), dTp=dTp)
                 else:
@@ -2358,7 +2503,11 @@ def run_projected(spec, project, cb, out_dir, p0):
                           f"not trust its width control.", flush=True)
                     rec.update(lam_chain="skipped")
             if (getattr(spec, "wgp_autogain", False) and acc is not None
-                    and acc.get("phase") == "restore"):
+                    and (acc.get("phase") == "restore"
+                         # RGP has no restore phase; a strong correction
+                         # component (wc > 0.5) is the equivalent condition —
+                         # only then did the step carry real ∇W signal.
+                         or (rgp and acc.get("wc", 0.0) > 0.5))):
                 # ★DEFECT #18 (2026-08-25): the old gate was `abs(dW_pred) >
                 # 1e-4`, which admits CLIMB steps — and climb is `alpha·D·gT`,
                 # whose ∇W·step is whatever ∇T's incidental overlap with ∇W
@@ -2398,9 +2547,10 @@ def run_projected(spec, project, cb, out_dir, p0):
             # what the retry branch and the dw_pred audit must use — otherwise
             # both silently disagree with the step whenever wgain ≠ 1.
             acc = {"p": p.copy(), "fom": fom, "W": W, "h": h,
-                   "gT": gT, "gW": gW_eff}
-            step, phase, lam = _proj_step(gT, gW_eff, D, W, W_tgt, marg, alpha,
-                                          _cap(alpha))
+                   "gT": gT, "gW": gW_eff, "lam_pk": lam_pk_row}
+            step, phase, lam = _step_of(gT, gW_eff, W, alpha, mutate=True)
+            st["Wh"].append(W)          # RGP: accepted widths size the buffer
+            acc["wc"] = wc_last         # RGP: autogain gates on this
             acc["phase"] = phase        # defect #18: autogain gates on this
             p = np.clip(p + step, lo, hi)
             alpha = min(alpha * 1.2, float(spec.wgp_step) * 4.0)

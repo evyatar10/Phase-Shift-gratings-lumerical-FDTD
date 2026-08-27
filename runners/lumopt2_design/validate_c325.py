@@ -931,9 +931,13 @@ def main(task_idx):
         best = eng.run_campaign(spec, out_dir)
         print(f"[proj-toy] completed: best_fom {best['fom']:.5f} — now compare "
               f"the width trajectory against 136753's 18.409->18.827")
-    elif task_idx == 27:
+    elif task_idx == 34:
         # ★CONTROL TWIN of task 41 (2026-08-27, user: "we might need to rerun
-        # anyways"): identical spec, wg_lam_chain OFF, fresh label. Re-measures
+        # anyways"). ★Was briefly task 27 — DEAD CODE: 27 belongs to
+        # _GFR_RUNGS earlier in this chain, and job 137845_27 ran that GPU
+        # rung instead (died on its known CUDA size bound). Never assign a
+        # task index without checking the MEMBERSHIP branches, not just the
+        # literals. Identical spec, wg_lam_chain OFF, fresh label. Re-measures
         # the uncorrected ΔW trajectory under the CURRENT engine + committed
         # per-tooth mesh fix (3120d38), so the toy-vs-control comparison cannot
         # be confounded by code/mesh drift since 137075_41. Judge exactly like
