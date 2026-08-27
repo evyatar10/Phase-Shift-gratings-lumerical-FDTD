@@ -47,7 +47,8 @@ else
 end                    % it off the end of the ladder is meaningless. No number is
                        % better than a wrong one.
 if straddles
-    lbl = sprintf('N = %.0f, Q = %.0f', Ncross, Qcross);
+    [~, ib] = min(abs(Ns - Ncross));   % rung AT the crossing (title + fig 2 use it)
+lbl = sprintf('N = %.0f, Q = %.0f', Ncross, Qcross);
 else
     lbl = sprintf('N ~ %.0f (EXTRAPOLATED - not bracketed); Q NOT AVAILABLE', Ncross);
 end
@@ -69,18 +70,20 @@ plot(ax2, [165 169], [13930 16203], 's', 'Color', c1, 'MarkerFaceColor', c1, ...
 if ~isnan(Qcross)
     plot(ax2, Ncross, Qcross, 'kp', 'MarkerSize', 14, 'HandleVisibility', 'off');
 end
-text(ax2, Ncross, max(Qs), ['  ' lbl], 'VerticalAlignment', 'top', 'Interpreter', 'none');
+text(ax2, Ncross, max(Qs), [lbl '   '], 'HorizontalAlignment', 'right', ...
+    'VerticalAlignment', 'top', 'Interpreter', 'none');
+xlim(ax1, [min(Ns)-5 max(Ns)+8]); xlim(ax2, [min(Ns)-5 max(Ns)+8]);
 ylabel(ax1, 'Peak transmission'); set(ax1, 'XTickLabel', []);
 ylabel(ax2, 'Loaded Q'); xlabel(ax2, 'N periods per side');
 legend(ax1, 'Location', 'southwest'); legend(ax2, 'Location', 'northwest');
 title(ax1, {'Inverse-designed \pi-shift TM at -3 dB', ...
-    ['corr 325 nm outer / apodized inner 25, height 350 nm, pitch 516.83 nm, mode ' num2str(Ws(1), '%.2f') ' \mum']});
+    ['corr 325 nm outer / apodized inner 25, height 350 nm, pitch 516.83 nm, mode ' num2str(Ws(ib), '%.2f') ' \mum']});
 out = fullfile(outdir, 'invdesign_q3db_20um_T_Q');
 savefig(fig1, [out '.fig']); exportgraphics(fig1, [out '.png'], 'Resolution', 150);
 fprintf('saved %s.png\n', out);
 
 % Device at (or nearest) the crossing: T(lambda) in dB.
-[~, ib] = min(abs(Ns - Ncross)); mb = Ms{ib};
+mb = Ms{ib};
 fig2 = figure('Position', [100 100 820 480]); hold on; grid on;
 plot(mb.wl_nm, 10*log10(mb.T), '-', 'Color', c0, 'DisplayName', ...
     ['inverse design, N=' num2str(Ns(ib)) ':  {\bf Q = ' num2str(Qs(ib), '%.0f') '}   (' ...
@@ -95,3 +98,45 @@ title({'Inverse-designed \pi-shift TM: device at the -3 dB point', ...
 out2 = fullfile(outdir, 'invdesign_q3db_20um_final_T_dB');
 savefig(fig2, [out2 '.fig']); exportgraphics(fig2, [out2 '.png'], 'Resolution', 150);
 fprintf('saved %s.png\n', out2);
+
+% Resonance + spatial mode profile of the longest MEASURED rung (added
+% 2026-08-26 by request). This is the rung we hold on disk, NOT the -3 dB
+% device -- the title says which N it is so the two never get confused.
+fig3 = figure('Position', [100 100 900 660]);
+ax3 = subplot(2,1,1); hold(ax3,'on'); grid(ax3,'on');
+ax4 = subplot(2,1,2); hold(ax4,'on'); grid(ax4,'on');
+
+plot(ax3, mb.wl_nm, mb.T, '-', 'Color', c0, 'LineWidth', 1.4);
+xline(ax3, mb.resonance_wavelength_nm, 'k:', 'HandleVisibility', 'off');
+xlabel(ax3, 'Wavelength [nm]'); ylabel(ax3, 'Transmission');
+xlim(ax3, mb.resonance_wavelength_nm + [-0.1 0.1]);   % line is ~18 pm wide
+text(ax3, 0.02, 0.92, sprintf(['%s_{res} = %.3f nm\npeak T = %.4f (%.2f dB)\n' ...
+     'Q = %.0f'], '\lambda', mb.resonance_wavelength_nm, mb.resonance_transmission, ...
+     dB(ib), Qs(ib)), ...
+     'Units', 'normalized', 'VerticalAlignment', 'top', 'FontSize', 11);
+
+x  = mb.field_x * 1e6;
+I  = mb.field_energy_density_1D / max(mb.field_energy_density_1D);
+E  = mb.field_envelope_1D / max(mb.field_envelope_1D);
+plot(ax4, x, I, '-', 'Color', [c1 0.35], 'LineWidth', 0.7, 'DisplayName', 'energy density');
+plot(ax4, x, E, '-', 'Color', c1, 'LineWidth', 1.8, 'DisplayName', 'envelope');
+yline(ax4, 0.5, 'k--', 'half max', 'HandleVisibility', 'off');
+% half-max crossings on the ENVELOPE — the raw profile's standing-wave ripple
+% dips below 0.5 every period, so interpolating it finds the wrong x.
+[~, ip] = max(E);
+iL = find(E(1:ip)   <= 0.5, 1, 'last');
+iR = ip - 1 + find(E(ip:end) <= 0.5, 1, 'first');
+xL = interp1(E(iL:iL+1), x(iL:iL+1), 0.5);
+xR = interp1(E(iR-1:iR), x(iR-1:iR), 0.5);
+plot(ax4, [xL xR], [0.5 0.5], 'k-', 'LineWidth', 1.8, 'HandleVisibility', 'off');
+legend(ax4, 'Location', 'northeast');
+xlabel(ax4, 'x [\mum]'); ylabel(ax4, 'normalized energy density');
+xlim(ax4, [-2.2 2.2] * Ws(ib) / 2); ylim(ax4, [0 1.05]);
+text(ax4, 0.02, 0.92, sprintf('spatial FWHM = %.2f %sm', Ws(ib), '\mu'), ...
+     'Units', 'normalized', 'VerticalAlignment', 'top', 'FontSize', 11);
+
+title(ax3, {sprintf('Inverse design + circles at -3 dB: N = %d per side', Ns(ib)), ...
+     'TM, height 350 nm, pitch 516.83 nm, cavity 961 nm, 57-post SiN comb'});
+out3 = fullfile(outdir, 'invdesign_q3db_20um_resonance_profile');
+savefig(fig3, [out3 '.fig']); exportgraphics(fig3, [out3 '.png'], 'Resolution', 150);
+fprintf('saved %s.png\n', out3);

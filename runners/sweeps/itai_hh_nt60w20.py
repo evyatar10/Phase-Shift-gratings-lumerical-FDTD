@@ -1,11 +1,42 @@
-"""Itai's RE-OPTIMIZED Nt60 design, natively FWHM 20 um -- short run at his length.
+"""Itai's RE-OPTIMIZED Nt60 design, natively FWHM 20 um -- N ladder to -3 dB.
 
-Study dir: runners/sweeps/   |   Created 2026-08-26   |   Job(s): TBD
+Study dir: runners/sweeps/   |   Created 2026-08-26   |   Job(s): 63722 (N=98)
+
 Purpose: his previous Nt60 ("HH", target FWHM 15.1 um) only reached our 20 um
 spec because WE scaled its whole dw profile by ~0.562. He has now re-optimized
 the profile to give 20 um directly (Nt60_FWHM_20_dw.npy, his optimizer reports
 FWHM 19.9889 um, Er 0.0050). This runner measures that device, untouched.
 
+ROUND 1 -- N=98, HIS design length -- IS MEASURED, job 63722, and is NOT in the
+ladder below (CLAUDE.md 6: never re-measure a stored result). Reuse it from
+    results/itai_hh_nt60w20/results/result_N98_..._Ybox6p8_Zbox6p8.mat
+    lam_res 1559.8597 nm (+0.07 nm from target -> the pitch is RIGHT, left alone)
+    peak T 0.97498 | R 0.00014 | T+R 0.97511 < 1 | Q_L 7680 | fwhm_m 19.633 um
+    -> Q_i ~ 6.1e5, but POORLY CONDITIONED at T=0.975 (1% in T = 39% in Q_i).
+User decision 2026-08-26: 19.633 um is on spec, run his design UNTOUCHED (no
+rescale) -- so the ladder varies N only.
+
+ROUND 2 (job 63752) -- ONE rung, N=130, and that is the whole answer. Method and
+sizing come from memory/project_q3db_measurement_method.md, distilled by reading
+te_q3db_20um (9 sims) and trench_q3db_20um (29 sims) BEFORE dispatching more:
+  * Q(-3 dB) = 0.29289*Q_i is exact two-port algebra, and it reproduces all FOUR
+    of our own directly-measured -3 dB anchors to ~2% (TE N166 -1.9%, TM N165
+    -2.1%, TM N170 +0.5%, TM N169 +3.2%). So a 17 h crossing run buys ~2%.
+  * The only assumption is that Q_i has stopped drifting with N. MEASURED
+    containment benchmark from the TM study: Q_i still drifted at an end-field of
+    1.8e-2 of peak and had saturated by 2.4e-3. This device's measured envelope
+    (exponential bulk tail, 1/e = 15.3 um) gives 5.5e-3 at N=98 -- ambiguous --
+    and 2.0e-3 at N=130, PAST the saturation benchmark.
+  * Conditioning A = sqrt(T)/(2(1-sqrt(T))): 39.2 at the N=98 row, 7.9 at N=130.
+    At the measured dT = 0.0018 mesh floor that is 7.2% vs 1.6% in Q_i.
+  So N=130 gives Q_i both saturated and well conditioned -> quote 0.29289*Q_i
+  from it, and use N=98 only to show how much drift was left behind it.
+  N=150 was dispatched in error and CANCELLED before starting (63752_1): with Q_c
+  extrapolated instead of ln T (Q_c is linear in N by construction) two rows 32
+  periods apart pin the growth rate to ~1%, which moves N* by 0.3 periods -- so
+  the third rung bought nothing. TE-only by user decision; TM is a measured 3.4x
+  weaker in Q_i on his old design (light-cone headroom 10.0% TE vs 5.5% TM) and
+  his index correction is TE-derived.
 IT IS NOT OUR SCALED DEVICE (checked before dispatch, no GPU): the second lobe
 is gone and the bulk/apodization balance is inverted --
     raw dw            his old   our 20um (old x0.562)   his new
@@ -33,18 +64,32 @@ BOX y 6.8 um / span_mult 4.14 (z 6.81 um) = the previous 20 um rows AND the
 inverse-design programme, so every number here is directly comparable. The
 derived box is NOT used: sizing y from the scalar width_wide is what made his
 device read T+R > 1 in round 1. Widest tooth here is 1347.5 nm -> ratio 5.05.
+Fine-mesh override box = 1617 nm (verified in the local build smoke; the engine
+deployed on IGUM already carries the per-tooth mesh-box fix, so remote == local).
+It is not load-bearing here either way -- half the widest tooth is 674 nm, inside
+both the fixed box (808 nm) and the old scalar one (748 nm). Stored 20 um rows
+measured before that fix was deployed used the scalar box; the difference cannot
+move a sidewall in or out of the fine mesh, but it is a numerics difference and is
+recorded here rather than buried. No engine code is pushed by this study.
 
-WINDOW 1559.79 +- 4 nm at the sweep-path default 3001 points = 2.67 pm.
-Q_L extrapolates to ~6e3 (bracket 3e3-1.5e4) from the two measured TE anchors at
-N=98, i.e. a 100-500 pm linewidth = 40-190 samples across it, and a ring-down
-16.1*tau of 80-250 ps against the 2000 ps default -- both comfortable. If the
-measured Q comes back above ~5e4 the window must be narrowed for round 2
-(see memory: high-Q measurement adequacy).
+WINDOWS are per-rung and centred on the MEASURED 1559.8597 nm, not the design
+target. lambda barely moves with N here -- the mode occupies ~40 periods, so
+periods 99+ sit outside it -- but each window still keeps >=1 nm of margin.
+n_wl_points is FIXED at 3001 on the sweep path (not sweepable), so the window
+width is the only sampling knob (memory: high-Q measurement adequacy):
+    N=130  EXPECTED Q_L ~3.5e4  linewidth ~45 pm  window 4.0 nm -> 1.33 pm, 34 pts
+Ring-down 16.1*tau = 461 ps, well inside the 2000 ps default, so no
+TM_SIM_TIME_PS override is needed. (It would be, past ~N=160: the sweep array at
+igum/deploy_igum.sh:1232 does NOT forward that env var -- set os.environ at the
+top of this module instead, it is imported on the node before the scene builds.)
 
-Containment: 98 * 0.49106 = 48.1 um >= 2 x 20 um (asserted below).
+Containment: min N * pitch = 130 * 0.49106 = 63.8 um >= 2 x 20 um (asserted).
 
-Dispatch (IGUM, user choice; probe seats + queue first, --max-concurrent=1 for
-the ansyscl startup race):
+Dispatch (IGUM, user choice; probe seats + queue first). --max-concurrent=1 for
+TWO reasons: the IGUM ansyscl startup race, and seats -- 24/50 were in use at
+round 1, and two concurrent tasks (~7 seats each) would put the pool at ~38/50,
+past the >=35 HIGH band where the rule is to hold fan-outs. Serial costs wall
+time, not GPU-hours.
     SBATCH_MEM=160G bash igum/deploy_igum.sh \
         --option3 --spec=runners.sweeps.itai_hh_nt60w20 --max-concurrent=1
 Output -> results/itai_hh_nt60w20/results/ (download to results_from_igum/).
@@ -60,10 +105,13 @@ import numpy as np
 from runners.sweeps.sweep_spec import SweepSpec
 from runners.sweeps.itai_hh_apod import AVG_WIDTH_NM, K_BIAS, LAMBDA, NEFF_TE, NEFF_W_UM
 
-N_APOD, N_SIDE = 60, 98
+N_APOD         = 60
+N_MEASURED     = 98                       # job 63722 -- reused, NOT re-run
+N_LADDER       = [130]                    # one rung; see round-2 note above
+WINDOW_NM      = [4.0]
+SCAN_CENTER_NM = 1559.8597                # MEASURED at N=98, not the design target
 MODE_FWHM_UM   = 20.0                     # the spec the pitch envelope is weighted on
 BOX_Y_UM, BOX_Z_MULT = 6.8, 4.14
-SCAN_WIDTH_NM  = 8.0
 N_WL_POINTS    = 3001                     # the sweep path's default; not sweepable
 
 # His drawn widths, cavity-first (d=1 .. d=61). Produced by his own chain (see
@@ -120,40 +168,45 @@ def pitch_for(n_side):
     return round(pitch, 2)
 
 
-PITCH_NM = pitch_for(N_SIDE)
-_NAR, _WID = teeth(N_SIDE)
-assert N_SIDE * PITCH_NM >= 2.0 * MODE_FWHM_UM * 1e3        # containment
+# pitch is N-independent to 0.01 nm (the mode samples only the first ~40 periods),
+# and the N=98 row MEASURED it right to +0.07 nm -- so every rung keeps it.
+PITCH_NM = pitch_for(N_MEASURED)
+_T = [teeth(n) for n in N_LADDER]
+assert min(N_LADDER) * PITCH_NM >= 2.0 * MODE_FWHM_UM * 1e3        # containment
 
 SPEC = SweepSpec(
-    n_periods_each_side       = [N_SIDE],
-    pitch_nm                  = [PITCH_NM],
-    avg_width_nm              = [AVG_WIDTH_NM],
-    cavity_width_nm           = [CAVITY_W_NM],
-    corrugation_depth_nm      = [round(BULK_WIDE_NM - BULK_NARROW_NM, 1)],
-    width_narrow_per_tooth_nm = [_NAR],
-    width_wide_per_tooth_nm   = [_WID],
-    polarization              = ["TE"],
-    center_wavelength_nm      = [LAMBDA["TE"]],
-    scan_width_nm             = [SCAN_WIDTH_NM],
-    y_span_um                 = [BOX_Y_UM],
-    span_mult                 = [BOX_Z_MULT],
+    n_periods_each_side       = list(N_LADDER),
+    pitch_nm                  = [PITCH_NM] * len(N_LADDER),
+    avg_width_nm              = [AVG_WIDTH_NM] * len(N_LADDER),
+    cavity_width_nm           = [CAVITY_W_NM] * len(N_LADDER),
+    corrugation_depth_nm      = [round(BULK_WIDE_NM - BULK_NARROW_NM, 1)] * len(N_LADDER),
+    width_narrow_per_tooth_nm = [t[0] for t in _T],
+    width_wide_per_tooth_nm   = [t[1] for t in _T],
+    polarization              = ["TE"] * len(N_LADDER),
+    center_wavelength_nm      = [SCAN_CENTER_NM] * len(N_LADDER),
+    scan_width_nm             = list(WINDOW_NM),
+    y_span_um                 = [BOX_Y_UM] * len(N_LADDER),
+    span_mult                 = [BOX_Z_MULT] * len(N_LADDER),
     mode  = "zipped",
     label = "itai_hh_nt60w20",
 )
 
 if __name__ == "__main__":
-    dlam = SCAN_WIDTH_NM / (N_WL_POINTS - 1) * 1e3          # pm per sample
+    # Growth calibrated on the ONE measured point (N=98, Q_L 7680) at 4.7 %/period
+    # -- deliberately used only to size windows and predict cost, never to place
+    # the crossing. Q_i 6.1e5 from the same row.
     print(SPEC.describe().split("width_narrow")[0])
-    print(f"  task 0: TE N={N_SIDE} pitch {PITCH_NM:.2f} nm | half-device "
-          f"{N_SIDE*PITCH_NM/1000:.1f} um | teeth {len(_NAR)} "
-          f"| narrow {min(_NAR):.1f}-{max(_NAR):.1f} | wide {min(_WID):.1f}-{max(_WID):.1f} "
-          f"| bulk dw {BULK_WIDE_NM-BULK_NARROW_NM:.1f} | dw_max "
-          f"{max(b-a for a, b in zip(_NAR, _WID)):.1f}")
-    print(f"  window {LAMBDA['TE']} +- {SCAN_WIDTH_NM/2:.0f} nm at {N_WL_POINTS} pts "
-          f"= {dlam:.2f} pm | box y {BOX_Y_UM} um (ratio {BOX_Y_UM*1e3/max(_WID):.2f}) "
-          f"/ z 6.81 um")
-    for Q in (3e3, 6e3, 1.5e4, 5e4):
-        lw = LAMBDA["TE"] * 1e3 / Q
-        tau = Q * LAMBDA["TE"] * 1e-9 / (2 * np.pi * 2.99792458e8) * 1e12
-        print(f"  Q_L {Q:8.0f}: linewidth {lw:6.1f} pm = {lw/dlam:5.1f} samples "
-              f"| 16.1*tau {16.1*tau:6.0f} ps vs 2000 ps sim time")
+    for i, n in enumerate(N_LADDER):
+        tn, tw = _T[i]
+        win = WINDOW_NM[i]
+        dlam = win / (N_WL_POINTS - 1) * 1e3                       # pm per sample
+        Q = 7680 * np.exp(0.047 * (n - N_MEASURED))
+        lw = SCAN_CENTER_NM * 1e3 / Q
+        tau = Q * SCAN_CENTER_NM * 1e-9 / (2 * np.pi * 2.99792458e8) * 1e12
+        Tex = (1 - Q / 6.1e5) ** 2
+        print(f"  task {i}: TE N={n:3d} pitch {PITCH_NM:.2f} | half-device "
+              f"{n*PITCH_NM/1000:.1f} um | teeth {len(tn)} | widest {max(tw):.1f} nm "
+              f"| window {SCAN_CENTER_NM}+-{win/2:.2f} nm = {dlam:.2f} pm")
+        print(f"           EXPECTED Q_L {Q:7.0f} -> linewidth {lw:5.1f} pm = "
+              f"{lw/dlam:4.1f} samples | 16.1*tau {16.1*tau:5.0f} ps vs 2000 ps "
+              f"| T ~ {Tex:.2f}")
