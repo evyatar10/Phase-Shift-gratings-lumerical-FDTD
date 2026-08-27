@@ -612,12 +612,354 @@ the right tool to map it.
 
 ---
 
-## 11. Pointers
+---
 
-| for | read |
-|---|---|
-| jobs, numbers, resume commands | `HANDOFF.md` (top box) |
-| the 191-vector of every named design | `best_designs.py` |
-| offline gates, all zero-GPU | `gates/` |
-| project invariants and the trap list | `../../CLAUDE.md` |
-| the defect history in full detail | `HANDOFF.md`, and the memory file `project_v2_width_gradient_plan.md` |
+# APPENDIX - everything a chat session cannot fetch for itself
+
+**Read this first if you are Claude in a chat window.** You have no filesystem,
+no cluster access, and no git. Everything below was extracted from the
+repository and the clusters at the moment of the pause so that it is available
+to you directly. Nothing here needs a tool to verify - it IS the source.
+
+## A1. The design: BEST_T9636, all 191 parameters
+
+Units: **nm** throughout. Layout is
+`25 corrugation | 25 mean-width | 25 shift | 57 comb-r | 57 comb-x | d_comb | cavity`.
+This is the device. If everything else were lost, this vector plus the geometry
+constants in A2 reproduces it.
+
+**Corrugation depth per tooth** (index 1 = innermost, next to the defect):
+```
+   324.6090,  331.1434,  345.5537,  353.6754,  355.1619,  358.4371,  360.7775,  361.6638
+   360.7377,  362.1005,  364.2621,  363.6839,  361.7549,  363.9784,  364.1430,  361.7676
+   363.6096,  363.6683,  361.0867,  362.0848,  362.2658,  360.0331,  360.6076,  361.5173
+   360.5136
+```
+**Mean tooth width per period:**
+```
+   802.0524,  800.7672,  801.1708,  801.2449,  800.9001,  800.6027,  800.4475,  800.2979
+   800.0848,  799.9858,  800.0853,  800.1164,  800.0157,  800.1087,  800.2400,  800.1739
+   800.2427,  800.3829,  800.3200,  800.3372,  800.4547,  800.4059,  800.3798,  800.4843
+   800.4759
+```
+**Longitudinal shift per tooth** (the cavity absorbs 2*sum(shift)):
+```
+     3.1648,    2.8142,    4.1996,    5.3510,    5.8762,    6.4260,    6.1177,    5.3444
+     4.8927,    3.9847,    3.0441,    2.3053,    1.4661,    0.9110,    0.8981,    0.8905
+     0.8902,    0.8972,    0.9087,    0.9250,    0.9467,    0.9688,    0.9954,    1.0262
+     1.0551
+```
+**Comb post radii (57):**
+```
+    80.1386,   80.0414,   79.9927,   80.0094,   79.9555,   79.8956,   79.9764,   79.9940
+    79.8916,   79.9385,   80.0171,   79.9775,   80.0695,   80.2230,   80.2140,   80.2174
+    80.3136,   80.2606,   80.0600,   79.8647,   79.6718,   79.5177,   79.5704,   79.9910
+    80.3358,   80.3781,   79.8793,   79.9624,   79.8236,   80.1171,   80.5040,   80.2245
+    79.7639,   79.5052,   79.5525,   79.7771,   79.9608,   80.1592,   80.3115,   80.3003
+    80.2097,   80.2537,   80.1959,   80.0089,   80.0231,   80.0090,   79.8906,   79.9502
+    80.0251,   79.9691,   79.9797,   80.0336,   80.0066,   80.0144,   80.1024,   80.0693
+    80.1189
+```
+**Comb post x-positions (57):**
+```
+  -14466.8801, -13935.9118, -13404.9294, -12873.9369, -12342.9464, -11811.9656, -11280.9779, -10749.9702
+  -10218.9796, -9688.0030, -9157.0101, -8626.0154, -8095.0408, -7564.0577, -7033.0287, -6502.0370
+  -5971.0439, -5439.9831, -4908.9245, -4377.8500, -3846.7888, -3315.7355, -2784.7886, -2253.9653
+  -1723.4231, -1192.5526, -660.8861, -129.7193,  400.5411,  932.1049, 1463.6639, 1994.2420
+  2524.8572, 3055.7440, 3586.7747, 4117.8391, 4648.8792, 5179.9316, 5711.0225, 6242.0319
+  6773.0300, 7304.0480, 7835.0496, 8366.0289, 8897.0155, 9428.0128, 9958.9935, 10489.9750
+  11020.9720, 11551.9734, 12082.9646, 12613.9540, 13144.9542, 13675.9462, 14206.9209, 14737.9290
+  15268.9024
+```
+**Comb transverse offset d_comb:** 1897.3711 nm
+**Cavity width:** 961.0659 nm
+
+**Note the shape of the corrugation profile** - it answers a standing question.
+It runs **324.61 at the innermost tooth, rises to ~364 mid-array, and is 360.51
+at tooth 25** - then **jumps down to the frozen 325.0** for every tooth from 26
+outward. So the "abrupt drop to 325" is the **freeze boundary**, not a feature
+the optimizer chose: teeth 26+ were never free. Whether that discontinuity
+costs anything is genuinely open - it is a candidate explanation for residual
+radiation, and freeing a few more teeth is a cheap test.
+
+
+## A2. Geometry and numerics constants
+
+| constant | value | meaning |
+|---|---|---|
+| n_core | 1.97 | SiN |
+| n_clad | 1.444 | SiO2 |
+| core height | 350 nm | |
+| PITCH_NM | 516.83 | grating period |
+| CORR_NM | 325.0 | FROZEN corrugation of the outer (non-free) teeth |
+| N_FREE | 25 | free periods per side |
+| N_COMB | 57 | comb posts (COMB_N_HALF = 28) |
+| N_PARAMS | 191 | total design variables |
+| P_SOFTMAX | 12.0 | soft-max exponent in the T objective |
+| WIN_FWHM_MULT | 2.5 | objective window = +/-2.5 x measured FWHM |
+| DEAD_T_FLOOR | 0.02 | dead-device guard (a dead device reads ~0.0008) |
+| TWO_KL_FLOOR | 3.5 | mirror-strength floor 2*kappa*L |
+| RHO_UP / RHO_DN | 1.02 / 0.98 | symmetric +/-2% width deadband |
+| WG_EPS | 0.05 | sigmoid temperature, fraction of (peak-floor) |
+| WG_BETA_PK | 60.0 | soft-max peak sharpness |
+| wg_dwdlam | 0.3655 um/nm | resonance->width coupling (FITTED, not universal) |
+| FWHM0_UM | 18.3460 | anchor width |
+| SOFTW0_UM | 18.476441 | anchor softW at the same eval |
+| W_HI / W_TARGET | 18.7129 / 18.6129 um | ceiling and ride target |
+| MARGIN_UM | 0.10 | restore/ride band half-width |
+| domain y-span | 6.800 um | fixed by override |
+| domain z-span | 6.8275 um | 350 nm core + 4.14*lambda pad |
+| port -> PML | 5.0 lambda ~ 7.82 um | |
+| production spectrum | 501 pts over 10 nm = 20 pm | = 40 pts per ~810 pm linewidth |
+
+The spectrum resolution is **exactly** at the minimum the resonance-chain term
+needs (~40 points per linewidth). Widening the scan window without adding
+points silently degrades the chain term.
+
+
+## A3. The code that defines the method
+
+These are the actual definitions, not paraphrases.
+
+**The transmission objective (make_fct):**
+```python
+def make_fct(wl_nm):
+    """FOM fct for lumopt2: T(λ) → windowed soft-max (autograd-differentiable).
+
+    Window indices are picked on the DETACHED spectrum (stop-gradient), so
+    the gradient flows only through the T values inside the window.
+    """
+    wl_nm = np.asarray(wl_nm, dtype=float)
+
+    def fct(T):
+        Tp = np.abs(_plain(T))
+        lam_pk, t_pk, fwhm = measure_peak(wl_nm, Tp)
+        if t_pk < DEAD_T_FLOOR:
+            raise RuntimeError(f"dead device: peak T {t_pk:.4g} < {DEAD_T_FLOOR}")
+        if fwhm is None:
+            # Peak clipped at the band edge (measured: line-search probes jump
+            # λ by up to +2.6 nm — jobs 54309/133016/54421 all died here when
+            # this raised RecenterNeeded for MID-SEARCH probes). Degraded
+            # fallback instead: soft-max over the FULL recorded band. A
+            # clipped peak's visible maximum understates the true peak, so
+            # the probe scores WORSE and L-BFGS-B backtracks naturally.
+            # Recentering is handled by the log callback, and only when the
+            # BEST design migrates (in-window evals are bit-identical).
+            return anp.mean(anp.abs(T) ** P_SOFTMAX) ** (1.0 / P_SOFTMAX)
+        idx = np.where(np.abs(wl_nm - lam_pk) <= WIN_FWHM_MULT * fwhm)[0]
+        return anp.mean(anp.abs(T)[idx] ** P_SOFTMAX) ** (1.0 / P_SOFTMAX)
+
+    return fct
+```
+
+**The width observable** - the spec quantity, NOT differentiable:
+```python
+def fwhm_env_of_line(x, I):
+    """SPATIAL FWHM (µm) — THE width observable, and the only one.
+
+    Cubic envelope through the standing-wave peaks, half-max RELATIVE TO THE
+    PROFILE FLOOR, via the sim_helpers functions themselves (not a copy), so
+    this is identical to post_processing's fwhm_m by construction. Comparable
+    to every stored fwhm_m (nladder corr-325 N=100 bare: 19.24 µm) and to the
+    ~20 µm acoustic spec.
+    ★USER RULE 2026-08-18: this convention ONLY. The raw-line variant I had
+    written is deleted and must not come back."""
+    try:
+        env = extract_envelope_peaks(x, I)
+        v = calculate_fwhm_relative(x, env)
+        return float(v) if v else None
+    except Exception:                 # <4 peaks breaks the cubic interp
+        return None
+```
+
+**The differentiable width carrier (soft_width_of_line)** - this is what the
+second adjoint is built from:
+```python
+def soft_width_of_line(x, I):
+    """softW (µm) of a y-integrated profile line — autograd-differentiable in I."""
+    x = np.asarray(x, dtype=float)
+    Is = anp.dot(_wsmooth_matrix(len(x), float(np.mean(np.diff(x)))), I)
+    # scale stays IN the autograd graph: detaching it puts a 2e-3 relative
+    # error in the gradient (measured, gate W0.3) because the softmax weights
+    # depend on it — a "safe constant" that silently isn't.
+    scale = anp.max(Is) - anp.min(Is)
+    w = anp.exp(WG_BETA_PK * (Is / scale))
+    P = anp.sum(w * Is) / anp.sum(w)                    # softmax peak
+    m = max(3, int(0.05 * len(x)))                      # fixed edge windows
+    F = 0.5 * (anp.mean(Is[:m]) + anp.mean(Is[-m:]))    # floor
+    h = F + 0.5 * (P - F)
+    z = anp.clip((Is - h) / (WG_EPS * (P - F)), -60.0, 60.0)
+    sig = 1.0 / (1.0 + anp.exp(-z))
+    return anp.sum(0.5 * (sig[1:] + sig[:-1]) * (x[1:] - x[:-1]))
+```
+
+**The band penalty** (the augmented-Lagrangian term of section 10):
+```python
+def width_band_penalty(spec, softw):
+    """Augmented-Lagrangian band penalty on the anchor-mapped FWHM prediction
+    (autograd in softw). Band = the standing +2%/−5% deadband on fwhm0_um."""
+    anc, f0 = spec.wg_anchor, spec.fwhm0_um
+    fhat = anc["fwhm"] + (softw - anc["softw"])         # µm, delta-anchored
+    g_hi = fhat - RHO_UP * f0
+    g_lo = RHO_DN * f0 - fhat
+    return (spec.wg_lam_hi * anp.maximum(0.0, g_hi)
+            + 0.5 * spec.wg_mu * anp.maximum(0.0, g_hi) ** 2
+            + spec.wg_lam_lo * anp.maximum(0.0, g_lo)
+            + 0.5 * spec.wg_mu * anp.maximum(0.0, g_lo) ** 2)
+```
+
+**The projected step** - climb / ride / restore, the core of the method:
+```python
+def _proj_step(gT, gW, D, W, W_tgt, marg, alpha, step_max_nm):
+    """Pure step math for the ceiling-riding projection (HANDOFF 2026-08-24
+    23:00) — tested by gate_projection_local.py (P0/clip/restore, zero GPU).
+    û lives in the D^{1/2}-scaled space: the only reading of "D = per-block
+    trust scales squared" whose null-space step gives ∇W·d = 0 exactly (the
+    literal û = D∇W/|D∇W| does not, since D² ≠ D — P0 arbitrates)."""
+    gT, gW, D = (np.asarray(v, dtype=float) for v in (gT, gW, D))
+    DgW = D * gW
+    nu, nW = np.linalg.norm(DgW), np.linalg.norm(gW)
+    lam = float(gT @ DgW) / (nu * nW) if nu > 0 and nW > 0 else 0.0
+    if W - W_tgt > marg / 2.0:                    # restoration on MEASURED W
+        step = -(W - W_tgt) * gW / max(float(gW @ gW), 1e-300)
+        phase = "restore"
+    elif W < W_tgt - marg / 2.0:                  # PHASE A: climb + clip
+        step = alpha * D * gT
+        dw = float(gW @ step)                     # predicted ΔW — free
+        if dw > 0.0 and W + dw > W_tgt:
+            step = step * ((W_tgt - W) / dw)      # land exactly on the ceiling
+        phase = "climb"
+    else:                                         # PHASE B: null-space ride
+        gd = float(gW @ DgW)                      # = |D^{1/2}∇W|²
+        coef = float(gT @ DgW) / gd if gd > 0 else 0.0
+        step = alpha * (D * gT - coef * DgW)      # ∇W·step = 0 exactly
+        phase = "ride"
+    m = float(np.max(np.abs(step)))
+    if m > step_max_nm:                           # scalar cap keeps ∇W·d = 0
+        step = step * (step_max_nm / m)
+    return step, phase, lam
+```
+
+
+## A4. The raw data behind every claim in this document
+
+### A4a. Uniform baseline (lumopt2_v2_uniform_s5) - the run that produced dW/dlambda
+| # | lam_pk_nm | fwhm_env_um | t_pk | fom | q_i |
+|---|---|---|---|---|---|
+| 0 | 1564.61402 | 18.34515 | 0.90120 | 0.66722 | 38071.06563 |
+| 1 | 1568.22238 | 32.26789 | 0.95577 | -1.55417 | 73475.56666 |
+| 2 | 1564.61402 | 18.34515 | 0.90120 | 0.66722 | 38071.06563 |
+| 3 | 1564.75404 | 18.38947 | 0.90679 | 0.67159 | 40573.76732 |
+| 4 | 1567.61983 | 25.13451 | 0.92575 | -1.32917 | 46374.31222 |
+| 5 | 1564.81405 | 18.40917 | 0.90896 | 0.67323 | 41621.22266 |
+| 6 | 1566.49631 | 20.37380 | 0.95912 | -0.88372 | 93527.86313 |
+| 7 | 1564.81402 | 18.40883 | 0.90924 | 0.67339 | 41751.26152 |
+| 8 | 1564.81402 | 18.40883 | 0.90924 | 0.67339 | 41751.26152 |
+| 9 | 1564.97404 | 18.45590 | 0.91381 | 0.67703 | 44146.98285 |
+| 10 | 1565.15410 | 18.50764 | 0.91858 | 0.68060 | 46904.54285 |
+| 11 | 1565.83470 | 18.82672 | 0.93604 | 0.69110 | 60102.39607 |
+| 12 | 1565.15410 | 18.50764 | 0.91858 | 0.68060 | 46904.54285 |
+| 13 | 1565.15410 | 18.50764 | 0.91858 | 0.68060 | 46904.54285 |
+| 14 | 1565.33420 | 18.56424 | 0.92260 | 0.68399 | 49437.26162 |
+| 15 | 1565.53437 | 18.62841 | 0.92689 | 0.68729 | 52424.41390 |
+| 16 | 1566.25537 | 19.53215 | 0.94644 | 0.19427 | 71503.13074 |
+
+### A4b. See-saw baseline (lumopt2_v2_seesaw)
+| # | lam_pk_nm | fwhm_env_um | t_pk | fom | q_i |
+|---|---|---|---|---|---|
+| 0 | 1564.56402 | 18.33179 | 0.93790 | 0.69590 | 65713.62010 |
+| 1 | 1568.55423 | 36.17639 | 0.95808 | -1.52657 | 73291.80996 |
+| 2 | 1564.56402 | 18.33179 | 0.93790 | 0.69590 | 65713.62010 |
+| 3 | 1564.70404 | 18.34099 | 0.93879 | 0.69679 | 66767.82648 |
+| 4 | 1564.88409 | 18.35664 | 0.94033 | 0.69769 | 68628.75997 |
+| 5 | 1565.52463 | 18.45968 | 0.94493 | 0.70128 | 74352.01889 |
+| 6 | 1565.54403 | 18.45847 | 0.94532 | 0.70111 | 74945.69502 |
+| 7 | 1565.54403 | 18.45847 | 0.94532 | 0.70111 | 74945.69502 |
+| 8 | 1565.74407 | 18.50358 | 0.94646 | 0.70226 | 76329.06777 |
+| 9 | 1565.96416 | 18.62591 | 0.94777 | 0.70296 | 77998.90655 |
+| 10 | 1566.66488 | 20.06145 | 0.95732 | 0.24884 | 92898.24396 |
+| 11 | 1566.02420 | 18.71486 | 0.94852 | 0.70365 | 79001.81575 |
+| 12 | 1565.96416 | 18.62591 | 0.94777 | 0.70296 | 77998.90655 |
+| 13 | 1565.96416 | 18.62591 | 0.94777 | 0.70296 | 77998.90655 |
+| 14 | 1566.18432 | 18.96297 | 0.95078 | 0.70485 | 82319.38447 |
+
+### A4c. The projected toy - the CONTROL, uncorrected gradient (job 137075_41)
+| # | lam_pk_nm | fwhm_env_um | t_pk | fom | q_i |
+|---|---|---|---|---|---|
+| 0 | 1564.61402 | 18.34515 | 0.90120 | 0.66722 | 38071.06563 |
+| 1 | 1564.65402 | 18.35618 | 0.90242 | 0.66829 | 38585.70523 |
+| 2 | 1564.69403 | 18.36840 | 0.90430 | 0.66978 | 39419.84587 |
+| 3 | 1564.75404 | 18.38451 | 0.90553 | 0.67108 | 39980.78415 |
+| 4 | 1564.75402 | 18.38431 | 0.90577 | 0.67117 | 40089.43374 |
+| 5 | 1564.75402 | 18.38431 | 0.90577 | 0.67117 | 40089.43374 |
+
+**The coupling fit.** Take rows with `fom > 0.5*max(fom)`, deduplicate identical
+(lambda, W) pairs - lumopt2 re-logs the accepted point at each restart, so some
+appear 2-3 times - and regress fwhm_env_um on lam_pk_nm:
+
+| baseline | slope | r | n | lambda explains |
+|---|---|---|---|---|
+| uniform_s5 | **+0.3654 um/nm** | 0.984 | 9 | 93% of its raw width growth |
+| see-saw | +0.3000 um/nm | 0.867 | 9 | 77% of its raw width growth |
+
+Both filter clauses are load-bearing. Keeping duplicates, or admitting the one
+out-of-band probe (fom 0.194 at W 19.53), moves the slope to ~0.59 - a 61%
+error. Do not pool the two baselines (different intercepts => 0.288, wrong).
+
+
+## A5. Run record
+
+| job | cluster | role | start -> end | ran for | outcome |
+|---|---|---|---|---|---|
+| 136465 | Athena | v2 projection campaign | - | - | **CONVERGED -> BEST_T9636** |
+| 137075_41 | Athena | uncorrected control | 08-25 13:11:06 -> 21:53:33 | 8:42:27 | 3 iterates, kept as control |
+| 137267_41 | Athena | lambda-chain, 1st attempt | 08-25 21:56:17 -> 23:59:35 | 2:03:18 | FAILED - selector indexing bug |
+| 137296_41 | Athena | lambda-chain, refixed | 08-26 00:06:57 -> 00:56:58 | 0:50:01 | cancelled for the pause |
+| 63195_3 | IGUM | conformal re-measure | - | - | T 0.97805 at N=100 |
+| 63423 / 63438 / 63540 / 63595 | IGUM | conformal + q3db ladder | - | - | RUNNING at the pause |
+
+**The control's three iterates** - the yardstick any corrected run is judged against:
+```
+it 0   fom 0.667217   W 18.3452 um   lam_pk 1564.61 nm   |gT| 0.002989   |gW| 0.125902
+it 1   fom 0.668293   W 18.3562 um   lam_pk 1564.65 nm   dW +0.0110
+it 2   fom 0.669780   W 18.3684 um                       dW +0.0122
+```
+
+## A6. State at the pause (2026-08-26)
+
+- **Athena: queue EMPTY.** Nothing of this programme is running. Disk 199G/300G
+  (84.6 GB was freed by deleting dead-study .h5 scratch).
+- **IGUM: RUNNING** - the separate conformal/q3db ladder. Its results exist
+  nowhere else, so fetching them is the first action on resume.
+- **The lambda-chain fix is implemented, gated offline, and NEVER validated on
+  hardware.** Treat it as unproven.
+- **Open, needs a human:** an uncommitted bragg_device.py mesh change from a
+  parallel session widens the fine-mesh y-span for per-tooth-width devices. The
+  control ran before it. For the current seed the scalar and per-tooth widths
+  agree (both 0.9625 um), so the domain is unchanged there - divergence appears
+  only once a tooth is drawn wider than the scalar.
+- **Not installed:** the fixed h5 cron cleaner on Athena.
+
+## A7. Traps that cost real GPU hours - do not re-learn them
+
+1. **The objective's x is FLAT** - `[T(lam_0)...T(lam_n), softW]`, not a list of
+   FOM entries. That is why the width selector is `x[-1]`. Writing `x[0][i]`
+   cost 2 GPU-hours.
+2. **A math gate is not a plumbing gate.** The formula gate passed at 0.0034%
+   while the call path was broken. Drive new derivative code through the real
+   framework - and assert the known-bad form still raises, or the gate has no
+   teeth.
+3. **Count live field sets before adding an assembly pass.** Four instead of two
+   doubles peak RAM in a pipeline already OOM-killed at 501 wavelengths.
+4. **An automated resume can silently continue the wrong run.** Reusing a study
+   label makes the cold-start resume restart from the previous run's endpoint.
+5. **State the filter before quoting a fit** (see A4).
+6. **Never compare numbers across meshers.** PVA vs conformal, same device:
+   lambda +5.3 nm, FWHM -8%.
+7. **Absolute T is numerics-sensitive** - the transverse box alone moves it ~3
+   points for strongly-radiating variants. Every sweep carries its own control
+   at identical numerics.
+8. **FDTD here is deterministic** - repeated identical evaluations return
+   bit-identical values. "Noise" is almost never the right explanation for a
+   discrepancy.
+
