@@ -36,7 +36,7 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 
 SPEC = eng.CampaignSpec(label="lumopt2_val_c325")
-N_TASKS = 46         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
+N_TASKS = 48         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
                      # gradient-fix experiment matrix (all B3-style, point 1
                      # unless noted, gates = per-class α vs FD):
                      # 4=α-stability point 2 | 5=co-location (option 3)
@@ -931,13 +931,49 @@ def main(task_idx):
         best = eng.run_campaign(spec, out_dir)
         print(f"[proj-toy] completed: best_fom {best['fom']:.5f} — now compare "
               f"the width trajectory against 136753's 18.409->18.827")
-    elif task_idx == 34:
+    elif task_idx == 47:
+        # ★★PIPELINE SMOKE (2026-08-28, user rule: debug cycles on 11 h runs
+        # are unaffordable — hardware-touching engine changes get a
+        # MINUTES-scale end-to-end pass first). Same 191-param spec, same
+        # code paths (λ-chain selectors, driver conversion, RGP if enabled,
+        # guards, jsonl, resume), on a SHRUNKEN device: N=40/side keeps a
+        # real (low-Q, broad) resonance so measure_peak/fwhm/chain all
+        # engage, at ~3-4x less solve volume; 2 iterates. Expected ~1.5-2 h
+        # total vs 11 h. NOT physics — never quote its numbers. Run this
+        # BEFORE any hours-scale dispatch whenever lumopt2_design.py changed.
+        import dataclasses
+        from runners.lumopt2_design.campaign_v2_proj import SPEC as PSPEC
+        spec = dataclasses.replace(PSPEC, label="lumopt2_v2_pipesmoke",
+                                   n_periods_side=60,
+                                   max_iter=2, max_feval=4)
+        spec.adj_fix_field_re, spec.adj_fix_field_im = (0.4554, +0.1336)
+        best = eng.run_campaign(spec, out_dir)
+        # ★SEMANTIC PASS/FAIL (2026-08-28): exit nonzero unless the λ-chain
+        # actually EXECUTED, so an `--after=afterok` chain on this job
+        # genuinely gates the 11 h dependents (exit-0-with-skip must block
+        # them — the 137853_41 dTp-sign skip looked exactly like success).
+        # N=60 not 40: 2κL≈2.2 keeps the resonance narrow enough that
+        # measure_peak returns a clean fwhm inside the 10 nm window.
+        import json as _json
+        rows = [_json.loads(l) for l in open(os.path.join(
+            out_dir, "lumopt2_v2_pipesmoke_proj.jsonl"), encoding="utf-8")]
+        ran = [r for r in rows if "gLam_n" in r]
+        skipped = [r for r in rows if r.get("lam_chain")]
+        print(f"[pipesmoke] best_fom {best['fom']:.5f} | chain ran on "
+              f"{len(ran)}/{len(rows)} iterates, skipped on {len(skipped)} "
+              f"— numbers are NOT physics (N=60 surrogate)")
+        if not ran:
+            raise RuntimeError(
+                "PIPESMOKE FAIL: λ-chain never executed (all iterates "
+                "skipped) — do NOT run the toy/campaign on this code")
+    elif task_idx == 46:
         # ★CONTROL TWIN of task 41 (2026-08-27, user: "we might need to rerun
-        # anyways"). ★Was briefly task 27 — DEAD CODE: 27 belongs to
-        # _GFR_RUNGS earlier in this chain, and job 137845_27 ran that GPU
-        # rung instead (died on its known CUDA size bound). Never assign a
-        # task index without checking the MEMBERSHIP branches, not just the
-        # literals. Identical spec, wg_lam_chain OFF, fresh label. Re-measures
+        # anyways"). ★Was task 27, then 34 — BOTH dead code: _GFR_RUNGS spans
+        # 27-36 and its membership branch sits earlier in this chain, so
+        # 137845_27 ran a GPU rung (died on its CUDA bound) and 137853_34 ran
+        # rung xnarrow_big (completed, wrong experiment). Indices are now
+        # audited PROGRAMMATICALLY by predispatch_check — never by eye.
+        # Identical spec, wg_lam_chain OFF, fresh label. Re-measures
         # the uncorrected ΔW trajectory under the CURRENT engine + committed
         # per-tooth mesh fix (3120d38), so the toy-vs-control comparison cannot
         # be confounded by code/mesh drift since 137075_41. Judge exactly like

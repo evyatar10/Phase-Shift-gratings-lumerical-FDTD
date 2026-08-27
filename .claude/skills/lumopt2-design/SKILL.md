@@ -1064,3 +1064,31 @@ Q_loaded = (1-sqrt(T))*Q_i = 0.2953*Q_i. Current best projects ~41,000
     Once the corrected pipeline is routine, plain-Opus sessions carry it and
     Fable is reserved for new failures / math / physics contradictions /
     >1-GPU-day decisions.
+
+40. ★PERIODIC DEEP-CHECK (user rule 2026-08-28: "keep asking what's going
+    on" — pattern-greps only catch what they were told to catch). While any
+    hardware run is active, every ~2 h an OPUS background agent (never
+    Fable) does ONE folded ssh + local jsonl read and answers four
+    questions: (1) is progress at the expected cadence (solve times vs
+    history — a stall looks like silence to every grep); (2) any log
+    anomaly OUTSIDE the standing grep set (read the last ~100 lines with
+    fresh eyes); (3) quota + janitor state; (4) are the small state files
+    (jsonl) pulled local (no unique data on the cluster). One-paragraph
+    report; wake Fable only on anomaly. Cadence deliberately ~2 h, not
+    more: each poll spends the ssh connection budget, and the marginal
+    value of quiet checks decays fast — event monitors carry the
+    minute-scale layer. Idle periods (nothing running): once per session
+    is enough.
+
+39. ★PIPELINE SMOKE TIER (user rule 2026-08-28, after the analysis-mode
+    crash cost a full dispatch cycle at hour 1 of an 11 h run). The debug
+    ladder for engine changes is now THREE tiers, each mandatory before the
+    next: (1) offline gates (seconds, math + call path + source-structure);
+    (2) `validate_c325` task 35 pipeline smoke (~1.5-2 h GPU: the SAME
+    191-param spec and code paths on an N=40 low-Q surrogate — the only tier
+    that catches LIVE-SESSION-STATE bugs like the in-analysis-mode dEps);
+    (3) the physics run (toy/campaign). Local gates provably cannot see
+    session-state hazards — five of them passed while 137845_41 died. Never
+    quote smoke numbers as physics. Related trap the same night: task
+    indices must be checked against MEMBERSHIP branches (_GFR_RUNGS ate
+    index 27), not just literal `== n` matches.

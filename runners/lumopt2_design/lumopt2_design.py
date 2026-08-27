@@ -1572,10 +1572,18 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                     # 49.4% low bias at x≈1 before the gate caught it.)
                     # Because truncation is gone, a WIDE stencil is now better:
                     # bigger difference signal, less float cancellation.
-                    dl = float(wl[1] - wl[0])
+                    # ★wl is λ-DESCENDING (Lumerical stores freq-ascending;
+                    # MEASURED live: 137853_41 it0 skipped on dTp = +0.394 at
+                    # a genuine max because "hi" sat on the BLUE side). |dl|
+                    # for k, and swap so wl[i_lo] < wl[i_hi] ALWAYS — then
+                    # the ascending-convention guard dTp<0 and the driver's
+                    # gLam formula hold untouched for either ordering.
+                    dl = abs(float(wl[1] - wl[0]))
                     k = max(1, min(int(round(0.5 * fwhm / dl)),
                                    i_pk - 1, len(wl) - 2 - i_pk))
                     i_lo, i_hi = i_pk - k, i_pk + k
+                    if wl[i_hi] < wl[i_lo]:
+                        i_lo, i_hi = i_hi, i_lo
                     # T' from the measured spectrum (free). Spacing is uniform
                     # in FREQUENCY, so take it from the actual wl values.
                     tp_lo = float(T[i_lo + 1] - T[i_lo - 1]) / float(

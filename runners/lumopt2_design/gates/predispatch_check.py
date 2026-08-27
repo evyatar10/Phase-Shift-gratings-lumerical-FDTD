@@ -82,4 +82,23 @@ allok &= check("task 41 + campaign (uniform seed)", PSPEC,
 
 print("\n" + ("ALL SEEDS IN BOUNDS — safe to dispatch"
                if allok else "*** DO NOT DISPATCH — fix the bounds first ***"))
+# ★INDEX-REACHABILITY (2026-08-28, after TWO collisions with _GFR_RUNGS'
+# membership branch ate tasks 27 and 34): our named tasks must not be
+# captured by any membership set and must appear exactly once as a literal.
+import re as _re
+from runners.lumopt2_design import validate_c325 as _v
+_src = open(_v.__file__, encoding="utf-8").read()
+_bad = False
+for _idx, _name in ((41, "lam-chain toy"), (46, "control twin"),
+                    (47, "pipeline smoke")):
+    _hits = len(_re.findall(rf"task_idx == {_idx}:", _src))
+    _in_gfr = _idx in _v._GFR_RUNGS
+    _ok = (_hits == 1) and not _in_gfr and _idx < _v.N_TASKS
+    print(f"  {'OK  ' if _ok else 'FAIL'} task {_idx} ({_name}): "
+          f"literal x{_hits}, in _GFR_RUNGS={_in_gfr}, < N_TASKS={_idx < _v.N_TASKS}")
+    _bad |= not _ok
+if _bad:
+    print("*** INDEX GATE FAILED ***")
+    allok = False
+print("INDEXES REACHABLE")
 sys.exit(0 if allok else 1)

@@ -51,11 +51,15 @@ def glam_naive(wl, p, k):
 
 
 def glam_matched(wl, p, k):
-    """EXACTLY the engine's recipe."""
+    """EXACTLY the engine's recipe (incl. the λ-descending swap, 2026-08-28:
+    Lumerical stores spectra freq-ascending = λ-DESCENDING; without the swap
+    the dTp<0 guard refuses a genuine max — measured live on 137853_41)."""
     T = spectrum(wl, p)
     i_pk = int(np.argmax(T))
     k = max(1, min(k, i_pk - 1, len(wl) - 2 - i_pk))
     i_lo, i_hi = i_pk - k, i_pk + k
+    if wl[i_hi] < wl[i_lo]:
+        i_lo, i_hi = i_hi, i_lo
     tp_lo = float(T[i_lo + 1] - T[i_lo - 1]) / float(wl[i_lo + 1] - wl[i_lo - 1])
     tp_hi = float(T[i_hi + 1] - T[i_hi - 1]) / float(wl[i_hi + 1] - wl[i_hi - 1])
     dTp = tp_hi - tp_lo
@@ -134,6 +138,35 @@ for shift in np.linspace(-0.5, 0.5, 11):
     worst = max(worst, abs(g - C_TRUE) / C_TRUE)
 print(f"\n  delta-leak (grid offset vs true peak): worst {worst*100:.2f}% "
       f"-- expected ~{100*DADP*(dl/2)/T_PK/C_TRUE:.2f}%, accepted")
+
+# ★λ-DESCENDING order (the live 137853_41 it-0 skip): the engine recipe must
+# give the SAME gLam on a reversed grid, and the OLD (unswapped) recipe must
+# refuse it — proof this check has teeth.
+g_asc, dTp_asc = glam_matched(wl, 0.0, K_ENGINE)
+g_desc, dTp_desc = glam_matched(wl[::-1].copy(), 0.0, K_ENGINE)
+inv_ok = g_desc is not None and abs(g_desc - g_asc) / abs(g_asc) < 1e-9
+print(f"  {'OK  ' if inv_ok else 'FAIL'} λ-descending grid: gLam invariant "
+      f"({g_asc:+.6f} vs {g_desc if g_desc is None else g_desc:+.6f}), "
+      f"dTp {dTp_asc:+.3f}/{dTp_desc:+.3f}")
+ok &= inv_ok
+
+
+def _glam_unswapped(wl, p, k):
+    T = spectrum(wl, p)
+    i_pk = int(np.argmax(T))
+    k = max(1, min(k, i_pk - 1, len(wl) - 2 - i_pk))
+    i_lo, i_hi = i_pk - k, i_pk + k
+    tp_lo = float(T[i_lo + 1] - T[i_lo - 1]) / float(wl[i_lo + 1] - wl[i_lo - 1])
+    tp_hi = float(T[i_hi + 1] - T[i_hi - 1]) / float(wl[i_hi + 1] - wl[i_hi - 1])
+    dTp = tp_hi - tp_lo
+    return (None, dTp) if not dTp < 0.0 else (0.0, dTp)
+
+
+g_old, dTp_old = _glam_unswapped(wl[::-1].copy(), 0.0, K_ENGINE)
+teeth = g_old is None and dTp_old > 0
+print(f"  {'OK  ' if teeth else 'FAIL'} old unswapped recipe still refuses the "
+      f"descending grid (dTp {dTp_old:+.3f} > 0) — teeth confirmed")
+ok &= teeth
 
 print("\n" + ("ALL PASS" if ok else "*** GATE FAILED ***"))
 raise SystemExit(0 if ok else 1)

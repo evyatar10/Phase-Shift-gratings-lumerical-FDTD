@@ -172,6 +172,18 @@ Over-testing never once cost anything. So:
     Replicate the third-party raise chain locally and assert the handler
     engages before trusting any except-and-recover design.
   - MATLAB: `checkcode` lint + headless `exportgraphics` render.
+- **★THE DEBUG CYCLE IS THE SCARCEST RESOURCE — hardware-touching engine changes
+  get a MINUTES-scale end-to-end pass BEFORE any hours-scale dispatch (user rule
+  2026-08-28).** Solves here are ~1 h each; an 11 h validation run is an
+  unaffordable debug probe. Local gates catch math/call-path bugs but NOT
+  live-session-state bugs (2026-08-27: analysis-mode dEps crash killed 137845_41
+  at 1:02 after five gates passed). So: any change to lumopt2/adjoint/driver
+  code runs the PIPELINE SMOKE first — `validate_c325` task 35, same 191-param
+  spec and code paths on an N=40 low-Q surrogate, ~1.5-2 h, numbers never
+  quoted as physics. Corollaries: (a) order jobs so new code executes EARLIEST
+  (fail fast beats fail late); (b) prefer many short discriminating runs over
+  one long confirmatory one; (c) when designing any new validation, first ask
+  "what is the CHEAPEST run that can kill this?".
 - **★DEBUG ON THE SMALLEST SCENE THAT CAN ANSWER THE QUESTION — never on the device
   (user rule 2026-08-24, after a night of it).** Before dispatching a diagnostic, ask
   what the question actually depends on. A question about **numerics, an API, a solver
