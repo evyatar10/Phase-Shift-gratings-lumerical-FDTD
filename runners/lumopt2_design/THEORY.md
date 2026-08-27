@@ -1,5 +1,13 @@
 # THE DESIGN, AND THE METHOD — pi-shift Bragg grating, inverse design
 
+> ### ℹ️ You probably want `HANDOFF_SELF_CONTAINED.md` instead
+> This file is the **method chapters only**, and it is *entirely contained in*
+> `HANDOFF_SELF_CONTAINED.md`, which adds the 191-parameter design vector, the
+> code, the raw data and the run record. This file exists as the **editable
+> source** — change the prose here, then regenerate the self-contained version.
+> Hand THAT one to a chat session, not this one.
+
+
 **What this file is.** The handoff for the inverse-design programme. `HANDOFF.md` is *state* — jobs, numbers, what to run
 next. This is the *explanation*: the device we have built, why we are doing
 inverse design at all, why a single cost function provably cannot do this job,

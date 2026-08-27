@@ -1,5 +1,13 @@
 # HANDOFF — lumopt2 corr-325 inverse design — updated 2026-08-26 IDT
 
+> ### ℹ️ Which file do you want?
+> This is the **operational log** — job IDs, incidents, the full trap history,
+> resume commands. Use it when you have **cluster access and are about to run
+> something**.
+> For understanding the design and the method, or for handing to a chat session
+> with no tools, use **`HANDOFF_SELF_CONTAINED.md`** instead.
+
+
 > ### 📘 COMPANION: `THEORY.md` — read it first if you need to UNDERSTAND, not just resume
 > This file is **state** (jobs, numbers, what to run next). **`THEORY.md`** is
 > **method**: the cost function and why it is a windowed p=12 soft-max; the

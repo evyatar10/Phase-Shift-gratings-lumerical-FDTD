@@ -10,7 +10,10 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
 > **`runners/lumopt2_design/HANDOFF.md`** is the live, self-contained state of the
 > lumopt2 inverse-design programme (2026-08-18). Read it before touching that
 > programme, quoting any of its numbers, or resuming a campaign.
-> **`runners/lumopt2_design/THEORY.md`** is its companion: the METHOD, not the
+> **`runners/lumopt2_design/HANDOFF_SELF_CONTAINED.md`** is the SELF-CONTAINED
+> version — method + the full 191-param design vector + the code + the raw data.
+> Hand THAT one to a session without repo access. `THEORY.md` is its editable
+> source and is entirely contained within it: the METHOD, not the
 > state — what the cost function is, the 191-parameter layout, how the two width
 > measures relate, the projected-gradient algorithm, how the adjoint gradients
 > are obtained (tiling, C_field, the zero-extra-solve split), the resonance

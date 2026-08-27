@@ -1,5 +1,20 @@
 # THE DESIGN, AND THE METHOD — pi-shift Bragg grating, inverse design
 
+> # ⭐ THIS IS THE ONE TO USE
+> **If you are handing one file to Claude, hand this one.** It is completely
+> self-contained: the method, the design's full 191-parameter vector, the real
+> code, the raw data, the run record, and what to do next. It needs no
+> filesystem, no cluster, and no other file.
+>
+> The other two documents in this folder are **not needed alongside it**:
+> - `THEORY.md` — the method chapters only. **Entirely contained in this file**
+>   (it is the source this file is generated from). Read it only if you are
+>   editing the prose.
+> - `HANDOFF.md` — the 3200-line operational log: every job ID, every incident,
+>   the full trap history. For a **Claude Code session with cluster access**
+>   that is about to run something. Not useful in a chat window.
+
+
 **What this file is.** The handoff for the inverse-design programme. `HANDOFF.md` is *state* — jobs, numbers, what to run
 next. This is the *explanation*: the device we have built, why we are doing
 inverse design at all, why a single cost function provably cannot do this job,
