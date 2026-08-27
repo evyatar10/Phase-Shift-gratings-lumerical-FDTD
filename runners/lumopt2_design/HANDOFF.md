@@ -10,6 +10,35 @@
 > best design we hold and its open questions; and the algorithm written out
 > step by step.
 
+> ## ★★★★★★WIDTH-GRADIENT PROGRAMME RESUMED — 2026-08-27 ~23:00. THIS BOX
+> ## SUPERSEDES THE "PAUSED" BOX BELOW. λ-CHAIN TOY IS ON HARDWARE.
+> **LIVE (Athena): job 137845, tasks 27 + 41, RUNNING on n315 (h200-shared),
+> QOS 12h_4g / 12:00:00 / 300G verified via sacct.**
+> - **_41 = the λ-chain toy** (`lumopt2_v2_projchain_toy`, wg_lam_chain=True,
+>   3 iterates, cold start from the uniform seed — fresh label, no resume trap).
+> - **_27 = NEW control twin** (`lumopt2_v2_projctrl_toy`, wg_lam_chain=False,
+>   otherwise identical spec, current engine + committed mesh fix) — added
+>   2026-08-27 (user: "we might need to rerun anyways") so the toy-vs-control
+>   comparison cannot be confounded by code/mesh drift since 137075_41.
+> **Pre-dispatch state, all green (this session):** 5/5 gates passed with their
+> exact expected lines; `scene_snapshot` diff vs committed references =
+> **6/6 byte-identical** (the per-tooth mesh fix 3120d38 is behavior-preserving
+> on every existing config path — §5 gate DISCHARGED; residual note: the
+> two-device fine-mesh branch in `bragg_device.py` ~818 still sizes from the
+> scalar, irrelevant for n_devices=1); file md5s local≡remote; seats 0/50;
+> quota 199G/300G; **fixed h5 cleaner INSTALLED on Athena** (md5-verified,
+> crontab entry pre-existing — the "3 blocked routes" item below is CLOSED).
+> **Verdict criteria** = the 4 checks in the paused box below (gLam_n present /
+> gλ·dp vs Δλ_pk / ΔW below control / ‖∇T‖-collapse falsification), except the
+> control ΔW reference is now task _27's own trajectory (fallback: 137075's
+> +0.0110/+0.0122 µm). **User approved AUTO-PROCEED** to the uniform-seed
+> production campaign (`campaign_v2_proj`, 4d_1g/96h) if (1)-(3) pass and ‖∇T‖
+> stays healthy. Cluster ruling this session: toy on Athena. λ-chain math
+> re-reviewed by Fable (matched-stencil algebra, signs, guards): sound.
+> q3db note: no N=240/280/320 results exist on Athena (137331 left nothing);
+> sacct query on it still owed.
+
+
 > ## ★★★★★q3db LADDER — LIVE STATE 2026-08-26 ~02:4x. READ THIS BOX FIRST.
 > **MEASURED so far** (regular builder, conformal, q3db family numerics):
 > | N | T | dB | lambda nm | Q_L | mode FWHM |

@@ -931,6 +931,22 @@ def main(task_idx):
         best = eng.run_campaign(spec, out_dir)
         print(f"[proj-toy] completed: best_fom {best['fom']:.5f} — now compare "
               f"the width trajectory against 136753's 18.409->18.827")
+    elif task_idx == 27:
+        # ★CONTROL TWIN of task 41 (2026-08-27, user: "we might need to rerun
+        # anyways"): identical spec, wg_lam_chain OFF, fresh label. Re-measures
+        # the uncorrected ΔW trajectory under the CURRENT engine + committed
+        # per-tooth mesh fix (3120d38), so the toy-vs-control comparison cannot
+        # be confounded by code/mesh drift since 137075_41. Judge exactly like
+        # 137075: ΔW per accepted iterate (old control +0.0110 / +0.0122 µm)
+        # and λ_pk drift (~+0.04 nm/iterate). Same 12 h lane as task 41.
+        import dataclasses
+        from runners.lumopt2_design.campaign_v2_proj import SPEC as PSPEC
+        spec = dataclasses.replace(PSPEC, label="lumopt2_v2_projctrl_toy",
+                                   max_iter=3, max_feval=6, wg_lam_chain=False)
+        spec.adj_fix_field_re, spec.adj_fix_field_im = (0.4554, +0.1336)
+        best = eng.run_campaign(spec, out_dir)
+        print(f"[proj-ctrl] completed: best_fom {best['fom']:.5f} — uncorrected "
+              f"control under current engine; compare ΔW vs 137075_41")
     elif task_idx == 40:
         # ★THE QUADRATURE PARTNER of task 37 — same point, same TILED config,
         # C_field = (0, 1) so the printed vector is Im{Z}. fit_c_field.py needs

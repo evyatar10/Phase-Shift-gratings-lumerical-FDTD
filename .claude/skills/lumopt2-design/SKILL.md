@@ -1023,3 +1023,44 @@ Q_loaded = (1-sqrt(T))*Q_i = 0.2953*Q_i. Current best projects ~41,000
     studies (it keeps newest-2 per `*_files` dir, and each finished study has
     only 1-2). Reclaiming ~85 GB of cancelled-campaign `*_output.h5` needed
     an explicit purge (283 → 203 G) — ask the user, it is a deletion.
+    ★2026-08-27: the FIXED once-per-10-min cron cleaner (`athena/h5_clean_once.sh`,
+    adds PASS 2 for dirs cold >24 h) is INSTALLED on Athena, md5-verified.
+    It is a CRON job — check `quota -s` + the h5 total, never pgrep.
+
+37. ★DEFECT #19 + THE λ-CHAIN (2026-08-25/27) — THE WIDTH GRADIENT WAS THE
+    WRONG DERIVATIVE. gW from the width adjoint is ∂W/∂p at FIXED λ, but the
+    spec width lives at the device's own MOVING resonance, and W is slaved to
+    λ (dW/dλ ≈ +0.3655 µm/nm uniform / +0.300 seesaw — per-run, ~20% spread,
+    NOT a constant of nature; re-derive per seed family via
+    `gates/derive_dwdlam.py`). 93%/77% of the width blow-up that killed both
+    baselines was resonance drift. FIX: gλ = dλ_pk/dp from the IFT on
+    ∂T/∂λ=0 via a MATCHED antisymmetric stencil pair (exact for any h on a
+    symmetric lineshape; the naive pair errs 1/(1+x²) = 49.4% low at x≈1),
+    two selector passes off the same solved fields = ZERO extra adjoints;
+    gW += wg_dwdlam·gλ. Guards: dTp<0 (straddles a max, else LOUD skip),
+    1<i_pk<len-2 (edge wrap), ≥40 spectrum pts per spectral FWHM. FIVE
+    offline gates before any dispatch, each with an expected last line
+    (HANDOFF top box): lam_chain math + plumbing + projection + predispatch
+    + derive_dwdlam. `validate_c325` task 41 = the 3-iterate hardware toy
+    (fresh label, cold start); task 27 = its wg_lam_chain=False CONTROL TWIN
+    under the same engine/mesh. Job 137845 (2026-08-27) is the first hardware
+    run of both. Until it completes cleanly the λ-chain is UNVALIDATED.
+
+38. ★MODEL-DELEGATION WORKFLOW (user directive 2026-08-27, after a token
+    audit found 96% of 2 weeks' burn in two marathon sessions and 13% in
+    hand-rolled queue polling). FABLE IS THE DECISION MAKER: planning,
+    gradient math, verdicts, anomaly root-causing, dispatch go/no-go.
+    OPUS SUBAGENTS (Agent tool, model:"opus", background) execute routine:
+    monitoring/polling, result fetch + MATLAB plotting, log summarization,
+    jsonl data crunching (Fable reviews conclusions), skill/memory drafts,
+    quota/seat probes. Standing burn rules distilled from the audit:
+    (a) queue-watching goes through the Monitor tool or one background
+    watcher — never repeated squeue turns in the main loop; (b) one ssh per
+    poll folding squeue+sacct+log-tail+quota; (c) the parent never Reads a
+    subagent's tasks/*.output transcript — the report IS the interface;
+    (d) state docs get ONE batched edit per stage, not incremental edits;
+    (e) read big state files (HANDOFF 200+ KB) by top box / Grep section,
+    never whole; (f) cap sessions — invoke safe-compact on a turn budget.
+    Once the corrected pipeline is routine, plain-Opus sessions carry it and
+    Fable is reserved for new failures / math / physics contradictions /
+    >1-GPU-day decisions.
