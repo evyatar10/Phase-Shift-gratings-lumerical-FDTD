@@ -612,6 +612,115 @@ the right tool to map it.
 
 ---
 
+## 11. ★ What happens next
+
+Read this together with §8 (where each track stands) and §9 (the open
+questions). This section is the *plan*, ordered, with **who can actually do
+each step** — that matters, because not every reader of this document has the
+same powers.
+
+### 11a. Who can do what
+
+| capability | Claude in a chat window | Claude Code session | must be a human |
+|---|---|---|---|
+| reason over the data in the appendix | ✅ | ✅ | |
+| design the next experiment | ✅ | ✅ | |
+| read repo files / run the gates | ❌ | ✅ | |
+| ssh to Athena or IGUM, dispatch, fetch | ❌ | ✅ | |
+| commit, deploy | ❌ | ✅ | |
+| approve a §2 numerics change | ❌ | ❌ | ✅ |
+| decide the formulation (projection vs AL) | ❌ | ❌ | ✅ |
+
+★**If you are reading this in a chat window, you cannot run anything.** That is
+fine — most of the valuable work left is *analysis and design*, and the
+appendix was built precisely so you can do it without tools. See §11d.
+
+### 11b. The ordered sequence — for whoever has cluster access
+
+**1. Fetch the IGUM results first.** ⚠️ *Before anything else.*
+The conformal / q3db ladder was still running at the pause (jobs 63423, 63438,
+63540, 63595). Those results exist **nowhere else** — a cluster holding the only
+copy of anything is the one situation this programme treats as an emergency.
+They belong to Track A, the deliverable.
+
+**2. Resolve the `bragg_device.py` mesh question.** ⚠️ *Blocking for Track B.*
+A parallel session changed the fine-mesh y-span to size from
+`max(width_wide_per_tooth_m)` rather than the scalar width. It is a genuine bug
+fix — the old behaviour ate 448 nm of PML standoff and inflated T above 1 — but
+it is a **§2 named-numerics change** on a shared file, and the stored control
+(job 137075) ran *before* it. For the current seed both widths agree (0.9625 µm)
+so the domain is unchanged there; divergence appears only once a tooth is drawn
+wider than the scalar, which is exactly what a per-tooth optimizer does.
+**Needs: a scene-snapshot diff against the committed references, and a decision
+on whether the control must be re-measured.**
+
+**3. Run the offline gates.** Six of them, all local, all seconds, zero GPU.
+They must all pass before any dispatch. Expected outputs are stated in
+`HANDOFF.md`.
+
+**4. Dispatch the 3-iterate validation toy.** ~9 h, one task.
+★**This is a prerequisite, not the first item in a queue.** The production
+campaign is configured and ready at 30 iterates — roughly 81 GPU-hours — on a
+gradient that has **never completed a single iterate**. Do not skip to it.
+
+**What the toy decides**, in order of what to look at:
+- Does the resonance-chain term *execute*? Look for `gLam_n` present in the
+  proj log with **no** `λ-CHAIN SKIPPED` line. If it skipped, nothing else in
+  the run means anything.
+- Does predicted `gλ·dp` match the measured `Δλ_pk`? The control drifted about
+  **+0.04 nm per iterate**; a correct chain term should predict that.
+- Does `ΔW` per iterate fall below the control's **+0.0110 / +0.0122 µm**?
+- ★**The falsification test:** does the projected `‖∇T‖` collapse toward zero?
+  If it does, transmission and width are **genuinely locked** for this device.
+  That is a real physical result, not a failure — and it arrives in ~5 GPU-hours
+  instead of a wasted multi-day campaign.
+
+**5. Only then, the production campaign** — and only if step 4's verdict
+supports it.
+
+### 11c. Decisions that need a human
+
+- **Projection or augmented Lagrangian?** (§10) They are not interchangeable:
+  the projection guarantees zero first-order width change and costs two
+  adjoints; AL discovers the true exchange rate and costs one. You cannot have
+  both. Recommendation in §10d: validate the projection first, because it is
+  one short run from an answer — and if that answer is "locked", the trade-off
+  *curve* becomes the interesting object and AL is the right tool to map it.
+- **Is Track A's device final?** If the answer is yes, Track B's remaining
+  value is scientific rather than practical, and the priority order changes.
+- **How much more GPU time is this worth?** Track B has consumed a great deal
+  and has not yet produced a width-controlled improvement.
+
+### 11d. What a chat session can do right now, with no tools at all
+
+The appendix contains the real data, so these are all genuinely available:
+
+1. **Re-read the earlier results through the λ-detrend lens.** Every past
+   conclusion about "this change widened the mode" was drawn before we knew
+   that width tracks resonance at ~0.37 µm/nm. Some of those conclusions are
+   probably wrong. The tables in A4 are enough to re-examine them.
+2. **Interrogate the design vector in A1.** The corrugation profile, the shift
+   distribution, the comb spacing — is the freeze-boundary discontinuity at
+   tooth 26 costing anything? Is the shift profile doing what a taper should?
+3. **Design the next experiment on paper.** What is the smallest run that
+   distinguishes "T and W are locked" from "the optimizer has not found the
+   right direction"? Specify it precisely enough that a Claude Code session can
+   dispatch it without re-deriving anything.
+4. **Sanity-check the method itself.** The derivations in §5, §6 and §10 are
+   all written out; a careful reader may well find something wrong. This
+   programme has repeatedly been saved by someone checking the algebra rather
+   than the code.
+5. **Write.** The physics story here — a constraint that turned out to be
+   mostly a proxy for something else — is a genuinely interesting result and is
+   not yet written up anywhere except these documents.
+
+★**What a chat session should NOT do:** invent numbers, assume a run happened,
+or claim the λ-chain fix works. It has never completed an iterate on hardware.
+Everything about it in this document is *implemented and gated offline*, which
+is not the same as *validated*.
+
+---
+
 ---
 
 # APPENDIX - everything a chat session cannot fetch for itself
