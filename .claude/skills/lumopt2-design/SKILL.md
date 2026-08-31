@@ -570,6 +570,11 @@ MUST BE RE-DERIVED per device (do NOT copy from the pi-shift contract):
   constraint would punish legitimate radiation reduction; only valid for
   joint Q/V maximization. (d) REJECTED: CMT width model — tooth-scale
   optimizer moves violate slowly-varying assumptions (user physics call).
+  ★Scope note (user, 2026-08-31): the CMT ban applies INSIDE the optimizer /
+  width-wall only. The standalone q3db PREDICTION program (python_tools/
+  bragg_cmt.py + calibrate_q3db.py + predict_q3db.py, memory
+  project_q3db_predictive_engine.md) is user-authorized to use CMT and is
+  backtested; do not import its width laws back into lumopt2 surrogates.
 
 
 ## ═══ PLATFORM RECIPE — distilled 2026-08-18 (Fable handoff) ═══

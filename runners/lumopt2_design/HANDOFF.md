@@ -127,14 +127,22 @@
 > sacct query on it still owed.
 
 
-> ## ★★★★★q3db LADDER — LIVE STATE 2026-08-26 ~02:4x. READ THIS BOX FIRST.
-> **MEASURED so far** (regular builder, conformal, q3db family numerics):
+> ## ★★★★★q3db LADDER — CLOSED 2026-08-31. MEASURED VERDICT: crossing N=220.
+> **MEASURED, all rungs landed** (regular builder, conformal, q3db family
+> numerics; .mat in results_from_{igum,athena}/invdesign_q3db_20um/results/):
 > | N | T | dB | lambda nm | Q_L | mode FWHM |
 > |---|---|---|---|---|---|
 > | 100 | 0.97228 | -0.122 | 1560.947 | 1818.6 | 19.1709 |
 > | 150 | 0.91429 | -0.389 | 1560.857 | 10493.8 | 19.7909 |
-> **IN FLIGHT (Athena):** 137322_2 N=180 (running) · 137333 N=200/220/240 ·
-> 137331 N=280/320. IGUM has no q3db jobs left. err=0 everywhere.
+> | 180 | 0.80750 | -0.929 | 1560.847 | 28066 | 19.875 |
+> | 200 | 0.67836 | -1.685 | 1560.852 | 52325 | 19.898 |
+> | **220** | **0.49944** | **-3.015** | 1560.851 | **88868** | **19.904** |
+> **VERDICT: the -3 dB device is N=220, Q_L=88,868, mode 19.904 um** — inside
+> the family acceptance (T 0.5+/-0.03, fwhm 20+/-1 um). All gates pass
+> (T+R<1, in-window; N=220 row carries the 3.1-samples/linewidth caveat
+> from the box below). N=240/280/320 never ran and are NOT needed.
+> (Box updated 2026-08-31 by the predictive-engine program, user-approved plan;
+> tools: python_tools/{calibrate_q3db,predict_q3db,bragg_cmt}.py.)
 >
 > ### ★THE ACCEPTANCE CRITERIA ARE THE FAMILY'S, RE-READ FROM THE OLD STUDIES
 > `trench_q3db_20um.py` round 2: "interpolate to T = 0.5; **accept T = 0.5 +/- 0.03,
@@ -146,16 +154,17 @@
 > device. Q must NOT be interpolated: near the crossing Q_L moves ~N^4 (projected
 > 143k at N=280 vs 241k at N=320), so a mid-gap interpolation could be 10-20% off.
 >
-> ### ★THE CROSSING IS NOT PREDICTABLE FROM THE TWO POINTS — 3 MODELS, 230 to 640
-> | model | crossing N |
-> |---|---|
-> | loss_dB ~ N^2.859 (power law) | 306 |
-> | ln(T) linear in N (the family's own convention) | ~640 |
-> | Q_c ~ exp, Q_i ~ N^1.5, solved at Q_c = 0.828*Q_i | ~230 |
-> Do NOT quote 306; it was stated too confidently earlier in the session and is only
-> one branch. The 180-320 ladder brackets all three. Fitted params for the third
-> model (from N=100/150): Q_i = 130296*(N/100)^1.5, Q_c = 3688*exp(0.03565*(N-100)),
-> T = (2Qi/(Qc+2Qi))^2, Q_L = Qi*Qc/(Qc+2Qi).
+> ### ★THE 3-MODEL CONTEST IS RESOLVED BY THE MEASURED CROSSING (2026-08-31)
+> | model | crossing N | error vs measured 220 |
+> |---|---|---|
+> | loss_dB ~ N^2.859 (power law) | 306 | +39% |
+> | ln(T) linear in N | ~640 | +191% |
+> | **Q_c ~ exp, Q_i ~ N^1.5, two-port solve** | **~230** | **+4.5% — WINNER** |
+> Confirms the standing rule: extrapolate Q_c, NEVER ln T. Fitted params of the
+> winner (from N=100/150): Q_i = 130296*(N/100)^1.5, Q_c = 3688*exp(0.03565*(N-100)),
+> T = (2Qi/(Qc+2Qi))^2, Q_L = Qi*Qc/(Qc+2Qi). Better still: a SATURATING Qi fit
+> on N=100-200 predicts the held-out N=220 rung to Q_L +2.3% / T -1.4pt
+> (python_tools/calibrate_q3db.py backtest B1b, 2026-08-31).
 >
 > ### ★SPECTRAL-SAMPLING FIX — THIS SAVED THE STUDY TWICE, KEEP IT
 > The 20 nm / 4001 pt family window is **5 pm per sample**. Fine at N<=180 (>=10
