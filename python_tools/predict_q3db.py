@@ -42,9 +42,13 @@ FAMILY = "tm_bare_c325"    # family key in q3db_calibration.csv
 N = 165                    # observe-mode N
 TARGET_DB = -3.0           # peak-T target in dB (0.5 = -3.01 dB)
 TARGET_WIDTH_UM = None     # e.g. 14.0 -> retune corr via the knob line; None = keep corr
-# extend-mode: the NEW measured device (fill from the result .mat / your note)
+# extend-mode: the NEW measured device (fill from the result .mat / your note).
+# mesher matters: the calibration families are ALL conformal (the q3db family
+# numerics). "pva" rows (the optimizer's smoother mesher) are a DIFFERENT
+# frame: lam +5.3 nm / FWHM -8% / T +0.0079 / Q_L -7% vs conformal (stored
+# notes, mesher memory + prod_q3db_ladder header) — never mix the frames.
 ROW = dict(pol="TM", corr_nm=325.0, pitch_nm=516.83, N=100, T=0.9104,
-           Q_L=1760.0, lam_nm=1559.006, width_um=19.245)
+           Q_L=1760.0, lam_nm=1559.006, width_um=19.245, mesher="conformal")
 BASE_FAMILY = "tm_bare_c325"   # shape priors for extend mode (match pol!)
 # ----------------------------------------------------------------------------
 
@@ -183,6 +187,11 @@ def main():
               f" -> Qc={qc_m:.0f} (DERIVED), Qi={qi_m:.0f} (DERIVED)")
         print("  ! single-row anchor: Qi SHAPE borrowed from base family — one more row"
               " ~30 periods away pins it")
+        if ROW.get("mesher", "conformal").lower() != "conformal":
+            print("  ! ROW is NOT conformal-mesh: predictions stay in the row's own"
+                  " mesher frame; comparing them to conformal/spec numbers is"
+                  " EXPECTED-grade only (known offsets: lam +5.3 nm, FWHM -8%,"
+                  " T +0.008, Q_L -7%)")
         corr_note = ""
     corr_now = ROW["corr_nm"] if MODE == "extend" else float(fam.split("_c")[-1]) \
         if "_c" in fam and fam.split("_c")[-1].isdigit() else np.nan
