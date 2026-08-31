@@ -36,7 +36,7 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 
 SPEC = eng.CampaignSpec(label="lumopt2_val_c325")
-N_TASKS = 52         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
+N_TASKS = 54         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
                      # ... | 49=fast-then-rescale s5 test (2026-08-29)
                      # gradient-fix experiment matrix (all B3-style, point 1
                      # unless noted, gates = per-class α vs FD):
@@ -810,6 +810,91 @@ def main(task_idx):
                   f"rLam {r.get('rLam_nm')}")
         print(f"[ns2toy] best_fom {best['fom']:.5f} — judge rho_T / Δλ / ΔW "
               f"per the d1 criteria before ANY campaign dispatch")
+    elif task_idx == 53:
+        # ★gW ANGLE PROBE (user request 2026-08-31): measure, at PRODUCTION
+        # numerics (N=100, PVA, GPU tiles), the actual angle between the
+        # width-gradient vectors at two CONSECUTIVE accepted ns2-toy points
+        # (one cap-10 step apart). This is the direct evidence for how deep
+        # wgp_reuse_k can go: cos ~ 1 ⇒ the width row survives reuse; the
+        # per-iterate proxy (gW_n drift ~0.3%) sees only the norm, not the
+        # direction. 2 solves per point (wg_pure: fwd + width adjoint),
+        # ~3 h total. Vectors saved as .npy for any later re-analysis.
+        import dataclasses
+        import json as _json
+        from runners.lumopt2_design.campaign_v2_proj_d1 import SPEC as DSPEC
+        rows = [_json.loads(l) for l in open(os.path.join(
+            out_dir, "lumopt2_v2_ns2toy_evals.jsonl"), encoding="utf-8")]
+        # ★audit #5 (2026-08-31): eval rows include rejected/retry trials —
+        # a too-close pair biases cos toward 1 and OVERSTATES safe reuse
+        # depth. Take the last row and the latest earlier row a genuine
+        # step apart (max|dp| in [2, 25] nm ≈ one accepted cap-10..15 move).
+        pB = np.asarray(rows[-1]["params"], dtype=float)
+        pA = None
+        for r in reversed(rows[:-1]):
+            cand = np.asarray(r["params"], dtype=float)
+            if 2.0 <= float(np.max(np.abs(pB - cand))) <= 25.0:
+                pA = cand
+                break
+        assert pA is not None, ("no eval pair a genuine step apart — refuse "
+                                "to measure a biased angle")
+        gs = []
+        for tag, pv in (("A", pA), ("B", pB)):
+            # mirror task 37/40's proven wg_pure knobs (151 λ pts; single
+            # assembly pass ⇒ memory-safe); seed_override=pv centres the
+            # frozen-comb slivers on the point itself.
+            spec = dataclasses.replace(
+                DSPEC, label=f"lumopt2_v2_gwangle_{tag}",
+                wg_pure=True, wg_project=False, n_wl_points=151,
+                seed_override=tuple(pv))
+            spec.adj_fix_field_re, spec.adj_fix_field_im = (0.4554, +0.1336)
+            lmpt = eng.import_lumopt2()
+            project, _ = eng.make_project(spec, out_dir, lmpt)
+            g = np.asarray(project.compute_gradient_raw(params=pv),
+                           dtype=float)
+            np.save(os.path.join(out_dir, f"gW_angle_{tag}.npy"), g)
+            gs.append(g)
+        cos = float(gs[0] @ gs[1]
+                    / (np.linalg.norm(gs[0]) * np.linalg.norm(gs[1])))
+        ang = float(np.degrees(np.arccos(np.clip(cos, -1.0, 1.0))))
+        print(f"[gw-angle] cos {cos:.6f} | angle {ang:.3f} deg | norms "
+              f"{np.linalg.norm(gs[0]):.5g} / {np.linalg.norm(gs[1]):.5g} | "
+              f"max|dp| {np.max(np.abs(pB - pA)):.3f} nm — reuse-depth "
+              f"evidence at production numerics")
+    elif task_idx == 52:
+        # ★wgp_reuse_k SMOKE (2026-08-31): task-50 pattern + width-row reuse
+        # (wgp_reuse_k=2 ⇒ alternate refresh/reuse). Exercises: the filtered
+        # adjoint queue (width solve skipped on reuse iterates), the zero-read
+        # width entry, the stored-gW substitution, reuse_age in the sidecar,
+        # and a refresh AFTER a reuse. NOT physics (N=60 surrogate).
+        import dataclasses
+        from runners.lumopt2_design.campaign_v2_proj_d1 import SPEC as DSPEC
+        # ★wgp_target_um = the N=60 surrogate's OWN measured W (16.455,
+        # ns2smoke eval 0) — with the campaign target the surrogate sits
+        # 1.9 µm off-target and the reuse eligibility gate (|W−tgt| ≤ marg)
+        # can never open, so the smoke would burn 4 iterates exercising
+        # nothing and then fail its own check (caught 2026-08-31 pre-verdict;
+        # first dispatch 139244 had exactly this flaw and was cancelled).
+        spec = dataclasses.replace(DSPEC, label="lumopt2_v2_reusesmoke2",
+                                   n_periods_side=60,
+                                   two_kl_floor=0.0, fwhm0_um=None,
+                                   wgp_target_um=16.455,
+                                   wgp_reuse_k=2,
+                                   max_iter=4, max_feval=8)
+        spec.adj_fix_field_re, spec.adj_fix_field_im = (0.4554, +0.1336)
+        best = eng.run_campaign(spec, out_dir)
+        import json as _json
+        rows = [_json.loads(l) for l in open(os.path.join(
+            out_dir, "lumopt2_v2_reusesmoke2_proj.jsonl"), encoding="utf-8")]
+        reused = [r for r in rows if r.get("gw_reused")]
+        fresh = [r for r in rows if r.get("rho_T") is not None
+                 and not r.get("gw_reused")]
+        print(f"[reusesmoke] best_fom {best['fom']:.5f} | reused "
+              f"{len(reused)}/{len(rows)} | fresh {len(fresh)} — numbers are "
+              f"NOT physics (N=60)")
+        if not reused or not fresh:
+            raise RuntimeError(
+                "REUSESMOKE FAIL: need >=1 reused AND >=1 fresh iterate — "
+                "the alternation never exercised; do NOT enable wgp_reuse_k")
     elif task_idx == 49:
         # ★FAST-THEN-RESCALE test (user-approved 2026-08-29). The fast
         # unconstrained uniform campaign (s5) gained T at ~2x the projected

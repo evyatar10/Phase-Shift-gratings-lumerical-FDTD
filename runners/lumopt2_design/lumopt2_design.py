@@ -463,6 +463,18 @@ class CampaignSpec:
     wgp_cap_adapt: bool = False
     wgp_cap_max_nm: float = 60.0
     wgp_cap_grow: float = 1.5
+    # ★wgp_reuse_k (2026-08-31, iterate-cost cut): reuse the WIDTH constraint
+    # row for up to k-1 iterates between width-adjoint refreshes — skips the
+    # ~45 min width-adjoint solve + its ~25 min assembly pass (~35% of an
+    # iterate) on reuse iterates. Justified by MEASURED row constancy on d1:
+    # gW_n 0.361→0.362, gLam_n 0.2413→0.2395, dTp −2.5361→−2.5369 across
+    # iterates. gλ stays FRESH every iterate (selector passes ride the port
+    # adjoint — zero extra solves), so the λ-hold is never stale; only gW
+    # ages. Refresh early on: any filter reject, restoration active, or
+    # |ΔW_meas| > wgp_reuse_dw_um. 0 = off (default; existing specs
+    # bit-identical). reuse_age persists in the optstate sidecar.
+    wgp_reuse_k: int = 0
+    wgp_reuse_dw_um: float = 0.025
 
 
 def seed_params(spec):
@@ -2204,6 +2216,14 @@ def make_width_classes(lmpt, spec):
 
         def _compute_adjoint_fields_phased(self, fdtd_session, entry, fwd_aux):
             if self._is_width(entry["sim_result"]):
+                if getattr(spec, "_wg_reuse", False):
+                    # ★wgp_reuse_k: no width-adjoint solve ran this iterate —
+                    # its fields must not be read (file is stale geometry).
+                    # Scalar zeros broadcast in the accumulate loop; the
+                    # width entry's jac is 0 under the pure-T fct anyway,
+                    # and the driver substitutes the STORED parameter-space
+                    # gW instead of an assembly here.
+                    return [0.0] * len(entry["sim_result"].wavelengths)
                 fac = complex(spec.adj_fix_field_re, spec.adj_fix_field_im)
                 e = FieldFom.get_adjoint_fields(self, fdtd_session, entry)
                 return [ei * fac for ei in e]
@@ -2255,9 +2275,15 @@ def make_width_classes(lmpt, spec):
                         setattr(self, attr,
                                 sup(fdtd_session, parametrization,
                                     symmetry_factors))
-                self.fct = lambda x: x[-1]
-                self.gfields_W = sup(fdtd_session, parametrization,
-                                     symmetry_factors)
+                if getattr(spec, "_wg_reuse", False):
+                    # ★wgp_reuse_k: no fresh width fields this iterate — the
+                    # driver reuses the stored parameter-space gW. Selector
+                    # passes above still ran (fresh gλ off the port adjoint).
+                    self.gfields_W = None
+                else:
+                    self.fct = lambda x: x[-1]
+                    self.gfields_W = sup(fdtd_session, parametrization,
+                                         symmetry_factors)
             finally:
                 self.fct = keep
             return gT          # combined == ∇T fields here (width jac was 0)
@@ -2438,6 +2464,12 @@ def _ns2_step(gT, gW, gLam, D, W, W_tgt, marg, lam_nm, lam_tgt_nm, lam_marg_nm,
         if n_g > 0 else 0.0
     mJ = float(np.max(np.abs(xi_J)))
     step = xi_J * (cap_nm / mJ) if mJ > 0 else np.zeros_like(xi_J)
+    # ★near-null guard (audit #3, 2026-08-31): normalizing to the cap
+    # amplifies a numerically-null ξ_J (rho_T→0, the "locked" regime) into a
+    # full-size noise-direction step, burning a solve per filter reject.
+    # Below rho_T=0.02 scale the step down proportionally instead.
+    if rho_T < 0.02:
+        step = step * (rho_T / 0.02)
     mC = float(np.max(np.abs(xi_C)))
     if mC > cap_nm:                               # scalar clamp: ξ_J part keeps
         xi_C = xi_C * (cap_nm / mC)               # both orthogonalities
@@ -2450,6 +2482,23 @@ def _ns2_step(gT, gW, gLam, D, W, W_tgt, marg, lam_nm, lam_tgt_nm, lam_marg_nm,
         "rLam_nm": (float(lam_nm - lam_tgt_nm)
                     if lam_nm is not None and lam_tgt_nm is not None else None),
         "ns2_degraded": degraded}
+
+
+def _queue_adjoint_jobs_filtered(project, spec):
+    """Mirror of Project._queue_adjoint_jobs (R1.3, project.py:500-507) that
+    SKIPS the width entry when spec._wg_reuse is set (the wgp_reuse_k solve
+    skip). Module-level so the gate can drive it with fakes (audit #6: the
+    old closure was only string-grep-testable). The one version-pinned copy
+    in this feature — re-diff on any Lumerical version bump."""
+    skip_width = bool(getattr(spec, "_wg_reuse", False))
+    for ck, ci in project.fom.config_map.config_map.items():
+        for adj in ci["adjoints"]:
+            if skip_width and project.fom._is_width(adj["sim_result"]):
+                continue
+            project._verify_simulation_files_exist([adj["adj_filename"]])
+            lab = f"run_adj_{ck}" if ck is not None else "run_adj"
+            lab += f"_{adj['sim_result'].monitor_name}"
+            project.runner.add_job(task=adj["adj_filename"], label=lab)
 
 
 def _optstate_path(out_dir, label):
@@ -2527,13 +2576,28 @@ def run_projected(spec, project, cb, out_dir, p0):
               f"{wgain:.3f}, lam_tgt {lam_tgt}", flush=True)
     n_acc, n_rej = int(ost.get("n_acc", 0)), int(ost.get("n_rej", 0))
     ns2_diag = {}
+    # ★wgp_reuse_k: width-row reuse state. dirty ⇒ force a refresh (any
+    # reject invalidates the stored row's trust).
+    reuse_k = int(getattr(spec, "wgp_reuse_k", 0) or 0)
+    reuse_dw = float(getattr(spec, "wgp_reuse_dw_um", 0.025))
+    reuse_age = int(ost.get("reuse_age", 0))
+    reuse_W0 = ost.get("reuse_W0")    # W at the last FRESH width solve —
+                                      # drift reference (audit #4: per-hop
+                                      # |W−acc.W| lets k≥3 accumulate
+                                      # (k−1)·reuse_dw of unchecked drift)
+    reuse_dirty = False
+    spec._wg_reuse = False
+    if ns2 and reuse_k >= 2:
+        project._queue_adjoint_jobs = (
+            lambda: _queue_adjoint_jobs_filtered(project, spec))
 
     def _save_state():
         if ns2 or cap_adapt:
             _save_opt_state(out_dir, spec.label, {
                 "cap_nm": cap_state, "wgain": wgain, "dTp0": dTp0,
                 "dwdlam": float(spec.wg_dwdlam), "lam_tgt_nm": lam_tgt,
-                "n_acc": n_acc, "n_rej": n_rej})
+                "n_acc": n_acc, "n_rej": n_rej, "reuse_age": reuse_age,
+                "reuse_W0": reuse_W0})
 
     def _step_of(gTv, gWv, Wv, a, gLamv=None, lamv=None, mutate=False):
         """One step under the active law; retry calls must not mutate the
@@ -2595,6 +2659,7 @@ def run_projected(spec, project, cb, out_dir, p0):
             if cap_adapt:
                 cap_state = max(cap_state * 0.5, 2.0)
                 n_rej += 1
+            reuse_dirty = True
             step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha,
                                         acc.get("gLam"), acc.get("lam_pk"))
             p = np.clip(acc["p"] + step, lo, hi)
@@ -2639,14 +2704,57 @@ def run_projected(spec, project, cb, out_dir, p0):
             if cap_adapt:
                 cap_state = max(cap_state * 0.5, 2.0)
                 n_rej += 1
+            reuse_dirty = True
             step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha,
                                         acc.get("gLam"), acc.get("lam_pk"))
             p = np.clip(acc["p"] + step, lo, hi)
             rec.update(phase=phase + "-retry", lam=lam)
         else:
+            # ★wgp_reuse_k decision — BEFORE compute_gradient so the width
+            # adjoint solve is skipped from the queue. Reuse only when the
+            # stored row is trustworthy: fresh enough, no reject since the
+            # last refresh, W barely moved, and we're inside the deadband
+            # (a real restoration needs a fresh gW).
+            reuse_now = (ns2 and reuse_k >= 2 and acc is not None
+                         and acc.get("gW_raw") is not None
+                         and not reuse_dirty
+                         and reuse_age < reuse_k - 1
+                         # drift measured vs the point of the last FRESH
+                         # solve, not per hop — k-proof (audit #4)
+                         and abs(W - (reuse_W0 if reuse_W0 is not None
+                                      else acc["W"])) <= reuse_dw
+                         # within the full margin: light restoration may run
+                         # on a reused row (first-order exact vs the row
+                         # used; residual re-measured every eval) — only a
+                         # REAL excursion forces a fresh solve. marg/2 here
+                         # blocked reuse whenever any restoration was active,
+                         # which is d1's normal regime (found 2026-08-31).
+                         and abs(W - W_tgt) <= marg)
+            spec._wg_reuse = bool(reuse_now)
             gT = np.asarray(project.compute_gradient(p), dtype=float)  # fwd cached
-            gW = np.asarray(project.parametrization.compute_gradient_from_fields(
-                project.fom.gfields_W, project.fdtd_session, p), dtype=float)
+            if reuse_now:
+                gW = np.asarray(acc["gW_raw"], dtype=float)
+                reuse_age += 1
+                rec["gw_reused"] = reuse_age
+                print(f"[proj {it}] width row REUSED (age {reuse_age}/"
+                      f"{reuse_k - 1}) — width adjoint skipped this iterate",
+                      flush=True)
+            else:
+                gW = np.asarray(
+                    project.parametrization.compute_gradient_from_fields(
+                        project.fom.gfields_W, project.fdtd_session, p),
+                    dtype=float)
+                if acc is not None and acc.get("gW_raw") is not None:
+                    # ★refresh-angle diagnostic (user, 2026-08-31): measured
+                    # drift of the width row per refresh — the number that
+                    # decides how deep wgp_reuse_k can safely go.
+                    a_ = np.asarray(acc["gW_raw"], dtype=float)
+                    na, nb = np.linalg.norm(a_), np.linalg.norm(gW)
+                    if na > 0 and nb > 0:
+                        rec["gW_refresh_cos"] = float(a_ @ gW / (na * nb))
+                reuse_age = 0
+                reuse_W0 = W          # fresh solve ⇒ new drift reference
+            reuse_dirty = False
             gLam_vec = None       # ns2: set by the chain block when healthy
             if getattr(spec, "wg_lam_chain", False):
                 # ★DEFECT #19: add the unpriced resonance-shift term, so the
@@ -2782,7 +2890,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                           f"{lam_pk_row - acc['lam_pk']:+.3f} nm)", flush=True)
             n_acc += 1
             acc = {"p": p.copy(), "fom": fom, "W": W, "h": h,
-                   "gT": gT, "gW": gW_eff, "gLam": gLam_vec,
+                   "gT": gT, "gW": gW_eff, "gW_raw": gW, "gLam": gLam_vec,
                    "lam_pk": lam_pk_row}
             step, phase, lam = _step_of(gT, gW_eff, W, alpha,
                                         gLam_vec, lam_pk_row, mutate=True)
@@ -2798,7 +2906,9 @@ def run_projected(spec, project, cb, out_dir, p0):
                 st.setdefault("lamh", []).append((lam_pk_row, W))
                 pts = sorted(set(st["lamh"]))
                 lams = np.array([a for a, _ in pts])
-                if len(pts) >= 5 and lams.ptp() >= 0.5:
+                # np.ptp(): the ndarray METHOD was removed in NumPy 2.0 —
+                # killed d1u (139050) at 11:39 h; IGUM's NumPy 1.x masked it.
+                if len(pts) >= 5 and np.ptp(lams) >= 0.5:
                     slope = float(np.polyfit(lams,
                                              [w for _, w in pts], 1)[0])
                     cur = float(spec.wg_dwdlam)
@@ -2807,7 +2917,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                     if abs(new - cur) > 1e-4:
                         spec.wg_dwdlam = new
                         print(f"[proj {it}] dwdlam refit: slope {slope:+.4f} "
-                              f"(n={len(pts)}, span {lams.ptp():.2f} nm) -> "
+                              f"(n={len(pts)}, span {np.ptp(lams):.2f} nm) -> "
                               f"{cur:.4f} => {new:.4f}", flush=True)
                     rec.update(dwdlam_fit=slope, dwdlam_n=len(pts))
             acc["wc"] = wc_last         # RGP: autogain gates on this
@@ -2816,6 +2926,15 @@ def run_projected(spec, project, cb, out_dir, p0):
             alpha = min(alpha * 1.2, float(spec.wgp_step) * 4.0)
             rec.update(phase=phase, lam=lam, wgain=wgain,
                        dw_pred=float(gW_eff @ (p - acc["p"])),  # post-clip audit
+                       # ★dT_pred (2026-08-31, predictive stopping): expected
+                       # FOM gain of the step just taken, from the exact
+                       # adjoint gradient. Stop rule (checkpoint policy):
+                       # dT_pred < the 0.002 T noise floor on 3 consecutive
+                       # accepted iterates, OR cap driven to its 2 nm floor
+                       # by rejects ⇒ converged-within-noise — detected 1-2
+                       # iterates after flattening instead of 5 measured
+                       # evals (~8-15 h saved per verdict).
+                       dT_pred=float(gT @ (p - acc["p"])),
                        gT_n=float(np.linalg.norm(gT)),
                        gW_n=float(np.linalg.norm(gW_eff)))
             if ns2 and ns2_diag:
@@ -2979,6 +3098,19 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                 best["params"], new_center = _best_from_log(spec, out_dir, best, sigma0_um)
                 print(f"[recenter {attempt}] {root} -> new center {new_center:.2f} nm")
                 spec.scan_center_nm = round(new_center, 2)
+                # ★2026-08-31 (adversarial audit #1): a recenter means the
+                # operating point MOVED — a persisted λ target / curvature
+                # reference from before it would make the ns2 restoration
+                # fight the recenter (pull λ back to the old resonance) and
+                # mis-floor the chain guard. Drop both; they re-latch on the
+                # next iterate at the new point.
+                ost_r = _load_opt_state(out_dir, spec.label)
+                if ost_r:
+                    ost_r["lam_tgt_nm"] = None
+                    ost_r["dTp0"] = None
+                    _save_opt_state(out_dir, spec.label, ost_r)
+                    print(f"[recenter {attempt}] optstate λ-target + dTp0 "
+                          f"cleared for re-latch", flush=True)
             elif isinstance(root, WidthTrip):
                 best["params"], _ = _best_from_log(spec, out_dir, best, sigma0_um)
                 if getattr(spec, "sigma_wall", False) or                         getattr(spec, "fwhm_wall", False):

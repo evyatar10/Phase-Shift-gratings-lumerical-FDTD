@@ -128,5 +128,77 @@ print(f"  {'OK  ' if ns2_ok else 'FAIL'} run_projected keeps gLam as its own "
       f"row under ns2 (chain not folded into gW)")
 ok &= ns2_ok
 
+# 7. wgp_reuse_k (2026-08-31): the width-row reuse must (a) default OFF,
+# (b) guard BOTH the width-adjoint read and the gfields_W pass on
+# spec._wg_reuse, (c) substitute the STORED gW in the driver, and (d) mark
+# any reject as dirty so the next iterate refreshes.
+r_ok = eng.CampaignSpec().wgp_reuse_k == 0
+i0 = mod_src.index("def _compute_adjoint_fields_phased")
+adj_src = mod_src[i0:i0 + 1500]
+r_ok &= '_wg_reuse' in adj_src and "[0.0] * len(" in adj_src
+i0 = mod_src.index("def calculate_gradient_fields")
+cgf2 = mod_src[i0:mod_src.index("return gT", i0)]
+r_ok &= '_wg_reuse' in cgf2 and "gfields_W = None" in cgf2
+r_ok &= ('acc.get("gW_raw")' in drv2 and "reuse_dirty = True" in drv2
+         and "_queue_adjoint_jobs_filtered" in drv2
+         and drv2.count("reuse_dirty = True") >= 2)
+print(f"  {'OK  ' if r_ok else 'FAIL'} wgp_reuse_k: default off, zero-read + "
+      f"pass-skip guarded, stored-gW substitution, rejects mark dirty")
+ok &= r_ok
+
+# 8. BEHAVIORAL test of the filtered adjoint queue (audit #6: string greps
+# cannot fail on the modes that matter). Fake project/fom/runner; assert the
+# width job is queued when _wg_reuse is False and absent when True.
+from types import SimpleNamespace
+
+
+def _fake(width_flag_reuse):
+    jobs = []
+    adjs = [{"sim_result": SimpleNamespace(monitor_name="Port_2"),
+             "adj_filename": "a_port.fsp"},
+            {"sim_result": SimpleNamespace(monitor_name="field_profile_adj"),
+             "adj_filename": "a_width.fsp"}]
+    fom = SimpleNamespace(
+        config_map=SimpleNamespace(config_map={None: {"adjoints": adjs}}),
+        _is_width=lambda sr: sr.monitor_name == "field_profile_adj")
+    proj = SimpleNamespace(
+        fom=fom,
+        _verify_simulation_files_exist=lambda fns: None,
+        runner=SimpleNamespace(
+            add_job=lambda task, label: jobs.append(label)))
+    sp = SimpleNamespace(_wg_reuse=width_flag_reuse)
+    eng._queue_adjoint_jobs_filtered(proj, sp)
+    return jobs
+
+
+j_fresh, j_reuse = _fake(False), _fake(True)
+beh_ok = (any("field_profile_adj" in j for j in j_fresh)
+          and not any("field_profile_adj" in j for j in j_reuse)
+          and any("Port_2" in j for j in j_reuse))
+print(f"  {'OK  ' if beh_ok else 'FAIL'} filtered queue BEHAVIOR: width job "
+      f"queued fresh ({len(j_fresh)}) / skipped on reuse ({len(j_reuse)}), "
+      f"port always queued")
+ok &= beh_ok
+# near-null guard: rho_T below 0.02 must shrink the step proportionally
+gT9 = np.random.default_rng(3).standard_normal(191)
+gW9 = np.random.default_rng(4).standard_normal(191)
+gL9 = np.random.default_rng(5).standard_normal(191)
+D9 = np.ones(191)
+# build gT nearly inside span{gW,gL}: tiny orthogonal residue
+A9 = np.stack([gW9, gL9], axis=1)
+M9 = A9.T @ A9
+gT_in = A9 @ np.linalg.solve(M9, A9.T @ gT9)
+resid = gT9 - gT_in
+gT_null = gT_in + 1e-3 * resid          # rho_T ~ 1e-3 * |resid|/|gT| << 0.02
+s_null, _, d_null = eng._ns2_step(gT_null, gW9, gL9, D9, 18.35, 18.35, 0.1,
+                                  1566.0, 1566.0, 0.05, 10.0)
+nn_ok = (d_null["rho_T"] < 0.02
+         and float(np.max(np.abs(s_null))) < 10.0 * (d_null["rho_T"] / 0.02)
+         * 1.01 + 1e-9)
+print(f"  {'OK  ' if nn_ok else 'FAIL'} near-null guard: rho_T "
+      f"{d_null['rho_T']:.2e} -> step inf-norm "
+      f"{float(np.max(np.abs(s_null))):.3g} nm (< cap*rho/0.02)")
+ok &= nn_ok
+
 print("\n" + ("ALL PASS" if ok else "*** GATE FAILED ***"))
 raise SystemExit(0 if ok else 1)

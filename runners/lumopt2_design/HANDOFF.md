@@ -20,9 +20,17 @@
 > λ_pk 1566.444 EXACT on every step (dlam_pred ~1e-16, rLam 0.0);
 > W 18.353→18.287 in-band (eases NARROWER at fixed λ — detrend confirmed);
 > Q_i 109,684→117,594. rho_T 0.143→0.075 (∇T overlaps raw gW only ~0.6%,
-> gλ ~85% ⇒ T rises by red-shifting; width creep was its shadow). WATCH:
-> rho_T declining — the 24h kill rules cover a stall (ΔT<+0.003/10 its at
-> cap≥30 ⇒ saturated; reject rate >50%/8; |W−tgt|>0.05 ×3).
+> gλ ~85% ⇒ T rises by red-shifting; width creep was its shadow).
+> **★CONVERGENCE RULE (user-tightened 2026-08-31, replaces the 10-iterate
+> check): PREDICTIVE, from the exact adjoint gradient.** The engine logs
+> `dT_pred = ∇T·step` per iterate. Stop conditions (checkpoint-applied):
+> (1) dT_pred < 0.002 (the T noise floor) on 3 CONSECUTIVE accepted
+> iterates, or (2) trust cap pinned at its 2 nm floor by rejects ⇒
+> converged-within-noise — verdict 1-2 iterates after flattening, not
+> 5-10 evals (~8-15 h saved). Fallback measured check at 5 accepted its
+> (cumulative ΔT < 0.002). Lane arbitration when budget-tight: compare
+> dT_pred/hour across lanes, feed the better one. Other kill rules stand:
+> reject rate >50%/8-window; |W−tgt|>0.05 sustained ×3 (WidthTrip backs).
 > **LIVE: d1 = Athena 139049 (BEST lane, inherits toy state — starts from
 > 0.96582); d1u = Athena 139050 (uniform lane, inherits c1's 15 iterates,
 > resumes c1 eval-5 fom 0.68758). Both 4d_1g/96:00:00/256G (★4d_1g REJECTS

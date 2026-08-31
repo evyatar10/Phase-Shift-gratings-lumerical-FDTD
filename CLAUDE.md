@@ -160,7 +160,22 @@ Over-testing never once cost anything. So:
     one-hot jacobian AND that the old broken form still raises) catches it.
     That `gates/` dir also holds the math, projection and bounds gates — run
     all four before any lumopt2 dispatch. Corollary: a gate that cannot fail proves nothing — assert the
-    known-bad form still errors. Second corollary from the same fix: count how
+    known-bad form still errors.
+    ★SECOND COROLLARY (2026-08-31, TWO burns in ONE day): **verify a
+    feature's ENGAGEMENT CONDITIONS against the test's actual state BEFORE
+    dispatching the test — zero-GPU arithmetic.** Burn 1: the dwdlam refit
+    engages at n≥5 accepted points; every gate/smoke/toy ran ≤4, so a
+    numpy-2 crash inside it survived to kill an 11.5 h campaign. Burn 2: the
+    reuse smoke's eligibility gate (|W−tgt| ≤ marg) could NEVER open at the
+    surrogate's W (1.9 µm off target) — the smoke was structurally unable to
+    exercise the feature it existed to test (cancelled pre-verdict, one
+    dispatch wasted). Rule: for every new conditional feature, list its
+    trigger conditions (count thresholds, eligibility windows, state flags)
+    and check ON PAPER that the validation run actually reaches them; a
+    smoke must assert the feature's own log marker fired, AND the dispatch
+    note states which iterate/eval is expected to trigger it. This is the
+    same class as index-reachability — audit engagement programmatically,
+    never by assumption. Second corollary from the same fix: count how
     many FIELD SETS are live at once before adding an assembly pass (the
     double-pass already OOM-killed a 160G job at 501 λ) — convert each to its
     parameter vector and free it rather than stashing field sets.

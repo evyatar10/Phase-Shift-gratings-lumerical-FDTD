@@ -140,7 +140,8 @@ _bad = False
 for _idx, _name in ((41, "lam-chain toy"), (46, "control twin"),
                     (47, "pipeline smoke"), (48, "ride toy"),
                     (49, "rescale s5"), (50, "ns2 smoke"),
-                    (51, "ns2 ride toy")):
+                    (51, "ns2 ride toy"), (52, "reuse smoke"),
+                    (53, "gW angle probe")):
     _hits = len(_re.findall(rf"task_idx == {_idx}:", _src))
     _in_gfr = _idx in _v._GFR_RUNGS
     _ok = (_hits == 1) and not _in_gfr and _idx < _v.N_TASKS
