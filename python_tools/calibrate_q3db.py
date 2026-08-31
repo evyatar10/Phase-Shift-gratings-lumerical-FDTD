@@ -46,6 +46,7 @@ DIRS = dict(
     invdesign_igum=os.path.join(REPO, r"results_from_igum\invdesign_q3db_20um\results"),
     invdesign_athena=os.path.join(REPO, r"results_from_athena\invdesign_q3db_20um\results"),
     apod=os.path.join(REPO, r"results_from_athena\tm_te_apod\results"),
+    te_q3db=os.path.join(REPO, r"results_from_athena\te_q3db_20um\results"),
 )
 ITAI_CSV = os.path.join(REPO, r"results_from_igum\itai_hh_summary.csv")
 SIG_T = 0.0018          # T mesh jitter floor (MEASURED, tm_span_conv_c325)
@@ -77,7 +78,7 @@ def parse_name(fname):
     d = dict(decorated="_sc" in fname)
     m = re.search(r"result_N(\d+)", fname)
     d["N"] = int(m.group(1)) if m else None
-    m = re.search(r"_C(\d+)_", fname)
+    m = re.search(r"_C(\d+)[_.]", fname)
     d["C"] = float(m.group(1)) if m else None
     m = re.search(r"_A(\d+)_", fname)
     d["A"] = int(m.group(1)) if m else None
@@ -450,6 +451,19 @@ def b11_apodized(kap325, pitch_default):
         check("B11", f"apod A{A} width um", w, r["fwhm_um"], tol_rel=0.05,
               note=f"kappa={kap0*1e-6:.4f}/um from A0 width; corr={r['corr_nm']:.0f}")
 
+def b13_te_q3db():
+    """TE polarization hold-out — the TE q3db family (corr 250, pitch 500) is
+    fitted and tested entirely on TE rows; no TM anchor touches it."""
+    rows = load_family("te_q3db", lambda r: r["pol"] == "TE" and r["C"] == 250)
+    byN = {r["N"]: r for r in rows}
+    tr = [byN[n] for n in (166, 168, 176, 190)]
+    qcf, qif = fit_qc_exp(tr), fit_qi_sat(tr)
+    m = byN[215]
+    check("B13-TE", "te c250 Q_L at N=215", QL_of(qc_model(qcf, 215), qi_model(qif, 215)),
+          m["QL"], tol_rel=0.10, note=f"TE-only fit; rate={qcf['rate']:.5f} p={qif['p']:.2f}")
+    check("B13-TE", "te c250 T at N=215", T_of(qc_model(qcf, 215), qi_model(qif, 215)),
+          m["T"], tol_abs=0.03)
+
 def b12_kappa_corr_reconciliation():
     """Phase-3 reconciliation, zero GPU: kappa(corr) is linear (coherent
     channel); the conflicting corr-exponents in memory belong to Q_i (radiative
@@ -478,15 +492,33 @@ def calibration_table():
     fams = {}
     bare = load_family("nladder_c325", lambda r: True) + \
         load_family("trench", lambda r: (not r["decorated"]) and r["C"] == 325 and r["N"] != 150)
-    fams["bare_c325"] = sorted(bare, key=lambda r: r["N"])
-    fams["bare_c276"] = load_family("trench", lambda r: (not r["decorated"]) and r["C"] == 276)
-    fams["trench_c325"] = load_family("trench", lambda r: r["decorated"] and r["C"] == 325)
-    fams["invdesign"] = sorted(load_family("invdesign_igum", lambda r: True) +
-                               load_family("invdesign_athena", lambda r: True),
-                               key=lambda r: r["N"])
+    fams["tm_bare_c325"] = sorted(bare, key=lambda r: r["N"])
+    fams["tm_bare_c276"] = load_family("trench", lambda r: (not r["decorated"]) and r["C"] == 276)
+    fams["tm_trench_c325"] = load_family("trench", lambda r: r["decorated"] and r["C"] == 325)
+    fams["tm_invdesign"] = sorted(load_family("invdesign_igum", lambda r: True) +
+                                  load_family("invdesign_athena", lambda r: True),
+                                  key=lambda r: r["N"])
     fams["itai_tm"], fams["itai_te"] = load_itai("TM"), [
         r for r in load_itai("TE") if abs(r["fwhm_um"] - 19.8) < 0.3]
+    fams["te_q3db_c250"] = load_family("te_q3db", lambda r: r["pol"] == "TE" and r["C"] == 250)
     lines = ["family,param,value,n_rows,source,engine_version,numerics"]
+    # width<->corr knob lines, ONE per polarization (1/w linear in corr; the
+    # lock-target linearizing coordinate). TM: corr_bisect_log.csv MEASURED
+    # rows. TE: stored te rows C233(N=170)/C250(N=166) + the corr_bisect TE
+    # C300 reference (N=80 legacy — carries ~4% truncation bias, noted).
+    te_rows = load_family("te_q3db", lambda r: r["pol"] == "TE")
+    te_by = {(r["C"], r["N"]): r for r in te_rows}
+    knobs = dict(
+        knob_tm=[(300.0, 19.25844), (350.0, 17.24287), (400.0, 15.54882), (450.0, 13.85999)],
+        knob_te=[(233.0, te_by[(233.0, 170)]["fwhm_um"]),
+                 (250.0, te_by[(250.0, 166)]["fwhm_um"]),
+                 (300.0, 15.54448)],
+    )
+    for kn, pts in knobs.items():
+        c = np.array([p[0] for p in pts]); iw = 1.0 / np.array([p[1] for p in pts])
+        b, a = np.polyfit(c, iw, 1)
+        lines.append(f"{kn},iw_a,{a:.6g},{len(pts)},corr-width knob,{ENGINE_VER},\"{NUMERICS}\"")
+        lines.append(f"{kn},iw_b,{b:.6g},{len(pts)},corr-width knob,{ENGINE_VER},\"{NUMERICS}\"")
     print("\nProduction calibration table (all-rows fits):")
     for fam, rows in fams.items():
         src = rows[0]["file"] + f" (+{len(rows)-1})"
@@ -524,6 +556,7 @@ def main():
     b10_spectral(byN325)
     b11_apodized(kap, pitch)
     b12_kappa_corr_reconciliation()
+    b13_te_q3db()
     report()
     calibration_table()
 
