@@ -244,6 +244,32 @@ Over-testing never once cost anything. So:
   §2 numerics change (box, window/points, mesh, symmetry/BCs) vs every stored
   baseline, written in the runner docstring. A stored identical-numerics control
   satisfies §2's in-study-control requirement.
+  **★EXTENDED 2026-08-30 (user: "wasting me hours each time") — the same rule
+  governs OPTIMIZER lanes.** (a) A campaign that continues a toy/prior lane
+  (same spec knobs + seed) must INHERIT its state — copy the toy's
+  `<label>_evals.jsonl` + `<label>_optstate.json` into the new label's out_dir
+  server-side before dispatch (seconds), so `_best_from_log` warm-starts from
+  the toy's last accepted point instead of re-deriving its iterates at
+  ~2.5 GPU-h each; the dispatch note names the inherited rows. (b) Never
+  dispatch a separate seed/benchmark re-measure: if the seed's observables
+  (t_pk, λ, W) exist in any stored eval log at the same numerics, cite them.
+  The only legitimate seed forward is the one inside an optimizer iterate
+  whose FIELDS feed the adjoint gradient assembly (fields are not stored) —
+  report it as "iterate-0 forward, fields needed", never as a "benchmark".
+  **★IDENTITY, SHARPENED (user, 2026-08-30, both edges):** a stored result's
+  identity = engine version + §2 numerics (mesh/dx, mesher, window/points,
+  box, BCs) + spec params. Cluster/machine is NOT part of the identity
+  (proven: exact cross-cluster repro at the same version). If ANY identity
+  component genuinely differs — an engine bump like R1.2→R1.3 is a real
+  difference; results across it are not interchangeable without a canary —
+  then a re-run IS warranted; say which component differs. But **"I can't
+  verify it's identical" is NEVER a reason to re-run**: verification is
+  cheap local work (the stored jsonl/runner docstring/job log/HANDOFF give
+  the version and numerics) — do that work first. Re-run only when a real
+  difference is FOUND, or provenance is genuinely unrecoverable AND the
+  number is decision-critical — and state that explicitly in the dispatch
+  note. Corollary duty: every stored/cited result carries its engine version
+  + numerics so this check stays a 2-minute read, not a GPU-hour rerun.
 - **★Never let one cluster hold UNIQUE results — fetch early (2026-08-17).**
   A long campaign's incremental log (eval jsonl / params history) is unique
   data the moment it is written; IGUM went unreachable for hours holding the

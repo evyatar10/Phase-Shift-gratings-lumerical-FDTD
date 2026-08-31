@@ -81,7 +81,13 @@ ADJ_FIX_FIELD = (0.4554, +0.1336)
 
 SPEC = dataclasses.replace(
     eng.CampaignSpec(),
-    label="lumopt2_v2_proj",
+    # ★GENERATION-TAGGED label (2026-08-28): the label IS the resume key —
+    # run_campaign cold-start-resumes from <label>_evals.jsonl, and a stale
+    # log under a reused label silently replaces the intended cold start
+    # (struck 3×: 137267/137296 design flaw, 137873_41, smoke 137879). Every
+    # new campaign generation MUST bump the _cN suffix. c1 = the first
+    # λ-chain-corrected uniform-seed campaign.
+    label="lumopt2_v2_proj_c1",
     # numerics identical to the s5 campaign, so the two are comparable
     scan_width_nm=10.0, n_wl_points=501,
     region_dx_nm=eng.DX_PITCHLOCK_NM,
@@ -123,7 +129,13 @@ SPEC = dataclasses.replace(
     wgp_target_um=W_TARGET_UM,
     wgp_margin_um=MARGIN_UM,
     wgp_step=0.25,                   # calibrated by gate P2
-    wgp_step_max_nm=5.0,             # C_field magnitude guard
+    # ★5.0 → 10.0 (user-approved 2026-08-28 evening): the cap was cutting the
+    # raw ~73 nm gradient step 15× and dominated the climb pace
+    # (+0.00122 T/iterate). Doubling is justified by the SAME-DAY validated
+    # prediction audits (dlam_pred 13-26%); filter/trust-box/WidthTrip bound
+    # the risk. b1 on IGUM keeps 5.0 (its tree predates this edit) as the
+    # conservative arm — do not redeploy IGUM with this file while b1 runs.
+    wgp_step_max_nm=10.0,            # C_field magnitude guard
     # ★λ-drift step bound (2026-08-28): control drifted +0.04 nm/iterate;
     # historical line-search probes jumped up to +2.6 nm and died at the band
     # edge. 0.5 nm (~0.6 linewidth) never binds a healthy step.

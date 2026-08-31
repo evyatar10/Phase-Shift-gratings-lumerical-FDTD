@@ -105,5 +105,28 @@ print(f"  {'OK  ' if drv_ok else 'FAIL'} run_projected converts the stashed "
       f"selector fields at the driver (layout-mode site)")
 ok &= drv_ok
 
+# 6. d1 (2026-08-30): the ns2 spec must build the same flat-x fct — the two-
+# constraint law changes the STEP, not the FOM plumbing — and the driver must
+# route gLam as its own constraint row (never fold the chain into gW under
+# ns2), read from source like check 5.
+from runners.lumopt2_design.campaign_v2_proj_d1 import SPEC as DSPEC
+try:
+    fct_d1 = eng.make_fct_v2(wl, DSPEC)
+    v_d1 = float(fct_d1(x))
+    jac_w = float(jacobian(fct_d1)(x)[n_wl])
+    d1_ok = np.isfinite(v_d1) and jac_w == 0.0
+    print(f"  {'OK  ' if d1_ok else 'FAIL'} d1 spec fct on flat x -> "
+          f"{v_d1:.6f}, width jac {jac_w:+.3g} (pure-T under wg_project)")
+    ok &= d1_ok
+except Exception as e:
+    print(f"  FAIL d1 spec fct raised {e!r}")
+    ok = False
+drv2 = inspect.getsource(eng.run_projected)
+ns2_ok = ("gLam_vec = gLam" in drv2 and "_ns2_step" in inspect.getsource(eng)
+          and "if ns2:" in drv2 and "gW = gW + chain" in drv2)
+print(f"  {'OK  ' if ns2_ok else 'FAIL'} run_projected keeps gLam as its own "
+      f"row under ns2 (chain not folded into gW)")
+ok &= ns2_ok
+
 print("\n" + ("ALL PASS" if ok else "*** GATE FAILED ***"))
 raise SystemExit(0 if ok else 1)

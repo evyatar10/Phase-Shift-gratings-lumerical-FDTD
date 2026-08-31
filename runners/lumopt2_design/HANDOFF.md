@@ -1,4 +1,49 @@
-# HANDOFF — lumopt2 corr-325 inverse design — updated 2026-08-26 IDT
+# HANDOFF — lumopt2 corr-325 inverse design — updated 2026-08-31 IDT
+
+> ## ★★★★★★★★2026-08-31 — d1 GENERATION LIVE. THIS BOX SUPERSEDES EVERYTHING
+> ## BELOW AND MOST OF HANDOFF_2026-08-30.md.
+> **The re-think happened and was validated on hardware.** Root causes found
+> (measured): (1) the old step engine delivered a CONSTANT 10 nm move —
+> `_cap(a)=cap0·min(1,a/a0)` cancels alpha/wgp_step whenever the raw ~73 nm
+> step exceeds the cap (b2's step-doubling was a NO-OP); (2) width creep was
+> λ-slaving — ride nulled dW/dp but nothing nulled dλ/dp (c1's live ride
+> evals grew W +0.031/+0.050 µm, WORSE than climb).
+> **THE d1 LAW (`_ns2_step`, lumopt2_design.py): project D·∇T into the null
+> space of BOTH raw fixed-λ ∇W AND gλ (IFT, zero extra solves) + Feppon
+> range-space restoration + adaptive trust cap (×1.5 on verified holds,
+> 10→60 nm, ×0.5 on reject) + `<label>_optstate.json` sidecar (survives
+> REQUEUE).** With gλ·d=0 the fitted 0.3655 coefficient cancels out of the
+> step entirely (gate-checked). Gates: projection gate +29 ns2 checks ALL
+> PASS; plumbing/lam-chain/predispatch green; smoke = task 50; toy = task 51.
+> **TOY 138658 VERDICT (MEASURED, N=100 PVA, 3 iterates): PASS.**
+> t_pk 0.96348→0.96459→**0.96582** (+0.00234/2 steps, accelerating);
+> λ_pk 1566.444 EXACT on every step (dlam_pred ~1e-16, rLam 0.0);
+> W 18.353→18.287 in-band (eases NARROWER at fixed λ — detrend confirmed);
+> Q_i 109,684→117,594. rho_T 0.143→0.075 (∇T overlaps raw gW only ~0.6%,
+> gλ ~85% ⇒ T rises by red-shifting; width creep was its shadow). WATCH:
+> rho_T declining — the 24h kill rules cover a stall (ΔT<+0.003/10 its at
+> cap≥30 ⇒ saturated; reject rate >50%/8; |W−tgt|>0.05 ×3).
+> **LIVE: d1 = Athena 139049 (BEST lane, inherits toy state — starts from
+> 0.96582); d1u = Athena 139050 (uniform lane, inherits c1's 15 iterates,
+> resumes c1 eval-5 fom 0.68758). Both 4d_1g/96:00:00/256G (★4d_1g REJECTS
+> 300G — 275G cap, use 256G). Labels lumopt2_v2_proj_d1 / _d1u.**
+> c1 (138535) + b1 (IGUM 64279) CANCELLED 2026-08-30 after state fetch:
+> results_from_athena/lumopt2_v2_proj_c1/, results_from_igum/lumopt2_v2_proj_b1/,
+> toy+smoke: results_from_athena/v2_ns2_toy/.
+> **★NEW USER RULES (CLAUDE.md §6, also in skill + memory): never re-derive
+> across labels — campaigns INHERIT toy/lane state (copy evals+optstate into
+> the new label server-side); result identity = engine version + numerics,
+> NOT cluster; "can't verify identical" is NEVER a rerun reason — read the
+> provenance instead.** Comb stays frozen in gen-1 (d2 arm = free it, only
+> if d1 healthy-but-saturated; r=80 choice provenance: COMB_HANDOFF.md §5.3
+> plateau + r⁴ parasitic + flush-route margin). Uncommitted: engine ns2
+> block, campaign_v2_proj_d1.py, campaign_v2_proj_d1u.py, gates, validate
+> tasks 50/51, this box (+ the 08-30 backlog listed in HANDOFF_2026-08-30.md).
+
+> ### ★2026-08-30: `HANDOFF_2026-08-30.md` (the re-think request) is now
+> ### HISTORICAL — its live-state section is superseded by the box above;
+> ### its measured-facts section remains valid background.
+> This file's state below is current only through 2026-08-26.
 
 > ### ℹ️ Which file do you want?
 > This is the **operational log** — job IDs, incidents, the full trap history,
@@ -17,6 +62,33 @@
 > `∇T`/`∇W` split); the resonance chain-rule term and its exact stencil; the
 > best design we hold and its open questions; and the algorithm written out
 > step by step.
+
+> ## ★★★★★★★2026-08-28 ~11:00 — λ-CHAIN VALIDATED IN EXECUTION + SIGN; RIDE
+> ## TEST IN FLIGHT. THIS BOX SUPERSEDES THE RESUME BOX BELOW.
+> **DONE (exit 0, data in `results_from_athena/v2_lam_chain_toy/`):** smoke
+> 137872 (2/2 chain) → toy 137873_41 + fresh control 137873_46 (3 iterates
+> each, 3h13m, ~1.5 h/iterate on H200). **MEASURED verdict:** chain ran 3/3
+> (gLam_n ≈0.245, dTp −2.25, 20× floor margin); ‖∇T‖ healthy;
+> proj_rot_deg 46°→6°→3° (it-0 inflated by near-cancellation — the chain
+> shrinks ‖gW‖ 0.126→0.028 there). ★★**SIGN RESULT: the control's dw_pred is
+> NEGATIVE on every iterate while measured ΔW is POSITIVE (+0.0110/+0.0122,
+> = 137075 exactly) — fixed-λ gW points the WRONG WAY; the corrected arm's
+> dw_pred sign is RIGHT (mag 0.5-4×).** λ-drift explains 81-154% of measured
+> ΔW on every real step (slaving confirmed in-run). ★NOT yet tested:
+> WIDTH-HOLDING — all 6 iterates sat in CLIMB (step ignores gW); "ΔW < ctrl"
+> is ill-posed there (totals equal, as expected). gλ·dp vs Δλ_pk was
+> untestable post-hoc (norm-only logging) → **dlam_pred_nm now logged**.
+> ★Label-reuse trap struck AGAIN: _41 silently RESUMED from cancelled
+> 137853's log (control seed eval bit-identical ⇒ zero engine drift; only a
+> one-step offset). Bump labels per attempt.
+> **IN FLIGHT: 137879 smoke → afterok → 137880_48 = RIDE-PHASE TOY**
+> (`lumopt2_v2_ridetoy`, wgp_target_um=18.345 = seed W ⇒ ride/null-space
+> ACTIVE from it 0; 3 iterates ~4.5 h). PASS = ΔW/iterate within the
+> ±0.0055 µm noise floor with fom rising ⇒ then the 96 h campaign
+> (pre-approved). Drift-out ⇒ RESTORE exercised (also informative). Task
+> map: 41 toy / 46 control / 47 smoke / 48 ride-toy (N_TASKS 49; predispatch
+> gate audits index reachability). Campaign HELD until the ride verdict.
+
 
 > ## ★★★★★★WIDTH-GRADIENT PROGRAMME RESUMED — 2026-08-27 ~23:00. THIS BOX
 > ## SUPERSEDES THE "PAUSED" BOX BELOW. λ-CHAIN TOY IS ON HARDWARE.

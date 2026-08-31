@@ -143,5 +143,90 @@ check("RGP step capped at cap_nm",
 # (e) default OFF — existing specs bit-identical
 check("wgp_rgp default OFF", eng.CampaignSpec().wgp_rgp is False)
 
+# ── 8) ns2: two-constraint null+range-space step (d1, 2026-08-30) ─────────
+LAM_TGT, LAM_MARG = 1566.44, 0.05
+# (a) both orthogonalities, machine precision, real D conditioning, mid-band
+worst_w = worst_l = 0.0
+for _ in range(50):
+    gT8, gW8, gL8 = (rng.standard_normal(N) for _ in range(3))
+    st8, ph8, dg8 = eng._ns2_step(gT8, gW8, gL8, D, W_TGT, W_TGT, MARG,
+                                  LAM_TGT, LAM_TGT, LAM_MARG, 10.0)
+    nrm = np.linalg.norm(st8)
+    worst_w = max(worst_w, abs(gW8 @ st8) / (np.linalg.norm(gW8) * nrm))
+    worst_l = max(worst_l, abs(gL8 @ st8) / (np.linalg.norm(gL8) * nrm))
+check("ns2 gW.d == 0 (mid-band)", worst_w < 1e-9, f"worst rel {worst_w:.2e}")
+check("ns2 gLam.d == 0 (mid-band)", worst_l < 1e-9, f"worst rel {worst_l:.2e}")
+check("ns2 phase mid-band", ph8 == "ns2")
+# (b) MUST-FAIL teeth: the old single-constraint ride direction does NOT
+# satisfy gLam.d = 0 — the new property is non-trivial
+s_old, _, _ = eng._proj_step(gT8, gW8, D, W_TGT, W_TGT, MARG, 0.3, 1e9)
+check("teeth: old ride violates gLam.d=0",
+      abs(gL8 @ s_old) / (np.linalg.norm(gL8) * np.linalg.norm(s_old)) > 1e-4)
+# (c) coefficient independence: (gW + c·gLam)·d == gW·d for ANY c — the
+# fitted wg_dwdlam is out of the feasible-direction math
+for c in (0.1, 0.3655, 0.7, -0.5):
+    check(f"ns2 chain-coef {c:+.3g} drops out",
+          abs(float((gW8 + c * gL8) @ st8) - float(gW8 @ st8)) < 1e-9)
+# (d) restoration first-order exact + deadbanded (gT=0 isolates xi_C)
+sC, phC, dgC = eng._ns2_step(np.zeros(N), gW8, gL8, D, W_TGT + 0.15, W_TGT,
+                             MARG, LAM_TGT + 0.20, LAM_TGT, LAM_MARG, 1e9)
+check("ns2 restore phase", phC == "ns2+restore")
+check("ns2 restore gW exact",
+      np.isclose(float(gW8 @ sC), -(0.15 - MARG / 2.0), rtol=1e-9))
+check("ns2 restore gLam exact",
+      np.isclose(float(gL8 @ sC), -(0.20 - LAM_MARG), rtol=1e-9))
+# inside both deadbands ⇒ zero restoration content
+sZ, phZ, _ = eng._ns2_step(gT8, gW8, gL8, D, W_TGT + 0.03, W_TGT, MARG,
+                           LAM_TGT + 0.02, LAM_TGT, LAM_MARG, 10.0)
+check("ns2 deadband: no restore inside bands", phZ == "ns2"
+      and abs(gW8 @ sZ) / (np.linalg.norm(gW8) * np.linalg.norm(sZ)) < 1e-9)
+# (e) collinear degeneracy: must degrade to single-constraint, not NaN
+sD, phD, dgD = eng._ns2_step(gT8, gW8, gW8 * 1.0001, D, W_TGT, W_TGT, MARG,
+                             LAM_TGT, LAM_TGT, LAM_MARG, 10.0)
+check("ns2 collinear degrades finite", np.all(np.isfinite(sD))
+      and dgD["ns2_degraded"] and phD == "ns2_degraded")
+check("ns2 degraded keeps gW.d == 0",
+      abs(gW8 @ sD) / (np.linalg.norm(gW8) * np.linalg.norm(sD)) < 1e-9)
+# (f) gLam=None ⇒ single-constraint; direction == _proj_step ride direction
+sN, _, _ = eng._ns2_step(gT8, gW8, None, D, W_TGT, W_TGT, MARG,
+                         None, None, LAM_MARG, 10.0)
+sR, _, _ = eng._proj_step(gT8, gW8, D, W_TGT, W_TGT, MARG, 0.3, 1e9)
+check("ns2 gLam=None == ride direction",
+      np.allclose(_dir(sN), _dir(sR), atol=1e-9))
+# (g) cap: inf-norm respected and mid-band direction cap-invariant
+s10, _, _ = eng._ns2_step(gT8, gW8, gL8, D, W_TGT, W_TGT, MARG,
+                          LAM_TGT, LAM_TGT, LAM_MARG, 10.0)
+s02, _, _ = eng._ns2_step(gT8, gW8, gL8, D, W_TGT, W_TGT, MARG,
+                          LAM_TGT, LAM_TGT, LAM_MARG, 2.0)
+check("ns2 cap inf-norm", float(np.max(np.abs(s02))) <= 2.0 * (1 + 1e-12)
+      and np.isclose(float(np.max(np.abs(s10))), 10.0, rtol=1e-9))
+check("ns2 cap parallel (mid-band)", np.allclose(_dir(s10), _dir(s02),
+                                                 atol=1e-9))
+# (h) rho_T sane: in (0,1]; and == 1 when constraints are orthogonal to gT
+check("ns2 rho_T in (0,1]", 0.0 < dg8["rho_T"] <= 1.0 + 1e-12)
+# build a gT already D-orthogonal to both rows: project in the D metric
+A8 = np.stack([gW8, gL8], axis=1)
+M8 = A8.T @ (D[:, None] * A8)
+gT_dperp = gT8 - A8 @ np.linalg.solve(M8, A8.T @ (D * gT8))
+_, _, dgP = eng._ns2_step(gT_dperp, gW8, gL8, D, W_TGT, W_TGT, MARG,
+                          LAM_TGT, LAM_TGT, LAM_MARG, 10.0)
+check("ns2 rho_T == 1 for feasible gT", np.isclose(dgP["rho_T"], 1.0,
+                                                   rtol=1e-9))
+# (i) gW=0 must not raise/NaN
+sF, phF, _ = eng._ns2_step(gT8, np.zeros(N), gL8, D, W_TGT, W_TGT, MARG,
+                           LAM_TGT, LAM_TGT, LAM_MARG, 10.0)
+check("ns2 gW=0 finite", np.all(np.isfinite(sF)))
+# (j) optstate sidecar round-trip + defaults off
+import json as _json, tempfile as _tf  # noqa: E402
+with _tf.TemporaryDirectory() as td:
+    state = {"cap_nm": 22.5, "wgain": 1.1, "dTp0": 2.2, "dwdlam": 0.31,
+             "lam_tgt_nm": 1566.401, "n_acc": 7, "n_rej": 1}
+    eng._save_opt_state(td, "gate", state)
+    back = eng._load_opt_state(td, "gate")
+    check("optstate round-trip", back == state)
+    check("optstate missing -> {}", eng._load_opt_state(td, "nope") == {})
+check("wgp_ns2 default OFF", eng.CampaignSpec().wgp_ns2 is False)
+check("wgp_cap_adapt default OFF", eng.CampaignSpec().wgp_cap_adapt is False)
+
 print(("\nALL PASS" if not fails else f"\nFAILED: {fails}"))
 sys.exit(1 if fails else 0)

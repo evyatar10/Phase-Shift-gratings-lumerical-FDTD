@@ -383,6 +383,10 @@ class CampaignSpec:
                                   # for the 18.346 family) — NOT the benchmark
     wgp_margin_um: float = 0.10   # drift margin; restoration beyond margin/2
     wgp_step: float = 0.25        # step scale in the D metric; gate P2 calibrates
+    # ★two_kl_floor (2026-08-28): None = the module TWO_KL_FLOOR (3.5).
+    # ONLY the pipeline smoke may lower it (weak surrogate, numbers never
+    # quoted); a physics spec must never touch this.
+    two_kl_floor: float = None
     # ★wgp_rgp (2026-08-28): relaxed gradient projection (Antonau SMO 2021) —
     # replaces the CLIMB/RIDE/RESTORE branches with one continuous formula
     # (buffer-ramped projection weight + bounded rotating correction). Their
@@ -393,6 +397,13 @@ class CampaignSpec:
     wgp_rgp: bool = False
     wgp_rgp_bsf: float = 2.0   # their BSF_init; the buffer auto-sizes from
                                # measured per-iterate |ΔW| history (eq 14)
+    # ★wg_dwdlam_fit (2026-08-28): re-fit the path-dependent dW/dλ ONLINE from
+    # this run's own accepted (λ_pk, W) points — the ±20% coefficient error is
+    # the measured dominant residual of the ride test (leak +0.0032 µm/it).
+    # Engages only at n ≥ 5 unique points AND λ-span ≥ 0.5 nm (the detrend
+    # audit's short-arm trap: below ~25 grid steps the own-slope fit flips
+    # sign/magnitude); per-refit change clamped ±30%, absolute [0.10, 0.70].
+    wg_dwdlam_fit: bool = False
     # ★wgp_lam_step_nm (2026-08-28, lit item 1): reject any trial step whose
     # measured λ_pk moved more than this from the accepted point (drift is the
     # width leak a fixed-λ gW cannot see; published recipe = recentring PLUS a
@@ -427,6 +438,31 @@ class CampaignSpec:
     wg_dwdlam: float = 0.3655     # µm/nm; MEASURED r=0.984 n=9 over the uniform
                                   # baseline's in-band evals. Refreshed online
                                   # from the eval log once ≥4 points accrue.
+    # ★wgp_ns2 (2026-08-30, d1 generation): TWO-constraint null+range-space
+    # step — hold the measured width W AND the resonance λ_pk (Feppon/Allaire/
+    # Dapogny, ESAIM:COCV 26:90). Why: measured ΔW ≈ 0.3655·Δλ_pk on every
+    # gradient path (c1 live: the first two production RIDE evals grew W
+    # +0.031/+0.050 µm — λ drift, not envelope reshaping), while task 49
+    # proved T can rise at fixed λ. Constraint rows use the RAW fixed-λ gW
+    # plus gLam: once gLam·d = 0, the fitted wg_dwdlam coefficient drops out
+    # of the feasible directions entirely (chain-correcting gW would make the
+    # two rows near-collinear). Default False = every existing spec
+    # bit-identical.
+    wgp_ns2: bool = False
+    wgp_lam_target_nm: float = None  # λ hold target; None ⇒ latch the first
+                                     # measured λ_pk (persisted in the sidecar)
+    wgp_lam_margin_nm: float = 0.05  # λ restoration deadband, nm (grid 20 pm)
+    # ★wgp_cap_adapt (2026-08-30): the step cap becomes trust-region STATE.
+    # The old _cap(a)=cap0·min(1,a/a0) made the delivered step a CONSTANT
+    # cap0 whenever the raw step exceeded it (~73 nm measured ⇒ always):
+    # alpha and wgp_step cancel out of the realised move, and nothing ever
+    # grows cap0 — the measured pace ceiling of c1/b1. With this flag on:
+    # accept whose measured |Δλ|<0.10 nm AND |ΔW|<0.020 µm ⇒ cap ×wgp_cap_grow
+    # (ceiling wgp_cap_max_nm); reject ⇒ cap ×0.5 (floor 2 nm). Retry halvings
+    # stay real (the property the old coupling existed for).
+    wgp_cap_adapt: bool = False
+    wgp_cap_max_nm: float = 60.0
+    wgp_cap_grow: float = 1.5
 
 
 def seed_params(spec):
@@ -1340,9 +1376,13 @@ def make_project(spec, out_dir, lmpt=None):
     if getattr(spec, "width_grad", False):
         # fail BEFORE the scene build — a misconfigured spec must not cost a
         # cluster minute (or a campaign) to discover.
-        assert spec.fwhm0_um and spec.wg_anchor and \
+        # fwhm0_um may be None ONLY on an explicit smoke spec (signalled by
+        # two_kl_floor being set) — a physics campaign without a width band
+        # must still die here, before the scene build.
+        _smoke = getattr(spec, "two_kl_floor", None) is not None
+        assert (spec.fwhm0_um or _smoke) and spec.wg_anchor and \
             {"softw", "fwhm"} <= set(spec.wg_anchor), \
-            "width_grad requires fwhm0_um + wg_anchor {'softw','fwhm'}"
+            "width_grad requires fwhm0_um (or smoke spec) + wg_anchor {'softw','fwhm'}"
     os.makedirs(out_dir, exist_ok=True)
     fsp = os.path.join(out_dir, f"{spec.label}_base.fsp")
     wl_nm = build_base_fsp(spec, fsp)
@@ -1645,8 +1685,14 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                 row["diag_error"] = repr(e)
             with open(path, "a") as f:
                 f.write(json.dumps(row) + "\n")
-            if row["two_kL"] < TWO_KL_FLOOR:
-                raise RuntimeError(f"2kL {row['two_kL']:.3f} < floor {TWO_KL_FLOOR}")
+            # spec override (2026-08-28): the PIPELINE SMOKE runs a deliberate
+            # weak-grating surrogate (N=60, 2κL≈2.2) — an honesty guard for
+            # optimization results must not block a plumbing exercise whose
+            # numbers are never quoted (137868_47 died on exactly this).
+            _floor = getattr(spec, "two_kl_floor", None)
+            _floor = TWO_KL_FLOOR if _floor is None else float(_floor)
+            if row["two_kL"] < _floor:
+                raise RuntimeError(f"2kL {row['two_kL']:.3f} < floor {_floor}")
             # Recenter ONLY when the BEST design migrates (2026-08-16: λ moves
             # redward ~1-2.6 nm per early step; recentering on every wandering
             # line-search probe would reset L-BFGS-B constantly. A probe that
@@ -2331,6 +2377,105 @@ def _proj_step(gT, gW, D, W, W_tgt, marg, alpha, step_max_nm):
     return step, phase, lam
 
 
+def _ns2_step(gT, gW, gLam, D, W, W_tgt, marg, lam_nm, lam_tgt_nm, lam_marg_nm,
+              cap_nm):
+    """Two-constraint null+range-space step (d1, 2026-08-30) — Feppon form.
+
+    d = cap·ξ_J/‖ξ_J‖_∞ + ξ_C  with  A = [gW, gLam],  M = AᵀDA:
+      ξ_J = D·gT − D·A·M⁻¹·AᵀD·gT   ⇒  gW·ξ_J = gLam·ξ_J = 0  exactly;
+      ξ_C = −D·A·M⁻¹·h              ⇒  A·d ≈ −h  (violations decay, first-
+                                        order exact; replaces pure-restore).
+    gW here is the RAW fixed-λ width gradient — with gLam·d = 0 the fitted
+    dW/dλ coefficient cancels out of the feasible directions for ANY value
+    (gate section 8 asserts this numerically). ξ_J is normalized to the cap
+    (RGP-style), so step length is set by the trust radius, not |∇T|.
+    Returns (step, phase, diag); diag carries rho_T (the falsification
+    observable: fraction of D^½∇T surviving the projection), condM, lam
+    (shadow price vs gW, same definition as _proj_step's), rW/rLam residuals.
+    """
+    gT, gW, D = (np.asarray(v, dtype=float) for v in (gT, gW, D))
+    s = np.sqrt(D)
+    # shadow price vs gW — logged with the same meaning as _proj_step's lam
+    DgW = D * gW
+    nu, nW = np.linalg.norm(DgW), np.linalg.norm(gW)
+    lam_sp = float(gT @ DgW) / (nu * nW) if nu > 0 and nW > 0 else 0.0
+    # deadbanded residuals (restore only the part beyond the band)
+    def _resid(v, tgt, band):
+        r = float(v - tgt)
+        return 0.0 if abs(r) <= band else r - np.sign(r) * band
+    rW = _resid(W, W_tgt, marg / 2.0)
+    cols, hs = [gW], [rW]
+    degraded = False
+    if gLam is not None and lam_nm is not None and lam_tgt_nm is not None:
+        cols.append(np.asarray(gLam, dtype=float))
+        hs.append(_resid(lam_nm, lam_tgt_nm, lam_marg_nm))
+    A = np.stack(cols, axis=1)                    # (n, r)
+    M = A.T @ (D[:, None] * A)                    # r×r
+    condM = float(np.linalg.cond(M)) if M.shape[0] > 1 else 1.0
+    if M.shape[0] > 1 and (not np.isfinite(condM) or condM > 1e8):
+        # near-collinear D^½gW ∥ D^½gLam — drop the λ column, keep width
+        degraded = True
+        A, hs = A[:, :1], hs[:1]
+        M = A.T @ (D[:, None] * A)
+    h = np.asarray(hs, dtype=float)
+    try:
+        Minv_AtDgT = np.linalg.solve(M, A.T @ (D * gT))
+        Minv_h = np.linalg.solve(M, h)
+    except np.linalg.LinAlgError:                 # |gW| ≈ 0: no constraint
+        xi_J = D * gT
+        mJ = float(np.max(np.abs(xi_J))) or 1.0
+        return xi_J * (cap_nm / mJ), "ns2_free", {
+            "lam": lam_sp, "rho_T": 1.0, "condM": condM, "rW_um": rW,
+            "rLam_nm": hs[1] if len(hs) > 1 else None, "ns2_degraded": degraded}
+    xi_J = D * gT - (D[:, None] * A) @ Minv_AtDgT
+    xi_C = -(D[:, None] * A) @ Minv_h
+    # rho_T in the D^{1/2} metric: ξ_J = s·(projected s·gT), so
+    # ‖ξ_J/s‖/‖s·gT‖ is exactly the surviving fraction of the scaled ∇T.
+    n_g = float(np.linalg.norm(s * gT))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        rho_T = float(np.linalg.norm(
+            np.where(s > 0, xi_J / np.where(s > 0, s, 1.0), 0.0)) / n_g) \
+        if n_g > 0 else 0.0
+    mJ = float(np.max(np.abs(xi_J)))
+    step = xi_J * (cap_nm / mJ) if mJ > 0 else np.zeros_like(xi_J)
+    mC = float(np.max(np.abs(xi_C)))
+    if mC > cap_nm:                               # scalar clamp: ξ_J part keeps
+        xi_C = xi_C * (cap_nm / mC)               # both orthogonalities
+    step = step + xi_C
+    phase = "ns2" if not np.any(h) else "ns2+restore"
+    if degraded:
+        phase = "ns2_degraded"
+    return step, phase, {
+        "lam": lam_sp, "rho_T": rho_T, "condM": condM, "rW_um": rW,
+        "rLam_nm": (float(lam_nm - lam_tgt_nm)
+                    if lam_nm is not None and lam_tgt_nm is not None else None),
+        "ns2_degraded": degraded}
+
+
+def _optstate_path(out_dir, label):
+    return os.path.join(out_dir, f"{label}_optstate.json")
+
+
+def _load_opt_state(out_dir, label):
+    """Optimizer-state sidecar: cap / wgain / dTp0 / dwdlam / λ target.
+    Every restart (REQUEUE or run_campaign's restart loop) re-enters
+    run_projected fresh, which used to reset the whole trust state (measured:
+    alpha/wgain/dTp0 all lost per restart). Missing/corrupt file ⇒ {}."""
+    try:
+        with open(_optstate_path(out_dir, label)) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_opt_state(out_dir, label, state):
+    path = _optstate_path(out_dir, label)
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(state, f)
+    os.replace(tmp, path)
+
+
 def run_projected(spec, project, cb, out_dir, p0):
     """Ceiling-riding projected-gradient driver — REPLACES ScipyOptimizer when
     spec.wg_project (L-BFGS-B's line search cannot be held to the null-space
@@ -2363,11 +2508,43 @@ def run_projected(spec, project, cb, out_dir, p0):
           "cbv_hi": W_tgt + marg / 2.0, "cbv_lo": W_tgt - marg / 2.0,
           "Wh": [], "w_prev": None}
     wc_last = 0.0
+    # ★d1 (2026-08-30): ns2 two-constraint law + trust-region cap as STATE,
+    # both persisted in a sidecar so REQUEUE / the restart loop does not
+    # reset them (they used to: alpha/wgain/dTp0 all reset per restart).
+    ns2 = bool(getattr(spec, "wgp_ns2", False))
+    cap_adapt = bool(getattr(spec, "wgp_cap_adapt", False))
+    lam_marg = float(getattr(spec, "wgp_lam_margin_nm", 0.05))
+    ost = _load_opt_state(out_dir, spec.label) if (ns2 or cap_adapt) else {}
+    cap_state = float(ost.get("cap_nm", cap0))
+    lam_tgt = ost.get("lam_tgt_nm",
+                      getattr(spec, "wgp_lam_target_nm", None))
+    if ost:
+        wgain = float(ost.get("wgain", wgain))
+        dTp0 = ost.get("dTp0", dTp0)
+        if ost.get("dwdlam"):
+            spec.wg_dwdlam = float(ost["dwdlam"])
+        print(f"[proj] optstate resumed: cap {cap_state:.3g} nm, wgain "
+              f"{wgain:.3f}, lam_tgt {lam_tgt}", flush=True)
+    n_acc, n_rej = int(ost.get("n_acc", 0)), int(ost.get("n_rej", 0))
+    ns2_diag = {}
 
-    def _step_of(gTv, gWv, Wv, a, mutate=False):
+    def _save_state():
+        if ns2 or cap_adapt:
+            _save_opt_state(out_dir, spec.label, {
+                "cap_nm": cap_state, "wgain": wgain, "dTp0": dTp0,
+                "dwdlam": float(spec.wg_dwdlam), "lam_tgt_nm": lam_tgt,
+                "n_acc": n_acc, "n_rej": n_rej})
+
+    def _step_of(gTv, gWv, Wv, a, gLamv=None, lamv=None, mutate=False):
         """One step under the active law; retry calls must not mutate the
         RGP adaptation state (they re-step from the same accepted point)."""
-        nonlocal wc_last
+        nonlocal wc_last, ns2_diag
+        if ns2 and gLamv is not None and lam_tgt is not None:
+            s_, ph, dg = _ns2_step(gTv, gWv, gLamv, D, Wv, W_tgt, marg,
+                                   lamv, lam_tgt, lam_marg, _cap(a))
+            if mutate:
+                ns2_diag = dg
+            return s_, ph, dg["lam"]
         if rgp:
             s, ph, lm, wc = _rgp_step(gTv, gWv, D, Wv, W_tgt, marg, _cap(a),
                                       st if mutate else dict(st),
@@ -2378,8 +2555,15 @@ def run_projected(spec, project, cb, out_dir, p0):
         return _proj_step(gTv, gWv, D, Wv, W_tgt, marg, a, _cap(a))
 
     def _cap(a):
-        """Effective per-param cap, shrinking WITH alpha.
+        """Effective per-param cap.
 
+        cap_adapt: the cap IS the trust radius (state, persisted): grown on
+        verified accepts, halved on rejects — alpha no longer touches it (the
+        old lockstep coupling made the delivered step a constant cap0; the
+        property it existed for — retry halvings being real — is preserved
+        because a reject halves cap_state directly).
+
+        Legacy path — shrinking WITH alpha:
         ★Without this the retry is a no-op (MEASURED offline 2026-08-25): at
         the real gradient magnitudes the raw step is ~73 nm, so the 5 nm cap
         binds for the first FOUR halvings of alpha — the filter would re-propose
@@ -2388,6 +2572,8 @@ def run_projected(spec, project, cb, out_dir, p0):
         halving genuinely halve the move. A scalar factor cannot rotate the
         step, so the null-space property grad-W . d = 0 is preserved.
         """
+        if cap_adapt:
+            return cap_state
         return cap0 * min(1.0, a / a0)
     for it in range(spec.max_iter):
         fom = float(project.compute_fom(p))
@@ -2406,14 +2592,20 @@ def run_projected(spec, project, cb, out_dir, p0):
                     "wg_project: no fwhm_env_um on the FIRST eval — the width "
                     "pipeline is broken, not flaky; fix before rerunning")
             alpha *= 0.5
-            step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha)
+            if cap_adapt:
+                cap_state = max(cap_state * 0.5, 2.0)
+                n_rej += 1
+            step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha,
+                                        acc.get("gLam"), acc.get("lam_pk"))
             p = np.clip(acc["p"] + step, lo, hi)
             print(f"[proj {it}] NO WIDTH READ — treating as a rejected step, "
                   f"alpha -> {alpha:.4g}, retrying from the accepted point",
                   flush=True)
+            _save_state()
             with open(ppath, "a") as f:
                 f.write(json.dumps({"it": it, "t": time.time(), "fom": fom,
                                     "W": None, "alpha": alpha,
+                                    "cap_nm": _cap(alpha),
                                     "phase": "no-width-retry"}) + "\n")
             continue
         W = float(row["fwhm_env_um"])
@@ -2424,6 +2616,11 @@ def run_projected(spec, project, cb, out_dir, p0):
         # recentring PLUS an explicit bandwidth bound; drift is also how width
         # leaks past a fixed-λ gW). Opt-in knob, default None = inert.
         lam_pk_row = row.get("lam_pk_nm")
+        if ns2 and lam_tgt is None and lam_pk_row is not None:
+            lam_tgt = float(lam_pk_row)           # latch once, persist
+            print(f"[proj {it}] ns2: λ target latched at {lam_tgt:.3f} nm",
+                  flush=True)
+            _save_state()
         lam_bound = getattr(spec, "wgp_lam_step_nm", None)
         lam_jump = (lam_bound is not None and acc is not None
                     and acc.get("lam_pk") is not None and lam_pk_row is not None
@@ -2439,13 +2636,18 @@ def run_projected(spec, project, cb, out_dir, p0):
             # accepted point's STORED gradients at alpha/2 — no re-solve
             # (the trial forward is the bounded loss).
             alpha *= 0.5
-            step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha)
+            if cap_adapt:
+                cap_state = max(cap_state * 0.5, 2.0)
+                n_rej += 1
+            step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha,
+                                        acc.get("gLam"), acc.get("lam_pk"))
             p = np.clip(acc["p"] + step, lo, hi)
             rec.update(phase=phase + "-retry", lam=lam)
         else:
             gT = np.asarray(project.compute_gradient(p), dtype=float)  # fwd cached
             gW = np.asarray(project.parametrization.compute_gradient_from_fields(
                 project.fom.gfields_W, project.fdtd_session, p), dtype=float)
+            gLam_vec = None       # ns2: set by the chain block when healthy
             if getattr(spec, "wg_lam_chain", False):
                 # ★DEFECT #19: add the unpriced resonance-shift term, so the
                 # projection nulls the gradient of the width we actually SPEC
@@ -2498,7 +2700,16 @@ def run_projected(spec, project, cb, out_dir, p0):
                         dirs.append(d / (np.linalg.norm(d) or 1.0))
                     rec["proj_rot_deg"] = float(np.degrees(np.arccos(
                         np.clip(dirs[0] @ dirs[1], -1.0, 1.0))))
-                    gW = gW + chain
+                    if ns2:
+                        # ★d1: keep gLam as its OWN constraint row — do NOT
+                        # fold the chain into gW. With gLam·d = 0 enforced,
+                        # the fitted wg_dwdlam cancels out of the feasible
+                        # directions for any coefficient value; folding it in
+                        # would make the two rows near-collinear.
+                        gLam_vec = gLam
+                    else:
+                        gW = gW + chain
+                    spec._wg_gLam = gLam    # for dlam_pred once step is known
                     rec.update(gLam_n=float(np.linalg.norm(gLam)),
                                dwdlam=float(spec.wg_dwdlam), dTp=dTp)
                 else:
@@ -2554,10 +2765,51 @@ def run_projected(spec, project, cb, out_dir, p0):
             # gW_eff (not raw gW) is what the step is BUILT from, so it is also
             # what the retry branch and the dw_pred audit must use — otherwise
             # both silently disagree with the step whenever wgain ≠ 1.
+            if cap_adapt and acc is not None:
+                # ★trust-region growth: only on a VERIFIED accepted step —
+                # both constraints measurably held (absolute bounds; a
+                # relative dlam_pred test is ill-posed under ns2 where the
+                # prediction is ~0 by construction).
+                held = (abs(W - acc["W"]) < 0.020
+                        and acc.get("lam_pk") is not None
+                        and lam_pk_row is not None
+                        and abs(lam_pk_row - acc["lam_pk"]) < 0.10)
+                if held:
+                    cap_state = min(cap_state * float(spec.wgp_cap_grow),
+                                    float(spec.wgp_cap_max_nm))
+                    print(f"[proj {it}] cap grown -> {cap_state:.3g} nm "
+                          f"(held: dW {W - acc['W']:+.4f} um, dlam "
+                          f"{lam_pk_row - acc['lam_pk']:+.3f} nm)", flush=True)
+            n_acc += 1
             acc = {"p": p.copy(), "fom": fom, "W": W, "h": h,
-                   "gT": gT, "gW": gW_eff, "lam_pk": lam_pk_row}
-            step, phase, lam = _step_of(gT, gW_eff, W, alpha, mutate=True)
+                   "gT": gT, "gW": gW_eff, "gLam": gLam_vec,
+                   "lam_pk": lam_pk_row}
+            step, phase, lam = _step_of(gT, gW_eff, W, alpha,
+                                        gLam_vec, lam_pk_row, mutate=True)
+            if ns2 and (gLam_vec is None or lam_tgt is None):
+                # chain skipped / curvature floor / no λ read — this step ran
+                # the single-constraint law on the FIXED-λ gW. Loud: its width
+                # control is the defect ns2 exists to fix.
+                rec["ns2_fallback"] = True
+                print(f"[proj {it}] ★ns2 FALLBACK: no gLam this iterate — "
+                      f"single-constraint step on fixed-λ ∇W.", flush=True)
             st["Wh"].append(W)          # RGP: accepted widths size the buffer
+            if getattr(spec, "wg_dwdlam_fit", False) and lam_pk_row is not None:
+                st.setdefault("lamh", []).append((lam_pk_row, W))
+                pts = sorted(set(st["lamh"]))
+                lams = np.array([a for a, _ in pts])
+                if len(pts) >= 5 and lams.ptp() >= 0.5:
+                    slope = float(np.polyfit(lams,
+                                             [w for _, w in pts], 1)[0])
+                    cur = float(spec.wg_dwdlam)
+                    new = float(np.clip(slope, 0.7 * cur, 1.3 * cur))
+                    new = float(np.clip(new, 0.10, 0.70))
+                    if abs(new - cur) > 1e-4:
+                        spec.wg_dwdlam = new
+                        print(f"[proj {it}] dwdlam refit: slope {slope:+.4f} "
+                              f"(n={len(pts)}, span {lams.ptp():.2f} nm) -> "
+                              f"{cur:.4f} => {new:.4f}", flush=True)
+                    rec.update(dwdlam_fit=slope, dwdlam_n=len(pts))
             acc["wc"] = wc_last         # RGP: autogain gates on this
             acc["phase"] = phase        # defect #18: autogain gates on this
             p = np.clip(p + step, lo, hi)
@@ -2566,10 +2818,37 @@ def run_projected(spec, project, cb, out_dir, p0):
                        dw_pred=float(gW_eff @ (p - acc["p"])),  # post-clip audit
                        gT_n=float(np.linalg.norm(gT)),
                        gW_n=float(np.linalg.norm(gW_eff)))
+            if ns2 and ns2_diag:
+                rec.update(rho_T=ns2_diag.get("rho_T"),
+                           condM=ns2_diag.get("condM"),
+                           rW_um=ns2_diag.get("rW_um"),
+                           rLam_nm=ns2_diag.get("rLam_nm"))
+                if ns2_diag.get("ns2_degraded"):
+                    rec["ns2_degraded"] = True
+            if ns2 or cap_adapt:
+                # per-block inf-norm shares of the step — the D-anisotropy
+                # starvation readout (which blocks actually move)
+                rec["step_shares_nm"] = {
+                    "corr": float(np.max(np.abs(step[SL_CORR]))),
+                    "avg": float(np.max(np.abs(step[SL_AVG]))),
+                    "shift": float(np.max(np.abs(step[SL_SHIFT]))),
+                    "comb": float(np.max(np.abs(step[SL_R.start:I_CAV]))),
+                    "cav": float(abs(step[I_CAV]))}
+            gl = getattr(spec, "_wg_gLam", None)
+            if gl is not None:
+                # predicted per-step resonance move — the DIRECT test of the
+                # IFT gradient against the next eval's measured λ_pk (the
+                # 137873 toy could not be judged on this: only the norm was
+                # logged). nm units.
+                rec["dlam_pred_nm"] = float(gl @ (p - acc["p"]))
+                spec._wg_gLam = None
+        rec["cap_nm"] = _cap(alpha)               # actual cap after any change
+        _save_state()
         with open(ppath, "a") as f:
             f.write(json.dumps(rec) + "\n")
         print(f"[proj {it}] {rec['phase']} fom {fom:.5f} W {W:.4f} "
-              f"lam {rec.get('lam', 0.0):.4g} alpha {alpha:.3g}", flush=True)
+              f"lam {rec.get('lam', 0.0):.4g} alpha {alpha:.3g} "
+              f"cap {rec['cap_nm']:.3g}", flush=True)
     return (acc["p"] if acc else p), (acc["fom"] if acc else -np.inf)
 
 
@@ -2625,10 +2904,13 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                 sw_anchor = rowb.get("softw_adj_um") or rowb["softw_um"]
                 spec.wg_anchor = {"softw": float(sw_anchor),
                                   "fwhm": float(rowb["fwhm_env_um"])}
-                g_hi = rowb["fwhm_env_um"] - RHO_UP * spec.fwhm0_um
-                g_lo = RHO_DN * spec.fwhm0_um - rowb["fwhm_env_um"]
-                spec.wg_lam_hi = max(0.0, spec.wg_lam_hi + spec.wg_mu * g_hi)
-                spec.wg_lam_lo = max(0.0, spec.wg_lam_lo + spec.wg_mu * g_lo)
+                if spec.fwhm0_um is not None:
+                    # fwhm0_um=None (pipeline smoke) ⇒ no band ⇒ no AL
+                    # multiplier update (137870_47 died here on None*float)
+                    g_hi = rowb["fwhm_env_um"] - RHO_UP * spec.fwhm0_um
+                    g_lo = RHO_DN * spec.fwhm0_um - rowb["fwhm_env_um"]
+                    spec.wg_lam_hi = max(0.0, spec.wg_lam_hi + spec.wg_mu * g_hi)
+                    spec.wg_lam_lo = max(0.0, spec.wg_lam_lo + spec.wg_mu * g_lo)
                 print(f"[width-grad {attempt}] anchor softW "
                       f"{spec.wg_anchor['softw']:.4f} / fwhm "
                       f"{spec.wg_anchor['fwhm']:.4f} um; lam_hi "

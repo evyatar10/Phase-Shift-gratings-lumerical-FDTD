@@ -231,6 +231,26 @@ pointer: memory/reference_inverse_design_program.md.
 - **Preemption**: every Athena partition REQUEUEs. run_campaign resumes from
   `{label}_evals.jsonl` on cold start (≈1 iteration lost). IGUM group
   partitions are PreemptMode=OFF.
+- **★NO RE-DERIVING ACROSS LABELS (user rule 2026-08-30, "wasting me hours
+  each time")**: a campaign that continues a toy/prior lane (same spec knobs
+  + seed) must INHERIT its state — before dispatch, server-side copy the
+  toy's `{label}_evals.jsonl` + `{label}_optstate.json` into the new label's
+  out_dir so `_best_from_log` warm-starts from the toy's last accepted point
+  (and the adaptive cap carries over); the dispatch note names the inherited
+  rows. Never dispatch a separate seed/benchmark re-measure — if the seed's
+  t_pk/λ/W exist in any stored eval log at the same numerics, cite them. The
+  only legitimate seed forward is inside an optimizer iterate (its FIELDS
+  feed the adjoint assembly; fields are not stored) — report it as
+  "iterate-0 forward, fields needed", never as a benchmark run.
+  ★Both edges (user, same day): a result's IDENTITY = engine version + §2
+  numerics + spec params (cluster is NOT part of it — exact cross-cluster
+  repro proven). A REAL identity difference (e.g. the R1.2→R1.3 engine bump)
+  DOES warrant a re-run — name the differing component. But "I can't verify
+  it's identical" is NEVER a reason to re-run: the stored jsonl / runner
+  docstring / job log / HANDOFF carry version+numerics — read them first;
+  re-run only on a FOUND difference, or unrecoverable provenance on a
+  decision-critical number (say so explicitly). Label every stored result
+  with its engine version + numerics so this check stays a 2-minute read.
 - **License**: seats shared across clusters. Probe from IGUM before every
   multi-server phase: `$LUM/licensingclient/linx64/lmutil lmstat -a -c
   1055@132.68.48.51 | grep lum_fdtd_solve`; each campaign ≈ 2 concurrent
@@ -1092,3 +1112,21 @@ Q_loaded = (1-sqrt(T))*Q_i = 0.2953*Q_i. Current best projects ~41,000
     quote smoke numbers as physics. Related trap the same night: task
     indices must be checked against MEMBERSHIP branches (_GFR_RUNGS ate
     index 27), not just literal `== n` matches.
+
+41. ★JANITOR CRONS ARE PART OF THE NUMERICS ENVELOPE (2026-08-29, killed
+    campaign c1 twice). Any cleanup automation must satisfy TWO bounds
+    proven against the SLOWEST live consumer, not the typical one:
+    (a) age floor > the longest window a running gradient still needs a
+    file (a preemption-resumed iterate held its forward h5 live ~2.5 h —
+    the 30 min floor deleted it mid-gradient, signature
+    `Can not find result 'E' in field_profile_adj` 40-50 min into
+    assembly); (b) keep-count > the number of files simultaneously live
+    (forward + port adjoint + width adjoint = 3; "keep 2" ranked the
+    forward third and killed it). Current safe values in
+    athena/h5_clean_once.sh: -mmin +240, keep 4. Corollaries: a crash that
+    appears ONLY after preemption/requeue may be an interaction with
+    time-based automation, not the resume code — check cron/mtime
+    coincidence FIRST (the fwd_default/ dir mtime matching a */10 cron
+    firing was the confirming fingerprint, free); and every watcher's grep
+    set must include `Can not find result` (it is the license-no-op AND
+    the deleted-scratch signature).

@@ -36,7 +36,8 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 
 SPEC = eng.CampaignSpec(label="lumopt2_val_c325")
-N_TASKS = 48         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
+N_TASKS = 52         # 0=B2a bare | 1=B2b comb | 2=B3 gradients | 3=B4 mini-opt
+                     # ... | 49=fast-then-rescale s5 test (2026-08-29)
                      # gradient-fix experiment matrix (all B3-style, point 1
                      # unless noted, gates = per-class α vs FD):
                      # 4=α-stability point 2 | 5=co-location (option 3)
@@ -746,6 +747,111 @@ def main(task_idx):
               f"FWHM {row.get('fwhm_env_um')} — subtract from campaign 136465 "
               f"iteration 0 (same design, comb ON) for the comb's value at the "
               f"benchmark width; comb value at 17.853 was +0.0030")
+    elif task_idx == 50:
+        # ★ns2 PIPELINE SMOKE (2026-08-30, d1 generation): task-47 pattern
+        # with the d1 spec — exercises _ns2_step (two-constraint null+range
+        # step), the gLam constraint row, cap-adapt growth/halving, the λ
+        # target latch, and the <label>_optstate.json sidecar, end-to-end on
+        # the N=60 surrogate (~1.5-2 h). Numbers are NOT physics. Physics
+        # guards disarmed like task 47 (two_kl_floor / fwhm0_um guard
+        # honesty, not plumbing). The far-off wgp_target exercises the
+        # range-space restoration — which replaces the never-run restore.
+        import dataclasses
+        from runners.lumopt2_design.campaign_v2_proj_d1 import SPEC as DSPEC
+        spec = dataclasses.replace(DSPEC, label="lumopt2_v2_ns2smoke",
+                                   n_periods_side=60,
+                                   two_kl_floor=0.0, fwhm0_um=None,
+                                   max_iter=2, max_feval=4)
+        spec.adj_fix_field_re, spec.adj_fix_field_im = (0.4554, +0.1336)
+        best = eng.run_campaign(spec, out_dir)
+        # SEMANTIC PASS/FAIL (task-47 rule: exit-0-with-skip must block the
+        # dependents): require the ns2 law to have actually run — an iterate
+        # with rho_T logged and no fallback — and the sidecar to exist.
+        import json as _json
+        rows = [_json.loads(l) for l in open(os.path.join(
+            out_dir, "lumopt2_v2_ns2smoke_proj.jsonl"), encoding="utf-8")]
+        ran = [r for r in rows if r.get("rho_T") is not None
+               and not r.get("ns2_fallback")]
+        side = os.path.exists(os.path.join(
+            out_dir, "lumopt2_v2_ns2smoke_optstate.json"))
+        print(f"[ns2smoke] best_fom {best['fom']:.5f} | ns2 ran on "
+              f"{len(ran)}/{len(rows)} iterates | sidecar {side} "
+              f"— numbers are NOT physics (N=60 surrogate)")
+        if not ran or not side:
+            raise RuntimeError(
+                "NS2SMOKE FAIL: the two-constraint law never executed (all "
+                "fallback) or no optstate sidecar — do NOT run the toy")
+    elif task_idx == 51:
+        # ★★ns2 RIDE TOY = THE d1 FALSIFICATION EXPERIMENT (2026-08-30):
+        # 3 iterates of the FULL d1 spec (BEST_T9636 seed, N=100, production
+        # numerics, ns2 + cap-adapt live). Read from lumopt2_v2_ns2toy_proj
+        # .jsonl / _evals.jsonl:
+        #   1. rho_T — fraction of D^½∇T surviving the (W, λ) projection.
+        #      < 0.15 on all iterates => BEST is LOCKED under both
+        #      constraints (real verdict; pivot = AL trade-curve).
+        #   2. constraint hold: |Δλ_pk| < 0.10 nm/it (vs the 0.04-0.14
+        #      unconstrained drift) and |ΔW| < 0.02 µm/it at cap 10.
+        #   3. condM < 1e6 and no ns2_degraded on >= 2/3 iterates.
+        # ~5-8 h on the 12h_4g lane. Verdict goes to the user BEFORE any
+        # 96 h campaign (a pace complaint is not authorization — b2 lesson).
+        import dataclasses
+        from runners.lumopt2_design.campaign_v2_proj_d1 import SPEC as DSPEC
+        spec = dataclasses.replace(DSPEC, label="lumopt2_v2_ns2toy",
+                                   max_iter=3, max_feval=6)
+        spec.adj_fix_field_re, spec.adj_fix_field_im = (0.4554, +0.1336)
+        best = eng.run_campaign(spec, out_dir)
+        import json as _json
+        rows = [_json.loads(l) for l in open(os.path.join(
+            out_dir, "lumopt2_v2_ns2toy_proj.jsonl"), encoding="utf-8")]
+        for r in rows:
+            print(f"[ns2toy] it {r.get('it')} phase {r.get('phase')} "
+                  f"fom {r.get('fom')} W {r.get('W')} rho_T {r.get('rho_T')} "
+                  f"condM {r.get('condM')} cap {r.get('cap_nm')} "
+                  f"rLam {r.get('rLam_nm')}")
+        print(f"[ns2toy] best_fom {best['fom']:.5f} — judge rho_T / Δλ / ΔW "
+              f"per the d1 criteria before ANY campaign dispatch")
+    elif task_idx == 49:
+        # ★FAST-THEN-RESCALE test (user-approved 2026-08-29). The fast
+        # unconstrained uniform campaign (s5) gained T at ~2x the projected
+        # pace but drifted: t_pk 0.9012 -> 0.93604 while lam walked +1.221 nm
+        # and W blew +0.482 um (slaving, out of band) — all STORED, no rerun.
+        # One forward answers the strategy question: rescale ALL x dims by
+        # f = 1564.614/1565.8347 (pitch 516.83 -> 516.427, cavity length and
+        # mesh dx follow; comb left at seed — 0.08% is negligible for it) and
+        # measure at the pulled-back resonance.
+        #   T >= ~0.93  => "run fast, rescale after" VALIDATED (drift was a
+        #                  free coordinate; the projected crawl is optional);
+        #   T <= ~0.91  => the fast gain was BOUGHT BY the drift — rescaling
+        #                  gives it back, and the projection earns its pace.
+        # Slaving predicts W_rescaled ~ 18.827 - 0.3655*1.221 = 18.38 um.
+        import dataclasses
+        from runners.lumopt2_design.best_designs import UNIFORM_S5_FAST_BEST
+        f = 1564.614 / 1565.8347
+        eng.PITCH_NM *= f
+        eng.DX_PITCHLOCK_NM = eng.PITCH_NM / eng.CELLS_PER_PITCH
+        # the OUTER periods take pitch from build_ports_base(), not eng — wrap
+        # the cfg builder so free region and outer arms rescale TOGETHER
+        # (task-local monkeypatch; the shared engine stays untouched while c1
+        # runs). grating.pitch_m verified the real field (config-override trap).
+        _orig_cfg = eng.build_base_cfg
+        def _scaled_cfg(s):
+            cfg = _orig_cfg(s)
+            cfg.grating.pitch_m = eng.PITCH_NM * 1e-9
+            return cfg
+        eng.build_base_cfg = _scaled_cfg
+        p = np.asarray(UNIFORM_S5_FAST_BEST, dtype=float).copy()
+        p[eng.SL_SHIFT] *= f                 # x-type params scale with pitch
+        spec = dataclasses.replace(
+            SPEC, label=SPEC.label + "_rescale_s5", scan_width_nm=10.0,
+            n_wl_points=501, region_dx_nm=eng.DX_PITCHLOCK_NM,
+            scan_center_nm=1564.614, free_comb=False)
+        spec.seed_override = tuple(eng.replay_params(spec, p))
+        row = eng.run_canary(spec, out_dir)
+        print(f"[rescale_s5] f={f:.6f} pitch={eng.PITCH_NM:.3f} | "
+              f"T {row.get('t_pk')} lam {row.get('lam_pk_nm')} "
+              f"FWHM {row.get('fwhm_env_um')} | stored drifted point: "
+              f"T 0.93604 lam 1565.8347 W 18.8267; seed 0.9012. Verdict per "
+              f"the header thresholds; expect lam ~1564.6, W ~18.4.")
     elif task_idx in _GFR_RUNGS:
         # route-1 ladder (header comment above _GFR_RUNGS): FieldRegion path
         # (wg_source default), GPU lane, adjoint-only. 151 λ points = the
@@ -931,6 +1037,28 @@ def main(task_idx):
         best = eng.run_campaign(spec, out_dir)
         print(f"[proj-toy] completed: best_fom {best['fom']:.5f} — now compare "
               f"the width trajectory against 136753's 18.409->18.827")
+    elif task_idx == 48:
+        # ★★RIDE-PHASE TOY (2026-08-28 morning, work-alone decision): the
+        # 137873 toy validated chain EXECUTION but spent all 3 iterates in
+        # CLIMB (W ~0.5 µm below the campaign target), where the step ignores
+        # gW — so width-holding was NOT tested. This toy sets the target AT
+        # the seed width, so |W−tgt| < marg/2 puts iterate 0 in RIDE: the
+        # null-space step (gW·d = 0 exactly, with the λ-chain-corrected gW)
+        # acts immediately. PASS = ΔW per accepted iterate ≪ the climb-phase
+        # +0.011 µm (ideally within the ±0.0055 width noise floor) while fom
+        # still rises. If W drifts out the far side it exercises RESTORE —
+        # also never run on hardware — so either outcome is informative.
+        # Judged against 137873_46 (control) trajectories. ~1.5 h/iterate.
+        import dataclasses
+        from runners.lumopt2_design.campaign_v2_proj import SPEC as PSPEC
+        spec = dataclasses.replace(PSPEC, label="lumopt2_v2_ridetoy",
+                                   wgp_target_um=18.345,
+                                   max_iter=3, max_feval=6)
+        spec.adj_fix_field_re, spec.adj_fix_field_im = (0.4554, +0.1336)
+        best = eng.run_campaign(spec, out_dir)
+        print(f"[ride-toy] completed: best_fom {best['fom']:.5f} — judge ΔW "
+              f"per iterate vs the climb arms' +0.011 µm and read dlam_pred_nm "
+              f"vs measured Δλ_pk")
     elif task_idx == 47:
         # ★★PIPELINE SMOKE (2026-08-28, user rule: debug cycles on 11 h runs
         # are unaffordable — hardware-touching engine changes get a
@@ -943,8 +1071,15 @@ def main(task_idx):
         # BEFORE any hours-scale dispatch whenever lumopt2_design.py changed.
         import dataclasses
         from runners.lumopt2_design.campaign_v2_proj import SPEC as PSPEC
+        # ★physics guards DISARMED for the surrogate (2026-08-28, after
+        # 137868_47 died on the 2κL honesty floor): two_kl_floor=0 and
+        # fwhm0_um=None (WidthTrip band) — both guard OPTIMIZATION HONESTY,
+        # not plumbing, and the smoke's numbers are never quoted. W sitting
+        # far off wgp_target just selects the restore branch — a bonus,
+        # since restore has never executed on hardware.
         spec = dataclasses.replace(PSPEC, label="lumopt2_v2_pipesmoke",
                                    n_periods_side=60,
+                                   two_kl_floor=0.0, fwhm0_um=None,
                                    max_iter=2, max_feval=4)
         spec.adj_fix_field_re, spec.adj_fix_field_im = (0.4554, +0.1336)
         best = eng.run_campaign(spec, out_dir)

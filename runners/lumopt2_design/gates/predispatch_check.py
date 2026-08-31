@@ -80,6 +80,54 @@ allok &= check("task 39 (P3 see-saw seed)", s39, p39, clamp=True)
 allok &= check("task 41 + campaign (uniform seed)", PSPEC,
                eng.seed_params(PSPEC))
 
+# tasks 50/51 + the d1 campaign — BEST_T9636 seed under the ns2 spec
+# (param_bounds derives the frozen-comb slivers and the shift trust box from
+# the seed, so this checks the exact vector the runner will submit)
+from runners.lumopt2_design.campaign_v2_proj_d1 import SPEC as DSPEC
+allok &= check("task 51 + d1 campaign (BEST seed, ns2 spec)", DSPEC,
+               np.asarray(BEST_T9636, dtype=float))
+s50 = dataclasses.replace(DSPEC, n_periods_side=60, two_kl_floor=0.0,
+                          fwhm0_um=None, label="ns2smoke")
+allok &= check("task 50 (ns2 smoke, N=60)", s50,
+               np.asarray(BEST_T9636, dtype=float))
+
+# d1u — uniform-lane continuation: c1's best in-band row (the row the copied
+# log will resume from) must sit inside the bounds the runtime derives after
+# recentring on it (run_campaign overwrites seed_override per attempt).
+import json as _j
+_c1_log = (r"c:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes"
+           r"\results_from_athena\lumopt2_v2_proj_c1"
+           r"\lumopt2_v2_proj_c1_evals.jsonl")
+try:
+    from runners.lumopt2_design.campaign_v2_proj_d1u import SPEC as USPEC
+    _rows = [_j.loads(l) for l in open(_c1_log, encoding="utf-8")]
+    _fw0 = float(USPEC.fwhm0_um)
+    _ok_rows = [r for r in _rows if r.get("fwhm_env_um")
+                and 0.98 <= r["fwhm_env_um"] / _fw0 <= 1.02]
+    _best = max(_ok_rows, key=lambda r: r["fom"])
+    _p = np.asarray(_best["params"], dtype=float)
+    _spec_rt = dataclasses.replace(USPEC, seed_override=tuple(_p))
+    allok &= check(f"d1u resume row (c1 eval {_best['eval']}, fom "
+                   f"{_best['fom']:.5f})", _spec_rt, _p)
+except (OSError, ValueError) as e:
+    print(f"  FAIL d1u resume row: {e}")
+    allok = False
+
+# task 49 — fast-then-rescale: s5 best, shifts scaled, replay under VAL spec
+from runners.lumopt2_design.best_designs import UNIFORM_S5_FAST_BEST
+_f = 1564.614 / 1565.8347
+s49 = dataclasses.replace(VAL, label="lumopt2_val_c325_rescale_s5",
+                          scan_width_nm=10.0, n_wl_points=501,
+                          scan_center_nm=1564.614, free_comb=False)
+p49 = np.asarray(UNIFORM_S5_FAST_BEST, dtype=float).copy()
+p49[eng.SL_SHIFT] *= _f
+try:
+    p49 = eng.replay_params(s49, p49)      # asserts bounds itself
+    allok &= check("task 49 (rescale_s5 replay)", s49, p49)
+except AssertionError as e:
+    print(f"  FAIL task 49 (rescale_s5 replay): {e}")
+    allok = False
+
 print("\n" + ("ALL SEEDS IN BOUNDS — safe to dispatch"
                if allok else "*** DO NOT DISPATCH — fix the bounds first ***"))
 # ★INDEX-REACHABILITY (2026-08-28, after TWO collisions with _GFR_RUNGS'
@@ -90,7 +138,9 @@ from runners.lumopt2_design import validate_c325 as _v
 _src = open(_v.__file__, encoding="utf-8").read()
 _bad = False
 for _idx, _name in ((41, "lam-chain toy"), (46, "control twin"),
-                    (47, "pipeline smoke")):
+                    (47, "pipeline smoke"), (48, "ride toy"),
+                    (49, "rescale s5"), (50, "ns2 smoke"),
+                    (51, "ns2 ride toy")):
     _hits = len(_re.findall(rf"task_idx == {_idx}:", _src))
     _in_gfr = _idx in _v._GFR_RUNGS
     _ok = (_hits == 1) and not _in_gfr and _idx < _v.N_TASKS
