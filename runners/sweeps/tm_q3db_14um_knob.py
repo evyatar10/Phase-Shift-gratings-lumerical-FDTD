@@ -27,6 +27,17 @@ Dispatch (IGUM; serialize deploys, own queue may hold 67731 — different study,
 per-study sweep lists, no shared-file overlap):
     bash igum/deploy_igum.sh --option3 --spec=runners.sweeps.tm_q3db_14um_knob --max-concurrent=1
 Output -> results/tm_q3db_14um_knob/results/.
+
+RUNG 0 VERDICT (MEASURED 2026-09-01, job 68086, result_N98_..._C448...mat):
+    T=0.5808 (ABOVE band), Q_L=3853 (-16.9%), width=14.15 um (+2.1% PASS),
+    lam=1557.75. Decomposition: Qi 16197 vs 15600 predicted (+3.8% — corr^-2.9
+    VALIDATED); miss isolated to Qc (5056 vs 6602, rate-only corr transform).
+    Fix: two-term transform (rate + intercept -0.002818/nm) fitted on the
+    STORED N=150 corr ladder, post-hoc -7.8% on this row; now in predict_q3db.
+RUNG 1 (N=103): anchored re-design for -3 dB at 14 um (N*=103.3).
+    PRE-REGISTERED: T=0.512 [0.48..0.54], Q_L=4666 [4430..4900],
+    width~14.1 [13.4..14.8], lam~1557.7. Dispatch ONLY task 1:
+    bash igum/deploy_igum.sh --option3 --spec=runners.sweeps.tm_q3db_14um_knob --array-tasks=1 --max-concurrent=1
 """
 
 import os
@@ -38,7 +49,7 @@ from runners.sweeps.sweep_spec import SweepSpec
 from runners.scatterers import _common
 
 CORR_NM        = 448.4
-N_EACH_SIDE    = 98
+N_ROWS         = [98, 103]   # rung 0 DONE (job 68086); rung 1 = anchored confirm
 
 BOX_Y_UM       = 8.0         # q3db family numerics exactly
 SCAN_CENTER_NM = 1559.5
@@ -53,16 +64,17 @@ BASE.spectral.n_wl_points = N_WL_POINTS
 assert BASE.symmetry.use_z_symmetry, "bare device is z-symmetric — keep the 2x z saving"
 
 SPEC = SweepSpec(
-    corrugation_depth_nm = [CORR_NM],
-    n_periods_each_side  = [N_EACH_SIDE],
-    center_wavelength_nm = [SCAN_CENTER_NM],
-    scatterer_radius_nm  = [0.0],
+    corrugation_depth_nm = [CORR_NM] * len(N_ROWS),
+    n_periods_each_side  = list(N_ROWS),
+    center_wavelength_nm = [SCAN_CENTER_NM] * len(N_ROWS),
+    scatterer_radius_nm  = [0.0] * len(N_ROWS),
     mode  = "zipped",
     label = "tm_q3db_14um_knob",
 )
 
 if __name__ == "__main__":
     print(SPEC.describe())
-    print(f"  task 0: corr={CORR_NM} N={N_EACH_SIDE}  bare device")
-    print("pre-registered PREDICTION: T 0.4937 [0.4576..0.5280], Q_L 4639 [4383..4902],")
-    print("width 13.86 um, lambda ~1555.9 nm — ONE-SHOT -3dB/14um design test")
+    for i, n in enumerate(N_ROWS):
+        print(f"  task {i}: corr={CORR_NM} N={n}  bare device")
+    print("rung 0 MEASURED: T 0.5808, Q_L 3853, width 14.15 (see docstring verdict)")
+    print("rung 1 PRE-REGISTERED: T 0.512 [0.48..0.54], Q_L 4666 [4430..4900], width ~14.1")

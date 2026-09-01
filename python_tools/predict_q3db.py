@@ -56,6 +56,11 @@ CALIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "q3db_calibrati
 Q_ADEQ = 5e4
 CORR_QI_EXP_TM = -2.9      # MEASURED (N=150 trench corr ladder, backtest B12)
 FINF_CORR_EXP = -1.11      # MEASURED cross-family (F_inf 20.06@c325 vs 24.05@c276)
+# Qc corr-transform intercept: lnQc = ... + rate(corr)*N + QC_H_PER_NM*corr.
+# MEASURED on the stored N=150 corr ladder (C266-400, residuals <=3.5%);
+# post-hoc validated on the C448/N=98 live row: -7.8% (old rate-only
+# transform: +31%, the 2026-09-01 knob-test T miss). See memory file.
+QC_H_PER_NM = -0.002818
 NUMERICS_NOTE = "y8.0/z8.8 box, 20nm window/4001pts (3nm/0.75pm if Q_L>5e4), dx50 conformal, ASL 1e-7"
 
 def load_calib():
@@ -117,6 +122,7 @@ def retune_corr(p, corr_now, pol, width_target):
     r = corr_new / corr_now
     q = dict(p)
     q["qc_rate"] = p["qc_rate"] * r                      # kappa prop. corr (0.1-1.3%)
+    q["qc_lnQ0"] = p["qc_lnQ0"] + QC_H_PER_NM * (corr_new - corr_now)
     if "w_Finf" in p:
         scale = r ** FINF_CORR_EXP
         q["w_Finf"], q["w_B"] = p["w_Finf"] * scale, p["w_B"] * scale
