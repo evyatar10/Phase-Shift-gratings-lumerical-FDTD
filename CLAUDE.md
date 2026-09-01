@@ -6,6 +6,17 @@ hours. Read `README.md` for architecture and `runners/README.md` for the study p
 
 The device is a **pi-shift Bragg grating** (use this term in discussion/writeups).
 
+> ## ★★★PREDICT BEFORE YOU SIMULATE — the q3db predictive engine (2026-09-01)
+> Before dispatching ANY length/corrugation tuning ladder (Q3dB devices, "what
+> does N=X give", "what corrugation gives a W µm mode"), use the **`predict-q3db`
+> skill** — `python_tools/{predict_q3db,calibrate_q3db,bragg_cmt}.py`, calibrated
+> from stored results, 44/46 hold-out backtests, and validated live: it predicted
+> a c276 device 35 periods beyond its calibration to −1.9% on Q, and delivered a
+> −3 dB / 14 µm device in TWO runs at a corrugation it had never seen. The
+> workflow is: predict → ONE confirmation run against pre-registered bands →
+> refit. State: memory `project_q3db_predictive_engine.md`. **CMT is authorized
+> for this program** (the CMT ban is scoped to the lumopt2 optimizer/width-wall).
+>
 > ## ★★★CURRENT PROGRAM STATE — READ BEFORE ANY INVERSE-DESIGN WORK
 > **`runners/lumopt2_design/HANDOFF.md`** is the live, self-contained state of the
 > lumopt2 inverse-design programme (2026-08-18). Read it before touching that
@@ -193,9 +204,11 @@ Over-testing never once cost anything. So:
   unaffordable debug probe. Local gates catch math/call-path bugs but NOT
   live-session-state bugs (2026-08-27: analysis-mode dEps crash killed 137845_41
   at 1:02 after five gates passed). So: any change to lumopt2/adjoint/driver
-  code runs the PIPELINE SMOKE first — `validate_c325` task 35, same 191-param
-  spec and code paths on an N=40 low-Q surrogate, ~1.5-2 h, numbers never
-  quoted as physics. Corollaries: (a) order jobs so new code executes EARLIEST
+  code runs the PIPELINE SMOKE first — `validate_c325` **task 47** (projected
+  lanes) / **task 50** (ns2 lanes), same 191-param spec and code paths on an
+  N=60 low-Q surrogate, ~1.5-2 h, numbers never quoted as physics. (★Stale
+  pointer fixed 2026-09-01: this rule previously said "task 35", which is a
+  GFR CUDA-probe rung — following it dispatched the wrong job class.) Corollaries: (a) order jobs so new code executes EARLIEST
   (fail fast beats fail late); (b) prefer many short discriminating runs over
   one long confirmatory one; (c) when designing any new validation, first ask
   "what is the CHEAPEST run that can kill this?".

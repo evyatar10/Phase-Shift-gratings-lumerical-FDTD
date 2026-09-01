@@ -55,3 +55,21 @@ the CMT ban remains ONLY inside the lumopt2 optimizer/width-wall.
   GROWTH phase only — it does not see the saturation ceiling (2026-09-01).
 - Pre-register every prediction (bands in the runner docstring) BEFORE the
   confirmation run; compare after; record hit/miss in the memory file.
+- ★A KNOB TRANSFORM NEEDS BOTH TERMS (learned 2026-09-01, corr knob rung 0).
+  Moving a family to a new corrugation changes Qc's RATE (kappa prop. corr)
+  AND its LEVEL. Applying the rate alone put Qc +31% off at corr 448 (T
+  missed the band by +0.087 while the WIDTH knob was right to 2.1% and Qi's
+  corr^-2.9 to 3.8%). The intercept term (-0.002818 per nm, fitted on the
+  STORED N=150 corr ladder, residuals <=3.5%) fixes it to -7.6%.
+  GENERAL RULE: before trusting any knob that moves a family, check the
+  transform reproduces the STORED ladder in that knob at fixed N — that
+  check was available for free and would have caught this pre-dispatch.
+- ★DECOMPOSE EVERY MISS INTO Qc AND Qi BEFORE TOUCHING THE MODEL. The rung-0
+  T miss looked like a broken knob; the decomposition showed Qi (the risky,
+  radiative half) was RIGHT to 3.8% and the error was entirely in Qc (the
+  coherent, cheap-to-fix half). One measured row + the two-term fix then
+  designed the confirm rung to T -0.002 / Q_L -0.5%.
+- One anchored row makes a NEW-corrugation family design-grade in one more
+  run: c448 rung 0 (measured) -> rung 1 predicted T 0.512 vs 0.5097 measured,
+  Q_L 4666 vs 4644, width 14.1 vs 14.19. That is the standard recipe for any
+  device family the calibration has never seen.
