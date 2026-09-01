@@ -1109,9 +1109,11 @@ Q_loaded = (1-sqrt(T))*Q_i = 0.2953*Q_i. Current best projects ~41,000
     crash cost a full dispatch cycle at hour 1 of an 11 h run). The debug
     ladder for engine changes is now THREE tiers, each mandatory before the
     next: (1) offline gates (seconds, math + call path + source-structure);
-    (2) `validate_c325` task 35 pipeline smoke (~1.5-2 h GPU: the SAME
-    191-param spec and code paths on an N=40 low-Q surrogate — the only tier
-    that catches LIVE-SESSION-STATE bugs like the in-analysis-mode dEps);
+    (2) `validate_c325` **task 47** (projected) / **task 50** (ns2) pipeline
+    smoke (~1.5-2 h GPU: the SAME 191-param spec and code paths on an N=60
+    low-Q surrogate — the only tier that catches LIVE-SESSION-STATE bugs
+    like the in-analysis-mode dEps). ★Stale "task 35" pointer fixed
+    2026-09-01 — 35 is a GFR CUDA-probe rung, not the smoke;
     (3) the physics run (toy/campaign). Local gates provably cannot see
     session-state hazards — five of them passed while 137845_41 died. Never
     quote smoke numbers as physics. Related trap the same night: task
@@ -1135,3 +1137,33 @@ Q_loaded = (1-sqrt(T))*Q_i = 0.2953*Q_i. Current best projects ~41,000
     firing was the confirming fingerprint, free); and every watcher's grep
     set must include `Can not find result` (it is the license-no-op AND
     the deleted-scratch signature).
+
+42. ★★★THE d1 GENERATION (2026-08-31/09-01) — THE FORMULATION THAT WORKS.
+    Two-constraint null+range-space step (`_ns2_step`): project D·∇T into
+    the null space of BOTH raw fixed-λ ∇W AND gλ (IFT selector passes,
+    zero extra solves; the fitted dW/dλ coefficient CANCELS from the step
+    once gλ·d=0 — gate-asserted). Feppon restoration folded into the same
+    step (never stop-and-restore). Adaptive trust cap = state (×1.5 on
+    verified holds |Δλ|<0.10 nm AND |ΔW|<0.020 µm, ×0.5 on reject, floor
+    2 nm, persisted in `<label>_optstate.json` with λ-target/dwdlam/
+    reuse_age — REQUEUE-proof; recenter clears λ-target+dTp0 for re-latch).
+    MEASURED on hardware: λ_pk held EXACT (0.0000 nm) across steps; W
+    in-band; T +0.004 over BEST_T9636 (d1) and uniform lane re-derived to
+    within 0.0015 of BEST via a DIFFERENT design family; per-step gain
+    scales ~linearly with cap (0.004@10nm → 0.013@33.75nm), leak
+    ~quadratically (λ slip 0.12 nm@33.75, 0.30 nm resid@50.6 — restoration
+    + the 0.5 nm reject bound self-limit). ∇T at BEST overlaps raw ∇W by
+    0.6%, gλ ~85% ⇒ T rises by red-shifting; width creep was its shadow.
+    KEY MEASURED CONSTANTS: gW direction rotates 0.685°/10 nm step (probe
+    task 53) ⇒ `wgp_reuse_k=5` approved (skip 4 of 5 width adjoints,
+    ~35-40% iterate time; guards: reject⇒dirty, |ΔW|>0.025 vs last-fresh,
+    restoration ⇒ refresh; NEVER reuse in convergence-declaration
+    iterates). Convergence = PREDICTIVE: dT_pred=∇T·step < 0.002 noise
+    floor ×3 consecutive, or cap pinned at floor (but check reject CAUSE —
+    noise-corrupted rejects mimic convergence; widen filter slack to
+    ~1.5e-3 at next restart). λ-hold is an ALGORITHMIC device (user
+    ruling): widen wgp_lam_margin_nm before ever paying T for λ; final λ
+    trim by pitch is measured-free (task 49). Next-gen levers in order:
+    N_FREE 25→60 (Itai's apodization footprint, ~free per iterate),
+    freed comb, TE lane (3.4× polarization factor, measured same-geometry).
+    Start caps at 20-30 (measured-safe), ceiling 60.

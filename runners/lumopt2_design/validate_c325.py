@@ -874,7 +874,7 @@ def main(task_idx):
         # can never open, so the smoke would burn 4 iterates exercising
         # nothing and then fail its own check (caught 2026-08-31 pre-verdict;
         # first dispatch 139244 had exactly this flaw and was cancelled).
-        spec = dataclasses.replace(DSPEC, label="lumopt2_v2_reusesmoke2",
+        spec = dataclasses.replace(DSPEC, label="lumopt2_v2_reusesmoke3",
                                    n_periods_side=60,
                                    two_kl_floor=0.0, fwhm0_um=None,
                                    wgp_target_um=16.455,
@@ -884,7 +884,7 @@ def main(task_idx):
         best = eng.run_campaign(spec, out_dir)
         import json as _json
         rows = [_json.loads(l) for l in open(os.path.join(
-            out_dir, "lumopt2_v2_reusesmoke2_proj.jsonl"), encoding="utf-8")]
+            out_dir, "lumopt2_v2_reusesmoke3_proj.jsonl"), encoding="utf-8")]
         reused = [r for r in rows if r.get("gw_reused")]
         fresh = [r for r in rows if r.get("rho_T") is not None
                  and not r.get("gw_reused")]

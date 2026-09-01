@@ -378,6 +378,15 @@ surrogate. The surrogate only ever supplies a *direction*.
 allowed width and spend the whole allowance on transmission, rather than
 hugging the seed width and leaving performance unclaimed.
 
+★**Seed-dependent exception (MEASURED, b1 lane 2026-08-29, lifted from
+campaign_v2_proj_best.py before its archival):** a NEAR-CONVERGED seed must
+NOT inherit the ceiling-ride target. At BEST_T9636 the width-blind climb to
+the ceiling bought +0.00097 T for +0.272 µm — 0.0036 T/µm, 30× below the
+uniform lane's rate — because at a converged point ∇T is aligned with the
+width direction and climbing just spends band for nothing. A best-seeded
+lane sets `wgp_target_um` = the seed's own fwhm_env, so the constrained
+(null-space) law engages from iterate 0.
+
 ### 6e. Two engineering results that made this affordable
 - **The width adjoint runs on GPU via source tiling.** The full-width source
   was rejected by a per-source CUDA launch bound; splitting it into 4 narrow

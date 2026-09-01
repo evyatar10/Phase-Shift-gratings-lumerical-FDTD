@@ -1,4 +1,38 @@
-# HANDOFF — lumopt2 corr-325 inverse design — updated 2026-08-31 IDT
+# HANDOFF — lumopt2 corr-325 inverse design — updated 2026-09-01 IDT
+
+> ## ★★★★★★★★★2026-09-01 — d1 GENERATION DELIVERING. CURRENT JOB IDs:
+> ## d1=139225, d1u=139226 (the 139049/139050 below DIED on the numpy-2
+> ## `.ptp()` crash, fixed same day, relaunched with zero data loss).
+> **BESTS (MEASURED, PVA design numerics, live eval logs):**
+> | lane | t_pk | λ_pk | W µm | Q_L | Q_i |
+> |---|---|---|---|---|---|
+> | d1 (BEST-seeded) | **0.96762** | 1566.444 EXACT | 18.290 | 2020 | 123,737 |
+> | d1u (uniform) | **0.96209** | 1565.774 (resid 0.30 nm, watched) | 18.585 | 2007 | 104,883 |
+> | BEST_T9636 (ref) | 0.96361 | 1566.444 | 18.354 | 2022 | ~110k |
+> **d1 = the first machine-driven improvement over the hand-tuned benchmark.
+> d1u re-derived to within 0.0015 of BEST from uniform via a DIFFERENT
+> design family (corr mean 321 sub-uniform vs BEST's 358 super-uniform —
+> two basins exist).** Machinery all exercised on hardware: exact λ-hold,
+> in-band W, first filter reject (33.75 nm step) + cap-halve + retry-success,
+> restoration, optstate resume across a crash (bit-identical gradients).
+> **MEASURED METHOD CONSTANTS:** per-step gain ~linear in cap
+> (0.004@10 → 0.013@33.75 nm), constraint leak ~quadratic (λ slip 0.12 nm
+> @33.75; resid 0.30 @50.6 — self-limited by restoration + 0.5 nm reject);
+> gW direction rotates **0.685°/10 nm step** (probe 139256, vectors in
+> results_from_athena/v2_ns2_toy/) ⇒ **wgp_reuse_k=5 approved** (smoke
+> 139345: skip works on hardware); adjoint-parallelization REJECTED at k=5
+> (≤6% left). Convergence rule = PREDICTIVE (dT_pred < 0.002 ×3, or cap at
+> floor — but check reject cause; widen filter slack to 1.5e-3 at restart).
+> λ-hold = algorithmic tool, NOT a spec (user 2026-08-31): widen
+> wgp_lam_margin_nm before paying T; final λ trim by pitch is free (task 49).
+> **NEXT-GEN LEVERS (user-endorsed, undispatched): reuse k=5 on restart;
+> N_FREE 25→60 (Itai's apodization footprint — top lever, ~free/iterate);
+> freed comb; TE lane (his TE numbers = 3.4× polarization factor,
+> measured same-geometry; beating his device needs Q_i ≥ 1.16M = TE-only).**
+> Mesher discipline: campaign logs are PVA; Itai's rows conformal — never
+> cross-quote; conformal re-measure only at delivery (user: not now).
+> Skill item 42 = the complete method record. Memory: top boxes of
+> project_v2_width_gradient_plan.md. Day records: CHANGES_2026-09-01.md.
 
 > ## ★★★★★★★★2026-08-31 — d1 GENERATION LIVE. THIS BOX SUPERSEDES EVERYTHING
 > ## BELOW AND MOST OF HANDOFF_2026-08-30.md.

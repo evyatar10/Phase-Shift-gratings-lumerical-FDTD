@@ -101,47 +101,13 @@ check("MixedFom override gated on wg_project",
       'if not getattr(spec, "wg_project", False):' in src)
 check("run_campaign dispatches on wg_project", "run_projected(" in src)
 
-# ── 7) RGP (spec.wgp_rgp, notes_relaxed_projection.md) ────────────────────
-# endpoint identity + both limits, on a random well-conditioned instance
-gT7 = rng.standard_normal(191); gW7 = rng.standard_normal(191)
-D7 = rng.uniform(0.5, 2.0, 191) ** 2
-W_tgt7, marg7, cap7 = 18.613, 0.746, 5.0
-def _st(W0):
-    return {"bsf": 2.0, "cbv_hi": W_tgt7 + marg7 / 2, "cbv_lo": W_tgt7 - marg7 / 2,
-            "Wh": [W0], "w_prev": None}
+# ── 7) RGP checks REMOVED 2026-09-01 with the _rgp_step surgery (never
+# adopted; superseded by ns2). History: git ≤744b4f1. Teeth check: the
+# symbol must actually be GONE.
 _dir = lambda v: v / np.linalg.norm(v)
-# (a) w=1 (W exactly at the ceiling): direction == today's RIDE direction
-W_at = W_tgt7 + marg7 / 2
-s_rgp, ph, lam_r, wc = eng._rgp_step(gT7, gW7, D7, W_at, W_tgt7, marg7, cap7,
-                                     _st(W_at))
-# RIDE direction is W-independent; evaluate _proj_step mid-band (its ride
-# branch — at W_at itself a 1-ULP excess flips it into restore)
-s_ride, _, lam_p = eng._proj_step(gT7, gW7, D7, W_tgt7, W_tgt7, marg7, 1.0, cap7)
-check("RGP w=1 endpoint == RIDE direction",
-      np.allclose(_dir(s_rgp), _dir(s_ride), atol=1e-9) and wc == 0.0)
-check("RGP w=1 keeps gW.d = 0",
-      abs(float(gW7 @ s_rgp)) / (np.linalg.norm(gW7) * np.linalg.norm(s_rgp))
-      < 1e-9)
-check("RGP shadow price == _proj_step's", np.isclose(lam_r, lam_p, rtol=1e-9))
-# (b) w=0: mid-band, buffer tiny vs marg ⇒ pure climb direction D*gT
-# (a point BELOW THE FLOOR correctly engages the floor correction instead —
-# the width spec is two-sided)
-W_in = W_tgt7
-s0, ph0, _, wc0 = eng._rgp_step(gT7, gW7, D7, W_in, W_tgt7, marg7, cap7,
-                                _st(W_in))
-check("RGP w=0 endpoint == climb direction",
-      np.allclose(_dir(s0), _dir(D7 * gT7), atol=1e-9) and wc0 == 0.0)
-# (c) violated ceiling (w=2): correction engaged and pushes W DOWN
-W_hi = W_tgt7 + marg7 / 2 + 1.0
-st_v = _st(W_hi)
-s2, ph2, _, wc2 = eng._rgp_step(gT7, gW7, D7, W_hi, W_tgt7, marg7, cap7, st_v)
-check("RGP violated: wc > 0 and gW.step < 0",
-      wc2 > 0.0 and float(gW7 @ s2) < 0.0)
-# (d) max-norm radius respected
-check("RGP step capped at cap_nm",
-      float(np.max(np.abs(s2))) <= cap7 * (1 + 1e-12))
-# (e) default OFF — existing specs bit-identical
-check("wgp_rgp default OFF", eng.CampaignSpec().wgp_rgp is False)
+check("RGP surgery complete: _rgp_step gone",
+      not hasattr(eng, "_rgp_step")
+      and not hasattr(eng.CampaignSpec(), "wgp_rgp"))
 
 # ── 8) ns2: two-constraint null+range-space step (d1, 2026-08-30) ─────────
 LAM_TGT, LAM_MARG = 1566.44, 0.05

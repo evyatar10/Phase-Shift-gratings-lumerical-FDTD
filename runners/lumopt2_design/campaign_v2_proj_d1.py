@@ -73,11 +73,22 @@ SPEC = dataclasses.replace(
     # ── the d1 step engine ──────────────────────────────────────────────────
     wgp_ns2=True,
     wgp_lam_target_nm=None,              # latch the first measured λ_pk
-    wgp_lam_margin_nm=0.05,
+    # 0.05→0.2 (2026-09-01, user λ-policy): λ-hold is an algorithmic tool,
+    # not a spec — never fight T for the last 0.1 nm; final trim is free.
+    wgp_lam_margin_nm=0.2,
     wgp_cap_adapt=True,
-    wgp_step_max_nm=10.0,                # INITIAL trust radius (state from here)
+    # 10→20 (2026-09-01): 30+ nm measured safe on this landscape; earn the
+    # rest. Cap state resumes from the optstate sidecar where present.
+    wgp_step_max_nm=20.0,
     wgp_cap_max_nm=60.0,
     wgp_cap_grow=1.5,
+    # ★k=5 reuse (2026-09-01, user-approved): gW rotates 0.685°/10 nm step
+    # (probe 139256) ⇒ 4 stale steps ≈ 2.8° ≈ 5% leak, inside the guards;
+    # smoke 139345 PASS (2/4 reused, constraints held, cap grew).
+    wgp_reuse_k=5,
+    # filter slack at the T noise floor (Sun–Nocedal): spurious noise
+    # rejects must not fake cap-collapse convergence.
+    wgp_fom_slack=1.5e-3,
     wg_dwdlam_fit=True,                  # diagnostics-only under ns2 (the
                                          # coefficient is out of the step math)
     # 60 iterates × ~1.1-1.5 h measured on H200 fits the 96 h lane with margin;

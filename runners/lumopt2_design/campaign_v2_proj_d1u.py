@@ -46,11 +46,17 @@ SPEC = dataclasses.replace(
                                          # not resumed under the old label
     wgp_ns2=True,
     wgp_lam_target_nm=None,              # latch the resumed row's resonance
-    wgp_lam_margin_nm=0.05,
+    # 2026-09-01 restart knobs (user-approved, same rationale as d1):
+    # λ-deadband 0.2 (λ = tool not spec; d1u's 0.30 nm residual stops
+    # fighting), start cap 20 (measured-safe), k=5 reuse (0.685°/step probe
+    # + smoke PASS), filter slack at the noise floor.
+    wgp_lam_margin_nm=0.2,
     wgp_cap_adapt=True,
-    wgp_step_max_nm=10.0,
+    wgp_step_max_nm=20.0,
     wgp_cap_max_nm=60.0,
     wgp_cap_grow=1.5,
+    wgp_reuse_k=5,
+    wgp_fom_slack=1.5e-3,
     wg_dwdlam_fit=True,
     max_iter=60, max_feval=120,
 )
