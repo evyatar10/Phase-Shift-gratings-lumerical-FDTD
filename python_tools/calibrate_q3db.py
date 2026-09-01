@@ -47,6 +47,8 @@ DIRS = dict(
     invdesign_athena=os.path.join(REPO, r"results_from_athena\invdesign_q3db_20um\results"),
     apod=os.path.join(REPO, r"results_from_athena\tm_te_apod\results"),
     te_q3db=os.path.join(REPO, r"results_from_athena\te_q3db_20um\results"),
+    nladder_c276=os.path.join(REPO, r"results_from_igum\tm_nladder_c276\results"),
+    knob_c448=os.path.join(REPO, r"results_from_igum\tm_q3db_14um_knob\results"),
 )
 ITAI_CSV = os.path.join(REPO, r"results_from_igum\itai_hh_summary.csv")
 SIG_T = 0.0018          # T mesh jitter floor (MEASURED, tm_span_conv_c325)
@@ -342,6 +344,19 @@ def b3_b4_trench():
                   m["QL"], tol_rel=0.10, note=f"p={qif['p']:.2f}")
             check(name, f"C{C} T at N={n}", T_of(qc_model(qcf, n), qi_model(qif, n)),
                   m["T"], tol_abs=0.03)
+    # B4b — the 2026-09-01 LIVE validation, kept as a permanent hold-out: full
+    # c276 stored family (N=110-165, saturating Qi) predicts the N=200 rung
+    # that was DISPATCHED against this prediction (IGUM 67731; landed inside
+    # the pre-registered bands: T +0.0055, Q_L -1.9%)
+    bare276 = load_family("trench", lambda r: (not r["decorated"]) and r["C"] == 276)
+    live = load_family("nladder_c276", lambda r: True)
+    if live:
+        qcf, qif = fit_qc_exp(bare276), fit_qi_sat(bare276)
+        m = live[0]
+        check("B4b-live", "c276 Q_L at N=200", QL_of(qc_model(qcf, 200), qi_model(qif, 200)),
+              m["QL"], tol_rel=0.10, note="fit stored 110-165; truth = live job 67731")
+        check("B4b-live", "c276 T at N=200", T_of(qc_model(qcf, 200), qi_model(qif, 200)),
+              m["T"], tol_abs=0.03)
     # decorated c325 arm (trench): fit low rungs, hold out the top
     dec = load_family("trench", lambda r: r["decorated"] and r["C"] == 325)
     byN = {r["N"]: r for r in dec}
@@ -464,6 +479,33 @@ def b13_te_q3db():
     check("B13-TE", "te c250 T at N=215", T_of(qc_model(qcf, 215), qi_model(qif, 215)),
           m["T"], tol_abs=0.03)
 
+def b14_corr_transform():
+    """The 2026-09-01 corr-knob live test (jobs 68086/68925, corr 448.4 — 38%
+    outside the calibration range). Two things are validated here: kappa prop.
+    corr (Qc RATE) and the two-term Qc transform (rate + intercept) that the
+    rung-0 miss forced. Fit source for the intercept: the STORED N=150 corr
+    ladder; c448 rows are the hold-out."""
+    rows = load_family("knob_c448", lambda r: True)
+    if len(rows) < 2:
+        return
+    fams_rate = fit_qc_exp(rows)["rate"]
+    check("B14", "Qc rate at corr 448 (kappa prop corr)", fams_rate,
+          0.03688 * 448.4 / 325.0, tol_rel=0.03,
+          note="c325 family rate scaled by corr ratio vs the MEASURED c448 pair")
+    # two-term transform, predicting the c448 Qc LEVEL from the c325 family
+    p325_rate, p325_ln0 = 0.03688, None
+    for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "q3db_calibration.csv")).read().splitlines()[1:]:
+        f_, k_, v_ = line.split(",")[:3]
+        if f_ == "tm_bare_c325" and k_ == "qc_lnQ0":
+            p325_ln0 = float(v_)
+    QC_H = -0.002818                      # MEASURED intercept slope, N=150 ladder
+    for r in rows:
+        pred = np.exp(p325_ln0 + QC_H * (448.4 - 325.0)
+                      + p325_rate * (448.4 / 325.0) * r["N"])
+        check("B14", f"Qc at corr448 N={r['N']} (2-term)", pred, r["Qc"], tol_rel=0.15,
+              note="rate-only transform gave +31% (the rung-0 miss)")
+
 def b12_kappa_corr_reconciliation():
     """Phase-3 reconciliation, zero GPU: kappa(corr) is linear (coherent
     channel); the conflicting corr-exponents in memory belong to Q_i (radiative
@@ -493,7 +535,10 @@ def calibration_table():
     bare = load_family("nladder_c325", lambda r: True) + \
         load_family("trench", lambda r: (not r["decorated"]) and r["C"] == 325 and r["N"] != 150)
     fams["tm_bare_c325"] = sorted(bare, key=lambda r: r["N"])
-    fams["tm_bare_c276"] = load_family("trench", lambda r: (not r["decorated"]) and r["C"] == 276)
+    fams["tm_bare_c276"] = sorted(
+        load_family("trench", lambda r: (not r["decorated"]) and r["C"] == 276) +
+        load_family("nladder_c276", lambda r: True), key=lambda r: r["N"])
+    fams["tm_bare_c448"] = load_family("knob_c448", lambda r: True)  # 2026-09-01 knob-test rows
     fams["tm_trench_c325"] = load_family("trench", lambda r: r["decorated"] and r["C"] == 325)
     fams["tm_invdesign"] = sorted(load_family("invdesign_igum", lambda r: True) +
                                   load_family("invdesign_athena", lambda r: True),
@@ -557,6 +602,7 @@ def main():
     b11_apodized(kap, pitch)
     b12_kappa_corr_reconciliation()
     b13_te_q3db()
+    b14_corr_transform()
     report()
     calibration_table()
 
