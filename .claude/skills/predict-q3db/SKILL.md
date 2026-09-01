@@ -5,9 +5,11 @@ description: Predict long pi-shift-grating observables (T, lambda, Q_L, spectral
 
 # predict-q3db — the q3db predictive engine
 
-State lives in memory `project_q3db_predictive_engine.md`; method provenance in
-the plan file named there. Program authorized to use CMT (user 2026-08-31);
-the CMT ban remains ONLY inside the lumopt2 optimizer/width-wall.
+★**Read `python_tools/Q3DB_PREDICTOR_HANDOFF.md` first** — self-contained state
+(model, backtests, the three live validations, rules, parked list). Running
+state in memory `project_q3db_predictive_engine.md`. Program authorized to use
+CMT (user 2026-08-31); the CMT ban remains ONLY inside the lumopt2
+optimizer/width-wall.
 
 ## The three tools (python_tools/)
 
