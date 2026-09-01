@@ -194,5 +194,46 @@ with _tf.TemporaryDirectory() as td:
 check("wgp_ns2 default OFF", eng.CampaignSpec().wgp_ns2 is False)
 check("wgp_cap_adapt default OFF", eng.CampaignSpec().wgp_cap_adapt is False)
 
+# -- 9) noise-slack RATCHET + reuse TRAVEL budget (2026-09-01 fixes) -------
+src9 = open(eng.__file__, encoding="utf-8").read()
+check("slack anchored to fom_best (not the moving acc)",
+      'fom_ref = max(acc["fom"], fom_best)' in src9
+      and "fom > fom_ref" in src9
+      and "fom_best = max(fom_best, fom)" in src9)
+check("reuse gate carries the travel budget",
+      "reuse_travel + _cap(alpha)" in src9
+      and "wgp_reuse_travel_nm" in src9
+      and "reuse_travel = 0.0" in src9)
+check("ns2 WidthTrip shrinks the cap, not corr_max",
+      '_ost["cap_nm"] = max(_cap_now * 0.5, 2.0)' in src9)
+check("new spec knobs default-safe",
+      eng.CampaignSpec().wgp_reuse_travel_nm == 40.0
+      and eng.CampaignSpec().wgp_reuse_k == 0)
+
+# BEHAVIORAL: replay the filter predicate over a downhill drift. slack 1.5e-3,
+# three steps each losing 1.0e-3. Anchored to fom_best the THIRD must reject;
+# the old acc-anchored form accepts all three -- that is the ratchet, and it
+# is the must-fail half: if both forms agreed the gate would have no teeth.
+SLACK = 1.5e-3
+def _replay(anchor_best):
+    acc_fom, best_seen, verdicts = 0.7200, 0.7200, []
+    for trial in (0.7190, 0.7180, 0.7170):
+        ref = max(acc_fom, best_seen) if anchor_best else acc_fom
+        ok_ = trial > ref - SLACK
+        verdicts.append(ok_)
+        if ok_:
+            acc_fom = trial
+            best_seen = max(best_seen, trial)
+    return verdicts
+v_fixed, v_old = _replay(True), _replay(False)
+# anchored to best, drift is bounded to ONE slack below the best ever seen:
+# the 1st dip (-1.0e-3) is inside the 1.5e-3 band, the 2nd (-2.0e-3 cumulative)
+# is not -- so the sequence is [True, False, False], stricter than a
+# per-step slack. That bound is the whole point of the fix.
+check("ratchet FIX bounds drift to one slack below best",
+      v_fixed == [True, False, False], f"{v_fixed}")
+check("teeth: old acc-anchored form accepts all three (the ratchet)",
+      v_old == [True, True, True], f"{v_old}")
+
 print(("\nALL PASS" if not fails else f"\nFAILED: {fails}"))
 sys.exit(1 if fails else 0)

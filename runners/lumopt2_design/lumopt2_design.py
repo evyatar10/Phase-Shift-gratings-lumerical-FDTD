@@ -467,6 +467,16 @@ class CampaignSpec:
     # bit-identical). reuse_age persists in the optstate sidecar.
     wgp_reuse_k: int = 0
     wgp_reuse_dw_um: float = 0.025
+    # ★wgp_reuse_travel_nm (2026-09-01, MEASURED coupling found on d1/139520):
+    # staleness is ANGULAR, so it scales with DISTANCE TRAVELLED since the
+    # fresh solve, not with iterate COUNT. The probe measured the width row
+    # rotating 0.685° per 10 nm step (job 139256) ⇒ a 40 nm travel budget
+    # ≈ 2.7° ≈ 5% leak. k alone is unsafe once the trust cap grows: d1 ran
+    # k=5 at cap 57-60 and reused a row up to ~180 nm of travel stale
+    # (~12°). This budget makes reuse depth self-scaling — 4 reuses at
+    # cap 10, at most one at cap 60 — and is checked with the NEXT step's
+    # cap included, so the budget bounds the step actually taken.
+    wgp_reuse_travel_nm: float = 40.0
     # ★wgp_fom_slack (2026-09-01, Sun–Nocedal noisy-trust-region): the
     # filter's FOM tolerance. The historic 1e-4 is BELOW the measured ~2e-3
     # T noise floor, so noise alone can reject legitimate steps and drive
@@ -2489,6 +2499,8 @@ def run_projected(spec, project, cb, out_dir, p0):
     ppath = os.path.join(out_dir, f"{spec.label}_proj.jsonl")
     p = np.clip(np.asarray(p0, dtype=float), lo, hi)
     alpha, acc = float(spec.wgp_step), None       # acc = last ACCEPTED point
+    fom_best = -np.inf        # best fom seen THIS run — the slack's anchor
+                              # (see the RATCHET FIX at the filter below)
     a0, cap0 = float(spec.wgp_step), float(spec.wgp_step_max_nm)
     # ★online width-gain (spec.wgp_autogain): gain ~ measured dW / predicted dW.
     # Starts at 1 (= trust C) and is updated from MEASURED widths, so a wrong
@@ -2524,6 +2536,8 @@ def run_projected(spec, project, cb, out_dir, p0):
     reuse_k = int(getattr(spec, "wgp_reuse_k", 0) or 0)
     reuse_dw = float(getattr(spec, "wgp_reuse_dw_um", 0.025))
     reuse_age = int(ost.get("reuse_age", 0))
+    reuse_travel = float(ost.get("reuse_travel", 0.0))  # nm of parameter
+                                      # travel since the last FRESH gW solve
     reuse_W0 = ost.get("reuse_W0")    # W at the last FRESH width solve —
                                       # drift reference (audit #4: per-hop
                                       # |W−acc.W| lets k≥3 accumulate
@@ -2540,7 +2554,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                 "cap_nm": cap_state, "wgain": wgain, "dTp0": dTp0,
                 "dwdlam": float(spec.wg_dwdlam), "lam_tgt_nm": lam_tgt,
                 "n_acc": n_acc, "n_rej": n_rej, "reuse_age": reuse_age,
-                "reuse_W0": reuse_W0})
+                "reuse_W0": reuse_W0, "reuse_travel": reuse_travel})
 
     def _step_of(gTv, gWv, Wv, a, gLamv=None, lamv=None, mutate=False):
         """One step under the active law (ns2 two-constraint when armed,
@@ -2631,8 +2645,17 @@ def run_projected(spec, project, cb, out_dir, p0):
             print(f"[proj {it}] ★λ STEP BOUND: peak moved "
                   f"{rec['lam_jump_nm']:+.3f} nm > {lam_bound} nm — rejecting "
                   f"the step like a filter fail.", flush=True)
+        # ★RATCHET FIX (2026-09-01, MEASURED on d1/139520): the noise slack
+        # must be anchored to the BEST fom seen, never to the last accepted
+        # point. With `fom > acc.fom − slack` and acc overwritten on every
+        # accept, each step may lose up to `slack` and the reference walks
+        # DOWN with it — d1 drifted 0.71832→0.71647 (−0.0019 ≈ −0.0021 t_pk)
+        # over 3 "accepted" iterates at slack 1.5e-3. Anchoring to fom_best
+        # keeps Sun–Nocedal's intent (a noise-sized dip is not a real
+        # rejection) while forbidding systematic downhill drift.
+        fom_ref = max(acc["fom"], fom_best) if acc else fom
         if acc and (lam_jump or
-                    not (fom > acc["fom"]
+                    not (fom > fom_ref
                          - float(getattr(spec, "wgp_fom_slack", 1e-4))
                          or h < acc["h"])):
             # minimal Fletcher-Leyffer filter. Reject: re-step from the
@@ -2661,6 +2684,13 @@ def run_projected(spec, project, cb, out_dir, p0):
                          # solve, not per hop — k-proof (audit #4)
                          and abs(W - (reuse_W0 if reuse_W0 is not None
                                       else acc["W"])) <= reuse_dw
+                         # ANGULAR budget: travel already made since the
+                         # fresh solve PLUS the step about to be taken must
+                         # stay inside wgp_reuse_travel_nm (0.685°/10 nm
+                         # MEASURED). This is what couples reuse to the cap.
+                         and (reuse_travel + _cap(alpha)
+                              <= float(getattr(spec, "wgp_reuse_travel_nm",
+                                               40.0)))
                          # within the full margin: light restoration may run
                          # on a reused row (first-order exact vs the row
                          # used; residual re-measured every eval) — only a
@@ -2691,6 +2721,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                     if na > 0 and nb > 0:
                         rec["gW_refresh_cos"] = float(a_ @ gW / (na * nb))
                 reuse_age = 0
+                reuse_travel = 0.0    # fresh row ⇒ angular budget resets
                 reuse_W0 = W          # fresh solve ⇒ new drift reference
             reuse_dirty = False
             gLam_vec = None       # ns2: set by the chain block when healthy
@@ -2856,6 +2887,10 @@ def run_projected(spec, project, cb, out_dir, p0):
                     rec.update(dwdlam_fit=slope, dwdlam_n=len(pts))
             acc["phase"] = phase        # defect #18: autogain gates on this
             p = np.clip(p + step, lo, hi)
+            # angular-staleness accounting: real post-clip travel of this
+            # step, added to the budget the reuse gate checks (reset to 0
+            # whenever the width row is solved fresh).
+            reuse_travel += float(np.max(np.abs(p - acc["p"])))
             alpha = min(alpha * 1.2, float(spec.wgp_step) * 4.0)
             rec.update(phase=phase, lam=lam, wgain=wgain,
                        dw_pred=float(gW_eff @ (p - acc["p"])),  # post-clip audit
@@ -2895,6 +2930,8 @@ def run_projected(spec, project, cb, out_dir, p0):
                 rec["dlam_pred_nm"] = float(gl @ (p - acc["p"]))
                 spec._wg_gLam = None
         rec["cap_nm"] = _cap(alpha)               # actual cap after any change
+        fom_best = max(fom_best, fom)   # AFTER the filter test, never before
+        rec["fom_best"] = fom_best
         _save_state()
         with open(ppath, "a") as f:
             f.write(json.dumps(rec) + "\n")
@@ -3046,6 +3083,29 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                           f"cleared for re-latch", flush=True)
             elif isinstance(root, WidthTrip):
                 best["params"], _ = _best_from_log(spec, out_dir, best, sigma0_um)
+                if getattr(spec, "wgp_ns2", False):
+                    # ★NS2 TRIP RESPONSE (2026-09-01, MEASURED churn on
+                    # d1u/139226): under the projection the width is steered
+                    # by the STEP, so a trip is a step-size failure, not a
+                    # corrugation-ceiling one. The legacy corr ratchet
+                    # (451→429→407 nm over three trips) fought the optimizer
+                    # while the same 50-60 nm step blew W to 19.0-19.1 µm
+                    # again every restart — four trips, zero progress.
+                    # Halve the persisted trust cap instead and force a
+                    # fresh width row; the corr ceiling is left alone.
+                    _ost = _load_opt_state(out_dir, spec.label)
+                    _cap_now = float(_ost.get("cap_nm",
+                                              spec.wgp_step_max_nm))
+                    _ost["cap_nm"] = max(_cap_now * 0.5, 2.0)
+                    _ost["reuse_age"] = 0
+                    _ost["reuse_travel"] = 0.0
+                    _ost["reuse_W0"] = None
+                    _save_opt_state(out_dir, spec.label, _ost)
+                    print(f"[width trip {attempt}] {root} -> ns2: cap "
+                          f"{_cap_now:.3g} -> {_ost['cap_nm']:.3g} nm, "
+                          f"width row forced fresh (corr ceiling untouched)",
+                          flush=True)
+                    continue
                 if getattr(spec, "sigma_wall", False) or                         getattr(spec, "fwhm_wall", False):
                     # under the sigma-hat wall, corr UP is the width PAYBACK
                     # direction — capping it would block the trade. The restart

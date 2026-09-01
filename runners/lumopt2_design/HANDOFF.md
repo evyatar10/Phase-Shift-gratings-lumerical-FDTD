@@ -1,5 +1,12 @@
 # HANDOFF — lumopt2 corr-325 inverse design — updated 2026-09-01 IDT
 
+> # ⛳ START HERE: `HANDOFF_2026-09-01.md`
+> That file is the CURRENT, SELF-CONTAINED handoff for the d1 generation:
+> final measured numbers, why both lanes were stopped, the three fixes made,
+> the exact resume recipe, the surviving rules, and the ranked next steps.
+> **Nothing is running — the cluster is idle by user order (2026-09-01).**
+> Everything below is the older operational log, kept for its trap history.
+
 > ## ★★★★★★★★★2026-09-01 — d1 GENERATION DELIVERING. CURRENT JOB IDs:
 > ## d1=139225, d1u=139226 (the 139049/139050 below DIED on the numpy-2
 > ## `.ptp()` crash, fixed same day, relaunched with zero data loss).
