@@ -86,7 +86,49 @@ reference for apodized-width work; treat TE apodized widths as a band.
 `predict_q3db.py` modes: **observe** (family + N → observables), **design**
 (target dB + optional width target → corr*, N*, expected observables + the
 confirmation-run spec), **extend** (anchor on ONE new measured row, borrow the
-family shape — the "here is my new result, extend it" workflow).
+family shape — the "here is my new result, extend it" workflow), **compare**
+(fill `MEASURED` with a landed run → PREDICTED vs MEASURED per observable with
+an INSIDE/OUTSIDE verdict — this is how you judge a confirmation run).
+
+**Two error bars, both printed.** *Model sensitivity* = the fit parameters
+wiggled (Q_i ±7%, Q_c rate ±1%). *Expected deviation* = the MEASURED spread of
+the hold-out backtests at the same extrapolation span (CSV family `errband`,
+Q rows relative, T rows absolute; the deliberate B2-E stress rows and the
+span-less corr/width rows are excluded):
+
+| span past the fit rows | n | Q_L p90 / max | n | T p90 / max |
+|---|---|---|---|---|
+| ≤30 periods | 7 | 3.2% / 4.7% | 5 | 0.007 / 0.007 |
+| 31-45 periods | 4 | 5.2% / 5.6% | 2 | 0.005 / 0.006 |
+| >45 periods | 1 | 6.6% / 6.6% | 1 | 0.017 / 0.017 |
+
+Buckets with <3 samples print the max instead of the p90 and say so — the
+>45 bucket is ONE hold-out pair (B6), not a distribution.
+
+**The corrugation knob solves, it no longer just scales** (fixed 2026-09-11).
+The per-pol 1/w-vs-corr line is now only the initial guess; corr* is found by
+brentq so the retuned family hits the width target at its OWN design length,
+inside 150-650 nm (outside → refusal, which is also the missing bounds check).
+This moved the TM 14 µm design 448.4 → 445.8 nm (width 13.91 → 14.00) and the
+TE one 323.9 → 350.3 nm (width 15.29 → 14.00 — the old TE knob missed its own
+target by 9%). Families with no width fit fall back to the knob line and say so.
+
+**An anchor row at a different corrugation moves the base SHAPE first** (fixed
+2026-09-11). extend mode and compare's `COMPARE_FROM_ROW` used to borrow the
+base family's shape unchanged and only shift the levels, which is wrong when the
+ROW sits at another corrugation: predicting the measured c276 N=150 row from the
+measured c276 N=110 row on the **c325** base gave Q_L **+22.3%** / T −0.051 (both
+outside any band). The same anchor now applies the corr transform (Q_c rate +
+`QC_H_PER_NM` level, Q_i corr⁻²⋅⁹, width F_inf/B/c) to the base before anchoring and
+lands at Q_L **−0.07%** / T −0.018 — matching the `tm_bare_c276` base reference
+(−1.5% / +0.003) to within the width’s 0.02%. It also names the better base when
+one exists (`note: family tm_bare_c276 matches your ROW's corrugation ...`) and
+still proceeds with your choice; a base family with no corrugation in its name
+(itai_*, tm_invdesign) says the shape is borrowed AS-IS. Exponents are
+TM-measured → EXPECTED-grade, so these designs quote the corr-knob band
+(Q_L ±10%, T ±0.03), not the length-span band. An unreachable dB target now
+refuses in one line (`no N reaches T target ... at N=20 T=..., at N=3000 T=...`)
+instead of raising out of brentq.
 
 ## 4. Backtests: 48/50 gated pass
 

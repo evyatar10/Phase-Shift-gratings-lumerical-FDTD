@@ -172,7 +172,8 @@ def fit_qi_sat(rows):
         if fit.cost * 2 < pow_cost * 0.98:
             return dict(lnA=fit.x[0], p=fit.x[1], sat=np.exp(fit.x[2]))
     except Exception:
-        pass
+        print(f"  note: saturating Qi fit failed for {len(rows)} rows,"
+              " using pure power law")
     return pw
 
 def qc_model(fit, N):
@@ -247,7 +248,10 @@ def engine_width(kappa, n_eff, pitch, N, profile=None):
 
 RESULTS = []
 
-def check(test, qty, pred, meas, tol_rel=None, tol_abs=None, note="", info=False):
+def check(test, qty, pred, meas, tol_rel=None, tol_abs=None, note="", info=False,
+          span=None):
+    """span = periods extrapolated past the fit rows (predicted N - max fitted N);
+    it buckets the row into the empirical deviation bands. None = excluded."""
     err = pred - meas
     rel = err / meas if meas else np.nan
     if info:
@@ -255,18 +259,49 @@ def check(test, qty, pred, meas, tol_rel=None, tol_abs=None, note="", info=False
     else:
         ok = "PASS" if ((abs(rel) <= tol_rel) if tol_rel is not None
                         else (abs(err) <= tol_abs)) else "FAIL"
-    RESULTS.append((test, qty, pred, meas, rel, ok, note))
+    RESULTS.append((test, qty, pred, meas, rel, ok, note, span))
     return ok
 
 def report():
     print(f"\n{'test':<14}{'quantity':<26}{'PREDICTED':>12}{'MEASURED':>12}{'err':>9}  ok    note")
     print("-" * 96)
-    for t, q, p, m, r, ok, note in RESULTS:
+    for t, q, p, m, r, ok, note, _ in RESULTS:
         print(f"{t:<14}{q:<26}{p:>12.4g}{m:>12.4g}{100*r:>8.1f}%  {ok:<5} {note}")
     gated = [x for x in RESULTS if x[5] != "INFO"]
     n_ok = sum(1 for x in gated if x[5] == "PASS")
     print(f"\n{n_ok}/{len(gated)} gated checks pass "
           f"(+{len(RESULTS)-len(gated)} informational rows)")
+
+BUCKETS = dict(le30=(0, 30), gap=(31, 45), gt45=(46, 10 ** 6))   # extrapolation span
+
+def error_bands():
+    """Empirical deviation bands: how far the MEASURED value actually sat from a
+    hold-out prediction, bucketed by extrapolation span. This is the honest
+    answer to "my run landed — how far off may it be?". The deliberate B2-E
+    stress rows are excluded (they mark the boundary, not the expected error);
+    so are corr-knob and width rows (no N span). Q rows are relative, T absolute."""
+    out = {}
+    for name, (lo, hi) in BUCKETS.items():
+        key = "31_45" if name == "gap" else name
+        ql = [abs(r[4]) for r in RESULTS if _in_band(r, lo, hi)
+              and ("Q_L" in r[1] or "Q_i" in r[1])]
+        t = [abs(r[2] - r[3]) for r in RESULTS if _in_band(r, lo, hi) and " T at" in f" {r[1]}"]
+        out[f"ql_n_{key}"], out[f"t_n_{key}"] = len(ql), len(t)
+        out[f"n_{key}"] = len(ql) + len(t)
+        for tag, v in (("ql", ql), ("t", t)):
+            out[f"{tag}_p90_{key}"] = float(np.percentile(v, 90)) if v else np.nan
+            out[f"{tag}_max_{key}"] = float(max(v)) if v else np.nan
+    print("\nEmpirical deviation bands (hold-out |error| vs extrapolation span):")
+    print(f"  {'span':<8}{'n Q':>5}{'Q p90':>9}{'Q max':>9}{'n T':>6}{'T p90':>8}{'T max':>8}")
+    for key in ("le30", "31_45", "gt45"):
+        print(f"  {key:<8}{out['ql_n_'+key]:>5}{100*out['ql_p90_'+key]:>8.1f}%"
+              f"{100*out['ql_max_'+key]:>8.1f}%{out['t_n_'+key]:>6}"
+              f"{out['t_p90_'+key]:>8.3f}{out['t_max_'+key]:>8.3f}")
+    return out
+
+def _in_band(row, lo, hi):
+    return row[5] != "INFO" and row[7] is not None and row[0] != "B2-E" \
+        and lo <= row[7] <= hi
 
 # ---------------------------------------------------------------- backtests
 
@@ -285,11 +320,12 @@ def b1_invdesign():
     tr = [byN[n] for n in (100, 150, 180, 200)]
     qcf, qif = fit_qc_exp(tr), fit_qi_sat(tr)
     m = byN[220]
+    sp = 220 - max(r["N"] for r in tr)
     satnote = f"Qi sat={qif['sat']:.3g}" if qif.get("sat") else "Qi pure power"
     check("B1b", "Q_L at N=220", QL_of(qc_model(qcf, 220), qi_model(qif, 220)),
-          m["QL"], tol_rel=0.10, note=satnote)
+          m["QL"], tol_rel=0.10, note=satnote, span=sp)
     check("B1b", "T at N=220", T_of(qc_model(qcf, 220), qi_model(qif, 220)),
-          m["T"], tol_abs=0.03)
+          m["T"], tol_abs=0.03, span=sp)
     check("B1b", "crossing N*", solve_crossing(qcf, qif), 220, tol_rel=0.05)
 
 def b2_b5_bare_c325():
@@ -310,10 +346,12 @@ def b2_b5_bare_c325():
     # target; Qi (slow variable) from the FULL ladder with the saturating form
     near = [byN[100], byN[120]]
     qcf2, qif2 = fit_qc_exp(near), fit_qi_sat(ladder)
+    sp = 165 - max(r["N"] for r in ladder)
     check("B2-E2", "Q_L at N=165 (near-fit)", QL_of(qc_model(qcf2, 165), qi_model(qif2, 165)),
-          m165["QL"], tol_rel=0.10, note=f"recipe: Qc from 100+120, Qi sat-fit on 60-120; rate={qcf2['rate']:.5f}")
+          m165["QL"], tol_rel=0.10, span=sp,
+          note=f"recipe: Qc from 100+120, Qi sat-fit on 60-120; rate={qcf2['rate']:.5f}")
     check("B2-E2", "T at N=165 (near-fit)", T_of(qc_model(qcf2, 165), qi_model(qif2, 165)),
-          m165["T"], tol_abs=0.03)
+          m165["T"], tol_abs=0.03, span=sp)
     # lane C informational: engine N-trend drift (arbitrated: lane E primary
     # for N-trends; engine is the fixed-N shape tool — see B11)
     pitch, n_eff = byN[80]["pitch"], byN[80]["lam"] * 1e-9 / (2 * byN[80]["pitch"])
@@ -343,10 +381,11 @@ def b3_b4_trench():
             if n not in byN:
                 continue
             m = byN[n]
+            sp = n - max(r["N"] for r in tr)
             check(name, f"C{C} Q_L at N={n}", QL_of(qc_model(qcf, n), qi_model(qif, n)),
-                  m["QL"], tol_rel=0.10, note=f"p={qif['p']:.2f}")
+                  m["QL"], tol_rel=0.10, note=f"p={qif['p']:.2f}", span=sp)
             check(name, f"C{C} T at N={n}", T_of(qc_model(qcf, n), qi_model(qif, n)),
-                  m["T"], tol_abs=0.03)
+                  m["T"], tol_abs=0.03, span=sp)
     # B4b — the 2026-09-01 LIVE validation, kept as a permanent hold-out: full
     # c276 stored family (N=110-165, saturating Qi) predicts the N=200 rung
     # that was DISPATCHED against this prediction (IGUM 67731; landed inside
@@ -356,10 +395,12 @@ def b3_b4_trench():
     if live:
         qcf, qif = fit_qc_exp(bare276), fit_qi_sat(bare276)
         m = live[0]
+        sp = 200 - max(r["N"] for r in bare276)
         check("B4b-live", "c276 Q_L at N=200", QL_of(qc_model(qcf, 200), qi_model(qif, 200)),
-              m["QL"], tol_rel=0.10, note="fit stored 110-165; truth = live job 67731")
+              m["QL"], tol_rel=0.10, span=sp,
+              note="fit stored 110-165; truth = live job 67731")
         check("B4b-live", "c276 T at N=200", T_of(qc_model(qcf, 200), qi_model(qif, 200)),
-              m["T"], tol_abs=0.03)
+              m["T"], tol_abs=0.03, span=sp)
     # decorated c325 arm (trench): fit low rungs, hold out the top
     dec = load_family("trench", lambda r: r["decorated"] and r["C"] == 325)
     byN = {r["N"]: r for r in dec}
@@ -368,7 +409,7 @@ def b3_b4_trench():
     for n in (205, 225):
         if n in byN:
             check("B3-dec", f"trench Q_L at N={n}", QL_of(qc_model(qcf, n), qi_model(qif, n)),
-                  byN[n]["QL"], tol_rel=0.10)
+                  byN[n]["QL"], tol_rel=0.10, span=n - max(r["N"] for r in tr))
 
 def b6_b7_itai():
     tm = load_itai("TM")
@@ -376,10 +417,11 @@ def b6_b7_itai():
     qcf, qif = fit_qc_exp(tr), fit_qi_sat(tr)
     m = [r for r in tm if r["N"] == 189][0]
     sat_s = f"{qif['sat']:.3g}" if qif.get("sat") else "-"
+    sp = 189 - max(r["N"] for r in tr)
     check("B6", "Itai TM T at N=189", T_of(qc_model(qcf, 189), qi_model(qif, 189)),
-          m["T"], tol_abs=0.03, note=f"p={qif['p']:.2f} sat={sat_s}")
+          m["T"], tol_abs=0.03, note=f"p={qif['p']:.2f} sat={sat_s}", span=sp)
     check("B6", "Itai TM Q_L at N=189", QL_of(qc_model(qcf, 189), qi_model(qif, 189)),
-          m["QL"], tol_rel=0.10)
+          m["QL"], tol_rel=0.10, span=sp)
     te = load_itai("TE")
     te = [r for r in te if abs(r["fwhm_um"] - 19.8) < 0.3]  # the consistent device family
     tr = [r for r in te if r["N"] <= 155]
@@ -387,7 +429,8 @@ def b6_b7_itai():
     for n in (175, 195):
         m = [r for r in te if r["N"] == n][0]
         check("B7", f"Itai TE Q_i at N={n}", float(qi_model(qif, n)), m["Qi"],
-              tol_rel=0.25, note=">1e5 regime: REPORT — defines stated uncertainty")
+              tol_rel=0.25, span=n - max(r["N"] for r in tr),
+              note=">1e5 regime: REPORT — defines stated uncertainty")
 
 def b8_decorations():
     anchors = dict(ctrl=(0.4906, 13930.0), comb=(0.4961, 16203.0),
@@ -411,7 +454,7 @@ def b9_lambda():
         a, b = wlin(C[msk], L[msk], np.ones(msk.sum()))
         check("B9", f"lambda at C{int(r['C'])}", a + b * r["C"], r["lam"], tol_abs=1.0)
 
-def b10_spectral(byN325):
+def b10_spectral():
     """Rahimof-recipe fit on ONE short c276 rung -> predict the N=165 lineshape."""
     bare = load_family("trench", lambda r: (not r["decorated"]) and r["C"] == 276)
     byN = {r["N"]: r for r in bare}
@@ -448,7 +491,7 @@ def b10_spectral(byN325):
     check("B10", "c276 N=165 Q_c", qc_pred, tgt["Qc"], tol_rel=0.10,
           note="engine shape ratio, level anchored on the N=110 row")
 
-def b11_apodized(kap325, pitch_default):
+def b11_apodized():
     """kappa anchored on THIS polarization's own A0 row — never borrowed across
     families or polarizations; then the 4 apodized rows per pol are pure held-out
     predictions of the kappa(z)-profile envelope. A0 widths/lambdas MEASURED in
@@ -479,10 +522,12 @@ def b13_te_q3db():
     tr = [byN[n] for n in (166, 168, 176, 190)]
     qcf, qif = fit_qc_exp(tr), fit_qi_sat(tr)
     m = byN[215]
+    sp = 215 - max(r["N"] for r in tr)
     check("B13-TE", "te c250 Q_L at N=215", QL_of(qc_model(qcf, 215), qi_model(qif, 215)),
-          m["QL"], tol_rel=0.10, note=f"TE-only fit; rate={qcf['rate']:.5f} p={qif['p']:.2f}")
+          m["QL"], tol_rel=0.10, span=sp,
+          note=f"TE-only fit; rate={qcf['rate']:.5f} p={qif['p']:.2f}")
     check("B13-TE", "te c250 T at N=215", T_of(qc_model(qcf, 215), qi_model(qif, 215)),
-          m["T"], tol_abs=0.03)
+          m["T"], tol_abs=0.03, span=sp)
 
 def b14_corr_transform():
     """The 2026-09-01 corr-knob live test (jobs 68086/68925, corr 448.4 — 38%
@@ -533,7 +578,7 @@ def b12_kappa_corr_reconciliation():
 ENGINE_VER = "2026R1.3-b4572"
 NUMERICS = "y8.0/z8.8 box, 20nm/4001pts, dx50 conformal, ASL 1e-7"
 
-def calibration_table():
+def calibration_table(bands):
     """PRODUCTION per-family fits (all rows — unlike the hold-out backtests)
     -> q3db_calibration.csv next to this script, for predict_q3db.py."""
     fams = {}
@@ -552,6 +597,11 @@ def calibration_table():
         r for r in load_itai("TE") if abs(r["fwhm_um"] - 19.8) < 0.3]
     fams["te_q3db_c250"] = load_family("te_q3db", lambda r: r["pol"] == "TE" and r["C"] == 250)
     lines = ["family,param,value,n_rows,source,engine_version,numerics"]
+    # empirical deviation bands (item: what a landed run may deviate by)
+    for k, v in bands.items():
+        bucket = next(b for b in ("31_45", "le30", "gt45") if k.endswith(b))
+        lines.append(f"errband,{k},{v:.6g},{bands['n_' + bucket]},"
+                     f"hold-out |err| (Q rel frac / T abs),{ENGINE_VER},\"{NUMERICS}\"")
     # width<->corr knob lines, ONE per polarization (1/w linear in corr; the
     # lock-target linearizing coordinate). TM: corr_bisect_log.csv MEASURED
     # rows. TE: stored te rows C233(N=170)/C250(N=166) + the corr_bisect TE
@@ -575,15 +625,17 @@ def calibration_table():
         qcf, qif = fit_qc_exp(rows), fit_qi_sat(rows)
         ent = dict(qc_rate=qcf["rate"], qc_lnQ0=qcf["lnQc0"], qi_p=qif["p"],
                    qi_lnA=qif["lnA"], qi_sat=qif.get("sat") or np.nan,
-                   n_lo=min(r["N"] for r in rows), n_hi=max(r["N"] for r in rows),
-                   lam_nm=np.mean([r.get("lam", np.nan) for r in rows if "lam" in r]))
+                   n_lo=min(r["N"] for r in rows), n_hi=max(r["N"] for r in rows))
+        lams = [r["lam"] for r in rows if "lam" in r]      # itai rows carry none
+        if lams:
+            ent["lam_nm"] = float(np.mean(lams))
         if all("fwhm_um" in r and np.isfinite(r.get("fwhm_um", np.nan)) for r in rows) \
                 and len(rows) >= 4:
             try:
                 wf = fit_width(rows)
                 ent.update(w_Finf=wf["Finf"], w_B=wf["B"], w_c=wf["c"])
             except Exception:
-                pass
+                print(f"  note: width fit failed for {fam}, no w_* params written")
         for k, v in ent.items():
             lines.append(f"{fam},{k},{v:.6g},{len(rows)},{src},{ENGINE_VER},\"{NUMERICS}\"")
         sat_s = f" sat={ent['qi_sat']:.3g}" if np.isfinite(ent["qi_sat"]) else ""
@@ -596,20 +648,19 @@ def calibration_table():
 
 def main():
     print("q3db predictive-engine backtests — stored data only, zero GPU")
-    byN325, kap, n_eff, pitch = None, None, None, None
     b1_invdesign()
-    byN325, kap, n_eff, pitch = b2_b5_bare_c325()
+    b2_b5_bare_c325()
     b3_b4_trench()
     b6_b7_itai()
     b8_decorations()
     b9_lambda()
-    b10_spectral(byN325)
-    b11_apodized(kap, pitch)
+    b10_spectral()
+    b11_apodized()
     b12_kappa_corr_reconciliation()
     b13_te_q3db()
     b14_corr_transform()
     report()
-    calibration_table()
+    calibration_table(error_bands())
 
 if __name__ == "__main__":
     main()

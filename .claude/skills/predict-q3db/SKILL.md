@@ -21,7 +21,22 @@ optimizer/width-wall.
   `python python_tools/calibrate_q3db.py` from the repo root IS the
   verification; rerun after any new result lands or any model change.
 - `predict_q3db.py` — edit the knobs at the top, run. Modes: observe / design /
-  extend (anchor on ONE new measured row, borrow family shape).
+  extend (anchor on ONE new measured row, borrow family shape) / **compare**
+  (fill MEASURED with a landed run -> PREDICTED vs MEASURED + INSIDE/OUTSIDE).
+  Every prediction prints TWO error bars: "model sensitivity" (fit params
+  wiggled) and "expected deviation" = the measured hold-out spread at the same
+  extrapolation span (CSV family `errband`): span <=30 -> Q_L +-3.2% / T +-0.007
+  (12 rows), 31-45 -> +-5.2% / 0.005 (6 rows), >45 -> +-6.6% / 0.017 (2 rows,
+  max not p90). Judge a landed run against THAT, not the sensitivity band.
+  The corr knob is solved self-consistently (brentq over 150-650 nm) so the
+  retuned family actually hits the width target at its own N* — the raw knob
+  line was 9% off for TE; out-of-band targets are refused. extend / compare
+  with a ROW at a DIFFERENT corrugation than the base family now moves the base
+  SHAPE to the ROW's corr before anchoring (TM-measured exponents,
+  EXPECTED-grade) and names the matching-corr family when one exists: the
+  measured c276 N=110 row on the c325 base predicting N=150 went from Q_L
+  +22.3% / T -0.051 to -0.07% / -0.018 (tm_bare_c276 base reference: -1.5%).
+  A dB target no device length reaches is refused in one line, not a traceback.
 
 ## Scope
 
@@ -55,7 +70,12 @@ optimizer/width-wall.
    bands. Dispatch that run (add-study + dispatch-study skills), compare, then
    rerun `calibrate_q3db.py` so the new row joins the calibration.
 
-## Standing model rules (violations caused every historical failure)
+## Standing model rules
+
+- "Extending" = adding UNIFORM periods outside; the measured core (apodization,
+  comb, shifts) is carried only by the anchored levels; ROW corr = OUTER corr.
+  Do not model the inside (user rule 2026-09-11).
+ (violations caused every historical failure)
 
 - Extrapolate Q_c, NEVER ln T (measured: lnT-linear missed the crossing +191%).
 - Q_i needs the SATURATING fit; a pure power law through the knee gives
@@ -68,6 +88,8 @@ optimizer/width-wall.
   Qc shape-ratio anchored on a measured row). N-trends of width and Qc go
   through the empirical fits. Light-cone leak ranks envelopes in the Qi
   GROWTH phase only — it does not see the saturation ceiling (2026-09-01).
+- Anchor on a base family of the SAME corrugation when one exists; otherwise
+  the tool transforms the shape and quotes the knob band (EXPECTED-grade).
 - Pre-register every prediction (bands in the runner docstring) BEFORE the
   confirmation run; compare after; record hit/miss in the memory file.
 - ★A KNOB TRANSFORM NEEDS BOTH TERMS (learned 2026-09-01, corr knob rung 0).
