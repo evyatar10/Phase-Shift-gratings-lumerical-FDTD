@@ -17,11 +17,24 @@ optimizer/width-wall.
   pi/fractional plates, z-dependent loss, envelopes). `python bragg_cmt.py`
   runs its gate suite — do that after ANY edit to it.
 - `calibrate_q3db.py` — loads STORED results only, fits per-family parameters,
-  runs the hold-out backtest matrix B1-B13, writes `q3db_calibration.csv`.
+  runs the hold-out backtest matrix B1-B14, writes `q3db_calibration.csv`.
   `python python_tools/calibrate_q3db.py` from the repo root IS the
   verification; rerun after any new result lands or any model change.
 - `predict_q3db.py` — edit the knobs at the top, run. Modes: observe / design /
   extend (anchor on ONE new measured row, borrow family shape).
+
+## Scope
+
+- Bare uniform gratings (TM corr 276/325/448, TE corr 250): DESIGN-GRADE.
+- Decorated (trench/flush/comb): measured Q_i multipliers at the -3 dB anchor
+  (B8) + the tm_trench_c325 family only; EXPECTED-grade away from those points.
+- Inverse-designed device: the tm_invdesign family AS MEASURED; any other
+  shift/comb setting needs extend mode with its own anchor row.
+- Apodized: WIDTH via the CMT kappa(z) engine (B11 TM 0.4-0.9%; B11-TE
+  +2.0/+1.1/-1.4/-4.8%, inside the 5% gate but a band); T/Q only as itai_* shapes.
+- Tooth shifts: NOT modeled (phase perturbation, not a kappa change).
+- The TE corr knob rests on one N=80 legacy point + TM exponents: EXPECTED-grade.
+  Full table: python_tools/Q3DB_PREDICTOR_HANDOFF.md "Scope by device class".
 
 ## The workflow for "here is a new result, extend it"
 

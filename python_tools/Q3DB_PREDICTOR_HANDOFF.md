@@ -17,7 +17,7 @@ long runs, and above Q~1e5 the devices cannot be simulated reliably at all
 low in a self-confirming way).
 
 Now: **predict → ONE confirmation run → refit.** The engine is calibrated from
-results already on disk; it was hold-out backtested 46 ways and then validated
+results already on disk; it was hold-out backtested 50 ways and then validated
 on three devices dispatched specifically to test it.
 
 ## 2. The model (three layers)
@@ -35,7 +35,7 @@ conditioning A = sqrt(T)/(2(1-sqrt(T)))   -> never fit Q_i from rows with A>~5
 - width `F(N) = F_inf - B*exp(-c*N)` (held-out error 0.4-0.7%).
 - lambda from the pitch/corr line; N-independent to ~0.1 nm.
 - `bragg_cmt.py` (piecewise Erdogan CMT/TMM) is the FIXED-N SHAPE tool:
-  apodized-width prediction (<1%), full spectra, and Q_c as a shape RATIO
+  apodized-width prediction (<1% TM, ≤4.8% TE), full spectra, and Q_c as a shape RATIO
   anchored on one measured row. Its N-trends are NOT primary (engine width-vs-N
   is flatter, crossover Q_c steeper than measured).
 
@@ -52,6 +52,28 @@ conditioning A = sqrt(T)/(2(1-sqrt(T)))   -> never fit Q_i from rows with A>~5
 numerics); a PVA-frame row triggers a loud warning (offsets: λ +5.3 nm,
 FWHM −8%, T +0.008, Q_L −7%).
 
+## Scope by device class
+
+What the calibration actually covers. Design-grade = predict, then ONE
+confirmation run. EXPECTED-grade = a band/estimate, never a spec number.
+
+| device class | covered how | grade |
+|---|---|---|
+| bare uniform gratings, TM corr 276/325/448, TE corr 250 | own fitted families + the three live validations | **design-grade** |
+| decorated (trench / flush / comb) | measured Q_i multipliers at the −3 dB anchor (B8, ±3%) + the `tm_trench_c325` family | design-grade AT those anchors, EXPECTED-grade away from them |
+| inverse-designed (comb + per-tooth shifts/widths) | only the `tm_invdesign` family as measured; no generalization to other shift/comb settings | design-grade for that device; any new setting needs extend mode with its own anchor row |
+| apodized | mode WIDTH from the CMT κ(z) engine (B11: TM 0.4-0.9%, **B11-TE 1.1-4.8%**); T/Q only through the `itai_*` HH-apodized families as shapes | width design-grade (TM) / EXPECTED-to-marginal (TE, see below); T/Q family-shape only |
+| tooth shifts | NOT modeled — a shift is a phase perturbation, not a κ change; neither the engine nor the fits see it | measured families only |
+| TE corrugation knob | one N=80 legacy point (~4% truncation bias) + TM-derived exponents (`CORR_QI_EXP_TM`, `QC_H_PER_NM`, `FINF_CORR_EXP`) | EXPECTED-grade |
+
+**B11-TE (added 2026-09-11):** the TE apodized rows (`tm_te_apod`, N=80,
+corr 300, A=2/5/10/20) predicted from the TE A0 anchor (15.2164 µm @
+1570.74 nm) come in at A2 +2.0%, A5 +1.1%, A10 −1.4%, A20 −4.8% — all inside
+the 5% gate, but 3-5× worse than the TM branch and drifting negative with
+apodization depth (untested hypothesis: the TE A0 device is the lossy one,
+T 0.859 vs TM 0.974, so less of its envelope is κ-limited). TM stays the
+reference for apodized-width work; treat TE apodized widths as a band.
+
 ## 3. The tools (`python_tools/`)
 
 | file | what it is | how to run |
@@ -66,7 +88,7 @@ FWHM −8%, T +0.008, Q_L −7%).
 confirmation-run spec), **extend** (anchor on ONE new measured row, borrow the
 family shape — the "here is my new result, extend it" workflow).
 
-## 4. Backtests: 44/46 gated pass
+## 4. Backtests: 48/50 gated pass
 
 The 2 failures are DELIBERATE stress rows (B2-E), kept failing to mark the
 validity boundary. Headlines, all out-of-sample:
@@ -78,7 +100,8 @@ validity boundary. Headlines, all out-of-sample:
 | B5 | width fit N=60/70/80 → held-out N=100/120 | 0.3-0.5% |
 | B7 | Itai TE Q_i at N=175/195 (>1e5 regime) | 4.7-5.6% |
 | B10 | fit κ,n_eff on ONE short spectrum → N=165 lineshape | λ 0.01 nm, Q_c +6.7% |
-| B11 | apodized width A2→A20 via kappa(z) CMT | all <1% |
+| B11 | apodized width A2→A20 via kappa(z) CMT (TM) | all <1% |
+| B11-TE | same, TE rows, TE A0 anchor | +2.0 / +1.1 / −1.4 / −4.8% |
 | B13-TE | TE-only fit N=166-190 → held-out N=215 | Q_L +2.2%, T +1.7% |
 | B14 | κ∝corr at corr 448 (+38% outside range) | rate 1.0%; 2-term Qc transform −7.6% |
 

@@ -1,11 +1,11 @@
 """Calibration + hold-out backtests for the q3db predictive engine (zero GPU).
 
 Fits per-family model parameters from STORED results only and runs the plan's
-hold-out backtest matrix B1-B11: every prediction is made from a fit that never
+hold-out backtest matrix B1-B14: every prediction is made from a fit that never
 saw the held-out row, then compared to the MEASURED stored value. This script
 IS the program's verification (plan: recently-we-have-been-vivid-pike.md).
 Size justification (CLAUDE.md par.10): one analysis engine = loaders + fits +
-the 12-test matrix; splitting it would create files that only run together.
+the B1-B14 test matrix; splitting it would create files that only run together.
 The .mat loader follows analyze_batch.py's par.2 sanity conventions (in-window
 + dead-floor asserts) but reads the extra fields this program needs (spectra,
 Qc/Qi decomposition, geometry).
@@ -31,10 +31,11 @@ import glob
 import os
 import re
 import sys
+import warnings
 
 import numpy as np
 from scipy.io import loadmat
-from scipy.optimize import least_squares, curve_fit, brentq
+from scipy.optimize import least_squares, curve_fit, brentq, OptimizeWarning
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bragg_cmt as cmt
@@ -192,7 +193,9 @@ def fit_width(rows):
     F = np.array([r["fwhm_um"] for r in rows], float)
     fn = lambda n, Finf, B, c: Finf - B * np.exp(-c * n)
     p0 = [F.max() + 0.3, 5.0, 0.03]
-    popt, _ = curve_fit(fn, N, F, p0=p0, maxfev=20000)
+    with warnings.catch_warnings():   # 3 rows / 3 params: exact fit, no covariance
+        warnings.simplefilter("ignore", OptimizeWarning)
+        popt, _ = curve_fit(fn, N, F, p0=p0, maxfev=20000)
     return dict(Finf=popt[0], B=popt[1], c=popt[2],
                 fn=lambda n: fn(np.asarray(n, float), *popt))
 
@@ -446,25 +449,27 @@ def b10_spectral(byN325):
           note="engine shape ratio, level anchored on the N=110 row")
 
 def b11_apodized(kap325, pitch_default):
-    """kappa anchored on THIS family's own A0 row (apod_summary.csv, width
-    17.8992 um at N=80) — never borrowed across families; then the 4 apodized
-    rows are pure held-out predictions of the kappa(z)-profile envelope."""
-    rows = load_family("apod", lambda r: r["pol"] == "TM")
-    A0_WIDTH, A0_LAM = 17.8992, 1523.57   # MEASURED, tm_te_apod apod_summary.csv
-    pitch = rows[0]["pitch"]
-    n_eff = A0_LAM * 1e-9 / (2 * pitch)
-    kap0 = engine_calibrate_kappa_width(A0_WIDTH, 80, n_eff, pitch, 0.039e6)
-    for r in rows:
-        A, corr_edge = r["A"], r["corr_nm"]
+    """kappa anchored on THIS polarization's own A0 row — never borrowed across
+    families or polarizations; then the 4 apodized rows per pol are pure held-out
+    predictions of the kappa(z)-profile envelope. A0 widths/lambdas MEASURED in
+    results_from_athena/tm_te_apod/graphs/apod_summary.csv (rows "TM,0"/"TE,0")."""
+    for pol, test, A0_WIDTH, A0_LAM in (("TM", "B11", 17.8992, 1523.57),
+                                        ("TE", "B11-TE", 15.2164, 1570.74)):
+        rows = load_family("apod", lambda r, pol=pol: r["pol"] == pol)
+        pitch = rows[0]["pitch"]
+        n_eff = A0_LAM * 1e-9 / (2 * pitch)
+        kap0 = engine_calibrate_kappa_width(A0_WIDTH, 80, n_eff, pitch, 0.039e6)
+        for r in rows:
+            A, corr_edge = r["A"], r["corr_nm"]
 
-        def prof(d, A=A, corr_edge=corr_edge):
-            if d <= A:
-                corr_d = 40.0 + (corr_edge - 40.0) * (d - 1) / float(A)
-                return corr_d / corr_edge
-            return 1.0
-        w = engine_width(kap0, n_eff, pitch, r["N"], profile=prof)
-        check("B11", f"apod A{A} width um", w, r["fwhm_um"], tol_rel=0.05,
-              note=f"kappa={kap0*1e-6:.4f}/um from A0 width; corr={r['corr_nm']:.0f}")
+            def prof(d, A=A, corr_edge=corr_edge):
+                if d <= A:
+                    corr_d = 40.0 + (corr_edge - 40.0) * (d - 1) / float(A)
+                    return corr_d / corr_edge
+                return 1.0
+            w = engine_width(kap0, n_eff, pitch, r["N"], profile=prof)
+            check(test, f"apod A{A} width um", w, r["fwhm_um"], tol_rel=0.05,
+                  note=f"kappa={kap0*1e-6:.4f}/um from {pol} A0 width; corr={r['corr_nm']:.0f}")
 
 def b13_te_q3db():
     """TE polarization hold-out — the TE q3db family (corr 250, pitch 500) is

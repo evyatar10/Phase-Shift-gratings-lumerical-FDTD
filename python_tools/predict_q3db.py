@@ -29,6 +29,33 @@ is the dispatch note. Validity rules are printed with each output:
     a band, not a point (measured boundary, backtest B2-E);
   - a single-row anchor pins LEVELS but trusts the base family's Qi SHAPE —
     quote the band, and one extra row ~30 periods away removes most of it.
+
+SCOPE — which device classes the calibration covers, and at what grade:
+  - bare uniform gratings, TM corr 276/325/448 and TE corr 250: calibrated AND
+    live-validated -> DESIGN-GRADE (predict, then ONE confirmation run).
+  - decorated devices (trench / flush / comb): only via the measured Qi
+    multipliers at the -3 dB anchor (backtest B8) and the tm_trench_c325
+    family; away from those anchors EXPECTED-grade.
+  - the inverse-designed device (comb + per-tooth shifts/widths): only the
+    tm_invdesign family AS MEASURED — no generalization to other shift/comb
+    settings; for a new setting use extend mode with its own anchor row.
+  - apodized devices: mode WIDTH via the CMT kappa(z) engine (backtest B11:
+    <1% TM, <5% TE); T and Q only through the itai_* (HH-apodized) families
+    as shapes.
+  - tooth shifts: NOT modeled by the engine or the fits (a shift is a phase
+    perturbation, not a kappa change) — measured families only.
+  - the TE corrugation knob line rests on ONE N=80 legacy point (~4%
+    truncation bias) plus TM-derived exponents: EXPECTED-grade.
+
+Usage examples (edit the knobs below, then run):
+  # observe: what does the stored c325 family give at N=180?
+  MODE, FAMILY, N = "observe", "tm_bare_c325", 180
+  # design: -3 dB with a 14 um mode (corr knob; bare families only)
+  MODE, FAMILY = "design", "tm_bare_c325"
+  TARGET_DB, TARGET_WIDTH_UM = -3.0, 14.0
+  # extend: anchor on ONE new measured row, borrow the family shape
+  MODE, BASE_FAMILY, TARGET_DB = "extend", "tm_bare_c325", -3.0
+  ROW = dict(pol="TM", corr_nm=325.0, pitch_nm=516.83, N=100, T=0.9104, ...)
 """
 
 import os
@@ -61,6 +88,9 @@ FINF_CORR_EXP = -1.11      # MEASURED cross-family (F_inf 20.06@c325 vs 24.05@c2
 # post-hoc validated on the C448/N=98 live row: -7.8% (old rate-only
 # transform: +31%, the 2026-09-01 knob-test T miss). See memory file.
 QC_H_PER_NM = -0.002818
+# fallback N_min when a family has no width fit: kappa prop. corr (MEASURED)
+KAPPA_C325_TM = 0.0353e6   # 1/m at corr 325 (MEASURED family kappa)
+PITCH_TM_M, PITCH_TE_M = 516.83e-9, 500e-9
 NUMERICS_NOTE = "y8.0/z8.8 box, 20nm window/4001pts (3nm/0.75pm if Q_L>5e4), dx50 conformal, ASL 1e-7"
 
 def load_calib():
@@ -133,13 +163,19 @@ def retune_corr(p, corr_now, pol, width_target):
         q["qi_sat"] *= fqi
     return q, corr_new
 
-def validity_notes(p, n):
+def validity_notes(p, n, corr=np.nan, pol="TM"):
     notes = []
+    n_min, src = np.nan, ""
     if "w_c" in p:                                       # w_c == 2*kappa*Lambda
         n_min = 3.2 / p["w_c"]
+    elif np.isfinite(corr):                              # no width fit for this family
+        kappa = KAPPA_C325_TM * corr / 325.0             # kappa prop. corr (MEASURED)
+        n_min = 3.2 / (2 * kappa * (PITCH_TM_M if pol == "TM" else PITCH_TE_M))
+        src = " (kappa from corr, EXPECTED)"
+    if np.isfinite(n_min):
         if n < n_min:
-            notes.append(f"REFUSE: N={n:.0f} < N_min~{n_min:.0f} (2kL<3.2 — device too short to carry the family shape)")
-        notes.append(f"shortest usable calibration/anchor device: N_min ~ {3.2/p['w_c']:.0f} (2kL>=3.2)")
+            notes.append(f"REFUSE: N={n:.0f} < N_min~{n_min:.0f} (2kL<3.2 — device too short to carry the family shape){src}")
+        notes.append(f"shortest usable calibration/anchor device: N_min ~ {n_min:.0f} (2kL>=3.2){src}")
     span = n - p.get("n_hi", n)
     if span > 45:
         notes.append(f"EXTRAPOLATION {span:.0f} periods beyond anchored range: T is a BAND not a point (measured boundary ~45)")
@@ -160,15 +196,16 @@ def uncertainty_band(p, n, dqi=0.07, drate=0.01):
     return (min(o["Q_L"] for o in outs), max(o["Q_L"] for o in outs)), \
            (min(o["T"] for o in outs), max(o["T"] for o in outs))
 
-def print_prediction(fam, p, n, corr_note=""):
+def print_prediction(fam, p, n, corr_note="", corr=np.nan, pol="TM"):
     obs = observables(p, n)
     (ql_lo, ql_hi), (t_lo, t_hi) = uncertainty_band(p, n)
     print(f"\n{fam} at N={n:.0f} {corr_note}(PREDICTED)")
     print(f"  T      = {obs['T']:.4f}  [{t_lo:.4f} .. {t_hi:.4f}]  ({10*np.log10(obs['T']):.2f} dB)")
     print(f"  Q_L    = {obs['Q_L']:.0f}  [{ql_lo:.0f} .. {ql_hi:.0f}]   Q_c={obs['Q_c']:.0f}  Q_i={obs['Q_i']:.0f}")
     print(f"  lambda = {obs['lam_nm']:.2f} nm   spectral fwhm = {obs['spec_fwhm_pm']:.2f} pm")
-    print(f"  width  = {obs['width_um']:.2f} um")
-    for note in validity_notes(p, n):
+    print(f"  width  = {obs['width_um']:.2f} um" if np.isfinite(obs["width_um"])
+          else "  width  = n/a (no width fit for this family)")
+    for note in validity_notes(p, n, corr, pol):
         print(f"  ! {note}")
     if obs["Q_L"] > Q_ADEQ:
         print("  ! confirmation run needs the HIGH-Q window (3nm/0.75pm) and"
@@ -178,16 +215,31 @@ def print_prediction(fam, p, n, corr_note=""):
 def main():
     fams = load_calib()
     T_target = 10 ** (TARGET_DB / 10.0)
+    # current operating corrugation: from the ROW in extend mode, else from the
+    # family name (tm_bare_c325 -> 325; families without a _c<NNN> tag give nan)
+    tail = FAMILY.split("_c")[-1]
+    corr_now = ROW["corr_nm"] if MODE == "extend" else \
+        (float(tail) if tail.isdigit() else np.nan)
+    pol = ROW["pol"] if MODE == "extend" else \
+        ("TM" if FAMILY.startswith(("tm_", "itai_tm")) else "TE")
     if MODE == "observe":
-        print_prediction(FAMILY, fams[FAMILY], N)
+        print_prediction(FAMILY, fams[FAMILY], N, corr=corr_now, pol=pol)
+        return
+    if TARGET_WIDTH_UM is not None and MODE != "extend" and (
+            not np.isfinite(corr_now) or not FAMILY.startswith(("tm_bare_", "te_q3db_"))):
+        print("REFUSED: the corrugation knob needs a bare family with corr in its"
+              f" name (tm_bare_c325, te_q3db_c250...) — got {FAMILY}."
+              " Use MODE='extend' with a measured ROW for any other device class.")
         return
     if MODE == "design":
         p, fam, corr_note = fams[FAMILY], FAMILY, ""
-        pol = "TM" if fam.startswith(("tm_", "itai_tm")) else "TE"
     else:  # extend
         base = fams[BASE_FAMILY]
+        base_pol = "TM" if BASE_FAMILY.startswith(("tm_", "itai_tm")) else "TE"
+        assert pol == base_pol, (f"polarization mismatch: ROW is {pol} but"
+                                 f" BASE_FAMILY {BASE_FAMILY} is {base_pol} —"
+                                 " TM and TE anchors are never mixed")
         p, qc_m, qi_m = anchor_on_row(base, ROW)
-        pol = ROW["pol"]
         fam = f"extend({BASE_FAMILY} shapes)"
         print(f"anchored on the measured row: N={ROW['N']} T={ROW['T']} Q_L={ROW['Q_L']}"
               f" -> Qc={qc_m:.0f} (DERIVED), Qi={qi_m:.0f} (DERIVED)")
@@ -199,17 +251,16 @@ def main():
                   " EXPECTED-grade only (known offsets: lam +5.3 nm, FWHM -8%,"
                   " T +0.008, Q_L -7%)")
         corr_note = ""
-    corr_now = ROW["corr_nm"] if MODE == "extend" else float(fam.split("_c")[-1]) \
-        if "_c" in fam and fam.split("_c")[-1].isdigit() else np.nan
     if TARGET_WIDTH_UM is not None:
         p, corr_new = retune_corr(p, corr_now, pol, TARGET_WIDTH_UM)
         corr_note = f"corr {corr_now:.0f}->{corr_new:.1f} nm (width knob -> {TARGET_WIDTH_UM} um) "
         print(f"\nCORRUGATION RETUNE: corr* = {corr_new:.1f} nm for width {TARGET_WIDTH_UM} um"
               f" (per-{pol} knob line). Qi rescaled by (corr ratio)^{CORR_QI_EXP_TM}"
-              + (" [TM-MEASURED exponent applied to TE — UNMEASURED, treat as band]" if pol == "TE" else " [MEASURED at N=150]")
+              + (" [CORR_QI_EXP_TM, QC_H_PER_NM and FINF_CORR_EXP are ALL TM-measured — EXPECTED-grade for TE, treat as a band]" if pol == "TE" else " [MEASURED at N=150]")
               + "; levels now EXPECTED-grade — the confirmation run is the arbiter.")
+        corr_now = corr_new
     n_star = design_N(p, T_target)
-    obs = print_prediction(fam, p, round(n_star), corr_note)
+    obs = print_prediction(fam, p, round(n_star), corr_note, corr_now, pol)
     print(f"\nDESIGN: N* = {n_star:.1f} -> run N={round(n_star)} for T target {T_target:.4f} ({TARGET_DB} dB)")
     print(f"CONFIRMATION RUN SPEC (ONE run): {NUMERICS_NOTE}")
     print(f"  EXPECTED: T={obs['T']:.4f}, Q_L={obs['Q_L']:.0f}, lam~{obs['lam_nm']:.2f} nm,"
