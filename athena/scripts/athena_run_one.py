@@ -101,7 +101,7 @@ def _patched_FDTD_init(self, *args, **kwargs):
         print(f"[athena_run_one] WARNING: {msg}; will run on CPU.")
         return
     # NOTE — DO NOT set processes=1 explicitly. The user already discovered
-    # (per dgx/scripts/athena_run_one.py:103-114 comment) that setting it
+    # (on the legacy DGX cluster, 2026-04) that setting it
     # BREAKS the simulation: FDTD aborts after ~2 s without computing modal
     # port expansion. The default is already capped at 1 on this cluster's
     # FlexLM, so explicit setting is redundant AND harmful. The 79426

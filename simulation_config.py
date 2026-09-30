@@ -382,7 +382,15 @@ class FarFieldConfig:
     farfield_x_span_m: float = 30e-6            # X extent of far-field monitors
     farfield_dist_wls: float = 0.8              # Monitor distance from PML edge (in wavelengths)
     ff_resolution: int = 201                    # Far-field ux/uy grid resolution
-    save_nearfield: bool = True                 # Store full complex E on the monitor surfaces.
+    farfield_freq_points: int = 1               # Monitor frequency points across the scan band.
+                                                # 1 (legacy) = band CENTRE only, which is NOT the
+                                                # resonance (CLAUDE.md §2 trap). >1 = record the
+                                                # band and project at the point nearest the found
+                                                # resonance_wavelength_nm.
+    use_2d_window: bool = False                 # True = far-field monitors record in the 2D monitors'
+                                                # own window (monitors.monitor_2d_center/span_nm) —
+                                                # needed at high Q, where the band spacing >> linewidth.
+    save_nearfield: bool = True                # Store full complex E on the monitor surfaces.
                                                 # Pin False for arm-length monitors (~100s of MB
                                                 # per row); the polarimetry reduction (scalars +
                                                 # 1D x-profiles) is always saved regardless.
@@ -654,6 +662,7 @@ class SimulationConfig:
             farfield_x_span_m=ff.farfield_x_span_m,
             farfield_y_dist_m=calc_farfield_y,
             farfield_z_dist_m=calc_farfield_z,
+            farfield_freq_points=ff.farfield_freq_points,
             # Domain-size overrides active → file tag carries the box size
             # (keeps default-box filenames unchanged; prevents same-tag clobber
             # when sweeping the domain itself)

@@ -56,8 +56,7 @@
 │   ├── athena.conf              # Host, remote paths, partitions, license
 │   ├── jobs/                    # SLURM job scripts (single, array, aggregate)
 │   └── scripts/                 # Server-side entry points (athena_run.py, ...)
-├── dgx/                         # Legacy A100 cluster (R470 driver; needs NVML shim)
-├── container/                   # Apptainer container build for Athena/DGX
+├── container/                   # Apptainer container build for Athena
 ├── zeus/
 │   ├── deploy.sh                # Upload project to Zeus and submit PBS job
 │   ├── scripts/

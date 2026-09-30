@@ -58,7 +58,7 @@ if [[ ! -f "${CONTAINER}" ]]; then
     exit 1
 fi
 
-apptainer exec \
+apptainer exec --writable-tmpfs \
     --bind "${PROJECT_DIR}:/work/project" \
     --bind "${SCRIPTS_DIR}:/work/scripts" \
     --bind "${DATA_DIR}:/work/data" \

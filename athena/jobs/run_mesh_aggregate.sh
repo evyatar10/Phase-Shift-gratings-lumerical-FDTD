@@ -58,7 +58,7 @@ fi
 # Patch config.BASE_SAVE_DIR before run_mesh_convergence.py loads — it
 # defaults to a Windows path that's unreachable on Athena and would crash
 # at module-load time when os.makedirs(LAYOUTS_DIR) runs.
-apptainer exec \
+apptainer exec --writable-tmpfs \
     --bind "${PROJECT_DIR}:/work/project" \
     --bind "${SCRIPTS_DIR}:/work/scripts" \
     --bind "${DATA_DIR}:/work/data" \

@@ -57,3 +57,11 @@ Move generated `.png`/`.fig` next to the data (`results_from_athena/<study>/resu
 End the reply with the **full absolute Windows paths** to every figure and the results
 folder (e.g. `c:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\results_from_athena\<study>\results\<fig>.png`),
 unprompted — the user has had to ask "give me the full link" 21 times.
+
+## Model routing (CLAUDE.md §12, 2026-09-11)
+
+This skill is routine, recipe-driven server work: when the session runs on Fable,
+execute it in an **Opus subagent** (`Agent`, `model: "opus"`) with the steps above
+as the brief, and have it return verdict lines only (queue state / job IDs /
+result paths / PASS-FAIL), never raw logs. Fable reads the verdict and decides.
+Exception: a single ssh line the manager needs right now is cheaper inline.

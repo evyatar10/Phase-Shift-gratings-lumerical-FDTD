@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # SLURM job: run the full Python/lumapi pipeline on the real Athena cluster with GPU.
-# This is the real-Athena analog of athena/jobs/run_python_gpu.sh (dgx-master).
+# Twin of athena/jobs/run_python_gpu.sh (same flow, native runtime).
 #
 # Runtime: NATIVE Lumerical 2026 R1.3 under ~/research/lumerical (IGUM: no containers).
 #

@@ -278,7 +278,7 @@ def extract_3d_fields(sim) -> dict:
 # Stage 6 — Far-field and near-field
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def extract_farfield_data(sim, cfg) -> dict:
+def extract_farfield_data(sim, cfg, lam_res_m=None) -> dict:
     """
     Extract far-field radiation patterns and near-field surface data from
     the side and top planar monitors.
@@ -307,7 +307,8 @@ def extract_farfield_data(sim, cfg) -> dict:
     for monitor_name, key, normal in [("side_monitor", "side", "y"),
                                       ("top_monitor", "top", "z")]:
         ff = extract_farfield(sim.fdtd, monitor_name, ff_res=ff_res,
-                              complex_fields=getattr(cfg.farfield, "save_complex", False))
+                              complex_fields=getattr(cfg.farfield, "save_complex", False),
+                              lam_target_m=lam_res_m)
         result[f"farfield_{key}"] = ff if ff is not None else {}
         pol = extract_monitor_polarimetry(sim.fdtd, monitor_name, normal)
         result[f"polarimetry_{key}"] = pol if pol is not None else {}
@@ -552,7 +553,7 @@ def analyze_simulation(sim, cfg, results_path: str, tag: str = "") -> dict:
     fields_3d = extract_3d_fields(sim)
 
     # 6. Far-field + near-field
-    farfield = extract_farfield_data(sim, cfg)
+    farfield = extract_farfield_data(sim, cfg, resonance.wavelength_m)
 
     # 7. Assemble
     results = assemble_results(sim, s_params, resonance, field_profile,

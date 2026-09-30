@@ -1,0 +1,353 @@
+{
+ "meta": {
+  "title": "Research Overview",
+  "short_title": "Research Overview",
+  "kind": "overview",
+  "subtitle": "Radiation loss engineering of $\\pi$ shift Bragg grating cavities",
+  "author": "Evyatar Rubin",
+  "short_author": "Evyatar Rubin",
+  "date": "September 14, 2026"
+ },
+ "frames": [
+  {
+   "type": "title"
+  },
+  {
+   "type": "bullets",
+   "title": "Main conclusions",
+   "items": [
+    "Apodization and tooth shift trade loss against mode length.",
+    "Structures beside the cavity reduce loss and leave the mode length unchanged.",
+    "TM radiates in the propagation plane, so an air trench or a SiN cylinder row \\textcolor{green!50!black}{reduces its loss}. TE does not.",
+    "At fixed width, inverse design \\textcolor{green!50!black}{does better than any of the hand tuned levers}, though it is still below the lab's overshoot.",
+    "Reflectors, scatterers and SiO$_2$ cylinders inside the core \\textcolor{red!75!black}{do not help}."
+   ]
+  },
+  {
+   "type": "table",
+   "title": "What worked",
+   "size": "footnotesize",
+   "arraystretch": 1.2,
+   "header": [
+    "direction",
+    "polarization",
+    "loss",
+    "mode length",
+    "comments"
+   ],
+   "rows": [
+    [
+     "linear apodization",
+     "TE, TM",
+     "\\textcolor{green!50!black}{reduced}",
+     "\\textcolor{red!75!black}{strongly increased}",
+     ""
+    ],
+    [
+     "tanh apodization",
+     "TE, TM",
+     "\\textcolor{green!50!black}{reduced}",
+     "\\textcolor{red!75!black}{increased}",
+     "less widening"
+    ],
+    [
+     "overshoot apodization",
+     "TE, TM",
+     "\\textcolor{green!50!black}{strongly reduced}",
+     "set by amplitude",
+     "lab's model"
+    ],
+    [
+     "wider cavity",
+     "TE, TM",
+     "\\textcolor{green!50!black}{reduced}",
+     "\\textcolor{green!50!black}{unchanged}",
+     ""
+    ],
+    [
+     "innermost tooth shift",
+     "TE",
+     "\\textcolor{green!50!black}{reduced}",
+     "\\textcolor{green!50!black}{unchanged}",
+     "recycles the leak"
+    ],
+    [
+     "innermost tooth shift",
+     "TM",
+     "\\textcolor{green!50!black}{reduced}",
+     "\\textcolor{red!75!black}{increased}",
+     "no optimum"
+    ],
+    [
+     "distributed small shifts",
+     "TM",
+     "\\textcolor{green!50!black}{reduced}",
+     "\\textcolor{green!50!black}{unchanged}",
+     "in inverse design"
+    ],
+    [
+     "two tooth design",
+     "TE",
+     "\\textcolor{green!50!black}{reduced}",
+     "wider",
+     "particle swarm"
+    ],
+    [
+     "air trench",
+     "TM",
+     "\\textcolor{green!50!black}{reduced}",
+     "\\textcolor{green!50!black}{unchanged}",
+     "deep etch needed"
+    ],
+    [
+     "SiN cylinder row",
+     "TM",
+     "\\textcolor{green!50!black}{reduced}",
+     "\\textcolor{green!50!black}{unchanged}",
+     "same lithography"
+    ],
+    [
+     "inverse design",
+     "TM",
+     "\\textcolor{green!50!black}{strongly reduced}",
+     "\\textcolor{green!50!black}{unchanged}",
+     "in progress"
+    ]
+   ],
+   "note": "All the levers reduce loss; apodization is the only one that lengthens the mode."
+  },
+  {
+   "type": "table",
+   "title": "What did not work",
+   "size": "footnotesize",
+   "arraystretch": 1.2,
+   "header": [
+    "direction",
+    "polarization",
+    "result",
+    "comments"
+   ],
+   "rows": [
+    [
+     "SiO$_2$ or air holes in core",
+     "TM",
+     "\\textcolor{red!75!black}{resonance lost}",
+     "every hole radiates"
+    ],
+    [
+     "Bragg or crystal walls",
+     "TM",
+     "\\textcolor{red!75!black}{loss increased}",
+     "light never re couples"
+    ],
+    [
+     "metal mirrors",
+     "TM",
+     "\\textcolor{red!75!black}{loss increased}",
+     "same, plus absorption"
+    ],
+    [
+     "shaped trenches",
+     "TM",
+     "\\textcolor{red!75!black}{worse than straight}",
+     "straight wall optimal"
+    ],
+    [
+     "single scatterers",
+     "TM",
+     "no improvement",
+     "acts like a wider cavity"
+    ],
+    [
+     "retro reflecting rows",
+     "TM",
+     "no effect",
+     "beam misses the lobe"
+    ],
+    [
+     "second cavity alongside",
+     "TE, TM",
+     "\\textcolor{red!75!black}{power drains}",
+     "leaks to the neighbour"
+    ],
+    [
+     "exotic innermost teeth",
+     "TE, TM",
+     "no effect",
+     "the leak is not local"
+    ],
+    [
+     "trench or cylinder row",
+     "TE",
+     "no effect",
+     "TE radiates upward"
+    ]
+   ],
+   "note": "Holes in the core radiate and kill the resonance. Everything else here either adds loss of its own or never reaches the leaky lobe."
+  },
+  {
+   "type": "chart",
+   "title": "$Q$ factor at a 20\\,$\\mu$m mode and a -3\\,dB peak",
+   "width": 0.8,
+   "height": 0.66,
+   "chart": {
+    "kind": "hbar",
+    "categories": [
+     "plain, TE",
+     "plain, TM",
+     "SiN cylinder row, TM",
+     "air trench, half depth, TM",
+     "SiN cylinder rows, TM",
+     "air trench, full depth, TM",
+     "lab overshoot, TM",
+     "inverse design, TM",
+     "lab overshoot, TE (projected)"
+    ],
+    "series": [
+     {
+      "name": "Q",
+      "values": [
+       12903,
+       13930,
+       16203,
+       16942,
+       18093,
+       18777,
+       35000,
+       88868,
+       250000
+      ]
+     }
+    ],
+    "y_log": true,
+    "y_min": 10000,
+    "y_max": 1000000,
+    "y_label": "loaded Q (log scale)",
+    "show_values": true,
+    "value_format": "#,##0",
+    "legend": false,
+    "aspect": 1.5,
+    "gap_pct": 40,
+    "size": "scriptsize",
+    "label_frequency": 1
+   },
+   "caption": "Each device lengthened until its peak is -3\\,dB at a 20\\,$\\mu$m mode. Lateral structures give about a third more $Q$, inverse design about 6×; the TE overshoot bar is projected."
+  },
+  {
+   "type": "divider",
+   "heading": "Details",
+   "subheading": "TE, TE versus TM, TM levers, inverse design"
+  },
+  {
+   "type": "bullets",
+   "title": "TE: apodization reduces loss and widens the mode",
+   "items": [
+    "Linear apodization: loss reduced, mode much wider.",
+    "Tanh gives the same gain with less widening.",
+    {
+     "text": "A few apodized periods are enough; more add nothing.",
+     "detail": "The lab's overshoot apodization is far stronger, and only its amplitude sets the mode length."
+    }
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "TE: shifting the innermost teeth recycles the leak",
+   "items": [
+    {
+     "text": "Shifting the innermost teeth outward reduces loss with the mode length unchanged.",
+     "detail": "Light that would leak at the cavity is redirected into the mode; the far field collapses to one lobe."
+    },
+    "A two tooth particle swarm design gave the best transmission per width.",
+    "\\textbf{In fabrication:} devices matched the same optimum, with slightly stronger coupling."
+   ]
+  },
+  {
+   "type": "blocks",
+   "title": "TE versus TM",
+   "blocks": [
+    {
+     "label": "At the same length",
+     "text": "TM couples more weakly, so lower loss, lower $Q$, wider mode."
+    },
+    {
+     "vspace_cm": 0.45
+    },
+    {
+     "label": "At the same peak transmission",
+     "text": "TM is longer and its $Q$ is about three times higher."
+    },
+    {
+     "vspace_cm": 0.45
+    },
+    {
+     "label": "At the operating point",
+     "text": "The plain gratings tie. TM radiates in the propagation plane, TE upward."
+    }
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "TM: the teeth behave as in TE, but the shift works differently",
+   "numbered": true,
+   "items": [
+    "Apodization reduces loss, widens the mode, and saturates.",
+    "A large shift of the innermost teeth widens the mode and shows no optimum; TM does not recycle at the cavity.",
+    "Once apodization saturates, small shifts on many teeth \\textcolor{green!50!black}{add further gain at fixed width}; the inverse design uses this."
+   ]
+  },
+  {
+   "type": "fullwidth",
+   "title": "TM: a trench reduces loss, a third more $Q$ at the benchmark",
+   "image": "trench_cross_sections.png",
+   "width": 0.84,
+   "caption_width": 0.9,
+   "caption_gap_cm": 0.35,
+   "caption": "The trench returns the in plane radiation by total internal reflection; the mode length is unchanged. A trench stopping at the core top keeps most of the gain in one lithography step."
+  },
+  {
+   "type": "bullets",
+   "title": "TM: a row of SiN cylinders does the same, one lithography step",
+   "items": [
+    "The row is a weak grating: its period sets the beam angle, $n_\\text{clad}\\,\\sin\\theta = n_\\text{eff} - \\lambda/\\Lambda$.",
+    "Aimed at the radiation lobe, sliding the row sets the phase: one phase cancels the lobe, the opposite grows it.",
+    "A second row on the other side adds a few percent; a third adds nothing."
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "Inverse design: what is optimized",
+   "items": [
+    {
+     "text": "3D adjoint optimization of the 25 innermost teeth per side (depth, width, shift), the cavity width and the cylinder row, TM.",
+     "detail": [
+      "\\textbf{Objective}\\; peak transmission.",
+      "\\textbf{Constraints}\\; the mode length and the resonance wavelength are held fixed."
+     ]
+    },
+    "Width penalties and second moment proxies failed; projecting each gradient step onto both constraints works."
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "Inverse design: what it found so far",
+   "items": [
+    "Transmission rises steadily with the resonance and the mode length held.",
+    "The design is a gentle rise in corrugation toward the arms, a mild overshoot.",
+    {
+     "text": "The cylinder row does not move when freed: its optimum is separable and set analytically.",
+     "detail": "About 6× the plain grating at the operating point, still below the lab's TE overshoot."
+    }
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "Next steps",
+   "items": [
+    "\\textbf{Restart} the inverse design with more free teeth.",
+    "\\textbf{Adapt} the overshoot apodization model to TM and use it as the starting point.",
+    "\\textbf{Open a TE lane} seeded from the overshoot profile, where the larger gains are."
+   ]
+  }
+ ]
+}

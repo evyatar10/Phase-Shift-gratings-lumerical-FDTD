@@ -7,7 +7,7 @@ optimize_transmission study so you can iterate on debugging.
 
 Invocation:
   bash athena/deploy_athena.sh --lumerical-native=runners.lumerical_native_optimization.smoke_test
-  bash dgx/deploy_dgx.sh        --lumerical-native=runners.lumerical_native_optimization.smoke_test
+  bash igum/deploy_igum.sh      --lumerical-native=runners.lumerical_native_optimization.smoke_test
 """
 
 import os

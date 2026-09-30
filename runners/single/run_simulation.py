@@ -129,7 +129,7 @@ def build_cfg(cfg: SimulationConfig) -> SimulationConfig:
     """Per-runner overrides applied to the base cfg.
 
     Single source of truth for *this* runner's parameters. The cluster
-    dispatchers (athena/dgx scripts/athena_run.py) call this hook after
+    dispatchers (athena/igum scripts/athena_run.py) call this hook after
     constructing the base cfg, so local and cluster runs apply the same
     overrides. Edits placed only in `__main__` are local-only — put them
     here instead.

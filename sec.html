@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <!-- v27921 -->
+
+
+  <title>Lumerical Release Notes &ndash; Ansys Optics</title>
+
+  <meta name="csrf-param" content="authenticity_token">
+<meta name="csrf-token" content="">
+
+  <meta name="description" content="Note: Ansys Optics 2023 R1 is the last release supporting the Lumerical FlexNet License Manager (legacy). All future releases will be..." /><link rel="canonical" href="https://optics.ansys.com/hc/en-us/sections/1500001572701-Lumerical-Release-Notes">
+<link rel="alternate" hreflang="en-us" href="https://optics.ansys.com/hc/en-us/sections/1500001572701-Lumerical-Release-Notes">
+<link rel="alternate" hreflang="x-default" href="https://optics.ansys.com/hc/en-us/sections/1500001572701-Lumerical-Release-Notes">
+
+  <link rel="stylesheet" href="//static.zdassets.com/hc/assets/application-dfda240c40477db2e8cc0ad93adeb1eb.css" media="all" id="stylesheet" />
+    <!-- Entypo pictograms by Daniel Bruce — www.entypo.com -->
+    <link rel="stylesheet" href="//static.zdassets.com/hc/assets/theming_v1_support-e05586b61178dcde2a13a3d323525a18.css" media="all" />
+  <link rel="stylesheet" type="text/css" href="/hc/theming_assets/9207885/360002189774/style.css?digest=55199741143827">
+
+  <link rel="icon" type="image/x-icon" href="/hc/theming_assets/01HZKSRK9P40E2JB0WKVC21YNC">
+
+    <script src="//static.zdassets.com/hc/assets/jquery-ed472032c65bb4295993684c673d706a.js"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2M4HQFFNK8"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-2M4HQFFNK8');
+</script>
+
+
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<script src="https://www2.lumerical.com/mathjax/MathJax.js?config=TeX-AMS_CHTML"></script> 
+<script src="https://assets.adobedtm.com/79b3942b8dfa/604ce2434de1/launch-2396cdda8e60.min.js" async></script> 
+  <script type="text/javascript" src="/hc/theming_assets/9207885/360002189774/script.js?digest=55199741143827"></script>
+</head>
+<body class="">
+  
+  
+  
+
+  <div class="header-fixed-container">
+  <header class="header">
+    <div class="logo">
+      <a title="Home" href="https://optics.ansys.com/hc/en-us">
+        <img src="/hc/theming_assets/01K38JKCRBHA5QX92MM6NGKP3D" alt="Ansys Optics Help Center home page">
+      </a>
+    </div>
+    <div class="nav-wrapper">
+      <span class="icon-menu" tabindex="0" role="button" aria-controls="user-nav" aria-expanded="false" aria-label="Toggle navigation menu"></span>
+      <nav class="user-nav" id="user-nav">
+        <div class="nav-drop-menu">
+          <a class="dropdown-toggle">Products</a>
+          <div class="nav-drop-menu-subnav">
+              <ul class="nav-drop-menu-sublist">
+                  <li><a href="https://www.ansys.com/products/optics">Ansys Optics</a></li>
+                  <li><a href="https://download.ansys.com/currentReleases">Downloads</a></li>
+                <li><a href="https://www.ansys.com/products/optics#tab1-2">What's new</a></li>
+                <li><a href="https://ansyshelp.ansys.com/public/account/secured?returnurl=/Views/Secured/main_page.html">Ansys Help</a></li>
+              </ul>
+          </div>
+      </div>
+      <div class="nav-drop-menu">
+          <a class="dropdown-toggle">Solutions</a>
+          <div class="nav-drop-menu-subnav">
+              <ul class="nav-drop-menu-sublist">
+                <li><a href="/hc/en-us/articles/42325093231251-Lumerical-Knowledge-Base">Lumerical</a></li>
+                <li><a href="/hc/en-us/categories/10139548118675">Zemax</a></li>
+                <li><a href="/hc/en-us/categories/6336944969107">Speos</a></li>
+                  
+              </ul>
+          </div>
+      </div>
+      <div class="nav-drop-menu">
+          <a class="dropdown-toggle">Learn</a>
+          <div class="nav-drop-menu-subnav">
+              <ul class="nav-drop-menu-sublist">
+                <li><a href="https://innovationspace.ansys.com/guided-learning-path/">Ansys Innovation Courses (AIC)</a></li>
+                <li><a href="https://learninghub.ansys.com/learn">Ansys Learning Hub (ALH)</a></li>
+                <li><a href="https://www.ansys.com/events#t=EventsTab&sort=relevancy&numberOfResults=20&f:@productcollections=[Optics,Photonics]">Webinars</a></li>
+                <li><a href="https://www.ansys.com/resource-center#t=ResourceCenterTab&sort=relevancy&numberOfResults=50&f:@productcollections=[Optics,Photonics]&f:@resourcetype=[Webinar]">On-Demand Webinars</a></li>
+                <li><a href="https://www.ansys.com/resource-center#t=ResourceCenterTab&sort=relevancy&numberOfResults=50&f:@productcollections=[Optics,Photonics]&f:@resourcetype=[White%20Paper]">White Papers</a></li>
+                
+                  
+              </ul>
+          </div>
+      </div>
+
+      <div class="nav-drop-menu">
+          <a class="dropdown-toggle">Get Help</a>
+          <div class="nav-drop-menu-subnav">
+              <ul class="nav-drop-menu-sublist">
+                <li><a href="/hc/en-us/articles/17581951094931-Ansys-Optics-Welcome-Guide">Welcome Guide</a></li>
+                <li><a href="https://innovationspace.ansys.com/forum/">Ansys Learning Forum (ALF)</a></li>
+                <li><a href="https://ix.lumerical.com/">Lumerical Ideas Exchange (IX)</a></li>
+                <li><a href="https://customer.ansys.com/">Ansys Support (ACSS)</a></li>
+                <li><a href="/hc/en-us/articles/5609426062483-How-to-register-on-Ansys-Customer-Support-Space">How to Register for Support</a></li>
+                  
+              </ul>
+          </div>
+      </div>
+        
+      
+      
+      </nav>
+      <div class="nav-drop-menu">
+          <a class="dropdown-toggle">Evaluate for Free</a>
+          <div class="nav-drop-menu-subnav">
+              <ul class="nav-drop-menu-sublist">
+      <li><a href="https://www.ansys.com/products/optics/lumerical-free-trial" >Lumerical</a></li>
+      <li><a href="https://www.ansys.com/products/optics/ansys-zemax-opticstudio/zemax-opticstudio-trial" >Zemax</a></li>
+      <li><a href="https://www.ansys.com/products/optics/ansys-speos/speos-trial" >Speos</a></li>
+            </ul>
+        </div>
+      </div>
+      
+    </div>
+  </header>
+</div>
+
+
+  <main role="main">
+    <div class="container-divider"></div>
+<div class="container">
+  <nav class="sub-nav">
+    <ol class="breadcrumbs">
+  
+    <li title="Ansys Optics">
+      
+        <a href="/hc/en-us">Ansys Optics</a>
+      
+    </li>
+  
+    <li title="Installation and Licensing">
+      
+        <a href="/hc/en-us/categories/360001597473-Installation-and-Licensing">Installation and Licensing</a>
+      
+    </li>
+  
+    <li title="Lumerical Release Notes">
+      
+        <a href="/hc/en-us/sections/1500001572701-Lumerical-Release-Notes">Lumerical Release Notes</a>
+      
+    </li>
+  
+</ol>
+
+    <form role="search" class="search" data-search="" action="/hc/en-us/search" accept-charset="UTF-8" method="get"><input type="hidden" name="utf8" value="&#x2713;" autocomplete="off" /><input type="search" name="query" id="query" placeholder="Search" aria-label="Search" /></form>
+  </nav>
+
+  <div class="section-container">
+    <section class="section-content">
+      <header class="page-header">
+        <h1>
+          Lumerical Release Notes
+        </h1>
+        
+          <p class="page-header-description">Note: Ansys Optics 2023 R1 is the last release supporting the Lumerical FlexNet License Manager (legacy). All future releases will be running on the Ansys License manager.</p>
+        
+      </header>
+
+      
+
+
+      
+        <ul class="article-list">
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/55230324899475-2026-R1-4-Release-Notes" class="article-list-link">2026 R1.4 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/53916763140499-2026-R1-3-Release-Notes" class="article-list-link">2026 R1.3 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/52497374874259-2026-R1-2-Release-Notes" class="article-list-link">2026 R1.2 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/51049727162899-2026-R1-1-Release-Notes" class="article-list-link">2026 R1.1 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/49743302311059-2026-R1-Release-Notes" class="article-list-link">2026 R1 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/47252314648723-2025-R2-4-Release-Notes" class="article-list-link">2025 R2.4 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/46555216210707-2025-R2-3-Release-Notes" class="article-list-link">2025 R2.3 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/44779753202835-2025-R2-2-Release-Notes" class="article-list-link">2025 R2.2 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/43598583744915-2025-R2-1-Release-Notes" class="article-list-link">2025 R2.1 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/42500782973715-2025-R2-Release-Notes" class="article-list-link">2025 R2 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/41006181327763-2025-R1-3-Release-Notes" class="article-list-link">2025 R1.3 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/39754465004947-2025-R1-2-Release-Notes" class="article-list-link">2025 R1.2 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/38462847569043-2025-R1-1-Release-Notes" class="article-list-link">2025 R1.1 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/37376057815443-2025-R1-Release-Notes" class="article-list-link">2025 R1 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/35079732252819-2024-R2-3-Release-Notes" class="article-list-link">2024 R2.3 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/33278643005587-2024-R2-2-Release-Notes" class="article-list-link">2024 R2.2 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/33278605787155-2024-R2-1-Release-Notes" class="article-list-link">2024 R2.1 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/33278475658643-2024-R2-Release-Notes" class="article-list-link">2024 R2 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/29228470976659-2024-R1-3-Release-Notes" class="article-list-link">2024 R1.3 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/27788346825875-2024-R1-2-release-notes" class="article-list-link">2024 R1.2 release notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/25979841863443-2024-R1-1-Release-Notes" class="article-list-link">2024 R1.1 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/33278435970835-2024-R1-Release-Notes" class="article-list-link">2024 R1 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/22166122986131-2023-R2-3-Release-Notes" class="article-list-link">2023 R2.3 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/20731658069395-2023-R2-2-Release-Notes" class="article-list-link">2023 R2.2 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/19070212955155-2023-R2-1-Release-Notes" class="article-list-link">2023 R2.1 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/33278402042131-2023-R2-Release-Notes" class="article-list-link">2023 R2 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/16565741544851-2023-R1-3-Release-Notes" class="article-list-link">2023 R1.3 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/15708318364819-2023-R1-2-Release-Notes" class="article-list-link">2023 R1.2 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/13659084854163-2023-R1-1-Release-Notes" class="article-list-link">2023 R1.1 Release Notes</a>
+              
+            </li>
+          
+            <li class="article-list-item ">
+              
+              <a href="/hc/en-us/articles/13798946477971-2023-R1-Release-Notes" class="article-list-link">2023 R1 Release Notes</a>
+              
+            </li>
+          
+        </ul>
+      
+
+      
+<nav class="pagination" aria-label="Pagination">
+  <ul>
+    
+
+    
+      
+        <li class="pagination-current">
+          <span>1</span>
+        </li>
+      
+    
+      
+        <li>
+          <a href="/hc/en-us/sections/1500001572701-Lumerical-Release-Notes?page=2#articles" rel="next nofollow">2</a>
+        </li>
+      
+    
+      
+        <li>
+          <a href="/hc/en-us/sections/1500001572701-Lumerical-Release-Notes?page=3#articles" rel="nofollow">3</a>
+        </li>
+      
+    
+
+    
+      <li class="pagination-next">
+        <a href="/hc/en-us/sections/1500001572701-Lumerical-Release-Notes?page=2#articles" rel="next nofollow">›</a>
+      </li>
+
+      <li class="pagination-last">
+        <a href="/hc/en-us/sections/1500001572701-Lumerical-Release-Notes?page=3#articles" rel="nofollow">»</a>
+      </li>
+    
+  </ul>
+</nav>
+
+
+
+    </section>
+  </div>
+</div>
+
+  </main>
+
+  <footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-nav">
+     <div class="footer-nav__column footer-nav-one-column">
+          <p class="footer-nav__column-heading">Products</p>
+
+          <ul class="footer-nav__column"> 
+              <li><a href="https://www.ansys.com/products/optics">Ansys Optics</a></li>
+              <li><a href="https://download.ansys.com/currentReleases">Downloads</a></li>
+              <li><a href="https://www.ansys.com/products/optics#tab1-2">What's new</a></li>
+              <li><a href="https://ansyshelp.ansys.com/public/account/secured?returnurl=/Views/Secured/main_page.html">Ansys Help</a></li>
+          </ul>
+      </div> 
+
+      <div class="footer-nav__column footer-nav-one-column">
+          <p class="footer-nav__column-heading">Solutions</p>
+
+          <ul class="footer-nav__column"> 
+                <li><a href="/hc/en-us/articles/42325093231251-Lumerical-Knowledge-Base">Lumerical</a></li>
+                <li><a href="/hc/en-us/categories/10139548118675">Zemax</a></li>
+                <li><a href="/hc/en-us/categories/6336944969107">Speos</a></li>
+          </ul>
+      </div> 
+
+      <div class="footer-nav__column footer-nav-one-column">
+          <p class="footer-nav__column-heading">Learn</p>
+
+          <ul class="footer-nav__column"> 
+                <li><a href="https://innovationspace.ansys.com/guided-learning-path/">Ansys Innovation Courses</a></li>
+                <li><a href="https://learninghub.ansys.com/learn">Ansys Learning Hub</a></li>
+                <li><a href="https://www.ansys.com/events#t=EventsTab&sort=relevancy&numberOfResults=20&f:@productcollections=[Optics,Photonics]">Webinars</a></li>
+                <li><a href="https://www.ansys.com/resource-center#t=ResourceCenterTab&sort=relevancy&numberOfResults=50&f:@productcollections=[Optics,Photonics]&f:@resourcetype=[Webinar]">On-Demand Webinars</a></li>
+                <li><a href="https://www.ansys.com/resource-center#t=ResourceCenterTab&sort=relevancy&numberOfResults=50&f:@productcollections=[Optics,Photonics]&f:@resourcetype=[White%20Paper]">White Papers</a></li>
+          </ul>
+      </div> 
+      
+      <div class="footer-nav__column footer-nav-one-column">
+          <p class="footer-nav__column-heading">Get Help</p>
+
+          <ul class="footer-nav__column"> 
+                <li><a href="https://innovationspace.ansys.com/forum/">Ansys Learning Forum</a></li>
+                <li><a href="https://ix.lumerical.com/">Lumerical Ideas Exchange</a></li>
+                <li><a href="https://customer.ansys.com/">Ansys Support</a></li>
+                <li><a href="/hc/en-us/articles/5609426062483-How-to-register-on-Ansys-Customer-Support-Space">How to Register for Support</a></li>
+          </ul>
+      </div> 
+      
+      <div class="footer-nav__column footer-nav-one-column">
+          <p class="footer-nav__column-heading">Evaluate for Free</p>
+
+          <ul class="footer-nav__column"> 
+      <li><a href="https://www.ansys.com/products/optics/lumerical-free-trial" >Lumerical</a></li>
+      <li><a href="https://www.ansys.com/products/optics/ansys-zemax-opticstudio/zemax-opticstudio-trial" >Zemax</a></li>
+      <li><a href="https://www.ansys.com/products/optics/ansys-speos/speos-trial" >Speos</a></li>
+          </ul>
+      </div> 
+      
+    </div>
+  
+    <div class="footer-subnav">
+      <div class="footer-subnav-newsletter">
+        <a href="https://www.ansys.com/email-opt-in">Hear the Latest from Ansys</a>
+      </div>
+      <div class="footer-subnav-copyright">
+        <p>Copyright 2025 Ansys Canada Ltd.</p> 
+      </div> 
+    </div>
+    
+    <div class="footer-terms">
+        <hr>
+        <div class="footer-terms-logo">
+          <a href="https://www.ansys.com" aria-label="Ansys Logo"><img src=/hc/theming_assets/01K1DAQSZFBSZ1NHH5QM20M8GQ style="width: 188px; background-color: transparent !important;" alt="Ansys"></a>
+        </div>
+
+        <div class="footer-terms-links">
+          <ul>
+            <li><a href="https://www.ansys.com/legal/terms-and-conditions">Terms of Service</a></li>
+            <li><a href="https://www.ansys.com/legal/cookie-policy">Cookie Policy</a></li>
+            <li><a href="https://www.ansys.com/legal/privacy-notice">Privacy Policy</a></li>
+            <li><a href="https://www.ansys.com/legal/legal-notices">Legal Notices</a></li>
+          </ul>
+        </div> 
+
+        <div class="footer-terms-social">
+					<ul>
+            <li><a href="https://www.linkedin.com/company/ansys-optics" target="_blank" class="icon-linkedin" aria-label="Ansys Optics on LinkedIn"></a></li>
+            <li><a href="https://www.youtube.com/user/ansysinc" target="_blank" class="icon-youtube" aria-label="Ansys on YouTube"></a></li>
+            <li><a href="https://www.twitter.com/ansys" target="_blank" class="icon-twitter" aria-label="Ansys on Twitter"></a></li>
+            <li><a href="https://www.facebook.com/ansys" target="_blank" class="icon-facebook" aria-label="Ansys on Facebook"></a></li> 
+          </ul>
+        </div>
+    </div>
+  </div>
+  
+</footer>
+<script> (function(){ var s = document.createElement('script'); var h = document.querySelector('head') || document.body; s.src = 'https://acsbapp.com/apps/app/dist/js/app.js'; s.async = true; s.onload = function(){ acsbJS.init({ statementLink : '', footerHtml : '', hideMobile : false, hideTrigger : false, disableBgProcess : false, language : 'en', position : 'right', leadColor : '#146FF8', triggerColor : '#146FF8', triggerRadius : '50%', triggerPositionX : 'right', triggerPositionY : 'bottom', triggerIcon : 'people', triggerSize : 'bottom', triggerOffsetX : 20, triggerOffsetY : 20, mobile : { triggerSize : 'small', triggerPositionX : 'right', triggerPositionY : 'bottom', triggerOffsetX : 20, triggerOffsetY : 20, triggerRadius : '20' } }); }; h.appendChild(s); })(); </script>
+
+
+
+  <!-- / -->
+
+  
+  <script src="//static.zdassets.com/hc/assets/en-us.40d9559b3308c0ac84df.js"></script>
+  
+
+  <script type="text/javascript">
+  /*
+
+    Greetings sourcecode lurker!
+
+    This is for internal Zendesk and legacy usage,
+    we don't support or guarantee any of these values
+    so please don't build stuff on top of them.
+
+  */
+
+  HelpCenter = {};
+  HelpCenter.account = {"subdomain":"lumerical","environment":"production","name":"Lumerical"};
+  HelpCenter.user = {"identifier":"da39a3ee5e6b4b0d3255bfef95601890afd80709","email":null,"name":"","role":"anonymous","avatar_url":"https://assets.zendesk.com/hc/assets/default_avatar.png","is_admin":false,"external_id":null,"organizations":[],"groups":[]};
+  HelpCenter.internal = {"asset_url":"//static.zdassets.com/hc/assets/","web_widget_asset_composer_url":"https://static.zdassets.com/ekr/snippet.js","current_session":{"locale":"en-us","csrf_token":null,"shared_csrf_token":null},"usage_tracking":{"event":"section_viewed","data":"BAh7CDoPc2VjdGlvbl9pZGwrCF2XDz9dAToLbG9jYWxlSSIKZW4tdXMGOgZFVDoKX21ldGF7DDoPYWNjb3VudF9pZGkDTYCMOhNoZWxwX2NlbnRlcl9pZGwrCKXPs9FTADoNYnJhbmRfaWRsKwjOec3RUwA6DHVzZXJfaWQwOhN1c2VyX3JvbGVfbmFtZUkiDkFOT05ZTU9VUwY7B1Q7BkkiCmVuLXVzBjsHVDoaYW5vbnltb3VzX3RyYWNraW5nX2lkMA==--3ef47dcc292af1887bc6e24afb1acb363c87a9f5","url":"https://optics.ansys.com/hc/activity"},"current_record_id":null,"current_record_url":null,"current_record_title":null,"current_text_direction":"ltr","current_brand_id":360002189774,"current_brand_name":"Lumerical","current_brand_url":"https://lumerical.zendesk.com","current_brand_active":true,"current_path":"/hc/en-us/sections/1500001572701-Lumerical-Release-Notes","show_autocomplete_breadcrumbs":true,"user_info_changing_enabled":false,"has_user_profiles_enabled":false,"has_end_user_attachments":true,"user_aliases_enabled":false,"has_anonymous_kb_voting":true,"has_multi_language_help_center":true,"show_at_mentions":false,"embeddables_config":{"embeddables_web_widget":false,"embeddables_help_center_auth_enabled":false,"embeddables_connect_ipms":false},"answer_bot_subdomain":"static","gather_plan_state":"subscribed","has_article_verification":false,"has_gather":true,"has_ckeditor":false,"has_community_enabled":false,"has_community_badges":false,"has_community_post_content_tagging":false,"has_gather_content_tags":false,"has_guide_content_tags":true,"has_user_segments":true,"has_answer_bot_web_form_enabled":false,"has_garden_modals":false,"has_auth_email_less_sso":false,"theming_cookie_key":"hc-da39a3ee5e6b4b0d3255bfef95601890afd80709-2-preview","is_preview":false,"has_search_settings_in_plan":true,"theming_api_version":1,"theming_settings":{"brand_color":"rgba(0, 68, 102, 1)","brand_text_color":"#FFFFFF","text_color":"#333333","link_color":"rgba(30, 109, 220, 1)","background_color":"#FFFFFF","heading_font":"-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif","text_font":"-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif","logo":"/hc/theming_assets/01K38JKCRBHA5QX92MM6NGKP3D","favicon":"/hc/theming_assets/01HZKSRK9P40E2JB0WKVC21YNC","homepage_background_image":"/hc/theming_assets/01HZKSRKG0EVWYK5E8ZSSRV28A","community_background_image":"/hc/theming_assets/01HZKSRKMGT2GHRV306N5MF5JZ","community_image":"/hc/theming_assets/01HZKSRKT0AJBFT9R8N6EEKSZ1","instant_search":true,"scoped_kb_search":false,"scoped_community_search":false,"show_recent_activity":false,"show_articles_in_section":false,"show_article_author":false,"show_article_comments":false,"show_follow_article":false,"show_recently_viewed_articles":true,"show_related_articles":true,"show_article_sharing":false,"show_follow_section":false,"show_follow_post":false,"show_post_sharing":false,"show_follow_topic":false},"has_pci_credit_card_custom_field":false,"help_center_restricted":false,"is_assuming_someone_else":false,"flash_messages":[],"user_photo_editing_enabled":true,"user_preferred_locale":"en-us","base_locale":"en-us","login_url":"https://lumerical.zendesk.com/access?locale=en-us\u0026brand_id=360002189774\u0026return_to=https%3A%2F%2Foptics.ansys.com%2Fhc%2Fen-us%2Fsections%2F1500001572701-Lumerical-Release-Notes","has_alternate_templates":false,"has_custom_statuses_enabled":true,"has_hc_generative_answers_setting_enabled":true,"has_suggested_initial_questions_enabled":false,"has_contentful_eap":false,"has_contentful_eap_eligible":false,"has_pdf_ingestion_eap":true,"has_pdf_ingestion_eap_eligible":true,"has_guide_saas_management":false,"has_knowledge_category_translation_modal":false,"has_guide_service_catalog":false,"has_service_catalog_search_poc":true,"has_service_catalog_multibranding":true,"has_csat_reverse_2_scale_in_mobile":false,"has_unified_navigation":true,"has_unified_navigation_eap_access":true,"has_knowledge_locale_display_names":true,"has_csat_bet365_branding":false,"has_csat_flora":false,"has_csat_theming_integration_phase_1":false,"has_help_center_gen_search_follow_up_conversation":true,"chat_page_renderable":false,"version":"v27921","dev_mode":false};
+</script>
+
+  
+  <script src="//static.zdassets.com/hc/assets/moment-3b62525bdab669b7b17d1a9d8b5d46b4.js"></script>
+  <script src="//static.zdassets.com/hc/assets/hc_enduser-f862b398e937b6ac61161d03eb55cadd.js"></script>
+  
+  
+</body>
+</html>

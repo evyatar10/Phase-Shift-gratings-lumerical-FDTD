@@ -1,0 +1,235 @@
+{
+ "meta": {
+  "title": "$\\pi$ Shift Bragg Grating for Acousto Optic Sensing: Research Overview",
+  "short_title": "$\\pi$ Shift Grating: Overview",
+  "subtitle": "What raises $Q$ at a fixed 20\\,$\\mu$m mode, and what does not",
+  "author": "Evyatar Rubin",
+  "short_author": "Evyatar Rubin",
+  "author_line2": "Research Overview",
+  "date": "September 13, 2026"
+ },
+ "frames": [
+  {
+   "type": "title"
+  },
+  {
+   "type": "bullets",
+   "title": "The question: highest $Q$ at a fixed 20\\,$\\mu$m mode",
+   "vspace_top_cm": 0.3,
+   "itemsep_cm": 0.5,
+   "items": [
+    "Device: a $\\pi$ shift Bragg grating in SiN (350\\,nm core), simulated in 3D FDTD.",
+    "Spec: a 20\\,$\\mu$m spatial mode. Each device is lengthened until its peak transmission is $-3$\\,dB, and $Q$ is compared there.",
+    "Materials are lossless, so every gain in $Q$ is a reduction of radiation.",
+    "Both polarizations were studied; the useful levers differ between them."
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "Bottom line",
+   "vspace_top_cm": 0.3,
+   "itemsep_cm": 0.5,
+   "items": [
+    "Plain TE and TM gratings reach the same $Q$ at the operating point.",
+    "Every change to the teeth trades loss against mode width; only the cavity and lateral structures escape that trade.",
+    "TM radiates in the propagation plane, so an air trench or a row of SiN posts beside the guide raises its $Q$ by about a third. TE does not respond.",
+    "Inverse design of the innermost teeth at a fixed width gives about 6$\\times$; it is in progress and still below the lab's overshoot apodization."
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "TE: apodization and tooth shifts",
+   "vspace_top_cm": 0.2,
+   "itemsep_cm": 0.4,
+   "items": [
+    "\\textbf{Linear apodization} cuts loss but widens the mode; \\textbf{tanh} apodization widens less for the same gain.",
+    "The lab's \\textbf{overshoot apodization} is a different regime: the corrugation overshoots, then settles. It is the strongest lever known; only its amplitude sets the mode width.",
+    "\\textbf{Shifting the innermost teeth} outward cuts loss with the mode width unchanged: the shifted teeth recycle light that would leak at the cavity, and the far field collapses to one lobe.",
+    "\\textbf{Two tooth inverse design} (particle swarm on the two innermost teeth and the cavity) gave the best transmission per unit width; a gradient method was not needed. Fabricated devices confirmed the shift range."
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "TE versus TM",
+   "vspace_top_cm": 0.3,
+   "itemsep_cm": 0.5,
+   "items": [
+    "At equal length TM couples more weakly to the corrugation: less loss, lower $Q$, wider mode.",
+    "TM can therefore be made longer; at equal peak transmission its $Q$ is about three times higher.",
+    "At the operating point the two plain gratings tie.",
+    "TM radiates in the propagation plane, TE upward. That is why the lateral levers below work only for TM."
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "TM: the teeth behave as in TE, with one difference",
+   "vspace_top_cm": 0.3,
+   "itemsep_cm": 0.5,
+   "items": [
+    "Apodization cuts loss and widens the mode, as in TE.",
+    "A large innermost tooth shift raises transmission but widens the mode, with no optimum: TM does not recycle at the cavity.",
+    "Small shifts spread over many teeth do help, but only inside the width constrained inverse design.",
+    "A wider cavity cuts loss without widening the mode; fancier cavity shapes add nothing."
+   ]
+  },
+  {
+   "type": "figure_left",
+   "title": "TM: an air trench raises $Q$ by a third",
+   "image": "trench_cross_sections.png",
+   "split": [
+    0.56,
+    0.42
+   ],
+   "image_width": 1.0,
+   "parsep_cm": 0.35,
+   "text": [
+    "An air trench beside the guide returns the in plane radiation by total internal reflection. Transmission and $Q$ rise; the mode width is unchanged.",
+    "A trench stopping at the core top keeps about 60\\,\\% of the gain in a single lithography step.",
+    "A deep trench conflicts with the PDMS cover of the acoustic sensor, which motivated the post rows."
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "TM: a row of SiN posts does the trench's job",
+   "vspace_top_cm": 0.3,
+   "itemsep_cm": 0.5,
+   "items": [
+    "A periodic row of posts in the cladding is a weak grating for the guided light; its period sets the angle of the beam it sends out, $n_\\text{clad}\\sin\\theta = n_\\text{eff} - \\lambda/\\Lambda$.",
+    "With the period chosen so that beam lands on the radiation lobe, sliding the row along the guide sets the interference phase: at one phase the lobe is cancelled, at the opposite phase it grows.",
+    "At the first phase we tried the row hurt; sweeping the phase found the cancelling one, and there the row matches the trench.",
+    "A second row on the other side of the cavity adds only a few percent, and a third adds nothing: the guided power far from the cavity is too weak to cancel with."
+   ]
+  },
+  {
+   "type": "chart",
+   "title": "$Q$ at the operating point",
+   "width": 0.8,
+   "height": 0.66,
+   "chart": {
+    "kind": "hbar",
+    "categories": [
+     "plain, TE",
+     "plain, TM",
+     "SiN post row, TM",
+     "air trench, half depth, TM",
+     "SiN post rows, TM",
+     "air trench, full depth, TM",
+     "lab overshoot, TM",
+     "inverse design, TM",
+     "lab overshoot, TE (projected)"
+    ],
+    "series": [
+     {
+      "name": "Q",
+      "values": [
+       12903,
+       13930,
+       16203,
+       16942,
+       18093,
+       18777,
+       35000,
+       88868,
+       250000
+      ]
+     }
+    ],
+    "y_log": true,
+    "y_min": 10000,
+    "y_max": 1000000,
+    "y_label": "loaded Q (log scale)",
+    "show_values": true,
+    "value_format": "#,##0",
+    "legend": false,
+    "aspect": 1.5,
+    "gap_pct": 40,
+    "size": "scriptsize",
+    "label_frequency": 1
+   },
+   "caption": "Every device at a 20\\,$\\mu$m mode and $-3$\\,dB peak, 350\\,nm SiN core, $\\lambda \\approx 1560$\\,nm. The lab's TE overshoot is projected from its measured intrinsic $Q$ (2 to 3.4$\\times10^{5}$), not simulated at $-3$\\,dB."
+  },
+  {
+   "type": "bullets",
+   "title": "What does not work",
+   "vspace_top_cm": 0.3,
+   "itemsep_cm": 0.5,
+   "items": [
+    "Reflectors of every kind: SiN Bragg walls, photonic crystal walls, metal mirrors, retro reflecting post rows.",
+    "Holes inside the core; Huygens and Kerker scatterers; bound state pairs.",
+    "A second cavity beside the first; shaped trenches; exotic innermost teeth; spreading the $\\pi$ shift over many gaps.",
+    "All measured, all null or harmful. Radiation in TM is spread along the arms, so nothing local to the cavity can remove it."
+   ]
+  },
+  {
+   "type": "bullets",
+   "title": "Inverse design: in progress",
+   "vspace_top_cm": 0.3,
+   "itemsep_cm": 0.5,
+   "items": [
+    "3D adjoint optimization of the 25 innermost teeth per side (depth, width, shift) and the cavity, TM, with the post row included.",
+    "Cost: peak transmission at a fixed mode width and a fixed resonance. Both are held by projecting each gradient step, after simpler width penalties failed.",
+    "It improves steadily; the design so far is a gentle rise in corrugation toward the arms, and the posts do not move.",
+    "About 6$\\times$ the plain grating at the operating point, still below the lab's TE overshoot. Next: more free teeth, then a TE run seeded from the overshoot profile."
+   ]
+  },
+  {
+   "type": "table",
+   "title": "Status",
+   "size": "small",
+   "arraystretch": 1.4,
+   "vspace_top_cm": 0.1,
+   "header": [
+    "direction",
+    "status",
+    "verdict"
+   ],
+   "align": [
+    "l",
+    "c",
+    "l"
+   ],
+   "col_widths": [
+    0.36,
+    0.16,
+    0.48
+   ],
+   "rows": [
+    [
+     "apodization, tooth shifts",
+     "closed",
+     "work, at a cost in width"
+    ],
+    [
+     "two tooth inverse design (TE)",
+     "closed",
+     "best transmission per width"
+    ],
+    [
+     "cavity width (TM)",
+     "closed",
+     "cuts loss, width unchanged"
+    ],
+    [
+     "air trench (TM)",
+     "closed",
+     "$Q$ up a third, deep etch"
+    ],
+    [
+     "SiN post rows (TM)",
+     "closed",
+     "$Q$ up a third, same litho"
+    ],
+    [
+     "reflectors, holes, scatterers",
+     "closed",
+     "null or harmful"
+    ],
+    [
+     "25 tooth inverse design (TM)",
+     "in progress",
+     "about 6$\\times$, below lab overshoot"
+    ]
+   ]
+  }
+ ]
+}

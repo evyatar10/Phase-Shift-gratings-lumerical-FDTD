@@ -57,7 +57,7 @@ outputs.
 - **Never rename** `single/`, `tm/`, `sweeps/`, or the four optimization directories —
   hardcoded in `deploy_athena.sh`. A new category needs three edits: picker block +
   menu entry in `deploy_athena.sh`, and `_AUTO_DIRS` in BOTH `athena/scripts/athena_run.py`
-  and `dgx/scripts/athena_run.py`.
+  and `igum/scripts/athena_run.py`.
 - **rsync `--delete`**: moving/deleting a local file removes it from the server's
   `project/runners/` on the next deploy (server `results/` are safe).
 

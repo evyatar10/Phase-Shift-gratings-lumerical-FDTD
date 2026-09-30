@@ -34,19 +34,6 @@
             "problemMatcher": []
         },
         {
-            "label": "DGX",
-            "type": "shell",
-            "command": "bash",
-            "args": ["-c", "${input:dgxAction}"],
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "Zeus",
             "type": "shell",
             "command": "bash",
@@ -88,19 +75,6 @@
                 {"label": "Upload only (no submit)",                                "value": "bash igum/deploy_igum.sh --upload-only"},
                 {"label": "Download results",                                       "value": "bash igum/deploy_igum.sh --results"},
                 {"label": "SSH into IGUM",                                          "value": "ssh igum"}
-            ]
-        },
-        {
-            "id": "dgxAction",
-            "type": "pickString",
-            "description": "DGX — pick action:",
-            "options": [
-                {"label": "Deploy — FSP job (local .fsp → engine on DGX)",          "value": "bash dgx/deploy_dgx.sh --option1"},
-                {"label": "Deploy — Python pipeline",                               "value": "bash dgx/deploy_dgx.sh --option2"},
-                {"label": "Watch job status (no deploy)",                           "value": "bash dgx/deploy_dgx.sh --watch-only"},
-                {"label": "Upload only (no submit)",                                "value": "bash dgx/deploy_dgx.sh --upload-only"},
-                {"label": "Download results",                                       "value": "bash dgx/deploy_dgx.sh --results"},
-                {"label": "SSH into DGX",                                           "value": "ssh dgx"}
             ]
         },
         {

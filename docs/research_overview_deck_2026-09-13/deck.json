@@ -1,0 +1,695 @@
+{
+ "meta": {
+  "title": "$\\pi$ Shift Bragg Grating for Acousto Optic Sensing: Research Overview",
+  "short_title": "$\\pi$ Shift Grating: Overview",
+  "subtitle": "Maximizing $Q$ at a fixed 20\\,$\\mu$m mode and $-3$\\,dB insertion loss, November 2025 to September 2026",
+  "author": "Evyatar Rubin",
+  "short_author": "Evyatar Rubin",
+  "author_line2": "Research Overview",
+  "date": "September 13, 2026"
+ },
+ "frames": [
+  {
+   "type": "title"
+  },
+  {
+   "type": "bullets",
+   "title": "Only cavity local changes escape the loss versus width trade",
+   "vspace_top_cm": 0.05,
+   "itemsep_cm": 0.18,
+   "items": [
+    "\\textbf{Goal:} a $\\pi$ shift Bragg grating with a fixed \\textbf{20\\,$\\mu$m} mode, maximizing $Q$ at \\textbf{$-3$\\,dB}. Materials are lossless, so every lever manages radiation.",
+    "\\textbf{Teeth:} apodization, tooth shifts and tooth shapes all reduce loss \\emph{and} widen the mode. Only cavity local changes, new scatterers and the lab's overshoot apodization escape.",
+    "\\textbf{TE and TM} plain gratings tie at the operating point (13k). TM radiates in the propagation plane and responds to lateral structures (trench +35\\,\\%, circle rows +30\\,\\%); TE does not.",
+    "\\textbf{Inverse design} (25 free teeth per side, width held fixed) is the largest measured gain: $Q = 88.9$k, 6.4$\\times$ plain. Still below the lab's TE overshoot (projected $2$ to $3.4\\times10^{5}$); in progress.",
+    "\\textbf{Dead ends,} all measured: reflectors of every kind, in core hole lattices, BIC and Kerker scatterers, a second cavity, shaped trenches, exotic teeth."
+   ]
+  },
+  {
+   "type": "table",
+   "title": "At 20\\,$\\mu$m and $-3$\\,dB the inverse design leads by 6.4$\\times$",
+   "size": "scriptsize",
+   "arraystretch": 1.06,
+   "vspace_top_cm": 0.0,
+   "header": [
+    "device",
+    "pol",
+    "corr / $N$",
+    "$T$",
+    "$Q$",
+    "gain",
+    "mode"
+   ],
+   "align": [
+    "l",
+    "c",
+    "c",
+    "c",
+    "c",
+    "c",
+    "c"
+   ],
+   "col_widths": [
+    0.27,
+    0.06,
+    0.15,
+    0.08,
+    0.21,
+    0.12,
+    0.11
+   ],
+   "rows": [
+    [
+     "plain grating",
+     "TE",
+     "250 / 166",
+     "0.492",
+     "\\textbf{12,903}",
+     "",
+     "20.5"
+    ],
+    [
+     "plain grating",
+     "TM",
+     "325 / 165",
+     "0.491",
+     "\\textbf{13,930}",
+     "",
+     "20.0"
+    ],
+    [
+     "+ circle row, 57 posts, $r$ 80",
+     "TM",
+     "325 / 169",
+     "0.496",
+     "\\textbf{16,203}",
+     "+16\\,\\%",
+     "19.9"
+    ],
+    [
+     "+ air trench, half depth",
+     "TM",
+     "325 / 168",
+     "0.502",
+     "\\textbf{16,942}",
+     "+22\\,\\%",
+     "19.7"
+    ],
+    [
+     "+ circle row, 61 posts, $r$ 110",
+     "TM",
+     "325 / 171",
+     "0.506",
+     "\\textbf{17,557}",
+     "+26\\,\\%",
+     "19.8"
+    ],
+    [
+     "+ circle pair, 31 + 31 posts",
+     "TM",
+     "325 / 172",
+     "0.500",
+     "\\textbf{18,093}",
+     "+30\\,\\%",
+     "19.8"
+    ],
+    [
+     "+ air trench, full depth",
+     "TM",
+     "325 / 170",
+     "0.502",
+     "\\textbf{18,777}",
+     "+35\\,\\%",
+     "19.6"
+    ],
+    [
+     "lab overshoot apodization",
+     "TM",
+     "lab / 189",
+     "0.528",
+     "\\textbf{34k to 36k}",
+     "2.6$\\times$",
+     "20.3"
+    ],
+    [
+     "inverse design + circles",
+     "TM",
+     "358 / 220",
+     "0.499",
+     "\\textbf{88,868}",
+     "6.4$\\times$",
+     "19.9"
+    ],
+    [
+     "lab overshoot (projected)",
+     "TE",
+     "lab profile",
+     "---",
+     "\\textbf{$2.0$ to $3.4\\times10^{5}$}",
+     "15 to 26$\\times$",
+     "19.7"
+    ]
+   ],
+   "note": "SiN 1.97 / SiO$_2$ 1.444, 350\\,nm core, corrugation in nm, $\\lambda \\approx 1560$\\,nm; each device lengthened until $T = 0.5$ at 20 $\\pm$ 1\\,$\\mu$m, where $Q(-3\\,\\text{dB}) \\approx 0.29\\,Q_i$ is set by radiation alone. Overshoot rows are the lab's profile: TM interpolated to $T = 0.5$, TE projected from measured $Q_i$.",
+   "note_size": "scriptsize",
+   "note_gap_cm": 0.2
+  },
+  {
+   "type": "chart",
+   "title": "Three tiers: lateral structures, inverse design, TE overshoot",
+   "width": 0.66,
+   "height": 0.72,
+   "chart": {
+    "kind": "hbar",
+    "categories": [
+     "plain (TE)",
+     "plain (TM)",
+     "circle row 57 (TM)",
+     "half trench (TM)",
+     "circle row 61 (TM)",
+     "circle pair (TM)",
+     "full trench (TM)",
+     "TM overshoot",
+     "inverse design (TM)",
+     "TE overshoot (proj.)"
+    ],
+    "series": [
+     {
+      "name": "Q",
+      "values": [
+       12903,
+       13930,
+       16203,
+       16942,
+       17557,
+       18093,
+       18777,
+       35000,
+       88868,
+       270000
+      ]
+     }
+    ],
+    "y_log": true,
+    "y_min": 10000,
+    "y_max": 1000000,
+    "y_label": "loaded Q (log scale)",
+    "show_values": true,
+    "value_format": "#,##0",
+    "legend": false,
+    "aspect": 1.15,
+    "gap_pct": 35,
+    "size": "tiny",
+    "label_frequency": 1
+   },
+   "caption": "Loaded $Q$ at the operating point. The two overshoot bars are the lab's profile, not ours: TM interpolated to $T = 0.5$, TE the midpoint of the projected $2.0$ to $3.4\\times10^{5}$ range, never measured at $-3$\\,dB."
+  },
+  {
+   "type": "table",
+   "title": "TE: apodization cuts loss most and widens the mode most",
+   "size": "footnotesize",
+   "arraystretch": 1.15,
+   "vspace_top_cm": 0.1,
+   "header": [
+    "lever (TE)",
+    "peak $T$",
+    "mode width",
+    "remark"
+   ],
+   "align": [
+    "l",
+    "c",
+    "c",
+    "l"
+   ],
+   "col_widths": [
+    0.26,
+    0.13,
+    0.13,
+    0.48
+   ],
+   "rows": [
+    [
+     "linear apodization",
+     "up strongly",
+     "up strongly",
+     "10 apodized periods per side: mode 15 to 20\\,$\\mu$m"
+    ],
+    [
+     "tanh apodization",
+     "same as linear",
+     "up, less",
+     "same $T$ for a tighter mode"
+    ],
+    [
+     "apodized period count",
+     "saturates",
+     "saturates",
+     "5 $\\approx$ 10; 20 to 40 add nothing; slight resonance shift"
+    ],
+    [
+     "overshoot apodization (lab's model)",
+     "set by period count",
+     "set by amplitude",
+     "not a taper: overshoots to $\\sim$2.4$\\times$ bulk, dips, settles; $Q_i$ $\\sim$15$\\times$ ours in TE, 2.6$\\times$ in TM"
+    ]
+   ],
+   "note": "Directions at equal period count. Apodization removes the abrupt envelope corner at the cavity, which radiates like an antenna; the far field drops one to two orders of magnitude with 10 apodized periods. The overshoot profile is the strongest lever on the table and we did not invent it.",
+   "note_size": "footnotesize",
+   "note_gap_cm": 0.35
+  },
+  {
+   "type": "table",
+   "title": "TE: the innermost tooth shift cuts loss at no width cost",
+   "size": "footnotesize",
+   "arraystretch": 1.15,
+   "vspace_top_cm": 0.1,
+   "header": [
+    "lever (TE)",
+    "peak $T$",
+    "mode width",
+    "verdict"
+   ],
+   "align": [
+    "l",
+    "c",
+    "c",
+    "l"
+   ],
+   "col_widths": [
+    0.28,
+    0.12,
+    0.15,
+    0.45
+   ],
+   "rows": [
+    [
+     "innermost pair shifted outward (100 to 140\\,nm plateau)",
+     "up",
+     "unchanged",
+     "loss down at no width cost; $Q$ rises modestly"
+    ],
+    [
+     "shift + one tooth apodization",
+     "up further",
+     "unchanged",
+     "most of a full apodization's $T$ at a much tighter mode"
+    ],
+    [
+     "two teeth + cavity width, PSO (5 parameters)",
+     "best per width",
+     "slightly wider",
+     "gradient not needed; experiment confirms the shift range, $Q$ 1.3 to 1.5$\\times$ simulation"
+    ],
+    [
+     "exotic innermost tooth shapes",
+     "$\\sim$flat",
+     "---",
+     "ceiling $\\Delta T \\approx$ +0.001 to +0.006 beyond the shift"
+    ]
+   ],
+   "note": "The shift tunes the innermost reflection to the cavity round trip, $\\mathrm{arg}(r) + k_0\\, n_\\text{eff}\\, L_\\text{cav} = 0$, redirecting light that would leak at the cavity corner into the mode. A $k$ space budget sets the ceiling: only $\\sim$15\\,\\% of the radiated power originates within one tooth of the cavity.",
+   "note_size": "footnotesize",
+   "note_gap_cm": 0.3
+  },
+  {
+   "type": "table",
+   "title": "TE and TM tie at the operating point but radiate differently",
+   "size": "footnotesize",
+   "arraystretch": 1.15,
+   "vspace_top_cm": 0.1,
+   "header": [
+    "comparison",
+    "TE",
+    "TM"
+   ],
+   "align": [
+    "l",
+    "l",
+    "l"
+   ],
+   "col_widths": [
+    0.28,
+    0.27,
+    0.45
+   ],
+   "rows": [
+    [
+     "same length (80 periods)",
+     "more lossy, higher $Q$, narrower",
+     "3$\\times$ weaker coupling: less lossy, lower $Q$, wider"
+    ],
+    [
+     "matched peak $T$",
+     "80 periods",
+     "132 periods, and then $Q$ 2.9$\\times$ TE's"
+    ],
+    [
+     "matched mode width",
+     "300\\,nm corrugation, 15.5\\,$\\mu$m",
+     "400\\,nm corrugation"
+    ],
+    [
+     "20\\,$\\mu$m / $-3$\\,dB point",
+     "$Q$ = 12,903",
+     "$Q$ = 13,930 (+8\\,\\%)"
+    ],
+    [
+     "radiation direction",
+     "upward, broad cone",
+     "$\\sim$60\\,\\% in the propagation plane, sharp lobe 11 to 12$^\\circ$ off axis"
+    ],
+    [
+     "lateral structures",
+     "null",
+     "$Q$ +22 to +35\\,\\%"
+    ]
+   ],
+   "note": "The TM mode has half the TE margin in $k$ space to the cladding light line ($n_\\text{eff} - n_\\text{clad}$ smaller), so envelope changes radiate more easily; the 350 $\\times$ 800\\,nm core is past the aspect ratio where the TM bandgap weakens.",
+   "note_size": "footnotesize",
+   "note_gap_cm": 0.35
+  },
+  {
+   "type": "table",
+   "title": "TM: tooth level detuning always widens; narrowing is under 1\\,\\%",
+   "size": "footnotesize",
+   "arraystretch": 1.15,
+   "vspace_top_cm": 0.05,
+   "header": [
+    "lever (TM)",
+    "loss",
+    "mode width",
+    "verdict"
+   ],
+   "align": [
+    "l",
+    "c",
+    "c",
+    "l"
+   ],
+   "col_widths": [
+    0.3,
+    0.1,
+    0.14,
+    0.46
+   ],
+   "rows": [
+    [
+     "linear / tanh apodization",
+     "down",
+     "up a lot",
+     "+15\\,\\% (5), +26\\,\\% (10), +49\\,\\% (20 apodized periods); tanh widens less"
+    ],
+    [
+     "large innermost tooth shift",
+     "down",
+     "up (+5\\,\\%)",
+     "no optimum; the loss lives in the arms"
+    ],
+    [
+     "$\\pi$ shift spread over many gaps",
+     "up",
+     "---",
+     "20 to 40\\,\\% worse than the lumped shift"
+    ],
+    [
+     "wider cavity (800 to 1050\\,nm)",
+     "$-$30\\,\\%",
+     "+0.6\\,\\%",
+     "cheapest loss lever"
+    ],
+    [
+     "+ see saw on the two inner teeth",
+     "$-$31\\,\\%",
+     "+0.8\\,\\%",
+     "fancier cavity shapes null or worse; mirror symmetry is optimal"
+    ]
+   ],
+   "note": "The envelope decays as $\\exp(-\\int q\\,dx)$ with $q = \\sqrt{\\kappa^2 - \\delta^2} \\le \\kappa$: any tooth level detuning $\\delta$ can only lower $q$ and widen the mode. Narrowing needs $\\kappa$ raised near the centre, which only cavity local changes or new scatterers can do; every measured narrowing is under 1\\,\\% (trench $-$0.9\\,\\%, circle row $-$0.4\\,\\%).",
+   "note_size": "footnotesize",
+   "note_gap_cm": 0.28
+  },
+  {
+   "type": "figure_left",
+   "title": "TM: an air trench raises $Q$ by 35\\,\\% without widening the mode",
+   "image": "trench_cross_sections.png",
+   "split": [
+    0.54,
+    0.44
+   ],
+   "image_width": 0.96,
+   "parsep_cm": 0.22,
+   "text": [
+    "A trench 1.8\\,$\\mu$m from the guide is the first lever that raises $T$ with the mode width unchanged or slightly narrower ($-$0.9\\,\\%): $Q$ \\textbf{+35\\,\\%} (full depth) or \\textbf{+22\\,\\%} (stopping at the core top, single lithography).",
+    "Total internal reflection at the oxide to air wall (lobe at $\\sim$79$^\\circ$, critical angle $\\sim$44$^\\circ$) shrinks the in plane light cone; a metal wall at the same place gives an equal loss, so it is the low index wall, not a mirror.",
+    "A straight wall is optimal; shaped trenches measured worse. TE null. The deep etch conflicts with the PDMS acoustic cover, which motivated the circles."
+   ]
+  },
+  {
+   "type": "two_plots",
+   "title": "TM: a SiN post row matches the trench in one lithography step",
+   "images": [
+    "comb_phase_scan.png",
+    "comb_period_scan.png"
+   ],
+   "image_width": 0.9,
+   "caption": "The post row ($r \\approx 80$ to 110\\,nm, 1.8\\,$\\mu$m from the guide) is a weak grating for the guided carrier and out couples a beam at $n_\\text{clad}\\sin\\theta = n_\\text{eff} - \\lambda/\\Lambda$; at the cutoff $\\Lambda_c = \\lambda/(n_\\text{eff}+n_\\text{clad}) \\approx 531$\\,nm it lands on the lobe, and sliding the row along $x$ sets the phase $\\varphi = 360^\\circ\\,\\delta x/\\Lambda$. Left: $T$ follows a sinusoid in $\\varphi$ (lobe $\\times$2.2 at 90$^\\circ$, $\\times$0.45 at 270$^\\circ$); at 0$^\\circ$, where we started, the row hurts. Right: at 270$^\\circ$ the period sweep peaks near 530\\,nm; an air hole version flips the sign."
+  },
+  {
+   "type": "figure_left",
+   "title": "TM: a second post row adds 3\\,\\%; rows are designed analytically",
+   "image": "fig8_pair_triple.png",
+   "split": [
+    0.56,
+    0.42
+   ],
+   "image_width": 1.0,
+   "parsep_cm": 0.18,
+   "text": [
+    "At the operating point: +16\\,\\% (57 posts, $r$ 80), +26\\,\\% (61 posts, $r$ 110), +30\\,\\% (pair at $\\pm$12\\,$\\mu$m), on par with the full trench; width $-$0.4\\,\\%.",
+    "A row's cost is set by its two ends, its gain by the carrier it sees: the pair is nearly additive at $N = 80$ (figure) but only +3\\,\\% over one long row at the operating point; a third row adds nothing. Stacked rows, more rows in $y$, radius apodization: null or worse.",
+    "Circles do not stack with apodization, which already removes the lobe, but do stack with the inverse design. Freed there, they drifted under 1\\,nm: their optimum is separable from the teeth."
+   ]
+  },
+  {
+   "type": "table",
+   "title": "Only the phase set post row cancels; every reflector fails",
+   "size": "footnotesize",
+   "arraystretch": 1.2,
+   "vspace_top_cm": 0.05,
+   "header": [
+    "concept",
+    "outcome",
+    "why"
+   ],
+   "align": [
+    "l",
+    "c",
+    "l"
+   ],
+   "col_widths": [
+    0.4,
+    0.12,
+    0.48
+   ],
+   "rows": [
+    [
+     "phase controlled SiN circle row",
+     "works",
+     "first phase controlled far field cancellation"
+    ],
+    [
+     "air trench",
+     "works",
+     "light cone shrinking, not interference"
+    ],
+    [
+     "2 post SiN pair (Green's function placed)",
+     "dropped",
+     "near field cavity widening, +0.02 in $T$ only"
+    ],
+    [
+     "period matched retro reflecting combs",
+     "null",
+     "transparent, $\\pm$0.001"
+    ],
+    [
+     "metal / PEC mirrors",
+     "harmful",
+     "equal magnitude loss at the trench position"
+    ],
+    [
+     "SiN DBR / photonic crystal walls",
+     "harmful",
+     "partial gap; reflected light never re couples"
+    ],
+    [
+     "in core SiO$_2$ hole lattices",
+     "harmful",
+     "kill the resonance"
+    ],
+    [
+     "Huygens / Kerker scatterers, BIC pairs",
+     "harmful",
+     "all raise loss"
+    ],
+    [
+     "second parallel cavity",
+     "harmful",
+     "drains, never recycles"
+    ]
+   ]
+  },
+  {
+   "type": "figure_left",
+   "title": "Inverse design: 25 free teeth per side at a fixed mode width",
+   "image": "tooth_profiles.png",
+   "split": [
+    0.5,
+    0.48
+   ],
+   "image_width": 0.98,
+   "parsep_cm": 0.22,
+   "text": [
+    "3D adjoint optimization (lumopt2) on a 100 period per side TM surrogate. \\textbf{191 parameters}: depth, width and shift of the 25 innermost teeth per side (mirrored), cavity width, and the circle row (frozen in practice).",
+    "Cost: peak transmission. Hard constraints: mode width inside a $\\pm$2\\,\\% band and a fixed resonance; the gradient step is projected so it changes neither. $Q$ is never in the cost: at fixed width the loaded $Q$ is pinned, so every $T$ gain is a radiation $Q$ gain.",
+    "The optimized profile rises gently over the 25 free teeth (325 to $\\sim$364\\,nm), a mild version of the lab's overshoot."
+   ]
+  },
+  {
+   "type": "table",
+   "title": "Inverse design: projecting on width and resonance works",
+   "size": "footnotesize",
+   "arraystretch": 1.15,
+   "vspace_top_cm": 0.05,
+   "header": [
+    "attempt",
+    "outcome"
+   ],
+   "align": [
+    "l",
+    "l"
+   ],
+   "col_widths": [
+    0.34,
+    0.66
+   ],
+   "rows": [
+    [
+     "$\\sigma$ (second moment) width proxy",
+     "failed silently: true FWHM grew 15\\,\\% while $\\sigma$ held"
+    ],
+    [
+     "penalty only cost",
+     "failed twice: width drifts to the band edge"
+    ],
+    [
+     "projection on width alone",
+     "failed: the resonance drifted and dragged the width"
+    ],
+    [
+     "projection on width and resonance",
+     "works: seed $T$ 0.90 to 0.964 (hand re trim) to 0.968 machine driven, resonance held, $Q_i$ 110k to 124k"
+    ],
+    [
+     "0.964 class design at 20\\,$\\mu$m / $-3$\\,dB",
+     "\\textbf{$Q$ = 88,868} at $N$ = 220, 6.4$\\times$ plain TM (3 samples per linewidth)"
+    ],
+    [
+     "status",
+     "paused: optimizer housekeeping bugs, not physics; fixes written, not yet redeployed"
+    ]
+   ],
+   "note": "Ranked next: restart; free 60 teeth instead of 25; free the circle row as a separate arm; a TE lane seeded from the overshoot profile, since TM $Q_i$ is capped near 150k to 250k by its light cone margin and the lab's TE $Q_i$ is 7 to 13$\\times$ ours. The optimizer's mesher reads the width band as $\\sim$18.3\\,$\\mu$m, $\\sim$20\\,$\\mu$m in the standard mesher; never mix them.",
+   "note_size": "footnotesize",
+   "note_gap_cm": 0.28
+  },
+  {
+   "type": "table",
+   "title": "Status: lateral levers closed, inverse design is the open lane",
+   "size": "scriptsize",
+   "arraystretch": 1.1,
+   "vspace_top_cm": 0.05,
+   "header": [
+    "direction",
+    "pol",
+    "status",
+    "verdict"
+   ],
+   "align": [
+    "l",
+    "c",
+    "c",
+    "l"
+   ],
+   "col_widths": [
+    0.34,
+    0.1,
+    0.14,
+    0.42
+   ],
+   "rows": [
+    [
+     "linear / tanh apodization",
+     "TE, TM",
+     "done",
+     "works; widens the mode; tanh widens less"
+    ],
+    [
+     "overshoot apodization (lab's model)",
+     "TE, TM",
+     "not ours",
+     "strongest known lever, TE $\\gg$ TM"
+    ],
+    [
+     "innermost tooth shift",
+     "TE, TM",
+     "done",
+     "TE: loss down, width constant; TM: widens"
+    ],
+    [
+     "2 tooth inverse design (PSO)",
+     "TE",
+     "closed",
+     "best $T$ per width at the time; 5 parameters"
+    ],
+    [
+     "cavity width + inner see saw",
+     "TM",
+     "closed",
+     "$-$30\\,\\% loss at under 1\\,\\% width"
+    ],
+    [
+     "air trench",
+     "TM",
+     "closed",
+     "$Q$ +35\\,\\% (full) / +22\\,\\% (half); TE null; fab conflict"
+    ],
+    [
+     "SiN circle row(s)",
+     "TM",
+     "closed",
+     "$Q$ +30\\,\\%, same litho step; ties the full trench"
+    ],
+    [
+     "reflectors, mirrors, hole lattices, BIC / Kerker, second cavity, exotic teeth",
+     "TM",
+     "closed",
+     "all null or harmful"
+    ],
+    [
+     "25 tooth adjoint inverse design, width constrained",
+     "TM",
+     "paused",
+     "$Q$ 88.9k, 6.4$\\times$ plain; below the lab's TE overshoot"
+    ],
+    [
+     "predictive engine (CMT calibrated)",
+     "both",
+     "validated",
+     "one confirmation run replaces tuning ladders"
+    ]
+   ]
+  }
+ ]
+}

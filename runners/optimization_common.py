@@ -9,7 +9,7 @@ smoke tests, 80 for production). Before this module existed the 8-line block
 was copy-pasted into all 8 spec files; consolidating it here keeps the
 smoke/production configs from silently drifting apart.
 
-Deploy-safety note (Athena/DGX menu contract):
+Deploy-safety note (Athena/IGUM menu contract):
   This module lives at runners/ root deliberately. The deploy scripts'
   study menus grep runners/<family>/*.py for the literal text "SPEC ="
   (and runners/single/*.py for a top-level `run` callable) — the runners/

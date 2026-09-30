@@ -118,5 +118,6 @@
         ]
       }
     ]
-  }
+  },
+  "outputStyle": "Concise"
 }

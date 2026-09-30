@@ -245,6 +245,7 @@ The trenches win on Q but require a deep etch.
 | full-device-length comb | worse than 41–53 posts | §5.3 |
 | comb on an apodized device | does **not** transfer: T 0.9723 vs apod-10 control 0.9770 | `scat_v_apodcomb` |
 | in-core oxide holes (inverted posts) | harmful: 0.8460 / 0.8654 / 0.5438 | `scat_x_incore` |
+| in-core oxide comb, full phase x period x count grid (2026-09-14/15, Athena 148812 / 149355 / 149982, r 80 / y 250 / 31 holes) | same circle SHAPE as the SiN comb (best 270°, worst 90°; Λ536 fit swing 0.165 vs SiN 0.026). At 270° T rises monotonically as Λ falls and PEAKS at **Λ 524: T 0.9280** (520: 0.9173, 527: 0.9000, 515: 0.831, 510: 0.745) — ABOVE ctrl 0.8851 and above the best SiN comb (0.8967 @530). CAVEAT (§2 sanity): the in-core rows are NOT width-neutral — resonance shifts to 1555.6-1557 nm and the spatial mode width moves 15.5 → 23.0 µm (524) / 24.8 (527) / 12.0 (510); resonant loss 0.11 → 0.067. Candidate, single-family, unconverged vs the fixed-width spec. Count does not recover at Λ531 (3/9/31 holes all ~0.85-0.86). r 110 at the same point (job 150391): T 0.8869, λ 1554.17, width 28.2 µm, loss 0.101 — bigger holes push the width/λ lever further but T falls back to ctrl (overdrive). r 50 at the same point (job 150429, one mesh cell at dx 50 — staircased, candidate until checked at accurate mesh): T 0.9244, λ 1557.80, spectral FWHM 1.207 (Q 1290), width 18.5 µm, loss 0.073 — keeps ~90% of the r 80 T gain while the width penalty drops from +7.5 to +3.0 µm and the λ shift from −2.3 to −0.8 nm; radius is a monotone width/λ lever (r50 18.5 / r80 23.0 / r110 28.2 µm) with T peaking near r 50-80. Radius series completed with r 40 / r 30 (job 150458, sub-cell at dx 50, trend only): r30 T 0.9008 / λ 1558.41 / Q 1320 / w 16.40 µm / loss 0.096; r40 0.9113 / 1558.17 / 1309 / 17.23 / 0.086. So along r = 30→50→80 the width closes smoothly toward the ctrl (15.5) while T falls smoothly toward the ctrl (0.885): ΔT/Δwidth is ~constant ≈ +0.018 per µm of extra width, i.e. the in-core comb buys T by the SAME lever that widens the mode — there is no radius at which the T gain survives at ctrl width. EQUAL-WIDTH TEST (job 150488, `scat_x8_incore_r50_c477`): r 50 holes + corr raised 400→477 (q3db knob line) landed the width at 15.39 µm (target 15.5, knob good to 1%) but T 0.7922 / λ 1556.24 / Q_L 2102 / loss 0.193 / Q_i 19.1k vs plain ctrl 0.8851 / 1327 / 0.111 / Q_i 22.4k at 15.53 µm. Decomposition: Q_c 1410→2362 (+67%, the deeper corrugation at fixed N=80 strengthens the mirrors — the pre-registered null band 0.87-0.90 missed because it assumed T tracks width only) and Q_i −15% (width-blind, the clean verdict): at matched width the hole comb RADIATES MORE than the plain device. CLOSED NEGATIVE: the in-core T gain was entirely the corr→width lever; the envelope-shape effect of the holes at fixed width is negative. r 50 phase circle at Λ524 (job 150504 + X6): 0° 0.8285 / 90° 0.7846 / 180° 0.8293 / 270° 0.9244, fit 0.842 + 0.070·cos(φ−270°) — same optimum phase as r 80 (0.612 + 0.165) and SiN (0.866 + 0.026); amplitude ∝ hole dose, mean level falls with dose. ON-AXIS SINGLE HOLE (y 0, stages X10-X12, jobs 151320/151333/90593/151353, r 30-110 at Λ524/270°): T 0.898/0.907/0.915/0.921/0.923/0.903, width 16.2/16.8/17.4/18.1/20.1/22.8 µm for r 30/40/50/60/80/110 — the same T-vs-width line as the pair (±0.002 at matched width), just a lower dose per radius (axis r 50 ≈ pair r 42). EQUAL-WIDTH TEST #2 (job 151476, `scat_x17_incore_axis_eqwidth`): axis r 60 + corr 465 → width 15.52 (target 15.53, knob exact), T 0.8198, Q_L 1920, Q_c 2121, Q_i 20.3k (−9% vs ctrl 22.4k); axis r 80 + corr 503 → width 15.79, T 0.7490, Q_L 2335, Q_c 2698, Q_i 17.3k (−23%). Both inside the pre-registered bands. q3db-engine extend-mode estimates of the −3 dB device at this width (EXPECTED, single-row anchors, ±10% Q_L): plain corr 400 N≈122 Q_L 6627; axis r 60/c465 N≈107 Q_L 6117 (−8%); pair r 50/c477 N≈103 Q_L 5715 (−14%); axis r 80/c503 N≈97 Q_L 5031 (−24%). Series completed with r 30 @ corr 418 (w 15.34, T 0.8622, Q_L 1512, Q_i 21.2k, −6%) and r 40 @ 433 (w 15.36, T 0.8509, Q_L 1635, Q_i 21.1k, −6%) (job 151664, `scat_x20_incore_axis_eqwidth_r30_40`); engine −3 dB: 6272 (N≈116) / 6258 (N≈113) vs plain 6629 (−5%/−6%). Every in-core hole comb LOWERS the equal-width Q3dB Q (the SiN outer comb raises it +16-30%); the smallest doses lose the least (−5%) and none crosses zero. Partial on-axis phase/period scans (X13 Λ510/515/520/527 @270°, X16 3-hole Λ531 @0°) were cancelled by the user mid-way; the finished rows remain on the servers, not fetched. AXIS r 60 FULL PROGRAM (jobs 151509 Athena + 90726 IGUM, `scat_x18_axis_r60_period_c536` / `scat_x19_axis_r60_phase524`): 270° period scan T 0.837/0.868/0.900/0.921/0.927/0.927/0.919/0.913/0.898/0.876 at Λ510/515/520/524/527/530/534/536/540/545 (optimum 527-530, broader and later than the pair's 524; width 13.6→18.7→16.1 µm tracks T); phase circles Λ524: 0.822/0.772/0.823/0.921, Λ536: 0.811/0.705/0.806/0.913 (0/90/180/270) — same 270° optimum as every comb. REDONE AT THE r 60 OPTIMUM Λ527 (jobs 151686 Athena + 90966 IGUM, `scat_x21_axis_l527_athena` / `scat_x22_axis_l527_igum`): phase circle r 60: 0.823/0.741/0.823/0.927 (0/90/180/270), width 15.5/13.6/15.7/18.6 µm; radius series @270°: r30 0.903/16.3, r40 0.913/17.0, r50 0.923/17.7, r60 0.927/18.6, r80 0.914/21.1, r110 0.856/24.8 (T / µm) — T peaks at r 60 at this period. r 50 phase circle @Λ527 (job 151719): 0.851/0.792/0.852/0.923. EQUAL-WIDTH RESCALES AT Λ527 (jobs 151719 Athena / 91008 IGUM, `scat_x23_axis_l527_r50phase_r30eq` / `scat_x24_axis_l527_r50eq`): r 30 @ corr 421 → w 15.38, T 0.8642, Q_L 1538, Q_c 1654, Q_i 21.8k (−2.6%), engine −3 dB Q 6456 @ N≈116 (−2.6%); r 50 @ corr 456 → w 15.52, T 0.8394, Q_L 1850, Q_c 2019, Q_i 22.1k (−1.5%), engine −3 dB Q 6625 @ N≈110 (0.0%). At the r-60 optimum period the equal-width penalty shrinks to the noise level (≤3%, inside the engine's ±10% band) — NEUTRAL, still no gain; the pair/Λ524 rescales were −6…−24%. Figures `matlab_plotting/studies/plot_axis_r60_summary.m` → results_from_athena/scat_x21_axis_l527_athena/. Plots `matlab_plotting/studies/plot_incore_circle{,_fit}.m` | `scat_x2_incore_circle`, `scat_x3_incore_lamscan`, `scat_x4_incore_below530`, `scat_x5_incore_r110`, `scat_x6_incore_r50`, `scat_x7_incore_r40_r30`, `scat_x8_incore_r50_c477`, `scat_x9_incore_r50_phase`, `scat_x10_incore_r50_axis`, `scat_x11_incore_axis_r30_40_60`, `scat_x12_incore_axis_r80_110`, `scat_x17_incore_axis_eqwidth`, `scat_x18_axis_r60_period_c536`, `scat_x19_axis_r60_phase524`, `scat_x20_incore_axis_eqwidth_r30_40` (+ cancelled `scat_x13..x16`) |
 | air (oxide-index) comb | mechanism study only; π-flip confirmed; device stays SiN | `scat_air_comb` |
 | the 2-pillar pair | **permanently dropped by user order** — "pillars" always means this periodic row | project rule |
 
@@ -255,6 +256,64 @@ the 191 free parameters, **115 are the comb** (57 radii + 57 x-positions + the s
 d), so the optimizer may break the uniform lattice entirely. See
 `runners/lumopt2_design/THEORY.md`. Everything above is the *hand-designed* comb that
 seeds it.
+
+## 7b. ★2026-09-11 — physics-first rethink: read `docs/comb_physics_rethink_2026-09-11.md`
+
+A validated k-space interference model (`python_tools/comb_kspace_model.py`, calibrated on
+13 stored rows, 27/37 blind cladding-comb rows within 2× the noise floor) re-reads this
+whole file. What changes: (1) the "needle at ux = 0.98" of §1/§4 was the far-field
+monitor's clipping edge — the leak piles up at the horizon and the correct aim is the
+cutoff Λ_c = λ/(n_eff + n_clad) = 530.6 nm, which is why the T-plateau sits at 530–532 and
+not at 536; (2) the r²-vs-r⁴ budget of §5.5 is ordinary two-channel interference (own
+emission ∝ a², interference ∝ a) — the comb was at its amplitude optimum, ceiling
+η²P_n = S²/4P_c = +0.011 from the stage-R circle alone; (3) the part of the leak the comb
+interferes with behaves as top-going, so a second row at any standoff is amplitude only —
+§6's "second row" verdict is confirmed with a mechanism, and an azimuthally designed second
+row (tested as a hypothesis in the rethink) is withdrawn; (4) within the validated range
+the single row is at its ceiling (period, phase, post count); the only untested axis is
+the post amplitude at the cutoff (no stored row has r > 110 at Λ = 531, d = 1.8); (5) the
+comb's value shrinks with any envelope smoothing and it belongs outside the inverse
+design; (6) at the 20 µm spec the stored apodized corr-400 N=150 rows (Q_i 217k; ≈620k
+with the full-z trench) are 4–10× the comb lock's Q_i — Quan & Lončar's cusp argument in
+the group's own numbers.
+
+**★2026-09-12 — the OFF-CENTRE comb, MEASURED (Athena job 146364, 9/9; doc §6c).** The
+comb's phase-independent cost is set by its CENTRE along the guide, not by δx: the Λ-536
+circle displaced to ±12 µm has pedestal −0.009 / −0.002 (centred: +0.184 in Δγ/γ) and its
+optimum phase flips 270° → 90° (half-period π/(β − k_c) = 12.2 µm). Best single displaced
+comb T 0.8967 (−12 µm) / 0.8959 (+12 µm) vs centred 0.8928 and ctrl 0.8851 — a single comb is
+at its ceiling either way, because the swing fell with the pedestal (carrier ×0.62 at 12 µm).
+The two sides are mirror images (no standing-wave asymmetry). Every earlier second-comb
+attempt (§6, stage T rows at d, d+Λ…) shared the first comb's centre and could only add
+amplitude. The k-space model refit on all 16 circle rows (rms 0.0034) predicts a PAIR — one
+comb per side at its own phase — is nearly additive (+0.0285 / +0.0254; measured singles sum
+to +0.0225) and a THIRD comb adds ≤ +0.001. Dispatched as `scat_offcentre2.py` (Athena job
+146419) and MEASURED: **pair T 0.9040 (+0.0189), triple 0.9031 (+0.0180)** — a second comb on
+its own centre beats the best single (+0.0115) by 4× the floor; the third adds nothing. THE
+PATTERN: one 31-post comb per side at ±12 µm (the end-scattering half-period), each at 90° of
+Λ 536, r 110, d 1.8 — never two combs on one centre. Loss 0.111 → 0.093, R and λ unchanged.
+Doc §6c–6d, fig8. Far-field monitors at 2.0 wls verified harmless for T (control 0.8864 vs
+stored 0.8851) — but keep the TOP monitor ≥ ~3 µm (evanescent-tail truncation ripple).
+**★ROUND 2–3 MEASURED (jobs 146553 / 146557 / 146564, doc §6e–6f):** pair at the cutoff period Λ 531
+(model phases +12 @60°, −12 @120°) **T 0.9070** (+0.0219); pair on **W1050 cavity T 0.9374**
+(+0.0156, single comb there 0.9310); rod posts 140×270 = circles (0.9038); pair on apod-10 **loses**
+(0.9708, −0.0062: no needle left to patch — comb and apodization are either/or); **one centred
+61-post comb at r 110, Λ 531, 270° T 0.9064** = the pair (the comb's cost follows its ENDS, sign
+period 12.2 µm; the stored N61 row at r 78, +0.0137, was amplitude-starved by the old Σr² rule).
+Model (16-row refit, +0.004 optimistic): third comb, fan combs, extra rows, curves/chirps/clusters
+(free-form optimizer) all tie or lose. Design rule: ends at ±16 µm (or two 31-post combs at ±12),
+Λ = Λ_c, r 110, d 1.8. **Round 4 (job 146614): two 61-post combs at ±17 µm (244 posts, ±33 µm)
+0.9057 / 0.9040 = TIE with the 31-pair — saturated by ~61 posts; the model's +0.007 was its largest
+miss (optimism grows with post count: +0.004 @31, +0.008 @62, +0.018 @122 — rank only, never
+extrapolate to bigger arrays). PROGRAM CLOSED on this device.**
+**★Q3DB TRANSFER (job 146639, doc §6h): corr-325 N165 at comb_q3db numerics — one 61-post r-110
+comb T 0.5659 (+0.0753), the r-110 pair (31 @ +12/60°, 31 @ −12/120°) T 0.5704 (+0.0798); both far
+above the stored r-80 57-post comb (0.5361); pair leads by +0.0045 (candidate, inside the ~0.005
+working floor at T ≈ 0.5). predict-q3db extend: pair N* = 172 → Q_L 18155 / width 19.77 µm; single
+N* = 171 → Q_L 17620. Old comb lock 16203 (N169); trench 18777. **CONFIRMED (job 146681): pair N172 T 0.5003 (−3.01 dB)
+Q 18093 w 19.76 µm; single N171 T 0.5060 (−2.96 dB) Q 17557 w 19.79 µm — engine misses ≤ 0.4 % on Q.
+NEW Q3DB DEVICE: corr 325, N 172, W800, comb pair r 110 / d 1.8 / Λ 531: 31 posts at +12 µm (δx 88.5 nm)
++ 31 posts at −12 µm (δx 177 nm), mirrored ±y. Runner runners/metal_mirror/comb_q3db_lock.py.**
 
 ## 8. Open / in flight
 

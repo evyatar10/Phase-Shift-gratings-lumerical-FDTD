@@ -24,13 +24,14 @@
 # Convert to Enroot .sqsh for Athena's Pyxis (run on Athena login node):
 #   enroot import --output lumerical-2026R1.sqsh apptainer://$(pwd)/lumerical-2026R1.sif
 #
-# License defaults baked into %environment (11055@dgx-master / 12325@172.25.0.12).
+# License defaults baked into %environment (Athena: 1055@132.68.48.51 / 2325@132.68.48.51);
+# athena/deploy_athena.sh exports the same values at runtime, so the baked defaults are a fallback.
 # Override at runtime if the server address changes:
-#   apptainer exec --env ANSYSLMD_LICENSE_FILE=11055@dgx-master ...
+#   apptainer exec --env ANSYSLMD_LICENSE_FILE=1055@132.68.48.51 ...
 
 Bootstrap: docker
 From: nvcr.io/nvidia/cuda:12.2.2-devel-ubuntu22.04
-# Athena DGX nodes ship NVIDIA driver R470 LTS (native cap CUDA 11.4).
+# The CUDA 12.2 base was chosen for the retired DGX R470 hosts; Athena nodes run R570+.
 # CUDA 12.2 is the smallest forward-compat bridge over R470 — see %environment
 # for the LD_LIBRARY_PATH ordering that activates the cuda-compat-12-2 shim.
 
@@ -147,8 +148,8 @@ From: nvcr.io/nvidia/cuda:12.2.2-devel-ubuntu22.04
     # FDTD engine fails to initialize (or silently CPU-falls-back).
     export LD_LIBRARY_PATH="/usr/local/cuda/compat:${LUMERICAL_HOME}/lib:${LUMERICAL_HOME}/lib/mesa:${LD_LIBRARY_PATH}"
     export LUMAPI_PYTHON="${LUMERICAL_HOME}/api/python"
-    export ANSYSLMD_LICENSE_FILE=11055@dgx-master
-    export ANSYSLI_SERVERS=12325@172.25.0.12
+    export ANSYSLMD_LICENSE_FILE=1055@132.68.48.51
+    export ANSYSLI_SERVERS=2325@132.68.48.51
     export QT_QPA_PLATFORM=offscreen
     export QT_OPENGL=software
 
@@ -163,7 +164,7 @@ From: nvcr.io/nvidia/cuda:12.2.2-devel-ubuntu22.04
     GPU A100-compatible (compute capability >=5.0)
 
 %help
-    Lumerical 2026 R1.3 with CUDA 12 support for Technion Athena (DGX A100).
+    Lumerical 2026 R1.3 with CUDA 12 support for the Technion Athena cluster.
     Built by copying a pre-installed Lumerical tree from the WSL2 host.
 
     Engine-only run (Option 1):

@@ -50,7 +50,7 @@ INTERCONNECT="${ATHENA_INTERCONNECT:-}"
 # doesn't waste GPU-task allocations.
 REQUIRE_GPU="${REQUIRE_GPU:-1}"
 
-# NVML trampoline (used on dgx/R470) is intentionally NOT used here.
+# No NVML trampoline here (Athena drivers are current; the R470 shim died with the DGX cluster).
 # All Athena GPU partitions run R570+ drivers that already export every
 # NVML symbol Lumerical 2026R1 needs. Mounting the trampoline corrupts
 # CUDA init on the newer driver (verified empirically — job 76907,
@@ -93,14 +93,16 @@ if [[ ! -f "${CONTAINER}" ]]; then
 fi
 
 # Bind hosts file so container resolves lumerical-lm.ece.technion.ac.il (FlexLM
-# returns this hostname during the licensing handshake even via dgx-master).
+# returns this hostname during the licensing handshake even when the client reaches it by IP).
 HOSTS_FILE="${HOME}/hosts_lum"
 if [[ ! -f "${HOSTS_FILE}" ]]; then
     cp /etc/hosts "${HOSTS_FILE}"
     echo "132.68.48.51 lumerical-lm.ece.technion.ac.il lumerical-lm" >> "${HOSTS_FILE}"
 fi
 
-apptainer exec --nv \
+# --writable-tmpfs explicit: a100-public nodes dropped nvidia-container-cli on 2026-09-30
+# (it had added the flag implicitly) -> read-only container, license client died (job 165464).
+apptainer exec --nv --writable-tmpfs \
     --bind "${PROJECT_DIR}:/work/project" \
     --bind "${SCRIPTS_DIR}:/work/scripts" \
     --bind "${DATA_DIR}:/work/data" \

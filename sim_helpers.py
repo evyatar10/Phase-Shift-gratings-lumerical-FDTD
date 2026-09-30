@@ -12,7 +12,8 @@ from scipy.interpolate import interp1d
 
 # ── Far-field extraction ─────────────────────────────────────────────────────
 
-def extract_farfield(fdtd, monitor_name, ff_res=201, idx_f=1, complex_fields=False):
+def extract_farfield(fdtd, monitor_name, ff_res=201, idx_f=1, complex_fields=False,
+                     lam_target_m=None):
     """
     Pull far-field data from a planar monitor via Lumerical eval().
 
@@ -24,6 +25,9 @@ def extract_farfield(fdtd, monitor_name, ff_res=201, idx_f=1, complex_fields=Fal
         complex_fields: Also return the complex far-field vector components
             Ex_c/Ey_c/Ez_c (response-matrix study — phase carries the
             cancellation; |E|² alone cannot form a linear response).
+        lam_target_m: When the monitor recorded >1 frequency point, project at
+            the recorded point nearest this wavelength (the found resonance)
+            instead of idx_f. Ignored for a 1-point monitor.
 
     Returns:
         dict with E2, ux, uy, lam (+ Ex_c, Ey_c, Ez_c when complex_fields)
@@ -32,8 +36,12 @@ def extract_farfield(fdtd, monitor_name, ff_res=201, idx_f=1, complex_fields=Fal
     print(f"  Extracting far-field: {monitor_name}")
     try:
         res = fdtd.getresult(monitor_name, "E")
-        lam = float(np.squeeze(res["lambda"]))
-        print(f"    lam = {lam * 1e9:.3f} nm")
+        lam_arr = np.atleast_1d(np.squeeze(res["lambda"])).astype(float)
+        if lam_target_m is not None and lam_arr.size > 1:
+            idx_f = int(np.argmin(np.abs(lam_arr - lam_target_m))) + 1   # 1-based
+        lam = float(lam_arr[idx_f - 1])
+        print(f"    lam = {lam * 1e9:.3f} nm  (point {idx_f}/{lam_arr.size}"
+              + (f", target {lam_target_m * 1e9:.3f} nm)" if lam_target_m is not None else ")"))
     except Exception as e:
         print(f"    ERROR: no data [{e}]")
         return None
@@ -613,11 +621,22 @@ def apply_monitor_overrides(sim, cfg):
         print(f"Override: Set 3D monitor to {n_3d_pts} points.")
 
     if sim.record_farfield:
-        # Single far-field frequency point. With "use source limits" it lands at the
-        # source band-CENTER frequency — so center the scan on the resonance (narrow
-        # band) so the far-field is recorded at the resonance, not the band center
-        # of a wide scan (which sits at the band-center FREQUENCY, e.g. 1546 nm for a
-        # 1550 nm / 150 nm-wide scan).
-        sim.fdtd.setnamed("side_monitor", "frequency points", 1)
-        sim.fdtd.setnamed("top_monitor", "frequency points", 1)
-        print("Override: Far-field monitors set to 1 frequency point (source band center).")
+        # farfield_freq_points = 1 (legacy): a single point, which with "use source
+        # limits" lands at the source band-CENTER frequency, NOT the resonance (the
+        # CLAUDE.md §2 trap — e.g. 1546 nm for a 1550 nm / 150 nm-wide scan).
+        # > 1: the monitors record the band and extract_farfield projects at the
+        # recorded point nearest the found resonance (smoke 164883 caught this
+        # override silently undoing the builder's setting).
+        n_ff = getattr(sim, "farfield_freq_points", 1)
+        sim.fdtd.setnamed("side_monitor", "frequency points", n_ff)
+        sim.fdtd.setnamed("top_monitor", "frequency points", n_ff)
+        print(f"Override: Far-field monitors set to {n_ff} frequency point(s)"
+              + (" (source band center)." if n_ff == 1 else " (projected at the found resonance)."))
+        c_nm = cfg.monitors.monitor_2d_center_nm
+        s_nm = cfg.monitors.monitor_2d_span_nm
+        if getattr(cfg.farfield, "use_2d_window", False) and c_nm and s_nm:
+            for _m in ("side_monitor", "top_monitor"):
+                sim.fdtd.setnamed(_m, "use source limits", 0)
+                sim.fdtd.setnamed(_m, "wavelength center", c_nm * 1e-9)
+                sim.fdtd.setnamed(_m, "wavelength span", s_nm * 1e-9)
+            print(f"Override: far-field monitors own window {c_nm} +/- {s_nm / 2} nm.")

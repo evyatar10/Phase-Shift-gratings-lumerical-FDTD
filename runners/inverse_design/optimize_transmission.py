@@ -7,8 +7,7 @@ Invocation:
     python -m runners.inverse_design.inverse_design --spec runners.inverse_design.optimize_transmission
   Athena (SLURM, parallel-ready via concurrent_adjoint_solves=True):
     bash athena/deploy_athena.sh --inverse-design=runners.inverse_design.optimize_transmission
-  DGX:
-    bash dgx/deploy_dgx.sh --inverse-design=runners.inverse_design.optimize_transmission
+    bash igum/deploy_igum.sh --inverse-design=runners.inverse_design.optimize_transmission
 """
 
 import os

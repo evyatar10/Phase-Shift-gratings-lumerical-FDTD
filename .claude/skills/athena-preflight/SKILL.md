@@ -74,3 +74,11 @@ Budget: each array task ≈ 1 seat while solving; each lumopt2 iteration ≈ 2
 ≥35/50 in use = HIGH → hold new fan-outs; ≥45/50 = CRITICAL → no new
 dispatches, tighten the trouble-finder. The pool is faculty-shared: a snapshot
 is not a promise — for long batches keep the seat-band monitor running.
+
+## Model routing (CLAUDE.md §12, 2026-09-11)
+
+This skill is routine, recipe-driven server work: when the session runs on Fable,
+execute it in an **Opus subagent** (`Agent`, `model: "opus"`) with the steps above
+as the brief, and have it return verdict lines only (queue state / job IDs /
+result paths / PASS-FAIL), never raw logs. Fable reads the verdict and decides.
+Exception: a single ssh line the manager needs right now is cheaper inline.

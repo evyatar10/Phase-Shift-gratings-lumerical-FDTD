@@ -6,12 +6,12 @@ showed it climbed a hill of cladding radiation: gen-5 best gave port-T=0.9916
 but modal |S21|² = 0.972, BELOW the regular-grating baseline of 0.9847.
 This run uses |S21|² (modal) → find_bragg_resonance as the FOM.
 
-Budget: 3 gens × 15 particles = 45 evals (~2 h on a single DGX GPU at n=80).
+Budget: 3 gens × 15 particles = 45 evals (~2 h on a single A100 GPU (legacy DGX cluster) at n=80).
 Seeded at the apodized point so we can directly test whether apodization +
 inner-tooth shifts can exceed the regular-grating baseline (0.9847 modal).
 
 Invocation:
-  bash dgx/deploy_dgx.sh --gradient-free-design=runners.gradient_free_design.optimize_transmission_corrected
+  bash athena/deploy_athena.sh --gradient-free-design=runners.gradient_free_design.optimize_transmission_corrected
 """
 
 import os

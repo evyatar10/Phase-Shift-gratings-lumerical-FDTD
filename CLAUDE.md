@@ -69,10 +69,16 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
 - **Local is allowed** for: building scenes, `save_fsp`, smoke tests, MATLAB plotting,
   and any quick non-GPU check. Local `fdtd.run()` is slow — only do a real local FDTD
   run if the user explicitly asks.
-- GPU/partition: **just use the default** (don't ask). The one exception worth a
-  one-line heads-up: a long, stateful optimization on a `*-shared` partition can be
-  preempted and lose progress — if that matters, mention `--gpu=a100` (non-preemptible)
-  but don't block on it.
+- GPU/partition: **just use the default** (don't ask). The default list is
+  `h200-shared,a100-public,rtx6k-shared,l40s-public,l40s-shared` (fastest memory
+  first); SLURM takes the first free slot. **Every Athena GPU partition is
+  `PreemptMode=REQUEUE`, `a100-public` included** (measured 2026-08-14, re-checked
+  2026-09-11) — there is no non-preemptible lane, so protection comes from resume
+  (§6), never from partition choice. Since 2026-09 `a100-public` is the big pool
+  (5 nodes / 40 A100, the migrated DGX hosts n305/n307/n308/n310/n313): pin it with
+  `--gpu=a100` when queue wait matters more than per-sim speed. Multi-node / the
+  `24h_16g` QOS are for MPI/PyTorch jobs — a Lumerical sim is capped at 1 GPU by the
+  license tier (memory `project_athena_multigpu_blocked.md`), so they buy us nothing.
 
 ## 2. Resonance & metrics (correctness-critical)
 
@@ -432,10 +438,10 @@ Over-testing never once cost anything. So:
   canary task first and confirm a real solve time before committing the fleet.
 - **Cluster scripts are a maintained PAIR: athena/ + igum/.** Any edit to
   `athena/scripts/*` or `athena/jobs/*` is either mirrored to `igum/` in the same
-  change or explicitly reported as not mirrored. **`dgx/` is FROZEN legacy — do
-  not edit it and do not dispatch to it** (broken with 2026R1; see its README
-  banner). This rule exists because the forks measurably drifted (2026-07-11
-  audit: dgx missing two athena fixes).
+  change or explicitly reported as not mirrored. **`dgx/` was deleted 2026-09-11** —
+  the DGX cluster shuts down 2026-09-14 and its nodes are now Athena's
+  `a100-public`; never recreate a third fork. This rule exists because the
+  forks measurably drifted (2026-07-11 audit: dgx missing two athena fixes).
 - **`lmstat` -96 on Athena is a FALSE NEGATIVE — do NOT block a dispatch on it.**
   `--license-probe` / container `lmutil lmstat` returns `-96` ("lmgrd is not running /
   server down"; locally `HOST_NOT_FOUND`) *even when the license is fully working*. Cause:
@@ -584,3 +590,34 @@ reader, not for the AI that wrote it.)
   explain in chat should instead be simplified in the code. If the diff is much
   longer than the task sounded, say so and why — length surprises get flagged, not
   buried.
+
+## 12. Model routing — Fable manages, Opus executes the routine (user rule 2026-09-11)
+
+The session model (Fable) is the MANAGER. It decides, reasons about physics and
+optimizer math, root-causes new failures, and reads verdicts. It does NOT spend its
+own turns on mechanical server round-trips — those go to an **Opus subagent**
+(`Agent` with `model: "opus"`, `subagent_type: "general-purpose"`). This is a
+standing rule, not something the user has to request per task.
+
+- **Delegate to Opus (routine, recipe-driven, bulky output):** status polls and
+  watching (`athena-status`, `work-alone` watchers), `fetch-results` + headless
+  plot, `athena-preflight` probes (seats / quota / queue), log and file sweeps,
+  server-side slicing, mass mechanical edits, and **confirmation runs** — a smoke
+  test whose recipe and expected outcome are already written ("run X, expect the
+  marker Y / job ID / PASS band Z"). The agent runs the recipe and returns
+  PASS/FAIL plus the one line that says why.
+- **Stays in Fable (judgment):** designing any §5 gate on NEW math/code and reading
+  its numbers, diagnosis after any FAIL or §2 anomaly, the dispatch DECISION and the
+  job-ID statement to the user, anything touching HANDOFF/THEORY/campaign state,
+  and any physics conclusion. The subagent may execute the deploy command; Fable
+  owns the decision before and the reported ID after.
+- **Cost threshold:** a single ssh line or a 2-file read is cheaper inline than a
+  spawn (a spawn re-pays the CLAUDE.md read). Delegate when the OUTPUT is bulky
+  (logs, greps over many files) or the task is a LOOP (polling, multi-step
+  fetch/plot). Continue a live agent via `SendMessage` instead of respawning.
+- **Brief shape:** exact files/commands, one question, the expected answer format
+  (≤10 lines), "return verdict lines only, never raw logs". Subagents have no
+  conversation context — put every needed number in the brief.
+- **Why mixing models is safe here:** the subagent never decides, it executes a
+  written recipe. Guard: if an Opus report is off-family (§2 sanity) or
+  surprising, Fable re-checks with ONE direct command before acting on it.

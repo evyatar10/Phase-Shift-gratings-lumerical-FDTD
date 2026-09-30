@@ -2,7 +2,7 @@
 #
 # Local script: upload project files to the Athena cluster and submit a SLURM GPU job.
 # Target: athena.technion.ac.il (SLURM ClusterName=athena, R570+ drivers, no trampoline needed).
-# This is SEPARATE from deploy_athena.sh which targets dgx-master.technion.ac.il.
+# Athena (athena.technion.ac.il) dispatcher. Maintained twin: igum/deploy_igum.sh.
 #
 # Run from Git Bash, WSL, or VS Code tasks on your local Windows machine.
 #
@@ -105,8 +105,8 @@ done
 # ── --gpu=<type>: override ARRAY_PARTITIONS with a single partition ───────────
 # Sourced after the conf so ARRAY_PARTITIONS is defined before we override it.
 if [[ -n "${GPU_TYPE:-}" ]]; then
-    # public  = won't be preempted (use for long jobs, important runs)
-    # shared  = may be preempted by contributor jobs (cheaper, more capacity)
+    # public/shared: BOTH are PreemptMode=REQUEUE on Athena (measured 2026-08-14); resume, not lane, is the protection
+    # a100-public = largest pool since 2026-09 (5 nodes / 40 A100 incl. the migrated DGX hosts)
     case "${GPU_TYPE}" in
         h200|h200-shared)   ARRAY_PARTITIONS="h200-shared" ;;     # only shared exists
         a100|a100-public)   ARRAY_PARTITIONS="a100-public" ;;     # only public exists
@@ -741,8 +741,8 @@ fi
 if [[ "${GPU_STATUS:-false}" == "true" ]]; then
     echo ""
     echo "=== Athena GPU availability (per-partition) ==="
-    echo "  public  = won't be preempted (use for long/important jobs)"
-    echo "  shared  = may be preempted by contributor jobs (more capacity)"
+    echo "  NOTE: every partition here is PreemptMode=REQUEUE (public included); protect long jobs with resume"
+    echo "  a100-public = biggest pool (5 nodes / 40 A100 since 2026-09); h200-shared = fastest per sim"
     echo ""
     ssh "${SSH}" "
         printf '%-16s %-10s %-22s %-12s %-12s %s\n' PARTITION TYPE NODE STATE GPUS-FREE PENDING

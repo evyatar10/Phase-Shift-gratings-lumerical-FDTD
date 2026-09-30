@@ -8,7 +8,7 @@ Three files:
 
 Run on the cluster:
     bash athena/deploy_athena.sh --inverse-design=runners.inverse_design.optimize_transmission
-    bash dgx/deploy_dgx.sh       --inverse-design=runners.inverse_design.optimize_transmission
+    bash igum/deploy_igum.sh     --inverse-design=runners.inverse_design.optimize_transmission
 
 Run one driver locally (useful for inspecting param vectors):
     python -m runners.inverse_design.inverse_design --spec runners.inverse_design.optimize_transmission

@@ -61,9 +61,10 @@ expensive mistake class in this project's history.
 | Optimization families | `--inverse-design=` / `--gradient-free-design=` / `--fd-gradient-design=` / `--lumerical-native=` with the module path |
 | Upload code only | `--upload-only` |
 
-- GPU/partition: use the default auto-pick (don't ask). Only heads-up case: a long
-  stateful optimization on a `*-shared` partition can be preempted — mention
-  `--gpu=a100`, don't block on it.
+- GPU/partition: use the default auto-pick (don't ask). EVERY Athena partition is
+  PreemptMode=REQUEUE (a100-public included) — long stateful jobs are protected by
+  resume, not by lane. `--gpu=a100` = the deepest pool since 2026-09 (5 nodes /
+  40 A100); pin it when queue wait matters more than per-sim speed.
 - Deploy does `rsync --delete` of the source tree — locally deleted/renamed files
   vanish from the server copy on dispatch.
 

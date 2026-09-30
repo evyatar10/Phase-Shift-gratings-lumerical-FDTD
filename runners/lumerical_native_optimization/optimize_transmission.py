@@ -8,8 +8,7 @@ Invocation:
   Athena (single-GPU job, walltime budget like gradient_free_design):
     bash athena/deploy_athena.sh --lumerical-native=runners.lumerical_native_optimization.optimize_transmission
 
-  DGX:
-    bash dgx/deploy_dgx.sh --lumerical-native=runners.lumerical_native_optimization.optimize_transmission
+    bash igum/deploy_igum.sh --lumerical-native=runners.lumerical_native_optimization.optimize_transmission
 """
 
 import os

@@ -44,7 +44,7 @@ INTERCONNECT="${ATHENA_INTERCONNECT:-}"
 # Threads — use all allocated CPUs (single rank).
 NTHREADS="${SLURM_CPUS_PER_TASK}"
 
-# NVML trampoline (used on dgx/R470) is intentionally NOT used here.
+# No NVML trampoline here (Athena drivers are current; the R470 shim died with the DGX cluster).
 # All Athena GPU partitions run R570+ drivers that already export every
 # NVML symbol Lumerical 2026R1 needs. Mounting the trampoline corrupts
 # CUDA init on the newer driver (verified empirically — job 76907,
@@ -99,7 +99,9 @@ fi
 # Set REQUIRE_GPU=0 only if you intentionally want a CPU run on Athena.
 REQUIRE_GPU="${REQUIRE_GPU:-1}"
 
-apptainer exec --nv \
+# --writable-tmpfs explicit: a100-public nodes dropped nvidia-container-cli on 2026-09-30
+# (it had added the flag implicitly) -> read-only container, license client died (job 165464).
+apptainer exec --nv --writable-tmpfs \
     --bind "${FSP_DIR}:/work/layouts" \
     --bind "${HOSTS_FILE}:/etc/hosts" \
     --bind "${SCILIBS}:/scilibs" \

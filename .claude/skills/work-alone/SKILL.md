@@ -146,3 +146,12 @@ unprompted. At every safe-compact checkpoint ask explicitly: "what did we
 learn since the last checkpoint that is not yet in a rule or skill?" — and
 write it. The user prompting a lesson that was already visible in the data
 counts as a capture failure.
+
+## Model routing while alone (CLAUDE.md §12, 2026-09-11)
+
+The watch loop is the biggest token sink in this project. When the session runs on
+Fable: the watcher's wake handling, fetch/plot cycles, preflight probes and
+recipe-driven confirmation runs execute in an **Opus subagent** (continue the same
+agent via `SendMessage` across milestones — do not respawn per wake). Fable handles
+only the decision points listed above, any FAIL/anomaly diagnosis, and the final
+report.

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # SLURM job: run the full Python/lumapi pipeline on the real Athena cluster with GPU.
-# This is the real-Athena analog of athena/jobs/run_python_gpu.sh (dgx-master).
+# Twin of igum/jobs/run_python_gpu.sh (same flow, container runtime).
 #
 # Runtime: apptainer exec --nv (matches run_fsp_gpu.sh — single image format,
 # no Pyxis/Enroot dependence). The CUDA forward-compat shim is activated by
@@ -61,7 +61,7 @@ RUN_SCRIPT="${RUN_SCRIPT:-run_simulation}"
 # is missing fdtd_gpu.
 REQUIRE_GPU="${REQUIRE_GPU:-0}"
 
-# NVML trampoline (used on dgx/R470) is intentionally NOT used here.
+# No NVML trampoline here (Athena drivers are current; the R470 shim died with the DGX cluster).
 # All Athena GPU partitions run R570+ drivers that already export every
 # NVML symbol Lumerical 2026R1 needs. Mounting the trampoline corrupts
 # CUDA init on the newer driver (verified empirically — job 76907,
@@ -102,7 +102,7 @@ fi
 # not in Athena's DNS. Bind a pre-built hosts file from home (NFS-shared).
 # Identical mechanism to run_fsp_gpu.sh — needed because the FlexLM server
 # replies with this hostname during the licensing handshake even when the
-# client connects via the dgx-master forward.
+# client reaches it by IP.
 HOSTS_FILE="${HOME}/hosts_lum"
 if [[ ! -f "${HOSTS_FILE}" ]]; then
     cp /etc/hosts "${HOSTS_FILE}"
@@ -126,7 +126,9 @@ fi
 # during FSP-path bring-up. The Python pipeline drives the same engine
 # binary internally via lumapi, so it needs the same fixes.
 
-apptainer exec --nv \
+# --writable-tmpfs explicit: a100-public nodes dropped nvidia-container-cli on 2026-09-30
+# (it had added the flag implicitly) -> read-only container, license client died (job 165464).
+apptainer exec --nv --writable-tmpfs \
     --bind "${PROJECT_DIR}:/work/project" \
     --bind "${SCRIPTS_DIR}:/work/scripts" \
     --bind "${DATA_DIR}:/work/data" \

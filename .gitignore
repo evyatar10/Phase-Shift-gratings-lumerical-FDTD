@@ -22,7 +22,7 @@ fsp_preview/
 *.tiff
 *.pdf
 
-# Large binary/container files (shared across DGX + Athena)
+# Large binary/container files (Athena)
 container/lumerical-2026R1.sif
 container/AnsysInstaller.sh
 

@@ -92,8 +92,8 @@ TARGET_WIDTH_UM = None     # e.g. 14.0 -> retune corr via the knob line; None = 
 # numerics). "pva" rows (the optimizer's smoother mesher) are a DIFFERENT
 # frame: lam +5.3 nm / FWHM -8% / T +0.0079 / Q_L -7% vs conformal (stored
 # notes, mesher memory + prod_q3db_ladder header) — never mix the frames.
-ROW = dict(pol="TM", corr_nm=325.0, pitch_nm=516.83, N=100, T=0.9104,
-           Q_L=1760.0, lam_nm=1559.006, width_um=19.245, mesher="conformal")
+ROW = dict(pol="TM", corr_nm=325.0, pitch_nm=516.83, N=165, T=0.5659,
+           Q_L=14971.0, lam_nm=1559.036, width_um=19.78, mesher="conformal")
 BASE_FAMILY = "tm_bare_c325"   # shape priors for extend mode (match pol!)
 # compare-mode: the run that LANDED (width_um / lam_nm optional -> None skips them)
 MEASURED = dict(N=103, T=0.5097, Q_L=4644.0, width_um=14.19, lam_nm=1557.75)

@@ -1,0 +1,643 @@
+# The cladding comb, rethought from the physics — what recycles the radiation and what cannot
+
+Study: `results_from_athena/comb_physics_rethink/` · model: `python_tools/comb_kspace_model.py`
+· date 2026-09-11 · device: TM pi-shift Bragg grating, SiN 350×800 nm core in oxide, pitch
+516.83 nm, corrugation 400 nm, N = 80/side (the loss-physics workhorse; box y 16 µm, opt mesh),
+with the q3db corr-325 N=165–169 device as the transfer target.
+
+Provenance labels: **MEASURED** = read from a named stored file this session; **DERIVED** =
+computed from measured values; **EXPECTED** = model/theory. Every number below is one of the
+three. Nothing was dispatched to a cluster for this document — it is zero-GPU by design: the
+model had to reproduce the ~40 stored comb measurements before it was allowed to predict.
+
+---
+
+## 0. The answers, in one page
+
+1. **Aim.** The comb should be tuned to the out-coupling *cutoff* Λ_c = λ/(n_eff + n_clad)
+   = 530.6 nm, not to the far-field lobe "at ux = 0.98". The lobe at 0.96–0.98 was the
+   far-field monitor's clipping edge; the leak actually piles up at the horizon (|ux| → 1).
+   The program found the right period empirically (T-plateau 530–532 nm) while explaining it
+   with the wrong picture. MEASURED (§2).
+2. **Second comb.** A second identical row can only add amplitude, and the single row is
+   already at its amplitude optimum — the measured 2-row/4-row nulls follow. The one
+   physically motivated non-identical second row (a row at another standoff cancelling a
+   different azimuth of the cone) is **not supported by the stored data**: across the
+   standoff scan the interference phase does not rotate, which means the part of the leak the
+   comb interferes with behaves as *top-going*, where every standoff radiates with the same
+   phase. In the validated model a second row at any standoff is amplitude only. MEASURED
+   + model (§4–5).
+3. **Ceiling.** Inside the range where the model is validated, the single row is at its
+   ceiling: period, phase and post count are optimal and the model's best equals the measured
+   +0.015 plateau. The one untested axis is the post amplitude at the cutoff (the model says
+   r ≈ 150–180 nm could add +0.01–0.02; the only stored strong-drive points say it saturates).
+   That is the single comb run this document can justify (§6).
+4. **Oxide inside the core.** Dead on amplitude, not on phase: the in-core field drives a
+   hole 10–30× harder than the cladding tail drives a post, so the amplitude-matched hole
+   would be r ≈ 15–30 nm; at any buildable size the hole's own emission exceeds the whole
+   leak and every phase loses. The buildable in-core equivalent is a slow per-tooth width
+   modulation, i.e. the apodization/envelope axis. MEASURED + DERIVED (§7).
+5. **TE.** No needle: TE's light-line margin is 2.3× TM's, so the envelope tail is ~30×
+   weaker and TE's loss is cavity-local and broad in angle. A comb cannot match a broad
+   source (measured +0.0033). The TE lever is cavity multipole cancellation (see-saw /
+   cavity width), never measured for TE. MEASURED + DERIVED (§8).
+6. **Inverse design.** The comb's optimum is separable from the envelope (period from n_eff,
+   phase universal, amplitude from the residual needle), so the optimizer had no gradient
+   to follow and the comb drifted < 1 nm. Design it outside the optimizer with this model
+   and confirm once. Its value shrinks as the envelope is smoothed (0.0107 → 0.0030 T)
+   because the needle shrinks. MEASURED (§9).
+7. **The bigger lever at the 20 µm spec.** Quan & Lončar's rules say the π-shift cusp is what
+   makes the Lorentzian needle; a Gaussian envelope removes it. The group's own Itai-HH
+   numbers (apodized Q(−3 dB) = 15.5× uniform in TE, 2.6× in TM at ~20 µm) are exactly the
+   TE/TM ratio the envelope-Fourier picture predicts, and a stored apodized corr-400 point
+   implies an intrinsic Q ≈ 4× the comb-locked device at the same width. The comb and the
+   apodization do not stack (measured −0.0047); the trench does. Whether an apodized TM device
+   enters the q3db benchmark is a program decision (§10).
+
+---
+
+## 1. What was wrong in our thinking (and why it did not matter for the winner)
+
+| earlier belief | what the stored data say | consequence |
+|---|---|---|
+| "the needle sits at ux ≈ 0.98; aim the comb there (Λ = 536)" | near-field k-space of the control (`radiation_kspace_diag`, `scat_i_fieldmaps` planes): 68–75 % of the in-cone weight at \|ux\| > 0.9, ~35 % beyond 0.977; the far-field monitors are geometrically clipped exactly there (side monitor at y = 6.75 µm needs ~33 µm of x-travel for a grazing ray; half-span 30 µm) | aim at the cutoff, 530.6 nm; the T-plateau 530–532 was right, the picture behind it wasn't |
+| "the parasitic loss scales as r⁴, the coherent gain as r²" | both are the same two-channel bookkeeping: own emission P_c ∝ a², interference 2η√(P_c P_n) ∝ a; the ceiling η²P_n = S²/(4P_c) = +0.011 from the stage-R circle alone — matching the measured +0.0115 | the comb was at its amplitude optimum already; no radius/height/row change can beat η²P_n |
+| "a second row adds cancellation" | 2-row +0.0099, 4-row +0.0087 < 1-row +0.0115; the model: rows at d, d+Λ, … are amplitude only | second comb closed, in agreement with measurement |
+| "a second row at a *different* standoff can cancel the in-plane part of the cone" (this rethink's initial hypothesis) | the standoff scan (d = 1.5–2.1) shows no rotation of the interference phase; the fit drives the needle's azimuth profile to top-going; forcing an in-plane component worsens every prediction | hypothesis withdrawn on the data; the single row already sees the whole addressable needle |
+| "in-core holes fail because the phase is wrong" | 9-hole rows at 270°/90°: 0.8654 / 0.5438 — enormous swing, deeply negative mean | amplitude (overdrive), not phase |
+
+## 2. Where the leak actually goes — MEASURED from the stored control planes
+
+Source: `scat_i_fieldmaps/results/result_N80_TM_avg_Ybox16p0_Zbox8p8.mat` (job 123991),
+resonance slice (67 pm off the peak, 6 % of the linewidth), extracted to
+`data/*_PLANES_RES.npz`. Lines of complex E_z at several distances from the guide axis, in the
+xy plane (in-plane, ψ = 0) and in the xz plane (top-going, ψ = 90°), Fourier-transformed along x.
+
+- **Broad-angle radiation (|ux| < 0.8) is in-plane and real:** its power on the in-plane
+  lines scales exactly as 1/s with distance s (cylindrical spreading of radiation from a
+  z-compact source); the top lines carry ~3.5× less of it. This is the defect-local
+  component the cavity program harvested (W1050, see-saw); no comb can match it.
+- **The grazing needle (|ux| > 0.9) dominates the top-going direction (~74 %) and the
+  source spectrum (~65–70 % with the proper flux weight).** In the last 2 % of ux it is
+  narrower than an 84-µm FFT bin: the exact Lorentzian tail of the measured envelope
+  (κ = 0.040 µm⁻¹) puts 71 % of the needle beyond ux = 0.977 and 45 % beyond 0.99.
+- **The far-field monitors under-count it:** side monitor 27 % at |ux| > 0.9 (peak "at
+  0.96" = clipping edge), top monitor 71 %. Both are blind at the horizon. The only
+  unclipped instruments are T, R, loss and the near-field planes.
+- Englund et al. 2005 (Eq. 6) confirms there is no Green's-function enhancement at the light
+  line (the integrand carries +k_z): the pile-up is purely the envelope's Fourier tail —
+  a cusped exponential envelope gives a Lorentzian, the π-shift's signature.
+
+![Fig. 1 — left: the control's radiated power vs ux from unclipped near-field lines (in-plane line flat and broad; top-going line and the exact Lorentzian tail of the measured envelope edge-piled at the horizon). Right: the same control on the far-field monitors — the side monitor's "needle at 0.96" sits on its geometric clipping edge.](results_from_athena/comb_physics_rethink/fig1_leak_where.png)
+
+## 3. The two-channel bookkeeping (DERIVED, exact for a symmetric two-port)
+
+With κ the coupling to each port and γ the radiative rate, T = (1 − ρ)², ρ = γ/(2κ + γ).
+The control (T 0.8851) gives ρ = 0.0593, hence R = ρ² = 0.0035 and loss = 2ρ(1 − ρ) = 0.1115 —
+both MEASURED values reproduced, so the CMT is trusted. A fractional change x = Δγ/γ gives
+T' = (1 − ρ')², ρ' = ρ(1 + x)/(1 + ρx); for small x, dT = −2Tρ·x = −0.105 x.
+Radiation adds coherently: γ ∝ ∫|L + C|² dΩ, so x = (2Re⟨L, C⟩ + ⟨C, C⟩)/P_total. Writing
+C = a·C₁: x(a) = −2η a√(P_n) + a² (normalised), optimum a* = η√P_n, best x = −η²P_n.
+Everything the comb can do is in η (overlap of its beam with the needle) and P_n (the
+needle's share of γ). The comb's own emission P_c = a² is the coherent beam, not an
+incoherent r⁴ parasitic.
+
+## 4. The model (`python_tools/comb_kspace_model.py`)
+
+- **Leak L(kx):** the exact Fourier tail of the measured mode, A(x)[c₊e^{iβx} + c₋e^{−iβx}],
+  A = A₀e^{−κ|x|}, with κ, c₊, c₋ read from the axis field (fine kx grid, Δux = 0.001 —
+  an FFT of the 84-µm window cannot resolve the needle). Azimuth profile
+  |L|² ∝ (1 + b sin²ψ), b fitted.
+- **Comb C(kx, ψ):** z-dipoles at x_k = kΛ + δx, y = ±d, driven by the measured guided
+  carrier on the line y = d of the same plane (no assumed e^{−γd}), polarizability
+  α·(r/110)², array factor, mirror-row phase 2cos(k⊥ d cosψ). Air posts: Δε ratio −0.60;
+  in-core holes: the core field at y = ±0.25 µm as drive, Δε ratio −1 (oxide) / −1.6 (air).
+- **Three fitted constants** (|α|, arg α, needle share f) plus b, fitted on 13 rows (two
+  phase circles, the standoff scan, two long combs); **37 other cladding rows predicted
+  blind**.
+
+Calibration: |α| = 0.0103, arg α = −82°, b → ∞ (top-going), rms 0.0023 on the 13 rows.
+
+## 5. Validation — model vs the stored record (MEASURED T, model T; floor ±0.0018)
+
+Blind predictions, 37 cladding-comb rows: rms 0.0049; 27/37 within 2× floor, 31/37 within
+3× floor. The design-relevant family is reproduced at the floor:
+
+| row family (source) | measured dT | model dT |
+|---|---|---|
+| Λ 530 / 531 / 532 / 534 / 536 / 540 at 270°, r 110, N 31 (scat_s) | +0.0116 / +0.0115 / +0.0111 / +0.0098 / +0.0061* / +0.0021 | +0.0105 / +0.0108 / +0.0109 / +0.0103 / +0.0076 / +0.0024 |
+| r 85 / 92 / 100 at Λ 536 (scat_s) | +0.0081 / +0.0085 / +0.0085 | +0.0063 / +0.0070 / +0.0078 |
+| N 41 / 53 posts, amplitude-matched (scat_y) | +0.0148 / +0.0148 | +0.0150 / +0.0153 |
+| 2-row / 4-row r110 / 4-row r80 / radius-apodized (scat_t) | +0.0099 / +0.0087 / +0.0088 / +0.0093 | +0.0106 / +0.0097 / +0.0064 / +0.0074 |
+| mesh twin δx = 929 (scat_t) | +0.0114 | +0.0110 |
+| d = 2.1 µm r 147 (scat_w) | +0.0060 | +0.0055 |
+| Λ 539 / 542 / 545 at δx = 0 (scat_p) | −0.0187 / −0.0176 / −0.0157 | −0.0173 / −0.0193 / −0.0205 |
+| air comb, SiN phase (must lose) (scat_air_comb) | −0.0128 | −0.0156 |
+| phase circles Λ 545 & 536 (calibration) | −0.0054…−0.0444 | rms 0.0023 |
+
+*the 536/432 row (290°). Where it fails, and why it is reported:
+- Λ ≥ 548 at δx = 0: measured loss shrinks with Λ (−0.0137, −0.0121), model keeps it at
+  −0.021 — the model's needle carries too much weight at ux 0.92–0.95 relative to the
+  horizon, or the beam is broader than reality. This is the constructive, off-needle regime
+  we never design in; it caps the model's trust at ~0.005 there.
+- Strongest-drive rows: d = 1.5 (+0.002…+0.006 over), air r 141 at the good phase (model
+  +0.034 vs +0.014). Saturation beyond first Born; predictions at r ≳ 140 or d ≲ 1.5 are
+  upper bounds.
+- In-core holes: first Born gives P_c of 5–16× the whole leak — the right verdict (dead at
+  every phase) but no quantitative value; the mode is expelled, λ moves nm's.
+- arg α = −82° is calibrated, not predicted. A real dielectric post should be ~0°; the
+  offset is the phase reference between the axis-field proxy and the true radiating
+  current. The 270° optimum is therefore reproduced, not derived.
+
+![Fig. 2 — model vs measured dT for the 50 stored cladding-comb rows (13 calibration rows as red squares, 37 blind predictions as blue circles; dotted lines = ±2× the noise floor).](results_from_athena/comb_physics_rethink/fig2_validation.png)
+
+The q3db transfer is consistent without new fitting: on corr-325 N=165 the comb bought
++0.0455 at T₀ = 0.4906, i.e. Δγ/γ = −0.155 (DERIVED with ρ = 0.30), against −0.11…−0.14 on
+corr-400 — the comb removes the same ~11–15 % of the radiative rate on both devices.
+
+## 6. Design scan — what a single row can still reach (EXPECTED, from the calibrated model)
+
+`data/design_scan_single_row.json`: 3,203 geometries (Λ 524–536, phase 0–345°, 21–101 posts,
+standoff 1.0–2.1 µm), each evaluated at its own optimal radius (the two-channel optimum
+a* = −X₁/2P_C₁ is analytic once X₁ and P_C₁ are known). Figures: `fig1_leak_where.png`,
+`fig2_validation.png`, `fig3_design_scan.png`.
+
+![Fig. 3 — best model dT per period, post count and standoff, each at its optimal phase and radius (radius clamped to 55–150 nm). The rise toward small standoff is the Born extrapolation discussed below, not a validated prediction.](results_from_athena/comb_physics_rethink/fig3_design_scan.png)
+
+**What the scan says, and how much of it to believe.**
+- Inside the calibrated amplitude range (effective post amplitude ≤ that of r ≈ 110–120 nm
+  at d = 1.8 µm; phase 255–300°; Λ 530–534; 41–61 posts) the model's best is
+  **+0.015 … +0.019 — the measured plateau (+0.0148 … +0.0150 at 41–53 posts).** Period,
+  phase and post count are at their optima; the single row has nothing left on those axes.
+- Outside that range the model keeps growing with amplitude (its radius optimum at the
+  cutoff is r ≈ 175–190 nm at d = 1.8, predicting +0.03; at d = 1.0 it predicts removing
+  ~95 % of *all* radiation, +0.10). **Do not believe the extrapolation.** Two reasons, both
+  measured: (i) the fitted needle share f = 59 is unphysical (>1), so beyond the data the
+  model is a response surface, not energy bookkeeping; (ii) every stored row with effective
+  amplitude above the calibrated range under-performs it — d = 1.5 / r 92 (equivalent to
+  r ≈ 120 at 1.8): measured +0.0130 vs model +0.0186; air r 141 at the good phase: +0.0143
+  vs +0.034. The real device saturates; first Born does not.
+- The one in-domain question the model raises that the record has never tested: **the
+  radius optimum at the cutoff.** The stored radius scans were taken at Λ = 536 (flat
+  85–110) and the record notes the optimum "moves up near the cutoff" (532: r 92 < r 110);
+  no row exists with r > 110 at Λ = 531, d = 1.8. Model: N = 41, 270°, r 150 → +0.029,
+  r 180 → +0.034; saturation alternative: ≤ +0.019. Cost: two ~40-min tasks. Prior odds of
+  beating the plateau by 2× floor, given (ii): ~1 in 3. This is the only comb run this
+  document can justify, and it is a test of the amplitude law, not a design promise.
+
+**Second row, revisited with the validated model.** With the needle behaving top-going
+(b → ∞), the mirror-row phase 2cos(k⊥ d cosψ) is 2 for every standoff at ψ = 90°: a row at
+d₂ contributes the same phase as the row at d₁, scaled by its weaker drive. Two rows are one
+row with more amplitude — the stored 2-row (+0.0099) and 4-row (+0.0087, +0.0088) rows are
+reproduced at +0.0106 / +0.0097 / +0.0064. **A non-identical second row has no mechanism
+left in this model**; the plan's B1 test (azimuthal second row) is withdrawn, not
+dispatched. If the amplitude test above shows saturation at r ≈ 110–120, a second row
+cannot add amplitude usefully either.
+
+**What "full cancellation" would take.** The leak is three things (§2): the top-going
+needle the comb sees (the comb removes 11–15 % of γ on both devices), the in-plane
+broad-angle defect radiation (cavity shaping harvested ~30 %), and the in-plane grazing part
+that neither structure touches in the record. No single-layer, in-plane structure in this
+model reaches the second and third with a beam; the trench blocks the third by total
+internal reflection (measured +0.016, orthogonal, stacks with the width lever). The
+remaining big lever is the source itself (§10).
+
+## 7. Oxide (or air) inside the core — why it fails at every phase
+
+Drive ratio, MEASURED from the same control plane: the carrier amplitude at y = ±0.25 µm
+(inside the core) versus at y = 1.8 µm (the comb line) is ~12–30× depending on x. With the
+same Δε magnitude, the post that matches the needle amplitude at d = 1.8 (r ≈ 90–110 nm)
+becomes an in-core hole of r ≈ 15–30 nm — below the mesh and below fab. At r = 80 the hole
+row's own emission P_c is 5–16× the whole leak (first Born; the true rows are far beyond
+Born: λ moves −0.7 to −5 nm, the mode is expelled). Measured: 0.8654 / 0.5438 / 0.3813 at
+the "right"/"wrong" phase and for air. The phase circle is alive (0.32 swing) but its mean
+sits 0.18 below the control — exactly the overdrive signature 2η√(P_cP_n) − P_c with
+P_c ≫ P_n. The amplitude-feasible in-core structure is a slow per-tooth width modulation
+(the 531-nm sideband aliased on the 517-nm lattice is a ~20 µm-period κ modulation) — that
+is the envelope/apodization axis, width-paying, already inside the inverse-design basis.
+
+## 8. TE — no needle, different lever
+
+TE: pitch 500, corr 300, N 80 (te_transfer_check, scat_z_teffmap): T 0.8756, loss 0.12, far
+field a broad double hump at |ux| ≈ 0.75–0.8, top monitor > side, 1–2 % in the grazing bin.
+β − k_c is 2.3× TM's (0.507 vs 0.257 µm⁻¹): the envelope's Lorentzian tail is ~30× weaker,
+so what radiates is the defect itself, compact in x and therefore broad in angle. A comb's
+beam is ~0.06 wide in ux; its overlap with a hump 0.4 wide is small — measured TE comb at
+Λ = 590, 270°: +0.0033. The pillar pair's TE gain (+0.0283, total far field −38 % with
+unchanged shape) was suppression at the source: multipole cancellation (Johnson 2001), the
+same physics as the TM see-saw (−31 % loss at +0.8 % width). A TE cavity-width ladder or TE
+see-saw has never been run; it is the one TE lever the record leaves open. For TE at 20 µm
+the Gaussian envelope removes essentially all envelope radiation (Δk·σ ≈ 6; Itai-HH measured
+15.5×).
+
+## 9. Should the comb stay inside the inverse design?
+
+No. Measured: `free_comb=False` in v2; in the free-comb seed campaigns the 57 radii moved
+±0.5 nm and the 57 positions ±0.7 nm over many accepted steps ("motionless … earns its
++0.0048 by being present", DESIGNS.md). The reason is in §3–4: Λ is set by n_eff + n_clad
+(the cutoff), the phase has been 270° on every device measured (TM corr-400, corr-325, TE),
+and the amplitude is set by the residual needle — none of these depends on the tooth
+profile in a way that produces a gradient at the optimum. Its value is a function of how
+much needle the envelope leaves: 0.0107 (uniform) → 0.0048 (dip design) → 0.0030 (v2 best).
+Recommendation: drop the 115 comb parameters from the optimizer; after an envelope
+optimization, evaluate the residual needle with this model, design (Λ_c, 270°, r, N) from it,
+confirm with one run.
+
+## 10. What Quan & Lončar (Opt. Express 19, 18529, 2011) adds
+
+Read in full this session. Their deterministic recipe: (i) zero cavity length — Q_rad falls
+with any inserted cavity segment (their Fig. 2e); (ii) constant period; (iii) a Gaussian
+field envelope obtained from a *linearly* rising mirror strength, i.e. a *quadratic* taper of
+the filling fraction (or of the beam width), with the resonance at the dielectric band edge
+of the central segment. Q grows exponentially with the taper length while V grows linearly.
+Their far fields sit at >70° zenith and an NA-0.95 lens collects only 32–63 % — the same
+grazing-dominated radiation we measured, and the same aperture problem our monitors have.
+Their step (iv), "a larger width pulls the mode away from the light line and reduces
+in-plane radiation", is our W1050 result.
+
+What it says about our device: the π-shift is a cavity length a/2 inside a uniform mirror;
+its exponential cusp is what produces the Lorentzian needle the comb patches. At a fixed
+20 µm mode the Gaussian route removes the tail: Δk·σ_f ≈ 3 for TM (tail density ~5× below
+the cusp's and vanishing beyond), ≈ 6 for TE (gone). The group's own Itai-HH ladders
+(memory, 2026-08-26) measured apodized Q(−3 dB) = 15.5× uniform in TE and 2.6× in TM at
+~20 µm — the TE/TM ratio the picture predicts. Two stored points of our own, re-read from
+the files this session (`results_from_athena/trench_n150_full/results/`, job 124551/124590,
+box y 8 µm, 5 pm grid, opt mesh), MEASURED:
+
+| device (N = 150, corr 400, linear apod-10) | λ (nm) | T | R | loss | linewidth | Q_L | mode | Q_i = Q_L/(1−√T) | Q(−3 dB) = 0.293·Q_i |
+|---|---|---|---|---|---|---|---|---|---|
+| apod-10 control | 1559.119 | 0.7624 | 0.0218 | 0.216 | 56.5 pm | 27,584 | 20.29 µm | **217k** | 64k |
+| apod-10 + full-z air trench (d 1.8, w 800) | 1558.424 | 0.8944 | 0.0040 | 0.102 | 46.0 pm | 33,861 | 19.92 µm | **≈ 620k** | ≈ 180k |
+
+The two-port CMT reproduces each row's R and loss to 10–25 % (0.016 vs 0.022; 0.221 vs
+0.216), so the Q_i are trusted at that level; the trench row has only 9 grid points across
+its linewidth and T = 0.89, so its Q_i is a lower bound (a low-biased T raises ρ and lowers
+Q_i). Against the −3 dB locks of the uniform corr-325 family at the same ~20 µm mode —
+comb 16,203 (Q_i 55k), full-z trench 18,777 (Q_i 63k) — the apodized device is ~4× in
+intrinsic Q and the apodized + trench device ~10×. The comb does not stack with apodization
+(measured −0.0047 on apod-10), the trench does (+0.0039 at N80, +0.13 T at N150). Caveats
+before anyone acts on this: their Fig. 6 shows higher-order modes inside the gap of a
+Gaussian cavity (our single-resonance requirement), the apodized device's envelope shape may
+matter for the acoustic overlap, and neither device has been locked at −3 dB / 20 µm — that
+is one `predict-q3db` estimate plus one confirmation run, and a program decision.
+
+## 11. Literature (two sweeps, DOIs verified; abstracts unless noted)
+
+- Englund, Fushman, Vučković, Opt. Express 13, 5961 (2005) — read in full; Eq. 6–7 the
+  light-cone kernel (k_z weight, no divergence).
+- Quan & Lončar, Opt. Express 19, 18529 (2011) — read in full (user-supplied PDF).
+- Zhang, McCutcheon, Burgess, Lončar, Opt. Lett. 34, 2694 (2009) — TM Q collapses as
+  thickness:width drops (9,000 at 1:1; ours is 0.44:1); Johnson et al. PRB 60, 5751 (1999):
+  thin slabs "hug the edge of the light cone".
+- Kazarinov & Henry, IEEE JQE 21, 144 (1985) + Henry et al. 151 (1985): radiation-loss
+  cancellation by interference in second-order DFB — the closest physical relative.
+- Svela et al., Light Sci. Appl. 9, 204 (2020): an external scatterer positioned to cancel a
+  resonator's backscatter (>30 dB) — external, passive, position-sets-phase.
+- Webster et al., IEEE PTL 19, 429 (2007); Nguyen et al., Opt. Express 18, 7243 (2010);
+  Dalvand et al., Opt. Express 19, 5635 (2011): magic-width lateral-leakage cancellation;
+  two radiators need phase AND amplitude tracking.
+- Gramotnev & Nieminen, Opt. Commun. 219, 33 (2003); Kim et al., Opt. Lett. 40, 5339
+  (2015): grazing diffracted order resonantly enhanced for a weak grating, finite length
+  broadens it — the comb-side physics of the soft cliff at Λ = 530.
+- Hessel & Oliner, Appl. Opt. 4, 1275 (1965); Tamir & Peng, Appl. Phys. 14, 235 (1977):
+  Rayleigh anomaly / leaky-wave framework.
+- Hsu et al., Nat. Rev. Mater. 1, 16048 (2016); Rybin et al., PRL 119, 243901 (2017):
+  Friedrich–Wintgen exact only for one open channel.
+- Monticone & Alù, PRX 3, 041005 (2013): passive single-frequency cancellation allowed,
+  broadband not.
+- Vitali et al., Sci. Rep. 12 (2022): dual-level grating couplers need opposite apodization
+  on the two levels — amplitude must track along the length.
+- Husko et al., OSA Continuum 4, 933 (2021): foundry SiN quarter-wave-shifted gratings,
+  Λ 520 nm, TE, 1.5 µm wide — κ/bandwidth extraction, no Q; abstract only.
+- Tan, Ikeda, Fainman, Opt. Lett. 34, 1357 (2009); Wang et al., Opt. Lett. 39, 5519 (2014);
+  Yoon et al., APL 123, 191106 (2023): cladding-modulated gratings as κ knobs — nobody
+  uses a cladding row as a phase-tuned anti-radiator. Novelty gap confirmed.
+
+
+## 6b. ★2026-09-12 addendum — the end-scattering term, and what a second comb can do
+
+**Correction.** §3 above says the comb's own emission P_c "is the coherent beam, not an
+incoherent r⁴ parasitic". That is wrong. The measured Λ=536 phase circle (scat_r) is a clean
+sinusoid on a PEDESTAL: in units of the radiative rate, mean +0.178, swing ±0.25 (DERIVED
+from the four T's with the exact two-port CMT). The model's coherent beam accounts for only
+0.047 of that pedestal. The remainder (0.117 in the model) is the posts re-scattering the
+counter-propagating carrier c₋e^{−iβx} with NO grating phase (the m=0 order): for an infinite
+row it lands at k_x = −β (outside the cone), but a row of length L with sharp ends has a
+finite-array skirt sinc((β−k_c)L/2) = 0.41 at the cone edge, exactly where the needle is.
+So the earlier program's "r⁴ parasitic" was real physics, mis-attributed by me; it now has
+a mechanism and a knob.
+
+**The knob.** The m=0 term is linear in the post size (like the beam) and its phase relative
+to the needle is set by the comb's CENTRE x_c, not by δx: phase ∝ e^{−i(β−k_c)x_c}, so a
+shift of π/(β−k_c) = 12.2 µm flips its sign and 24 µm restores it (a one-period shift δx→δx+Λ
+rotates it by only 8°, which is why the mesh-twin row at δx = 929 measured the same T as the
+winner). For the comb centred on the cavity that term ADDS radiation; displaced by ~12 µm it
+cancels.
+
+**Standing-wave asymmetry** (MEASURED from the axis field): arg(c₋/c₊) = +108° at x = 0 (the
+device is not mirror-symmetric: wide tooth left of the cavity, narrow right). The two lobes at
+±k_c rotate in opposite directions with δx: Φ± = φ₀ ± (108° + 2πδx/Λ); both anti-phase
+together only at 2πδx/Λ = 72° or 252°; the measured optimum is 270°.
+
+**Predictions (EXPECTED, validated amplitude range: Λ531 / 31 posts / r110 / d1.8, each at
+its own best δx; four model variants = two needle proxies × two azimuth assumptions):**
+
+| configuration | Lorentz needle, b fitted | Lorentz, b=0 | top-line needle | axis needle |
+|---|---|---|---|---|
+| centred (measured winner +0.0115) | +0.0113 | +0.0084 | +0.0101 | +0.0123 |
+| centre at +12 µm | +0.0203 | +0.0286 | +0.0141 | +0.0167 |
+| centre at −12 µm | +0.0078 | +0.0063 | +0.0165 | +0.0164 |
+| centred winner + second comb at +10 µm, own phase | +0.0280 | +0.0377 | +0.0230 | +0.0264 |
+
+All four variants predict a gain from displacing the comb and a larger one from a second,
+displaced comb; they disagree on the side. This replaces the withdrawn B1 of the plan as the
+one confirmation run the physics justifies: 3 tasks at stage-H numerics (comb at +12, at
+−12, the pair) vs the stored control 0.8851; pre-registered: mechanism confirmed if at least
+one displaced comb exceeds +0.0186 and the two sides differ; refuted if both sit within the
+floor of +0.0115. Not dispatched. Figures: `fig4_cusp_story.png`, `fig5_offcentre.png`.
+
+
+### Why every earlier second-comb attempt failed (re-read through the model)
+
+| attempt (stored) | geometry | why it could not work |
+|---|---|---|
+| stage H 2-row retro comb (job 123563) | rows at d = 3.0 and 5.68 µm, Λ 551, same centre | drive at 3.0 µm is e^{−1.75·1.2} = 0.12 of the 1.8 µm row's; at 5.68 it is 0.001. Nothing to add, nothing to cancel: measured "transparent" |
+| stage C2/C3 second rows (jobs 121392, 121525) | rows at y = 0.9–1.5 µm, 40–200 nm from the teeth | near-field regime: measured as cavity dressing (width-equivalent), not radiation interference; dimer coupling at 200 nm gaps broke superposition (16 % error) |
+| stage T 2-row and 4-row (job 130154) | rows at d, d+Λ, d+2Λ, d+3Λ, **same centre, same δx** | each added row has the same beam phase and the same end-scattering sign as the first (same centre), with drive ×0.39 per row step: pure extra amplitude past the optimum. Model: +0.0106 / +0.0097 / +0.0064 vs measured +0.0099 / +0.0087 / +0.0088 |
+| stage T 4-row r80 | as above, amplitude-compensated | equivalence, not gain — as registered before the run |
+
+The common thread: **every second row shared the first row's centre along the guide**, so it inherited the first row's end-scattering phase and could only scale the amplitude. No attempt gave the second comb its own position, which is the only knob the mechanism has. The off-centre run (job 146364, 2026-09-12) is the first to turn it.
+
+## 6c. ★2026-09-12 — MEASURED: the off-centre run (Athena job 146364) and the second-comb dispatch
+
+The pre-registered test of §6b ran overnight: the Λ = 536 nm circle (r 110, 31 posts, d 1.8 µm,
+δx 0/134/268/402 nm) with the comb centre displaced to +12 µm and to −12 µm, box16 numerics,
+far-field monitors moved closer (2.0 wavelengths). Files: `results_from_athena/scat_offcentre/results/`.
+
+| circle | T at 0° / 90° / 180° / 270° | pedestal (x̄) | swing | optimum | T_opt (fit) |
+|---|---|---|---|---|---|
+| centred (stored, job 130091) | 0.8664 / 0.8407 / 0.8657 / 0.8928 | +0.184 | 0.257 | 271° | 0.8927 |
+| centre +12 µm (146364) | 0.8857 / 0.8959 / 0.8858 / 0.8769 | −0.009 | 0.091 | 90° | 0.8956 |
+| centre −12 µm (146364) | 0.8858 / 0.8967 / 0.8854 / 0.8737 | −0.002 | 0.110 | 89° | 0.8970 |
+
+(MEASURED T; pedestal/swing DERIVED with the §3 bookkeeping, x = Δγ/γ vs the control 0.8851.)
+
+**Verdicts against the registration.**
+- **P1 PASS, decisively.** The phase-independent cost vanished: +0.184 → −0.009 / −0.002. The
+  worst phase of a displaced comb (0.874) costs less than a tenth of what the centred comb's
+  worst phase costs (0.841). The mechanism of §6b — a centre-set term, not a δx-set one — is real.
+- **P2 at the gate.** Best displaced T 0.8967 vs the gate 0.8964 (centred best + 2× floor): a
+  displaced single comb beats the centred one by +0.003–0.004, i.e. +0.0105 / +0.0119 over the
+  control, the same as the best centred comb ever measured (Λ 531, +0.0115). The reason is in
+  the table: the swing fell ×0.35–0.43 along with the pedestal. The carrier at 12 µm is ×0.62 of
+  its value at the cavity, and the overlap with the leak lost another ×0.6, so the comb buys its
+  clean pedestal with a weaker interference term. A single comb is at its ceiling either way.
+- **P3 FAIL.** The two sides are mirror images to within 0.003 (best points 0.8959 vs 0.8967).
+  The model's standing-wave asymmetry (arg c−/c+ = 108° at x = 0) does not show up 12 µm out —
+  the refit absorbs this (the fitted needle share f fell from 6.9 to 2.5, a physical value).
+- The optimum phase rotated from 270° (centred) to 90° (both sides) — the 180° flip predicted by
+  the end-scattering half-period π/(β − k_c) = 12.2 µm.
+
+**Model correction found on the way.** The pattern search of §6b optimised a complex
+amplitude per comb. That is not the physical knob: shifting the sites by δx moves the drive
+samples and the end-scattering term differently from a pure phase rotation, so the amplitude
+search reported +0.005 for a design whose δx-circle the same model put at +0.013. The search was
+rewritten over the physical knobs (centre, δx in 30° steps, 21 or 31 posts) with the two-channel
+quadratic form precomputed as a Gram matrix; `data/pattern_search_dx.json`, refit on all 16
+rows (rms 0.0034 / 0.0035 for the two leak proxies).
+
+**What the refit says about two and three combs (EXPECTED).** Both proxies now agree:
+- one displaced comb: +0.016–0.018 (the model still over-predicts the measured +0.011 by ~0.005);
+- **a pair, one comb on each side at its own phase: +0.0285 / +0.0254** for the two measured
+  winners (+12/90° and −12/90°), +0.031 / +0.030 for the model's best pair, which is the same
+  two combs within 10 nm ("+10 µm at 0°" is "+12 µm at 90°" shifted by four periods minus 10 nm).
+  The pair is nearly additive: the two beams share the direction but their fine-k phase across
+  the beam width is decorrelated by the 24 µm separation, unlike the stacked rows of stage T,
+  which were the same beam twice. The sum of the two measured singles would be +0.0225.
+- **a third comb adds +0.0010 / +0.0008**: the best triple puts a 21-post comb at −6 µm and a
+  31-post comb at −20 µm beside the +10 µm comb, where the carrier is ×0.45 — below the floor.
+
+**Dispatched as `runners/scatterers/scat_offcentre2.py`** (2 tasks, identical numerics):
+row 0 = the pair of measured winners; row 1 = the model's best triple. Registered: **P4** the
+pair reaches T ≥ 0.905 (refuted at ≤ 0.8985 — then two beams into one direction compete after
+all); **P5** the triple adds ≤ 2× floor over the pair. Figure: `fig6_offcentre_circles.png`.
+
+**The closer far-field monitors (the user's side question), MEASURED on the control row.**
+T is untouched (0.8864 with monitors at 2.0 wavelengths vs 0.8851 stored at 0.8; the stored
+control without any far-field monitor is 0.8864). Side monitor moved 6.75 → 4.88 µm: the power
+it records beyond |ux| 0.9 rises 11 % → 15 % and beyond 0.977 doubles, 1.8 % → 3.7 %, as the
+clipping geometry of §2 predicts, though the apparent peak stays at 0.96 (0.01 grid). Top
+monitor moved 3.15 → 1.28 µm: **worse, not better** — the guided mode's evanescent tail
+(decay length 0.57 µm) is 14 % of its surface value there, its truncation at the monitor's
+±30 µm edges rings across 0.5 < |ux| < 1 and the horizon share falls (48 % → 38 %). Rule for
+future far-field work: side monitor at 2.0 wavelengths is fine, top monitor no closer than
+~3 µm. None of the conclusions above rest on these monitors; the leak structure of §2 comes
+from the near-field planes. Figure: `fig7_monitor_distance.png`.
+
+## 6d. ★2026-09-12 — MEASURED: two combs and three combs (Athena job 146419)
+
+`results_from_athena/scat_offcentre2/results/`, same numerics as job 146364, all vs the control 0.8851.
+
+| row | T | ΔT | λ (nm) | linewidth (nm) | R | loss | x = Δγ/γ |
+|---|---|---|---|---|---|---|---|
+| pair: (31 posts, +12 µm, 90°) + (31 posts, −12 µm, 90°) | **0.9040** | **+0.0189** | 1558.636 | 1.1643 | 0.0028 | 0.0933 | −0.177 |
+| triple: 31 @ +10 µm/0° + 21 @ −6 µm/0° + 31 @ −20 µm/120° | 0.9031 | +0.0180 | 1558.649 | 1.1656 | 0.0027 | 0.0942 | −0.169 |
+
+**P4 — the pair: at the gate, and the answer is yes.** T 0.9040 against the gate 0.905 and the
+refutation line 0.8985. A second comb raised T by +0.007 over the best single comb ever
+measured (+0.0115, Λ 531 centred), four times the floor, and by +0.008 over the best displaced
+single. In rate units the two singles sum to −0.211 and the pair reaches −0.177: the two beams
+are 84 % additive. The remaining 16 % is their mutual coherence, 2Re⟨C_A, C_B⟩ = +0.034, which the
+model under-estimated (it predicted +0.0285 / +0.0254; the residual grew from ~0.004 on singles
+to ~0.008 on the pair, so the model's beams are somewhat too decorrelated). The linewidth
+narrowed 1.174 → 1.164 nm and the resonant loss fell 0.111 → 0.093, R unchanged: the gain is
+radiation recycled, not a cavity change.
+
+**P5 — the third comb: nothing, as registered.** 0.9031 vs the pair's 0.9040 (−0.0009, inside
+the floor; model said +0.001). Where the carrier is 0.45 of its cavity value a comb cannot pay
+for itself.
+
+**The pattern, then.** One comb per side, each displaced by about the end-scattering half-period
+(12 µm) from the cavity, each at 90° of Λ = 536 — not the centred 270°. The rule that makes the
+second comb work is the one every earlier attempt broke: give it its own centre. Two combs on
+the same centre (stage T) share the end-scattering sign and only add amplitude; two combs on
+opposite sides of the cavity have their own sign and largely their own beam. The physical
+search over centres −20…+20 µm, phases in 30° steps and 21/31 posts finds nothing further within
+2× the floor (its best pair, ±10 µm, is the measured pair shifted 10 nm), so no further comb run
+is justified on this device from the model. T 0.9040 is the highest peak transmission reached on
+the uniform corr-400 N = 80 device by cladding posts alone. Figure: `fig8_pair_triple.png`.
+
+**Transfer note (EXPECTED).** The knob is set by β − k_c (the light-line margin), which is the
+same for the q3db corr-325 device (same core, same clad); its longer envelope (κ smaller) makes
+the carrier at ±12 µm stronger, so the pair should carry over at least as well. That is the
+B2 step of the plan — one confirmation run against `predict-q3db`, when the user decides.
+
+## 6e. ★2026-09-12 — Is two the optimum? What else could a row of circles do? (model answers, EXPECTED)
+
+The question was put in the most open form: more combs, unequal spacings, curves, clusters, or no comb
+at all. The calibrated model can score *any* set of posts — a set S radiates Σ C_i and its effect is the
+quadratic form x(S) = 2Re Σ g_i + Σ_ij Re G_ij with g_i = ⟨L, C_i⟩ and G_ij = ⟨C_i, C_j⟩ — so instead of
+guessing shapes I let a free-form optimizer choose posts anywhere on a 0.1 µm grid over |x| ≤ 22 µm at
+standoffs 1.8 / 2.3 / 2.8 µm (`data/freeform_posts.json`), and scored the specific families it and the
+physics suggested (`data/pattern_search_wide.json`, `round3_model.json`, `round3b_model.json`). Every
+number below is the model's, refit on all 16 phase-circle rows; blind checks against the stored Λ-scan
+(residual ≤ 0.002) and the stored 41–61-post N-scan (+0.003…+0.005 optimistic, ordering right) bound its
+trust. The measured pair is +0.0189; the model has it at +0.0285 / +0.0254.
+
+| family | model best | what it is |
+|---|---|---|
+| free-form, one row at 1.8 µm, no constraint | +0.0319 | two straight periodic combs, 32 posts each, spanning ±1…±17 µm — no curve, no chirp, no cluster |
+| free-form, rows allowed at 2.3 and 2.8 µm | +0.0380 (greedy) → +0.0305 / +0.0294 when re-scored properly | a second row adds ≤ +0.002, a third row subtracts: the greedy's extra was an artefact |
+| "fan" combs, Λ 0.6–3 µm, beams aimed inside the cone at the broad in-plane component | +0.0035 alone; nothing as a third element | the broad component cannot be reached by any periodic row |
+| third comb of any period/length/phase given the measured pair | none within reach | every candidate overlaps the pair or sits where the carrier is < 0.45 |
+| pair at the cutoff period Λ 531 instead of 536 | +0.0324 (both variants) | +0.004 over the measured pair's geometry — dispatched as job 146553 rows 2–3 |
+| one centred comb, r 110, Λ 531, 270°, n = 31 / 47 / 61 / 71 | +0.013 / +0.028 / +0.033 / +0.033 | saturates at 61 posts; equals the pair |
+| two halves with a phase slip at the cavity, any gap 0.5–4.8 µm | +0.0335 | indistinguishable from the long comb and from the pair |
+
+**The reading.** The optimizer never leaves the straight periodic row, because the target is a single
+narrow beam at the horizon and the only radiator that puts power there coherently is a Λ_c-periodic
+line driven by the carrier. Everything that looked like "more structure" — curves, clusters, unequal
+spacings — is a way of spending amplitude on directions where the leak is not. What the model does say,
+and did not say before, is that the comb's phase-independent cost is set by where its **ends** sit
+(the m=0 end-scattering has a sign period of 12.2 µm along the guide), not by its centre: a 31-post
+comb centred on the cavity has its ends at ±8 µm (bad); displaced to ±12 µm its ends sit at 4 and
+20 µm (good); a centred 61-post comb has its ends at ±16 µm (good) and scores the same as the pair. So
+"two combs" is not a magic number — it is one way of putting the ends in the right place with 31-post
+building blocks; a single long comb at full radius is another, and the family saturates at ±16–19 µm
+where the carrier has fallen to 0.5. **Job 146564 (61 posts, r 110, Λ 531, 270°, centred) tests exactly
+this**: if it matches the pair, one comb replaces two and the end rule is established; the stored 61-post
+row at r 78 (+0.0137) is the amplitude-limited comparison.
+
+**What no periodic row can reach, and what is left.** After the pair the resonant loss is 0.093, i.e.
+84 % of the original radiative rate remains: the broad cavity-local component (all of it, ~30 % of the
+original) and the part of the needle the comb's dipole-line pattern does not overlap. Two single-layer
+levers were never measured and are now in the queue: **rod posts** elongated along y (140 × 270 nm,
+equal area; job 146553 row 1) — a dielectric post's induced polarization follows the local field through
+its polarizability tensor, so a rod tilts the comb's radiation pattern toward the in-plane transverse
+polarization, the one lever on the azimuthal overlap that stays single-layer — and the pair on the
+**widened cavity** (row 0) and on **apod-10** (job 146557), which ask whether the displaced pair stacks
+with the two cavity-side loss levers the single comb did (+0.0092) and did not (−0.0047) stack with.
+Beyond those, the remaining loss belongs to the cusp itself (§8) and to the cavity-local component,
+where the recorded levers are the cavity width and the see-saw, not posts.
+
+## 6f. ★2026-09-12 — MEASURED: round 2 (Athena jobs 146553, 146557) and round 3 (146564)
+
+All MEASURED from `results_from_athena/scat_pair_transfer/`, `scat_pair_apod/`, `scat_longcomb/`; each
+row at the numerics of its own stored control.
+
+| row | device | T | ΔT vs control | reference | registered gate → verdict |
+|---|---|---|---|---|---|
+| pair (±12 µm, 90°, Λ 536) | W1050 cavity (ctrl 0.9219, job 124400) | **0.9374** | **+0.0156** | single centred comb there 0.9310 (+0.0092) | ≥ +0.013 → **PASS**: the pair transfers, +0.0064 over the single |
+| pair at Λ 531, model phases (+12 @60°, −12 @120°) | uniform (ctrl 0.8851) | **0.9070** | **+0.0219** | Λ 536 pair 0.9040 | model +0.004 → measured +0.0030 (1.7× floor): consistent, candidate |
+| pair with rod posts 140 × 270 nm | uniform | 0.9038 | +0.0187 | circle pair 0.9040 | within ±0.0036 → as registered: **shape does not matter**, the tensor lever is empty |
+| pair | apod-10 (ctrl 0.9770, job 124531) | 0.9708 | **−0.0062** | single comb there 0.9723 (−0.0047) | ≤ −0.0047 → **REFUTED**: the pair costs more than the single |
+| pair at Λ 531, both 90° (hedge) | uniform | 0.9054 | +0.0203 | model-phase row 0.9070 | −0.0016: the model's phases were the better call (within floor) |
+| one centred 61-post comb, r 110, Λ 531, 270° | uniform | **0.9064** | **+0.0213** | pair 0.9040 / 0.9070; stored r-78 row +0.0137 | ≥ +0.0153 → **PASS**: the end rule holds; one long comb = the pair, +0.0076 over the amplitude-compensated stored row |
+
+**What round 2 settles.**
+- **The pair is a transferable device element on cusped cavities.** On the widened W1050 cavity it
+  gives T 0.9374, the highest peak transmission recorded on this device family with dielectric posts
+  (loss 0.062, R 0.0006). The cavity-width lever and the comb pair address different parts of the loss
+  and add.
+- **The cutoff period is worth +0.003.** Λ 531 (the horizon, Λ_c = 530.6) beats 536 by the amount the
+  model predicted and the single-comb Λ-scan measured (0.8966 vs 0.8928). T 0.9070 is the uniform
+  device's best with posts.
+- **Post shape is irrelevant at equal area**, now also for elongated rods: the comb's radiation
+  pattern is set by the line, not by the post's polarizability tensor.
+- **The comb is a needle patch and nothing else.** On apod-10 the softened cusp leaves loss 0.023
+  and almost no horizon needle; any comb, centred or displaced, only adds its own emission and loses
+  (−0.0047 single, −0.0062 pair). The choice for a device is therefore either/or: apodize the cusp
+  (Q_i 217k at N = 150, §8) or keep the uniform cusped mirror and patch it with the pair (T 0.907 /
+  0.937). They do not stack. (The full-z trench is the lever that stacks with apodization.)
+
+**What round 3 settles — the design rule in its final form.** The comb's phase-independent cost is set by
+where its ends fall along the guide (sign period π/(β − k_c) = 12.2 µm), not by its centre. A single
+centred comb long enough to put its ends at ±16 µm (61 posts, r 110, Λ 531, 270°) gives T 0.9064,
+indistinguishable from the two displaced combs (0.9070 at Λ 531, 0.9040 at Λ 536), and is the simpler
+device. The stored 61-post row measured +0.0137 only because its radius had been cut to 78 nm under the
+old "hold Σr² fixed" rule, which was the pedestal in disguise. Everything else the model was asked —
+a third comb, fan combs, extra rows, curves, chirps, clusters, rod posts — ties or loses; the family
+saturates at ±16–19 µm where the carrier has fallen to half. Final measured ledger on the uniform
+corr-400 N = 80 device: control 0.8851 → best single stored comb 0.8966 → displaced pair 0.9040 →
+pair at the cutoff period 0.9070 ≈ one 61-post comb 0.9064. On the W1050 cavity the pair gives 0.9374.
+The comb does not stack with apodization (−0.0062), which removes the needle at its source.
+
+## 6g. ★2026-09-12 — MEASURED: the pair lengthened to 61 posts per comb (Athena job 146614)
+
+User request: the best displaced pair with each comb lengthened to 61 posts. Two 61-post combs cannot
+sit at ±12 µm (they would overlap across the cavity), so they were pushed out until their inner ends
+meet: centres ±17 µm, 244 posts spanning ±33 µm, phases re-optimised in the model (270°/270°; the
+31-pair's 60°/120° would have scored −0.035 there). Far-field monitor span 60 → 70 µm, nothing else
+changed. `results_from_athena/scat_longpair/results/`.
+
+| row | T | ΔT vs ctrl | vs the 31-post pair 0.9070 | registered band → verdict |
+|---|---|---|---|---|
+| ±17.0 µm, 270°/270° (model best, +0.039 / +0.038) | 0.9057 | +0.0206 | −0.0013 | **TIE** (within ±0.0036); not confirmed (≥ 0.9106) |
+| ±17.5 µm, 300°/270° (hedge, +0.039) | 0.9040 | +0.0189 | −0.0030 | **TIE** |
+
+**Verdict.** Twice the posts for no gain: the family is saturated by ~61–62 posts, whether laid out as
+one centred comb (0.9064), two displaced 31-post combs (0.9070) or two displaced 61-post combs
+(0.9057). The stretch 20–33 µm, where the carrier is 0.25–0.45 of its cavity value, does not pay.
+The model had predicted +0.007 over the pair; this is its largest miss, and the pattern of its misses
+is now clear: its optimism grows with the number of posts (+0.004 at 31, +0.008 at 62, +0.018 at 122),
+so its own-emission and cross-coherence terms are underestimated for large arrays — it ranks designs
+correctly but cannot be used to extrapolate gains to bigger structures. Final measured ledger on the
+uniform corr-400 N = 80 device: control 0.8851 → single 31-post comb 0.8966 → 61-post comb 0.9064 ≈
+31-post pair at Λ 531 0.9070 (best) ≈ 61-post pair 0.9057.
+
+## 6h. ★2026-09-12 — The q3db device (corr 325): one comb vs two, MEASURED at N = 165, and the −3 dB lock
+
+**Why convert first.** The comb's period (Λ_c depends on pitch and wavelength only: 528.0 → 528.1 nm
+between corr 400 and 325) and its end rule (half-period 12.2 → 12.1 µm) carry over unchanged; the
+envelope decay and the needle share do not, and both set the length saturation and the one-vs-two
+question. So the layouts were transferred as-is and compared on the q3db device directly.
+
+**Model transfer (EXPECTED-grade).** κ rescaled (mode FWHM 15.5 → 19.9 µm), the corr-400 post
+polarizability kept, the needle share f calibrated on the one stored corr-325 comb row (job 130458:
+centred 57-post comb, r 80, d 1.9, 270°: +0.0455 vs ctrl 0.4906). Blind check: the stored 90° sibling
+(measured 0.4371) predicted at 0.4391. Prediction: one 61-post comb at r 110 +0.110, the pair +0.107,
+71 posts +0.112 — a tie again; the two-61-post pair +0.137 not trusted (that claim failed on corr 400).
+
+**Measured (Athena job 146639, comb_q3db numerics exactly: ports base, box 8/8.8, 4001 pts, corr 325,
+N 165; `results_from_athena/comb_q3db_layouts/results/`).**
+
+| row | T | dB | ΔT vs ctrl 0.4906 | vs stored r-80 comb 0.5361 | Q_L | mode |
+|---|---|---|---|---|---|---|
+| one centred 61-post comb, r 110, Λ 531, 270° | 0.5659 | −2.47 | +0.0753 | +0.0298 | 14971 | 19.78 µm |
+| pair 31 @ +12 µm/60° + 31 @ −12 µm/120°, r 110 | **0.5704** | −2.44 | **+0.0798** | +0.0343 | 15014 | 19.75 µm |
+
+Gate (i) PASS by 17–19× the floor: the r-110 / end-rule transfer holds and lifts the q3db device by
++0.03 in T at fixed N over its stored comb. Gate (ii): the pair leads by +0.0045 — outside the 0.0036
+tie band, inside the 0.005 working floor for this operating point (the mirror balance is ~3× more
+sensitive at T ≈ 0.5). **A marginal, candidate advantage for two combs on the longer envelope; not a
+confirmed one.** The model over-predicted the magnitudes as usual (+0.11 → +0.08) and got the order
+right within its resolution.
+
+**The −3 dB lock (predict-q3db, extend mode anchored on each measured row, base shape tm_bare_c325;
+no simulation).**
+
+| layout | N* for −3 dB | Q_L (expected deviation ±3.2%) | Q_c / Q_i | width | vs stored locks |
+|---|---|---|---|---|---|
+| pair | **172** | **18155** | 25735 / 61636 | 19.77 µm | comb lock N169 16203 (+12%); full-z trench N168 18777 (−3%) |
+| one 61-post comb | 171 | 17620 | 24830 / 60681 | 19.80 µm | +9% over the comb lock |
+
+Both single-row anchors borrow the Q_i shape from the bare family (the engine flags it: one more row
+~30 periods away would pin it). The engine's own workflow ends with ONE confirmation run per layout at
+N* against the bands (Q_L ±10%, T ±0.03, width ±5% design-grade; ±3.2% / ±0.007 expected). Not run;
+the user decides.
+
+**Confirmation runs (Athena job 146681, `results_from_athena/comb_q3db_lock/results/`), MEASURED.**
+
+| device | N | T | dB | λ (nm) | Q_L | width | engine expected | miss |
+|---|---|---|---|---|---|---|---|---|
+| pair 31 + 31, r 110 | 172 | **0.5003** | **−3.01** | 1559.031 | **18093** | 19.76 µm | 0.4977 / 18155 / 19.77 | T +0.0026, Q −0.3 %, w −0.0 % |
+| one 61-post comb, r 110 | 171 | 0.5060 | −2.96 | 1559.036 | 17557 | 19.79 µm | 0.5036 / 17620 / 19.80 | T +0.0024, Q −0.4 %, w −0.0 % |
+
+Both inside the expected-deviation bands (Q ±3.2 %, T ±0.007), the engine's fourth and fifth live
+validations. **Delivered: the q3db device with the r-110 comb pair at N = 172 sits at −3.01 dB with
+Q 18093 and a 19.76 µm mode — +11.7 % over the stored comb lock (16203, N 169) and within 4 % of the
+full-z trench lock (18777).** The single 61-post comb at N = 171 gives 17557 (+8.4 %). At −3 dB the
+pair's edge over the single comb is +3.1 % in Q, the size of the expected band: consistent with the
++0.0045 at N = 165, still a marginal advantage rather than a proven one; the single comb remains the
+simpler layout at a 3 % cost. Follow-up for the engine: a `tm_comb110_c325` family (four rows now
+exist: N 165 / 171 / 172 per layout) would pin the comb devices' Q_i shape in `calibrate_q3db`.

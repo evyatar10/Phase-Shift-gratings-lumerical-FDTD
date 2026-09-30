@@ -62,6 +62,7 @@ class PiShiftBraggFDTD:
                  farfield_x_span_m=20e-6,
                  farfield_y_dist_m=None,
                  farfield_z_dist_m=None,
+                 farfield_freq_points=1,
                  cavity_width_option="narrow",
                  cavity_width_m=None,
                  innermost_tooth_shift_m=0.0,
@@ -174,6 +175,7 @@ class PiShiftBraggFDTD:
         self.farfield_x_span_m = farfield_x_span_m
         self.farfield_y_dist_m = farfield_y_dist_m
         self.farfield_z_dist_m = farfield_z_dist_m
+        self.farfield_freq_points = int(farfield_freq_points)
 
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
 
@@ -1478,7 +1480,7 @@ class PiShiftBraggFDTD:
 
             fdtd.set("override global monitor settings", 1)
             fdtd.set("use source limits", 1)
-            fdtd.set("frequency points", 1)  # record at resonance wavelength only
+            fdtd.set("frequency points", self.farfield_freq_points)  # 1 = band centre (legacy); >1 = band, projected at resonance
 
             # ---- Top monitor (2D Z-normal): captures radiation out the top (vertical) ----
             fdtd.addprofile()
@@ -1495,7 +1497,7 @@ class PiShiftBraggFDTD:
 
             fdtd.set("override global monitor settings", 1)
             fdtd.set("use source limits", 1)
-            fdtd.set("frequency points", 1)  # record at resonance wavelength only
+            fdtd.set("frequency points", self.farfield_freq_points)
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points

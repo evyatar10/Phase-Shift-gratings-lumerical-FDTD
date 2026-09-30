@@ -117,14 +117,14 @@ intentional; only the 8 standard spec files use `make_optimization_base`.
 
 ## The deploy-menu contract (READ BEFORE RENAMING/ADDING FILES)
 
-`athena/deploy_athena.sh` and `dgx/deploy_dgx.sh` discover studies by
+`athena/deploy_athena.sh` and `igum/deploy_igum.sh` discover studies by
 scanning this tree. The rules, verified against the scripts:
 
 1. **Directory names are hardcoded** in the deploy menus. Never rename
    `single/`, `tm/`, `sweeps/`, or the four optimization directories. A new
    single-run-style category (like `tm/`) needs three edits: the picker block +
    menu entry in `deploy_athena.sh`, and a `_AUTO_DIRS` entry in BOTH
-   `athena/scripts/athena_run.py` and `dgx/scripts/athena_run.py`.
+   `athena/scripts/athena_run.py` and `igum/scripts/athena_run.py`.
 2. **Single / TM menus** = every `runners/single/*.py` (resp. `runners/tm/*.py`)
    with a top-level `run` callable (`def run(` or `run = ...` at column 0);
    `_`-prefixed files and `IS_HELPER=True` modules are skipped.
