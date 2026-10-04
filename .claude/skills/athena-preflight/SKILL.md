@@ -57,7 +57,10 @@ The project permission policy (`.claude/settings.json`) allows all Bash/ssh comm
 without prompting, so every preflight step runs non-interactively. The one guardrail:
 any command containing `scancel` is on the **ask** list — it always prompts the user
 first (this is the harness-level encoding of CLAUDE.md §6 "stopping runs is a
-confirm-first action"). Keep it that way, and always write ssh commands in the plain
+confirm-first action"). The list matches only the LITERAL command, so a `scancel`/`rm`
+hidden in a script or `subprocess` call slips past it. The user-level hook
+`~/.claude/hooks/remote_destructive_guard.py` closes that gap (incident 2026-10-04).
+Keep it that way, and always write ssh commands in the plain
 `ssh evyatarrubin@athena.technion.ac.il "..."` form (no `SSHHOST=...` env-var prefixes,
 which evade the pattern match).
 

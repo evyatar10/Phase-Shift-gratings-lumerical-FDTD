@@ -111,5 +111,5 @@ if __name__ == "__main__":
         b = np.array(eng.param_bounds(SPECS[i]))
         ok = bool(((p >= b[:, 0] - 1e-9) & (p <= b[:, 1] + 1e-9)).all())
         print(f"task {i}: a={a:.1f}  corr {prof.min():.1f}..{prof.max():.1f} nm  "
-              f"rho={prof.mean() / eng.CORR_NM:.6f}  2kL={eng.two_kappa_L(p, 100):.3f}  "
+              f"rho={prof.mean() / eng.CORR_NM:.6f}  2kL={eng.two_kappa_L(p, SPECS[i]):.3f}  "
               f"bounds_ok={ok}")

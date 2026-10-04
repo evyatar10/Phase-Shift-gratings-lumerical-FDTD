@@ -144,5 +144,5 @@ if __name__ == "__main__":
         # EXPECTED width from the 61901 single-point rates (this is the claim under test)
         w = 18.3452 + d * 0.02335 - b * 0.031      # EXPECTATION under test
         print(f"task {i}: d={d:5.1f} b={b:5.1f}  inner={c[:N_INNER].mean():5.1f} outer={c[N_INNER:].mean():5.1f} "
-              f"mcorr={c.mean():6.2f}  2kL={eng.two_kappa_L(p, SPECS[i].n_periods_side):.3f}  "
+              f"mcorr={c.mean():6.2f}  2kL={eng.two_kappa_L(p, SPECS[i]):.3f}  "
               f"W_pred={w:6.3f}  bounds_ok={ok}")

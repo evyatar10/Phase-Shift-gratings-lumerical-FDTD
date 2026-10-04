@@ -24,7 +24,9 @@ you will PARK for the user. Then stop asking — everything after this is action
 - **Decide by stated rule:** at each go/no-go gate, apply the quantitative rule from
   the program memory (e.g. "ceiling below the measured jitter floor → stop = valid
   negative"). Record the number, the rule, and the verdict in the memory file.
-- **PARK (never do alone):** deleting anything, mutating git, `scancel`, changing
+- **PARK (never do alone):** deleting anything (on the servers too, and inside scripts or
+  tests: a "test" that sends `rm`/`scancel` to a real host IS a live delete, as in the
+  2026-10-04 incident; Athena undo = `~/.snapshot`), mutating git, `scancel`, changing
   physics scope or geometry beyond the approved plan, spending GPU budget on stages
   the user hasn't approved, and anything CLAUDE.md §8 reserves for the user. Parked
   items go in the final report under "waiting for you", with a recommendation.

@@ -9,7 +9,8 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GATES = ["gate_projection_local.py", "gate_lam_chain.py",
-         "gate_lam_chain_plumbing.py", "predispatch_check.py"]
+         "gate_lam_chain_plumbing.py", "predispatch_check.py",
+         "gate_tm_identity.py"]      # 2026-10-04: engine is device-parametric; TM must stay bit-identical
 
 env = dict(os.environ, PYTHONIOENCODING="utf-8")   # the lam-chain gate prints λ
 for g in GATES:
@@ -18,4 +19,4 @@ for g in GATES:
     if r.returncode != 0:
         print(f"*** GATE FAILED: {g} — do NOT dispatch ***")
         sys.exit(1)
-print("ALL FOUR GATES GREEN — safe to dispatch")
+print("ALL FIVE GATES GREEN — safe to dispatch")

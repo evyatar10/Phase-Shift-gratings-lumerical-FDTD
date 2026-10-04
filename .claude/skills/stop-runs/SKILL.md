@@ -10,6 +10,10 @@ blanket cancel is unrecoverable for a long optimization. The `scancel` command i
 the permission **ask** list, so the actual cancel always shows the user a prompt —
 that prompt is the confirmation step; everything before it should make the prompt
 trivially verifiable.
+**The ask-list only sees the literal command:** never put `scancel` (or any remote
+delete) inside a script, heredoc or `subprocess` call, and never into a test aimed at
+a real host. The user-level hook `remote_destructive_guard.py` forces a prompt for
+those, but the rule is to not write them at all (incident 2026-10-04, CLAUDE.md §8).
 
 ## Steps
 

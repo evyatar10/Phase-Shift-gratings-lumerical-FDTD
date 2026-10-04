@@ -61,6 +61,7 @@ import numpy as np
 import autograd
 import autograd.numpy as anp
 from dataclasses import dataclass
+from types import SimpleNamespace
 
 import config
 from sim_helpers import (apply_monitor_overrides, find_bragg_resonance,
@@ -130,6 +131,25 @@ I_CAV    = I_DCOMB + 1           # cavity WIDTH (y span) — user scope addition
 N_PARAMS = I_CAV + 1             # 191
 
 
+def layout(n_free):
+    """The parameter-vector layout above for any free-tooth count (the module
+    SL_*/I_*/N_PARAMS are layout(N_FREE), kept for importers). The comb block
+    stays N_COMB posts whatever n_free is."""
+    s_r = 3 * n_free
+    i_d = s_r + 2 * N_COMB
+    return SimpleNamespace(N_FREE=n_free, SL_CORR=slice(0, n_free),
+                           SL_AVG=slice(n_free, 2 * n_free),
+                           SL_SHIFT=slice(2 * n_free, s_r),
+                           SL_R=slice(s_r, s_r + N_COMB),
+                           SL_X=slice(s_r + N_COMB, i_d),
+                           I_DCOMB=i_d, I_CAV=i_d + 1, N_PARAMS=i_d + 2)
+
+
+def dx_pitchlock(spec):
+    """Pitch-locked region dx for spec's pitch (DX_PITCHLOCK_NM is the TM value)."""
+    return spec.pitch_nm / CELLS_PER_PITCH
+
+
 @dataclass
 class CampaignSpec:
     """Everything a runner may vary. Defaults = the settled campaign values."""
@@ -143,7 +163,7 @@ class CampaignSpec:
                                      # +5.2 nm vs the family's 1559.0
     scan_width_nm: float = 6.0
     n_wl_points: int = 301           # 20 pm grid
-    corr_seed_nm: tuple = (CORR_NM,) * N_FREE   # seed B overrides with a dip profile
+    corr_seed_nm: tuple = None       # None → (corr0_nm,)*n_free; seed B passes a dip profile
     corr_max_nm: float = 500.0       # tightened 5 % on a width trip
     max_iter: int = 60
     max_feval: int = 100
@@ -484,57 +504,111 @@ class CampaignSpec:
     # that use cap-collapse as a convergence signal. Default keeps every
     # existing spec bit-identical.
     wgp_fom_slack: float = 1e-4
+    # ★wgp_noise_freeze / wgp_noise_stop (2026-10-04, noise-aware trust cap —
+    # Cao/Berahas/Scheinberg arXiv 2205.03667; Sun & Nocedal 2023): a filter
+    # reject whose PREDICTED gain |gT·Δp| is below 2×wgp_fom_slack could not
+    # have been resolved by the measurement, so it says nothing about the
+    # model and must not shrink the trust cap. wgp_noise_stop consecutive
+    # such rejects ⇒ stop: converged within noise. Off ⇒ bit-identical.
+    wgp_noise_freeze: bool = False
+    wgp_noise_stop: int = 3
+    # ★wgp_reuse_broyden (2026-10-04, Walther & Biegler lagged-Jacobian SQP):
+    # rank-1 secant correction of a REUSED width row from the measured softW
+    # change along the step just taken; skipped if λ moved > 0.05 nm (the row
+    # is a fixed-λ gradient). A fresh solve always replaces it. Default off.
+    wgp_reuse_broyden: bool = False
+    # ★wgp_mode_mac (2026-10-04, MAC mode tracking — Kim & Kim 2000): reject a
+    # trial whose intensity profile overlaps the accepted one below this MAC
+    # (a mode hop), exactly like the λ step bound. None = off.
+    wgp_mode_mac: float = None
+    # ★wgp_range_alpha / wgp_range_cap_frac (2026-10-04, Feppon, Allaire &
+    # Dapogny 2020, nullspace_optimizer: A_C = min(CFL, α_C·dt/‖ξ_C‖∞)): the
+    # range-space (restoration) part ξ_C gets its own gain and its own cap
+    # (as a fraction of the trust cap). 1.0 / None = today's arithmetic.
+    wgp_range_alpha: float = 1.0
+    wgp_range_cap_frac: float = None
+    # ── Device profile (2026-10-04, TE refactor) ───────────────────────────
+    # What used to be module constants, so a TE family can run through the
+    # same engine. Defaults = the corr-325 TM family ⇒ every existing spec is
+    # bit-identical (gates/gate_tm_identity.py proves it).
+    n_free: int = N_FREE             # free innermost periods per side (layout size)
+    pitch_nm: float = PITCH_NM
+    polarization: str = "TM"
+    corr0_nm: float = CORR_NM        # frozen outer-tooth (bulk) corrugation; rho
+                                     # denominator; default seed corr
+    avg_w_nm: float = AVG_W_NM       # bulk average width; seed avg + seed cavity width
+    avg_seed_nm: tuple = None        # per-tooth avg-width seed (None → (avg_w_nm,)*n_free)
+    kappa_per_um: float = KAPPA_PER_UM   # measured kappa of the bulk grating (2κL rule)
+    corr_min_nm: float = 150.0       # corr lower bound (upper bound stays corr_max_nm)
+    avg_bounds_nm: tuple = (775.0, 825.0)
+    wcav_bounds_nm: tuple = (750.0, 1150.0)
+    recenter_nm: float = RECENTER_NM  # recenter trip; scales with the recording window
+    # ★region_y_half_nm (2026-10-04, TE lane; MEASURED on job 168240): the
+    # optimization region's y half-span was always the COMB's containment
+    # (box_y*500-900 = 2500 nm). A bare grating's teeth end at ~±0.7 µm, and
+    # the region DFT monitor stores every cell × every λ (≈113 MB/λ at 2500;
+    # 801 λ → 88.8 GiB → the 40 GB A100 crawled at a 43 h ETA, then died).
+    # None = legacy comb formula (every TM spec unchanged). A value requires
+    # bare=True and must contain the widest tooth at the bounds (asserted).
+    region_y_half_nm: float = None
 
 
 def seed_params(spec):
     """Seed vector: uniform grating (or spec's corr profile) + winner comb."""
+    L = layout(spec.n_free)
     if spec.seed_override is not None:
         p = np.asarray(spec.seed_override, dtype=float).copy()
-        assert p.shape == (N_PARAMS,)
+        assert p.shape == (L.N_PARAMS,)
         return p
-    p = np.empty(N_PARAMS)
-    p[SL_CORR]  = np.asarray(spec.corr_seed_nm, dtype=float)
-    p[SL_AVG]   = AVG_W_NM
-    p[SL_SHIFT] = 0.0
-    p[SL_R]     = COMB_R_NM
-    p[SL_X]     = [k * COMB_LAM_NM + COMB_DX_NM
-                   for k in range(-COMB_N_HALF, COMB_N_HALF + 1)]
-    p[I_DCOMB]  = COMB_D_NM
-    p[I_CAV]    = AVG_W_NM        # cavity width, seed = builder's "avg" option
+    corr = (spec.corr_seed_nm if spec.corr_seed_nm is not None
+            else (spec.corr0_nm,) * spec.n_free)
+    avg = (spec.avg_seed_nm if spec.avg_seed_nm is not None
+           else (spec.avg_w_nm,) * spec.n_free)
+    assert len(corr) == len(avg) == spec.n_free, "seed profile length != n_free"
+    p = np.empty(L.N_PARAMS)
+    p[L.SL_CORR]  = np.asarray(corr, dtype=float)
+    p[L.SL_AVG]   = np.asarray(avg, dtype=float)
+    p[L.SL_SHIFT] = 0.0
+    p[L.SL_R]     = COMB_R_NM
+    p[L.SL_X]     = [k * COMB_LAM_NM + COMB_DX_NM
+                     for k in range(-COMB_N_HALF, COMB_N_HALF + 1)]
+    p[L.I_DCOMB]  = COMB_D_NM
+    p[L.I_CAV]    = spec.avg_w_nm     # cavity width, seed = builder's "avg" option
     return p
 
 
 def param_bounds(spec):
     """Box bounds (nm). Comb d upper bound derives from the y-PML clearance;
     frozen comb params get sliver bounds (inert — func never touches them)."""
+    L = layout(spec.n_free)
     p0 = seed_params(spec)
-    b = ([(150.0, spec.corr_max_nm)] * N_FREE +   # corr: dip and overshoot allowed
-         [(775.0, 825.0)] * N_FREE)               # avg width: ±25 nm n_eff drift cap
+    b = ([(spec.corr_min_nm, spec.corr_max_nm)] * L.N_FREE +  # corr: dip and overshoot allowed
+         [tuple(spec.avg_bounds_nm)] * L.N_FREE)              # avg width: ±25 nm n_eff drift cap
     if spec.freeze_shifts:
         # stage-2: pin shifts at the (evolved) seed — the elongation direction
         # is exhausted and width-coupled; sliver bounds match the frozen-comb
         # mechanism so func still applies the values, optimizer can't move them
-        b += [(v - 1e-3, v + 1e-3) for v in p0[SL_SHIFT]]
+        b += [(v - 1e-3, v + 1e-3) for v in p0[L.SL_SHIFT]]
     else:
-        b += [(0.0, 200.0)] * N_FREE              # shift (repo convention, don't tighten)
+        b += [(0.0, 200.0)] * L.N_FREE            # shift (repo convention, don't tighten)
     if spec.free_comb and not spec.bare:
         d_max = spec.box_y_um * 1000.0 / 2.0 - 240.0 - 1200.0  # y_half − r_max − clear
         b += [(70.0, 240.0)] * N_COMB             # radius: 70 ≈ dx=50 mesh floor
-        b += [(x - 100.0, x + 100.0) for x in p0[SL_X]]
+        b += [(x - 100.0, x + 100.0) for x in p0[L.SL_X]]
         b += [(1500.0, d_max)]
     else:
-        b += [(v - 1e-3, v + 1e-3) for v in p0[3 * N_FREE:I_CAV]]
-    b += [(750.0, 1150.0)]        # cavity width: covers the measured 1050
-    assert len(b) == N_PARAMS
+        b += [(v - 1e-3, v + 1e-3) for v in p0[L.SL_R.start:L.I_CAV]]
+    b += [tuple(spec.wcav_bounds_nm)]   # cavity width: TM default covers the measured 1050
+    assert len(b) == L.N_PARAMS
     if spec.trust_nm:
         # Clamp named blocks to p0 +/- r, centered (see CampaignSpec note).
         # r shrinks near a physical edge to preserve centering; a seed ON the
         # edge (fresh campaign, shifts at 0) keeps the plain box clamp.
-        blocks = {"corr": SL_CORR, "avg": SL_AVG, "shift": SL_SHIFT,
-                  "r": SL_R, "x": SL_X, "d": slice(I_DCOMB, I_DCOMB + 1),
-                  "wcav": slice(I_CAV, I_CAV + 1)}
+        blocks = {"corr": L.SL_CORR, "avg": L.SL_AVG, "shift": L.SL_SHIFT,
+                  "r": L.SL_R, "x": L.SL_X, "d": slice(L.I_DCOMB, L.I_DCOMB + 1),
+                  "wcav": slice(L.I_CAV, L.I_CAV + 1)}
         for name, r in spec.trust_nm.items():
-            for i in range(*blocks[name].indices(N_PARAMS)):
+            for i in range(*blocks[name].indices(L.N_PARAMS)):
                 lo, hi = b[i]
                 # ★FIX 2026-08-24: was min(r, p0-lo, hi-p0) + a symmetry
                 # requirement, which silently did NOTHING whenever the seed sat
@@ -568,11 +642,12 @@ def replay_params(spec, p):
     133395 task 1 in 34 s (skill item 17). Resets the inert comb block to
     seed (physics-neutral: the comb is absent or frozen in the scene),
     keeps the grating block untouched, and asserts bounds compliance."""
+    L = layout(spec.n_free)
     p = np.asarray(p, dtype=float).copy()
-    assert p.shape == (N_PARAMS,)
+    assert p.shape == (L.N_PARAMS,)
     if spec.bare or not spec.free_comb:
         seed = seed_params(spec)
-        p[SL_R], p[SL_X], p[I_DCOMB] = seed[SL_R], seed[SL_X], seed[I_DCOMB]
+        p[L.SL_R], p[L.SL_X], p[L.I_DCOMB] = seed[L.SL_R], seed[L.SL_X], seed[L.I_DCOMB]
     for i, (lo, hi) in enumerate(param_bounds(spec)):
         assert lo <= p[i] <= hi, f"replay param {i}={p[i]} outside [{lo},{hi}]"
     return p
@@ -582,7 +657,7 @@ def replay_params(spec, p):
 # Geometry: parameter vector → Lumerical object properties
 # ═══════════════════════════════════════════════════════════════════════════
 
-def tooth_names(n_side):
+def tooth_names(n_side, n_free=N_FREE):
     """Builder object names for the free teeth (asserted against the .fsp).
 
     bragg_device numbers rects with one global seg counter: wg_left_inf_1,
@@ -590,7 +665,7 @@ def tooth_names(n_side):
     cavity, then the right arm d=1..n emitting (R_narrow_d, R_wide_d).
     """
     names = {}
-    for d in range(1, N_FREE + 1):
+    for d in range(1, n_free + 1):
         names[d] = (f"L_narrow_{d}_{2 + 2 * (n_side - d)}",
                     f"L_wide_{d}_{3 + 2 * (n_side - d)}",
                     f"R_narrow_{d}_{2 * n_side + 3 + 2 * (d - 1)}",
@@ -619,20 +694,21 @@ def make_func(spec):
     Both free regions are walked from their FIXED outer edges toward the
     cavity; the cavity absorbs 2*sum(shift) (see module docstring).
     """
-    hp = PITCH_NM / 2.0
-    cav_l0 = PITCH_NM / 2.0                       # builder default cavity length
-    x_out = cav_l0 / 2.0 + N_FREE * PITCH_NM      # |x| of the free-region outer edge
-    names, cavity = tooth_names(spec.n_periods_side)
+    L = layout(spec.n_free)
+    hp = spec.pitch_nm / 2.0
+    cav_l0 = spec.pitch_nm / 2.0                  # builder default cavity length
+    x_out = cav_l0 / 2.0 + L.N_FREE * spec.pitch_nm   # |x| of the free-region outer edge
+    names, cavity = tooth_names(spec.n_periods_side, L.N_FREE)
     comb_free = spec.free_comb and not spec.bare
     track_twin = (getattr(spec, "width_grad", False)
                   and getattr(spec, "wg_track_resonance", False))
 
     def func(p):
-        corr, avg, shift = p[SL_CORR], p[SL_AVG], p[SL_SHIFT]
+        corr, avg, shift = p[L.SL_CORR], p[L.SL_AVG], p[L.SL_SHIFT]
         w_n, w_w = (avg - corr / 2.0) * NM, (avg + corr / 2.0) * NM
         props = {}
         xl = -x_out                                # left walk, d = 25 .. 1
-        for i in range(N_FREE - 1, -1, -1):
+        for i in range(L.N_FREE - 1, -1, -1):
             s = shift[i]
             ln, lw = names[i + 1][0], names[i + 1][1]
             props[f"{ln}::x"], props[f"{ln}::x span"] = (xl + (hp - s) / 2.0) * NM, (hp - s) * NM
@@ -640,7 +716,7 @@ def make_func(spec):
             props[f"{ln}::y span"], props[f"{lw}::y span"] = w_n[i], w_w[i]
             xl = xl + 2.0 * hp - s
         xr = cav_l0 / 2.0 + anp.sum(shift)         # right walk, d = 1 .. 25
-        for i in range(N_FREE):
+        for i in range(L.N_FREE):
             s = shift[i]
             rn, rw = names[i + 1][2], names[i + 1][3]
             props[f"{rn}::x"], props[f"{rn}::x span"] = (xr + (hp - s) / 2.0) * NM, (hp - s) * NM
@@ -649,13 +725,13 @@ def make_func(spec):
             xr = xr + 2.0 * hp - s
         props[f"{cavity}::x"] = 0.0
         props[f"{cavity}::x span"] = (cav_l0 + 2.0 * anp.sum(shift)) * NM
-        props[f"{cavity}::y span"] = p[I_CAV] * NM  # free cavity width (seed 800
+        props[f"{cavity}::y span"] = p[L.I_CAV] * NM  # free cavity width (seed 800
                                                     # = the builder's "avg" option)
         if comb_free:
-            d_c = p[I_DCOMB] * NM
+            d_c = p[L.I_DCOMB] * NM
             for j, (top, bot) in enumerate(scatterer_names()):
-                props[f"{top}::radius"] = props[f"{bot}::radius"] = p[SL_R][j] * NM
-                props[f"{top}::x"] = props[f"{bot}::x"] = p[SL_X][j] * NM
+                props[f"{top}::radius"] = props[f"{bot}::radius"] = p[L.SL_R][j] * NM
+                props[f"{top}::x"] = props[f"{bot}::x"] = p[L.SL_X][j] * NM
                 props[f"{top}::y"], props[f"{bot}::y"] = d_c, -d_c
         if track_twin:
             # wg_track_resonance: pin the single-λ twin to the last measured
@@ -747,7 +823,7 @@ def make_fct(wl_nm):
     return fct
 
 
-def kappa_penalty(p):
+def kappa_penalty(p, corr0_nm=CORR_NM, n_free=N_FREE):
     """Width anchor: asymmetric deadband on rho = mean(corr)/325 (autograd),
     PLUS the cavity-elongation guard (added 2026-08-16 after seed B walked
     the width-cheat): Σshift collectively elongates the cavity by 2Σs — the
@@ -757,8 +833,9 @@ def kappa_penalty(p):
     total elongation keeps the per-tooth DIFFERENTIAL freedom (the wanted
     physics); beyond it the quadratic overwhelms any measured FOM gain
     (β=1e-5/nm²: at the violator's 255 nm → penalty 0.18 vs gain 0.015)."""
-    rho = anp.mean(p[SL_CORR]) / CORR_NM
-    elong = 2.0 * anp.sum(p[SL_SHIFT])           # nm of cavity elongation
+    L = layout(n_free)
+    rho = anp.mean(p[L.SL_CORR]) / corr0_nm
+    elong = 2.0 * anp.sum(p[L.SL_SHIFT])         # nm of cavity elongation
     return (BETA_UP * anp.maximum(0.0, rho - RHO_UP) ** 2
             + BETA_DN * anp.maximum(0.0, RHO_DN - rho) ** 2
             + BETA_ELONG * anp.maximum(0.0, anp.abs(elong) - ELONG_DEADBAND_NM) ** 2)
@@ -767,9 +844,9 @@ def kappa_penalty(p):
 _kappa_penalty_grad = autograd.grad(kappa_penalty)
 
 
-def elong_penalty(p):
+def elong_penalty(p, n_free=N_FREE):
     """Cheat-channel wall ONLY (rho band retired for v2-projection specs)."""
-    elong = 2.0 * anp.sum(p[SL_SHIFT])
+    elong = 2.0 * anp.sum(p[layout(n_free).SL_SHIFT])
     return BETA_ELONG * anp.maximum(0.0, anp.abs(elong) - ELONG_DEADBAND_NM) ** 2
 
 
@@ -855,9 +932,11 @@ def _fw_elong_curve(e, c=None):
 
 
 def make_fwhm_wall(spec):
+    L = layout(spec.n_free)
+
     def pen(p):
         anc = spec.fw_anchor
-        elong = 2.0 * anp.sum(p[SL_SHIFT])
+        elong = 2.0 * anp.sum(p[L.SL_SHIFT])
         if spec.fw_curve:
             cc = getattr(spec, "fw_curve_c", None)   # device-class coefficient
             d_elong = (_fw_elong_curve(elong, cc)
@@ -868,9 +947,9 @@ def make_fwhm_wall(spec):
         if spec.fw_tooth_w is not None:
             # per-tooth price (see FW_TOOTH_W) — anchor must carry corr_vec
             d_corr = anp.sum(anp.asarray(spec.fw_tooth_w)
-                             * (p[SL_CORR] - anp.asarray(anc["corr_vec"])))
+                             * (p[L.SL_CORR] - anp.asarray(anc["corr_vec"])))
         else:
-            d_corr = FW_A_MCORR * (anp.mean(p[SL_CORR]) - anc["mcorr"])
+            d_corr = FW_A_MCORR * (anp.mean(p[L.SL_CORR]) - anc["mcorr"])
         fhat = anc["fwhm"] + d_corr + d_elong
         hi, lo = RHO_UP * spec.fwhm0_um, RHO_DN * spec.fwhm0_um
         band = (BETA_FW * anp.maximum(0.0, fhat - hi) ** 2
@@ -895,7 +974,7 @@ def make_fwhm_wall(spec):
             # so it cannot overflow the way tanh's cosh^2 derivative does at
             # large excess (measured: RuntimeWarning at e>=163).
             band = cap * band / (cap + band)
-        return band + elong_penalty(p)
+        return band + elong_penalty(p, spec.n_free)
     return pen, autograd.grad(pen)
 
 # ── Stage-3 sigma-hat wall constants (MEASURED, tangent probe job 133512 +
@@ -949,11 +1028,12 @@ def sigma_hat_of(spec, p):
     anc = getattr(spec, "sig_anchor", None)
     if not anc:
         return None
+    L = layout(spec.n_free)
     p = np.asarray(_plain(p), dtype=float)
     return float(anc["sigma"]
-                 + SIG_A_SHIFT * (2.0 * p[SL_SHIFT].sum() - anc["elong"])
-                 + SIG_A_RHO * (p[SL_CORR].mean() / CORR_NM - anc["rho"])
-                 + SIG_A_WCAV * (p[I_CAV] - anc["wcav"]))
+                 + SIG_A_SHIFT * (2.0 * p[L.SL_SHIFT].sum() - anc["elong"])
+                 + SIG_A_RHO * (p[L.SL_CORR].mean() / spec.corr0_nm - anc["rho"])
+                 + SIG_A_WCAV * (p[L.I_CAV] - anc["wcav"]))
 
 
 def check_sigma_surrogate(row):
@@ -1006,24 +1086,27 @@ def make_sigma_wall(spec):
     fixed point, not slowly to the right one.
     """
     anc = spec.sig_anchor
+    L = layout(spec.n_free)
 
     def pen(p):
-        rho = anp.mean(p[SL_CORR]) / CORR_NM
-        elong = 2.0 * anp.sum(p[SL_SHIFT])
+        rho = anp.mean(p[L.SL_CORR]) / spec.corr0_nm
+        elong = 2.0 * anp.sum(p[L.SL_SHIFT])
         sig_hat = (anc["sigma"] + SIG_A_SHIFT * (elong - anc["elong"])
                    + SIG_A_RHO * (rho - anc["rho"])
-                   + SIG_A_WCAV * (p[I_CAV] - anc["wcav"]))
+                   + SIG_A_WCAV * (p[L.I_CAV] - anc["wcav"]))
         return (BETA_SIG * anp.maximum(0.0, sig_hat - SIG_CEIL_UM) ** 2
                 + BETA_SIG * anp.maximum(0.0, SIG_FLOOR_UM - sig_hat) ** 2)
 
     return pen, autograd.grad(pen)
 
 
-def two_kappa_L(p, n_side):
-    """2*kappa*L over one side (the surrogate-rule quantity), kappa ∝ corr."""
-    per_um = PITCH_NM * 1e-3
-    frozen = 2.0 * KAPPA_PER_UM * (n_side - N_FREE) * per_um
-    free = 2.0 * KAPPA_PER_UM * float(np.sum(_plain(p)[SL_CORR]) / CORR_NM) * per_um
+def two_kappa_L(p, spec):
+    """2*kappa*L over one side (spec.n_periods_side periods; the surrogate-rule
+    quantity), kappa ∝ corr relative to the bulk spec.corr0_nm."""
+    per_um = spec.pitch_nm * 1e-3
+    frozen = 2.0 * spec.kappa_per_um * (spec.n_periods_side - spec.n_free) * per_um
+    free = 2.0 * spec.kappa_per_um * float(
+        np.sum(_plain(p)[layout(spec.n_free).SL_CORR]) / spec.corr0_nm) * per_um
     return frozen + free
 
 
@@ -1036,9 +1119,11 @@ def attach_penalty(project, spec=None):
     and exact, so it is added after calibration, uncalibrated."""
     fom0, grad0 = project.compute_fom, project.compute_gradient
     cal = getattr(spec, "grad_cal", None) if spec is not None else None
-    cal_slices = {"corr": SL_CORR, "avg": SL_AVG, "shift": SL_SHIFT,
-                  "r": SL_R, "x": SL_X, "d": slice(I_DCOMB, I_DCOMB + 1),
-                  "cav": slice(I_CAV, I_CAV + 1)}
+    c0, nf = (spec.corr0_nm, spec.n_free) if spec is not None else (CORR_NM, N_FREE)
+    L = layout(nf)
+    cal_slices = {"corr": L.SL_CORR, "avg": L.SL_AVG, "shift": L.SL_SHIFT,
+                  "r": L.SL_R, "x": L.SL_X, "d": slice(L.I_DCOMB, L.I_DCOMB + 1),
+                  "cav": slice(L.I_CAV, L.I_CAV + 1)}
     if spec is not None and getattr(spec, "wg_project", False):
         # ★PROJECTION MODE: NO analytic width penalty at all (audit S4,
         # 2026-08-25). Width is steered by the null-space projection using the
@@ -1058,9 +1143,11 @@ def attach_penalty(project, spec=None):
             assert spec.fw_anchor, "fwhm_wall=True requires fw_anchor"
             pen, pen_grad = make_fwhm_wall(spec)
         elif spec is not None and not getattr(spec, "rho_band", True):
-            pen, pen_grad = elong_penalty, _elong_penalty_grad
+            pen = lambda p: elong_penalty(p, nf)
+            pen_grad = lambda p: _elong_penalty_grad(p, nf)
         else:
-            pen, pen_grad = kappa_penalty, _kappa_penalty_grad
+            pen = lambda p: kappa_penalty(p, c0, nf)
+            pen_grad = lambda p: _kappa_penalty_grad(p, c0, nf)
 
     def compute_fom(params=None):
         pp = params if params is not None else project.parametrization.get_initial_params()
@@ -1105,13 +1192,14 @@ def bc_normal_weight(eps_eval):
 def boundary_weights(spec):
     """param index → (wx, wy, wz) dEps-component weights for the bc patch."""
     r = bc_normal_weight(spec.bc_eps_eval)
+    L = layout(spec.n_free)
     w = {}
-    for sl, wxyz in ((SL_CORR, (1.0, r, 1.0)),      # y-normal walls
-                     (SL_AVG, (1.0, r, 1.0)),
-                     (SL_SHIFT, (r, 1.0, 1.0))):    # x-normal walls
+    for sl, wxyz in ((L.SL_CORR, (1.0, r, 1.0)),    # y-normal walls
+                     (L.SL_AVG, (1.0, r, 1.0)),
+                     (L.SL_SHIFT, (r, 1.0, 1.0))):  # x-normal walls
         for i in range(sl.start, sl.stop):
             w[i] = wxyz
-    w[I_CAV] = (1.0, r, 1.0)                        # cavity wall is y-normal
+    w[L.I_CAV] = (1.0, r, 1.0)                      # cavity wall is y-normal
     return w
 
 
@@ -1154,10 +1242,16 @@ def make_bc_parametrization(lmpt):
 
 def build_base_cfg(spec):
     """SimulationConfig for the campaign base scene (comb_q3db numerics family)."""
+    L = layout(spec.n_free)
     cfg = _common.build_ports_base()
     cfg.y_span_override_m = spec.box_y_um * 1e-6
     cfg.span_multiplier_override = spec.box_z_mult
-    cfg.geometry.corrugation_depth_m = CORR_NM * NM   # NOT cfg.grating — silent no-op
+    # pitch / avg width via the decimal literal: 516.83 * NM is 1 ulp off the
+    # base config's 516.83e-9, and TM specs must reproduce today's cfg exactly
+    cfg.grating.pitch_m = float(f"{spec.pitch_nm!r}e-9")
+    cfg.geometry.avg_corrugation_width_m = float(f"{spec.avg_w_nm!r}e-9")
+    cfg.source.polarization = spec.polarization
+    cfg.geometry.corrugation_depth_m = spec.corr0_nm * NM   # NOT cfg.grating — silent no-op
     cfg.grating.n_periods_each_side = spec.n_periods_side
     cfg.spectral.center_wavelength_m = spec.scan_center_nm * NM
     cfg.spectral.scan_width_nm = spec.scan_width_nm
@@ -1170,7 +1264,7 @@ def build_base_cfg(spec):
         cfg.scatterer.enabled = True
         cfg.scatterer.radius_m = COMB_R_NM * NM
         if spec.comb_n_half is None:
-            x_nm = list(p0[SL_X])
+            x_nm = list(p0[L.SL_X])
         else:
             # Count study: regenerate the lattice at the requested half-count.
             # (The optimized vector's own x sit within 0.73 nm of this lattice,
@@ -1178,7 +1272,7 @@ def build_base_cfg(spec):
             k = spec.comb_n_half
             x_nm = [j * COMB_LAM_NM + COMB_DX_NM for j in range(-k, k + 1)]
         cfg.scatterer.x_list_m = [x * NM for x in x_nm]
-        cfg.scatterer.y_list_m = [p0[I_DCOMB] * NM] * len(x_nm)
+        cfg.scatterer.y_list_m = [p0[L.I_DCOMB] * NM] * len(x_nm)
         cfg.scatterer.height_m = 350.0 * NM
     assert cfg.symmetry.use_z_symmetry, "comb is z-symmetric — keep the 2x z saving"
     return cfg
@@ -1305,7 +1399,7 @@ def build_base_fsp(spec, out_path):
 def _assert_name_map(fdtd, spec):
     """Every object the func will touch must exist in the scene — never trust
     the name formula (the job-130145 class of bug)."""
-    names, cavity = tooth_names(spec.n_periods_side)
+    names, cavity = tooth_names(spec.n_periods_side, spec.n_free)
     wanted = [n for quad in names.values() for n in quad] + [cavity]
     if not spec.bare:
         wanted += [n for pair in scatterer_names(comb_count(spec)) for n in pair]
@@ -1408,26 +1502,41 @@ def make_project(spec, out_dir, lmpt=None):
     fsp = os.path.join(out_dir, f"{spec.label}_base.fsp")
     wl_nm = build_base_fsp(spec, fsp)
 
-    dp = np.full(N_PARAMS, spec.dp_tooth_nm)       # dp lives in PARAM units (nm)
-    dp[SL_R] = dp[SL_X] = dp[I_DCOMB] = spec.dp_comb_nm
+    L = layout(spec.n_free)
+    dp = np.full(L.N_PARAMS, spec.dp_tooth_nm)     # dp lives in PARAM units (nm)
+    dp[L.SL_R] = dp[L.SL_X] = dp[L.I_DCOMB] = spec.dp_comb_nm
     # Explicit uniform mesh over the region is REQUIRED by lumopt2 (the dEps
     # grid locks to it; dx=None crashes addmesh). 50 nm = the optimization-mesh
     # cell, so the override matches the global mesh; B2 quantifies any residual
     # numerics shift vs the stored anchor.
+    # x half-span = the larger of the comb extent (TM: 16.0 µm) and the free
+    # tooth region + 1 µm (TE n_free=60 at pitch 500: 31.1 µm). TM specs are
+    # unchanged (13.05 µm edge < comb); teeth outside the region would get a
+    # silently ZERO gradient — the assert below is the backstop.
+    x_half = max(COMB_N_HALF * COMB_LAM_NM + COMB_DX_NM + 240.0 + 500.0,
+                 spec.pitch_nm / 4.0 + spec.n_free * spec.pitch_nm + 1000.0)
+    y_half = spec.box_y_um * 500.0 - 900.0                        # region, nm
+    if spec.region_y_half_nm is not None:
+        assert spec.bare, "region_y_half_nm is for bare specs (comb needs 2200+)"
+        y_half = float(spec.region_y_half_nm)
     region = lmpt.Box(
-        x_span=2.0 * (COMB_N_HALF * COMB_LAM_NM + COMB_DX_NM + 240.0 + 500.0) * NM,
-        y_span=2.0 * (spec.box_y_um * 500.0 - 900.0) * NM,
+        x_span=2.0 * x_half * NM,
+        y_span=2.0 * y_half * NM,
         z_span=0.8e-6,
         dx=getattr(spec, "region_dx_nm", 50.0) * NM, dy=50e-9, dz=50e-9,
     )
     # Containment (docs audit risk #5 — "the docs' single loudest warning"):
     # the optimization region must contain every geometry excursion at the
     # BOUNDS EXTREMES, not just the seed layout.
-    y_half = spec.box_y_um * 500.0 - 900.0                        # region, nm
-    x_half = COMB_N_HALF * COMB_LAM_NM + COMB_DX_NM + 240.0 + 500.0
-    assert (825.0 + 500.0 / 2.0) / 2.0 < y_half, \
+    assert (spec.avg_bounds_nm[1] + spec.corr_max_nm / 2.0) / 2.0 < y_half, \
         "widest tooth edge (avg_max + corr_max/2)/2 exceeds region y half-span"
-    assert 1960.0 + 240.0 <= y_half, "comb d_max + r_max exceeds region y half-span"
+    # The region's x span is sized by the COMB (±16.0 µm). The free teeth must
+    # sit inside it too, or their dEps is never sampled and their gradient is
+    # silently zero (TM n_free=25: edge 13.05 µm; a 60-tooth TE layout ~30 µm).
+    assert spec.pitch_nm / 4.0 + spec.n_free * spec.pitch_nm < x_half, \
+        "free-tooth region outer edge exceeds the optimization region x half-span"
+    if spec.region_y_half_nm is None:
+        assert 1960.0 + 240.0 <= y_half, "comb d_max + r_max exceeds region y half-span"
     if spec.comb_n_half is None:
         assert COMB_N_HALF * COMB_LAM_NM + COMB_DX_NM + 100.0 + 240.0 < x_half, \
             "comb x bound + r_max exceeds region x half-span"
@@ -1582,14 +1691,15 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
     from lumopt2.utils.callbacks import BaseCallback
     path = os.path.join(out_dir, f"{spec.label}_evals.jsonl")
     fwhm0_um = fwhm0_um or getattr(spec, "fwhm0_um", None)
+    L = layout(spec.n_free)
 
     class CampaignLog(BaseCallback):
         def on_function_eval(self, project, eval_num, params, fom_value,
                              gradient=None, **kw):
             p = np.asarray(params, dtype=float)
             row = {"eval": int(eval_num), "t": time.time(), "fom": float(fom_value),
-                   "rho": float(np.mean(p[SL_CORR]) / CORR_NM),
-                   "two_kL": two_kappa_L(p, spec.n_periods_side),
+                   "rho": float(np.mean(p[L.SL_CORR]) / spec.corr0_nm),
+                   "two_kL": two_kappa_L(p, spec),
                    "params": p.tolist()}
             try:
                 project.load_forward_results()
@@ -1657,7 +1767,8 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                     spec._wg_dTp = tp_hi - tp_lo
                 q_l = lam_pk / fwhm if fwhm else None
                 try:
-                    px, pI = profile_line(fdtd, lam_pk, spec.n_periods_side)
+                    px, pI = profile_line(fdtd, lam_pk, spec.n_periods_side,
+                                          spec.pitch_nm)
                 except Exception:
                     px = pI = None
                 if pI is not None:
@@ -1676,7 +1787,8 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                 if pI is not None:
                     # V2 dual measurement (item 28): the gradient carrier and
                     # the spec observable, side by side on EVERY eval.
-                    row["softw_um"] = round(float(soft_width_of_line(px, pI)), 6)
+                    row["softw_um"] = round(float(soft_width_of_line(
+                        px, pI, spec.pitch_nm / 2000.0)), 6)
                 if getattr(spec, "width_grad", False):
                     # the FOM carrier's OWN sample (single-λ twin monitor) —
                     # this is what wg_anchor must be measured through, or the
@@ -1685,9 +1797,9 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                         ra = fdtd.getresult("field_profile_adj", "E")
                         ax, aI, _ = _line_from_res(
                             ra, float(np.squeeze(ra["lambda"])) / NM,
-                            spec.n_periods_side)
-                        row["softw_adj_um"] = round(
-                            float(soft_width_of_line(ax, aI)), 6)
+                            spec.n_periods_side, spec.pitch_nm)
+                        row["softw_adj_um"] = round(float(soft_width_of_line(
+                            ax, aI, spec.pitch_nm / 2000.0)), 6)
                     except Exception:
                         pass
                     anc = getattr(spec, "wg_anchor", None)
@@ -1732,11 +1844,11 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                     # item-24 fix, live: anchor tracks the measurement at
                     # accepted-best cadence (probes never move it)
                     spec.fw_anchor = {"fwhm": float(row["fwhm_env_um"]),
-                                      "mcorr": float(np.mean(p[SL_CORR])),
-                                      "elong": float(2.0 * p[SL_SHIFT].sum()),
+                                      "mcorr": float(np.mean(p[L.SL_CORR])),
+                                      "elong": float(2.0 * p[L.SL_SHIFT].sum()),
                                       "corr_vec": tuple(float(v)
-                                                        for v in p[SL_CORR])}
-                if row.get("lam_pk_nm") and abs(row["lam_pk_nm"] - spec.scan_center_nm) > RECENTER_NM:
+                                                        for v in p[L.SL_CORR])}
+                if row.get("lam_pk_nm") and abs(row["lam_pk_nm"] - spec.scan_center_nm) > spec.recenter_nm:
                     raise RecenterNeeded(f"peak {row['lam_pk_nm']:.3f} vs center {spec.scan_center_nm}")
                 s = row.get("sigma_um")
                 if sigma0_um and s and not (RHO_DN <= s / sigma0_um <= RHO_UP):
@@ -1751,7 +1863,7 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
     return CampaignLog()
 
 
-def profile_line(fdtd, lam_pk_nm, n_side):
+def profile_line(fdtd, lam_pk_nm, n_side, pitch_nm=PITCH_NM):
     """(x_um, I_x) — the PROJECT's canonical 1D mode profile.
 
     ★REWRITTEN 2026-08-18 on the user's instruction ("just use my model with
@@ -1773,11 +1885,11 @@ def profile_line(fdtd, lam_pk_nm, n_side):
     until re-measured, and do not attribute a mechanism without evidence.
     """
     res = fdtd.getresult("field_profile", "E")
-    x, I, _ = _line_from_res(res, lam_pk_nm, n_side)
+    x, I, _ = _line_from_res(res, lam_pk_nm, n_side, pitch_nm)
     return x, I
 
 
-def _line_from_res(res, lam_pk_nm, n_side):
+def _line_from_res(res, lam_pk_nm, n_side, pitch_nm=PITCH_NM):
     """(x_um_cropped, I_cropped, aux) from a raw field_profile result dict.
 
     aux carries what the width-adjoint source needs: the resonance λ index,
@@ -1803,7 +1915,7 @@ def _line_from_res(res, lam_pk_nm, n_side):
         wy[1:-1] = (y[2:] - y[:-2]) / 2.0
     else:
         I, wy = I_xy, np.ones(1)
-    keep = np.abs(x) <= n_side * PITCH_NM / 1000.0      # crop to the grating
+    keep = np.abs(x) <= n_side * pitch_nm / 1000.0      # crop to the grating
     return x[keep], I[keep], {"i_lam": i, "keep": keep, "wy": wy}
 
 
@@ -1842,7 +1954,9 @@ def fwhm_env_of_line(x, I):
 # softW-µm to fwhm-µm and is re-zeroed per restart; the measured fwhm_env
 # guard stays the authority.
 
-WG_FRINGE_UM = 0.258     # standing-wave period ≈ pitch/2 — boxcar kills it
+WG_FRINGE_UM = 0.258     # standing-wave period ≈ pitch/2 — boxcar kills it.
+                         # TM default only: spec callers pass pitch_nm/2000
+                         # (0.25842 — the same boxcar nb at dx 50 and 51.683)
 WG_GAUSS_UM = 0.25       # kills harmonics; 0.25 measured best of .15/.25/.40
 WG_EPS = 0.05            # sigmoid temperature, fraction of (peak−floor)
 WG_BETA_PK = 60.0        # softmax-peak sharpness (on I/scale ∈ [0,1])
@@ -1851,10 +1965,10 @@ WG_RESID_WARN = 0.05     # µm: |Δpredicted − Δmeasured| that must not pass 
 _WSMOOTH = {}
 
 
-def _wsmooth_matrix(n, dx_um):
+def _wsmooth_matrix(n, dx_um, fringe_um=WG_FRINGE_UM):
     """Dense boxcar+Gaussian smoothing matrix with edge replication (cached).
     A constant to autograd — the smoothing becomes one differentiable dot."""
-    key = (n, round(dx_um, 9))
+    key = (n, round(dx_um, 9), fringe_um)
     if key not in _WSMOOTH:
         def mat(k):
             m = len(k) // 2
@@ -1863,7 +1977,7 @@ def _wsmooth_matrix(n, dx_um):
                 for j, kv in enumerate(k):
                     M[i, min(max(i + j - m, 0), n - 1)] += kv
             return M
-        nb = max(1, int(round(WG_FRINGE_UM / dx_um)))
+        nb = max(1, int(round(fringe_um / dx_um)))
         ng = int(np.ceil(4 * WG_GAUSS_UM / dx_um))
         t = np.arange(-ng, ng + 1) * dx_um
         kg = np.exp(-0.5 * (t / WG_GAUSS_UM) ** 2)
@@ -1871,10 +1985,10 @@ def _wsmooth_matrix(n, dx_um):
     return _WSMOOTH[key]
 
 
-def soft_width_of_line(x, I):
+def soft_width_of_line(x, I, fringe_um=WG_FRINGE_UM):
     """softW (µm) of a y-integrated profile line — autograd-differentiable in I."""
     x = np.asarray(x, dtype=float)
-    Is = anp.dot(_wsmooth_matrix(len(x), float(np.mean(np.diff(x)))), I)
+    Is = anp.dot(_wsmooth_matrix(len(x), float(np.mean(np.diff(x))), fringe_um), I)
     # scale stays IN the autograd graph: detaching it puts a 2e-3 relative
     # error in the gradient (measured, gate W0.3) because the softmax weights
     # depend on it — a "safe constant" that silently isn't.
@@ -1889,13 +2003,15 @@ def soft_width_of_line(x, I):
     return anp.sum(0.5 * (sig[1:] + sig[:-1]) * (x[1:] - x[:-1]))
 
 
-_soft_width_grad = autograd.grad(lambda I, x: soft_width_of_line(x, I))
+_soft_width_grad = autograd.grad(
+    lambda I, x, f=WG_FRINGE_UM: soft_width_of_line(x, I, f))
 
 
-def softw_and_weight(x, I):
+def softw_and_weight(x, I, fringe_um=WG_FRINGE_UM):
     """(softW value, dsoftW/dI) — the weight is the adjoint-source profile."""
     I = np.asarray(I, dtype=float)
-    return float(soft_width_of_line(x, I)), np.asarray(_soft_width_grad(I, x))
+    return (float(soft_width_of_line(x, I, fringe_um)),
+            np.asarray(_soft_width_grad(I, x, fringe_um)))
 
 
 def width_band_penalty(spec, softw):
@@ -1945,7 +2061,7 @@ def make_fct_v2(wl_nm, spec):
     return fct
 
 
-def check_import_src_injects(src_plane):
+def check_import_src_injects(src_plane, polarization="TM"):
     """★ROOT CAUSE of the exactly-zero width gradients (136189/136190,
     diagnosed 2026-08-23, plan §27): the twin/source plane sits at z=0 = the
     ANTI-symmetric (PEC-like) BC, where tangential E ≡ 0 by parity — the TM
@@ -1955,10 +2071,22 @@ def check_import_src_injects(src_plane):
     W·conj(E) sheet was ~empty and the adjoint solved noise → gradient 0.
     (The FieldRegion 'source mode' object is dipole-based — z-polarized
     dipoles allowed — which is why only the import route zeroes out.)
-    This guard turns the silent 6-GPU-h zero into a 1-second loud failure."""
+    This guard turns the silent 6-GPU-h zero into a 1-second loud failure.
+
+    TE (2026-10-04): the z=0 plane is the SYMMETRIC BC there, so tangential
+    Ex/Ey carry the field and Ez ≡ 0 by parity — the import route injects
+    fine. The guard then asserts that parity instead (tangential must
+    dominate); Ez >= tangential means the plane/BC/polarization disagree."""
     s = np.abs(np.asarray(src_plane))
     tan = float(max(s[..., 0].max(), s[..., 1].max()))
     nrm = float(s[..., 2].max())
+    if polarization == "TE":
+        if tan <= nrm:
+            raise RuntimeError(
+                f"TE width-adjoint import source: tangential max {tan:.3e} <= "
+                f"Ez {nrm:.3e} on the z=0 plane, where the symmetric BC makes "
+                f"Ez vanish — plane, BC and polarization disagree.")
+        return tan, nrm
     if tan < 1e-3 * max(nrm, 1e-300):
         raise RuntimeError(
             f"width-adjoint import source would inject ~nothing: tangential "
@@ -2104,8 +2232,9 @@ def make_width_classes(lmpt, spec):
         def get_results(self, fdtd_session):
             res = fdtd_session.fdtd.getresult(self.monitor_name, "E")
             lam_nm = float(np.squeeze(res["lambda"])) / NM   # single plane
-            x, I, aux = _line_from_res(res, lam_nm, spec.n_periods_side)
-            sw, w_x = softw_and_weight(x, I)
+            x, I, aux = _line_from_res(res, lam_nm, spec.n_periods_side,
+                                       spec.pitch_nm)
+            sw, w_x = softw_and_weight(x, I, spec.pitch_nm / 2000.0)
             self.values = anp.array([sw])
             self.wavelengths = [lam_nm * NM]
             aux.update(w_x=w_x, softw=sw, x_um=x, I=I, lam_pk_nm=lam_nm)
@@ -2187,7 +2316,8 @@ def make_width_classes(lmpt, spec):
             if getattr(spec, "wg_source", "fieldregion") == "import":
                 # standard import source carries the weighted sheet; the
                 # FieldRegion stays a pure monitor (source mode stays off)
-                check_import_src_injects(src[..., i, :])   # fail LOUD (§27)
+                check_import_src_injects(src[..., i, :],   # fail LOUD (§27)
+                                         spec.polarization)
                 fdtd_session.fdtd.setnamed("width_adj_src", "enabled", True)
                 # pin the source spectrum to the twin's λ (audit 2026-08-22:
                 # override=1 with unset wavelengths risks an off-λ spectrum;
@@ -2361,7 +2491,7 @@ def _proj_step(gT, gW, D, W, W_tgt, marg, alpha, step_max_nm):
 
 
 def _ns2_step(gT, gW, gLam, D, W, W_tgt, marg, lam_nm, lam_tgt_nm, lam_marg_nm,
-              cap_nm):
+              cap_nm, range_alpha=1.0, range_cap_nm=None):
     """Two-constraint null+range-space step (d1, 2026-08-30) — Feppon form.
 
     d = cap·ξ_J/‖ξ_J‖_∞ + ξ_C  with  A = [gW, gLam],  M = AᵀDA:
@@ -2375,6 +2505,8 @@ def _ns2_step(gT, gW, gLam, D, W, W_tgt, marg, lam_nm, lam_tgt_nm, lam_marg_nm,
     Returns (step, phase, diag); diag carries rho_T (the falsification
     observable: fraction of D^½∇T surviving the projection), condM, lam
     (shadow price vs gW, same definition as _proj_step's), rW/rLam residuals.
+    range_alpha / range_cap_nm: separate gain and inf-norm cap for ξ_C (Feppon
+    et al. 2020: A_C = min(CFL, α_C·dt/‖ξ_C‖∞)); defaults = the old clamp.
     """
     gT, gW, D = (np.asarray(v, dtype=float) for v in (gT, gW, D))
     s = np.sqrt(D)
@@ -2427,9 +2559,11 @@ def _ns2_step(gT, gW, gLam, D, W, W_tgt, marg, lam_nm, lam_tgt_nm, lam_marg_nm,
     # Below rho_T=0.02 scale the step down proportionally instead.
     if rho_T < 0.02:
         step = step * (rho_T / 0.02)
+    xi_C = xi_C * range_alpha                     # ×1.0 is exact in IEEE
+    c_cap = range_cap_nm if range_cap_nm is not None else cap_nm
     mC = float(np.max(np.abs(xi_C)))
-    if mC > cap_nm:                               # scalar clamp: ξ_J part keeps
-        xi_C = xi_C * (cap_nm / mC)               # both orthogonalities
+    if mC > c_cap:                                # scalar clamp: ξ_J part keeps
+        xi_C = xi_C * (c_cap / mC)                # both orthogonalities
     step = step + xi_C
     phase = "ns2" if not np.any(h) else "ns2+restore"
     if degraded:
@@ -2482,6 +2616,50 @@ def _save_opt_state(out_dir, label, state):
     os.replace(tmp, path)
 
 
+def profile_mac(npz_a, npz_b):
+    """Modal assurance criterion of two saved intensity profiles (MAC mode
+    tracking, Kim & Kim 2000): (∫I_a·I_b)² / (∫I_a² ∫I_b²), b interpolated
+    onto a's x (0 outside). 1 = same shape; a mode hop drops it. None if
+    either file is missing."""
+    if not (os.path.exists(npz_a) and os.path.exists(npz_b)):
+        return None
+    with np.load(npz_a) as a, np.load(npz_b) as b:
+        x = np.asarray(a["x_um"], dtype=float)
+        Ia = np.asarray(a["I"], dtype=float)
+        Ib = np.interp(x, np.asarray(b["x_um"], dtype=float),
+                       np.asarray(b["I"], dtype=float), left=0.0, right=0.0)
+    ab, aa, bb = (float(np.trapz(v, x)) for v in (Ia * Ib, Ia * Ia, Ib * Ib))
+    return ab ** 2 / (aa * bb) if aa > 0 and bb > 0 else None
+
+
+def _reject_cap(cap_state, dT_pred_trial, slack, freeze):
+    """Trust cap after a filter reject -> (new_cap, noise). A reject whose
+    predicted gain |gT·Δp| is below 2×slack is a NOISE reject (Cao/Berahas/
+    Scheinberg arXiv 2205.03667): the measurement could not resolve the step,
+    so the cap stays. Otherwise the legacy rule: halve, floor 2 nm."""
+    noise = bool(freeze) and abs(dT_pred_trial) < 2.0 * slack
+    return (cap_state if noise else max(cap_state * 0.5, 2.0)), noise
+
+
+def _broyden_update(gW, dp, dW_meas, dlam, dlam_max=0.05):
+    """Rank-1 secant (Broyden) correction of a reused width row (Walther &
+    Biegler lagged-Jacobian SQP): afterwards gW·dp == dW_meas, unchanged
+    orthogonal to dp. gW is the FIXED-λ softW gradient (µm per nm), so the
+    measured ΔsoftW is attributable to dp only if the resonance stayed put:
+    skip when |dλ| > dlam_max nm. Returns (gW_new, log fields)."""
+    gW, dp = np.asarray(gW, dtype=float), np.asarray(dp, dtype=float)
+    if dlam is None or abs(dlam) > dlam_max:
+        return gW, {"broyden_skipped": "dlam"}
+    dd = float(dp @ dp)
+    if dd <= 0.0:
+        return gW, {"broyden_skipped": "dp0"}
+    resid = float(dW_meas - gW @ dp)
+    dg = (resid / dd) * dp
+    ng = float(np.linalg.norm(gW))
+    return gW + dg, {"broyden_rel": float(np.linalg.norm(dg)) / ng if ng > 0
+                     else None, "broyden_dW_resid": resid}
+
+
 def run_projected(spec, project, cb, out_dir, p0):
     """Ceiling-riding projected-gradient driver — REPLACES ScipyOptimizer when
     spec.wg_project (L-BFGS-B's line search cannot be held to the null-space
@@ -2492,6 +2670,7 @@ def run_projected(spec, project, cb, out_dir, p0):
     _best_from_log / WidthTrip / RecenterNeeded work as before (raised raw
     here; run_campaign's handler catches the direct instances).
     Returns (params, fom), the R1.3 Optimization.run tuple shape."""
+    L = layout(spec.n_free)
     b = np.asarray(param_bounds(spec), dtype=float)
     lo, hi = b[:, 0], b[:, 1]
     D = ((hi - lo) / 2.0) ** 2
@@ -2531,6 +2710,15 @@ def run_projected(spec, project, cb, out_dir, p0):
               f"{wgain:.3f}, lam_tgt {lam_tgt}", flush=True)
     n_acc, n_rej = int(ost.get("n_acc", 0)), int(ost.get("n_rej", 0))
     ns2_diag = {}
+    # ★wgp_noise_freeze: consecutive noise rejects (persisted, REQUEUE-safe)
+    slack = float(getattr(spec, "wgp_fom_slack", 1e-4))
+    noise_freeze = bool(getattr(spec, "wgp_noise_freeze", False))
+    noise_stop = int(getattr(spec, "wgp_noise_stop", 3))
+    n_noise_rej = int(ost.get("n_noise_rej", 0))
+    range_alpha = float(getattr(spec, "wgp_range_alpha", 1.0))
+    range_frac = getattr(spec, "wgp_range_cap_frac", None)
+    mode_mac = getattr(spec, "wgp_mode_mac", None)
+    prof_dir = os.path.join(out_dir, "profiles")   # the log callback's npz dir
     # ★wgp_reuse_k: width-row reuse state. dirty ⇒ force a refresh (any
     # reject invalidates the stored row's trust).
     reuse_k = int(getattr(spec, "wgp_reuse_k", 0) or 0)
@@ -2554,15 +2742,19 @@ def run_projected(spec, project, cb, out_dir, p0):
                 "cap_nm": cap_state, "wgain": wgain, "dTp0": dTp0,
                 "dwdlam": float(spec.wg_dwdlam), "lam_tgt_nm": lam_tgt,
                 "n_acc": n_acc, "n_rej": n_rej, "reuse_age": reuse_age,
-                "reuse_W0": reuse_W0, "reuse_travel": reuse_travel})
+                "reuse_W0": reuse_W0, "reuse_travel": reuse_travel,
+                "n_noise_rej": n_noise_rej})
 
     def _step_of(gTv, gWv, Wv, a, gLamv=None, lamv=None, mutate=False):
         """One step under the active law (ns2 two-constraint when armed,
         else the 3-phase projection). Retry calls pass mutate=False."""
         nonlocal ns2_diag
         if ns2 and gLamv is not None and lam_tgt is not None:
-            s_, ph, dg = _ns2_step(gTv, gWv, gLamv, D, Wv, W_tgt, marg,
-                                   lamv, lam_tgt, lam_marg, _cap(a))
+            s_, ph, dg = _ns2_step(
+                gTv, gWv, gLamv, D, Wv, W_tgt, marg, lamv, lam_tgt, lam_marg,
+                _cap(a), range_alpha=range_alpha,
+                range_cap_nm=(_cap(a) * range_frac
+                              if range_frac is not None else None))
             if mutate:
                 ns2_diag = dg
             return s_, ph, dg["lam"]
@@ -2627,6 +2819,8 @@ def run_projected(spec, project, cb, out_dir, p0):
         h = abs(W - W_tgt)
         rec = {"it": it, "t": time.time(), "fom": fom, "W": W, "alpha": alpha,
                "cap_nm": _cap(alpha)}
+        if range_alpha != 1.0:
+            rec["range_alpha"] = range_alpha
         # ★λ-drift step bound (lit item 1, 2026-08-28: published recipe is
         # recentring PLUS an explicit bandwidth bound; drift is also how width
         # leaks past a fixed-λ gW). Opt-in knob, default None = inert.
@@ -2645,6 +2839,19 @@ def run_projected(spec, project, cb, out_dir, p0):
             print(f"[proj {it}] ★λ STEP BOUND: peak moved "
                   f"{rec['lam_jump_nm']:+.3f} nm > {lam_bound} nm — rejecting "
                   f"the step like a filter fail.", flush=True)
+        # ★wgp_mode_mac: profile overlap vs the accepted point. Files are keyed
+        # by `it` (what cb.on_function_eval was just called with) — row["eval"]
+        # can be an older run's index when _row_of_params matches a repeat p.
+        mode_hop = False
+        if mode_mac is not None and acc is not None:
+            mac = profile_mac(
+                os.path.join(prof_dir, f"{spec.label}_ev{acc['eval_num']:04d}.npz"),
+                os.path.join(prof_dir, f"{spec.label}_ev{int(it):04d}.npz"))
+            rec["mac"] = mac
+            mode_hop = mac is not None and mac < float(mode_mac)
+            if mode_hop:
+                print(f"[proj {it}] ★MODE HOP: MAC {mac:.4f} < {mode_mac} — "
+                      f"rejecting", flush=True)
         # ★RATCHET FIX (2026-09-01, MEASURED on d1/139520): the noise slack
         # must be anchored to the BEST fom seen, never to the last accepted
         # point. With `fom > acc.fom − slack` and acc overwritten on every
@@ -2654,17 +2861,32 @@ def run_projected(spec, project, cb, out_dir, p0):
         # keeps Sun–Nocedal's intent (a noise-sized dip is not a real
         # rejection) while forbidding systematic downhill drift.
         fom_ref = max(acc["fom"], fom_best) if acc else fom
-        if acc and (lam_jump or
+        if acc and (lam_jump or mode_hop or
                     not (fom > fom_ref
                          - float(getattr(spec, "wgp_fom_slack", 1e-4))
                          or h < acc["h"])):
             # minimal Fletcher-Leyffer filter. Reject: re-step from the
             # accepted point's STORED gradients at alpha/2 — no re-solve
             # (the trial forward is the bounded loss).
+            # p is still the rejected TRIAL here: its predicted FOM gain.
+            dT_pred_trial = float(acc["gT"] @ (p - acc["p"]))
+            rec["dT_pred_trial"] = dT_pred_trial
             alpha *= 0.5
+            # λ-jump / mode-hop rejects are real failures, never "noise"
+            new_cap, noise = _reject_cap(cap_state, dT_pred_trial, slack,
+                                         noise_freeze
+                                         and not (lam_jump or mode_hop))
             if cap_adapt:
-                cap_state = max(cap_state * 0.5, 2.0)
+                cap_state = new_cap
                 n_rej += 1
+            if noise:
+                n_noise_rej += 1
+                rec["noise_reject"] = True
+                print(f"[proj {it}] ★NOISE REJECT: predicted gain "
+                      f"{dT_pred_trial:+.2e} below 2×slack {2.0 * slack:.2e} — "
+                      f"cap frozen ({n_noise_rej}/{noise_stop})", flush=True)
+            else:
+                n_noise_rej = 0     # the stop rule counts CONSECUTIVE ones
             reuse_dirty = True
             step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha,
                                         acc.get("gLam"), acc.get("lam_pk"))
@@ -2702,6 +2924,18 @@ def run_projected(spec, project, cb, out_dir, p0):
             gT = np.asarray(project.compute_gradient(p), dtype=float)  # fwd cached
             if reuse_now:
                 gW = np.asarray(acc["gW_raw"], dtype=float)
+                if getattr(spec, "wgp_reuse_broyden", False):
+                    sw = row.get("softw_um")
+                    if sw is None or acc.get("softw") is None:
+                        rec["broyden_skipped"] = "nosoftw"
+                    else:
+                        dlam = (lam_pk_row - acc["lam_pk"]
+                                if lam_pk_row is not None
+                                and acc.get("lam_pk") is not None else None)
+                        # softW (µm), not fwhm_env: the row's own observable
+                        gW, binfo = _broyden_update(
+                            gW, p - acc["p"], float(sw) - acc["softw"], dlam)
+                        rec.update(binfo)
                 reuse_age += 1
                 rec["gw_reused"] = reuse_age
                 print(f"[proj {it}] width row REUSED (age {reuse_age}/"
@@ -2854,9 +3088,12 @@ def run_projected(spec, project, cb, out_dir, p0):
                           f"(held: dW {W - acc['W']:+.4f} um, dlam "
                           f"{lam_pk_row - acc['lam_pk']:+.3f} nm)", flush=True)
             n_acc += 1
+            n_noise_rej = 0
             acc = {"p": p.copy(), "fom": fom, "W": W, "h": h,
                    "gT": gT, "gW": gW_eff, "gW_raw": gW, "gLam": gLam_vec,
-                   "lam_pk": lam_pk_row}
+                   "lam_pk": lam_pk_row, "eval_num": int(it),
+                   "softw": (float(row["softw_um"])
+                             if row.get("softw_um") is not None else None)}
             step, phase, lam = _step_of(gT, gW_eff, W, alpha,
                                         gLam_vec, lam_pk_row, mutate=True)
             if ns2 and (gLam_vec is None or lam_tgt is None):
@@ -2916,11 +3153,11 @@ def run_projected(spec, project, cb, out_dir, p0):
                 # per-block inf-norm shares of the step — the D-anisotropy
                 # starvation readout (which blocks actually move)
                 rec["step_shares_nm"] = {
-                    "corr": float(np.max(np.abs(step[SL_CORR]))),
-                    "avg": float(np.max(np.abs(step[SL_AVG]))),
-                    "shift": float(np.max(np.abs(step[SL_SHIFT]))),
-                    "comb": float(np.max(np.abs(step[SL_R.start:I_CAV]))),
-                    "cav": float(abs(step[I_CAV]))}
+                    "corr": float(np.max(np.abs(step[L.SL_CORR]))),
+                    "avg": float(np.max(np.abs(step[L.SL_AVG]))),
+                    "shift": float(np.max(np.abs(step[L.SL_SHIFT]))),
+                    "comb": float(np.max(np.abs(step[L.SL_R.start:L.I_CAV]))),
+                    "cav": float(abs(step[L.I_CAV]))}
             gl = getattr(spec, "_wg_gLam", None)
             if gl is not None:
                 # predicted per-step resonance move — the DIRECT test of the
@@ -2938,6 +3175,10 @@ def run_projected(spec, project, cb, out_dir, p0):
         print(f"[proj {it}] {rec['phase']} fom {fom:.5f} W {W:.4f} "
               f"lam {rec.get('lam', 0.0):.4g} alpha {alpha:.3g} "
               f"cap {rec['cap_nm']:.3g}", flush=True)
+        if n_noise_rej >= noise_stop:
+            print(f"[proj] CONVERGED WITHIN NOISE ({n_noise_rej} consecutive "
+                  f"noise rejects)", flush=True)
+            break
     return (acc["p"] if acc else p), (acc["fom"] if acc else -np.inf)
 
 
@@ -2946,6 +3187,7 @@ def run_campaign(spec, out_dir, sigma0_um=None):
     trip (rebuilding the base scene at the new λ) — also the crash-recovery
     path, since lumopt2 has no checkpointing. Returns the best (fom, params)."""
     lmpt = import_lumopt2()
+    L = layout(spec.n_free)
     best = {"fom": -np.inf, "params": seed_params(spec)}
     # Cold-start resume: EVERY Athena partition is PreemptMode=REQUEUE (measured
     # 2026-08-14), so the driver can be evicted and rerun from scratch at any
@@ -2973,9 +3215,9 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                 sig_meas = (spec.sig_anchor or {}).get("sigma")
             assert sig_meas is not None, "sigma_wall needs an initial sig_anchor"
             spec.sig_anchor = {"sigma": float(sig_meas),
-                               "elong": float(2.0 * p_b[SL_SHIFT].sum()),
-                               "rho": float(p_b[SL_CORR].mean() / CORR_NM),
-                               "wcav": float(p_b[I_CAV])}
+                               "elong": float(2.0 * p_b[L.SL_SHIFT].sum()),
+                               "rho": float(p_b[L.SL_CORR].mean() / spec.corr0_nm),
+                               "wcav": float(p_b[L.I_CAV])}
             print(f"[sigma-wall {attempt}] anchor sigma {sig_meas:.4f} um, "
                   f"elong {spec.sig_anchor['elong']:.1f} nm, "
                   f"rho {spec.sig_anchor['rho']:.4f}")
@@ -3017,10 +3259,10 @@ def run_campaign(spec, out_dir, sigma0_um=None):
             if rowf:
                 pb = np.asarray(best["params"], dtype=float)
                 spec.fw_anchor = {"fwhm": float(rowf["fwhm_env_um"]),
-                                  "mcorr": float(np.mean(pb[SL_CORR])),
-                                  "elong": float(2.0 * pb[SL_SHIFT].sum()),
+                                  "mcorr": float(np.mean(pb[L.SL_CORR])),
+                                  "elong": float(2.0 * pb[L.SL_SHIFT].sum()),
                                   "corr_vec": tuple(float(v)
-                                                    for v in pb[SL_CORR])}
+                                                    for v in pb[L.SL_CORR])}
                 print(f"[fwhm-wall {attempt}] re-anchored at measured "
                       f"{spec.fw_anchor['fwhm']:.4f} um "
                       f"(mcorr {spec.fw_anchor['mcorr']:.1f})")
@@ -3118,7 +3360,7 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                     print(f"[width trip {attempt}] {root} -> re-anchor only")
                 else:
                     spec.corr_max_nm *= 0.95
-                    best["params"][SL_CORR] = np.minimum(best["params"][SL_CORR], spec.corr_max_nm)
+                    best["params"][L.SL_CORR] = np.minimum(best["params"][L.SL_CORR], spec.corr_max_nm)
                     print(f"[width trip {attempt}] {root} -> corr cap {spec.corr_max_nm:.0f} nm")
             else:
                 raise                               # a real error — let it crash loudly
@@ -3220,7 +3462,52 @@ def run_canary(spec, out_dir):
     return row
 
 
-def run_validate_gradient(spec, out_dir, indices, perturbation=2.0, detune=1):
+def detune_params(spec, detune=1):
+    """The B3 gate operating point (see run_validate_gradient for why not the
+    seed). corr/avg are offsets from the bulk values (355/795 for corr-325).
+    The comb slots move only when the comb is free: under bare/free_comb=False
+    their ±1e-3 sliver bounds would reject the moved values, so the cavity
+    width is detuned instead (grating-only branch, 2026-10-04)."""
+    L = layout(spec.n_free)
+    p = seed_params(spec)
+    comb = spec.free_comb and not spec.bare
+    jr, jx = L.SL_R.start + COMB_N_HALF, L.SL_X.start + COMB_N_HALF   # center post
+    if detune == 1:
+        p[L.SL_SHIFT] = 20.0                  # off the (0, 200) lower bound
+        if comb:
+            p[jr] = 100.0                     # detune center post r 80→100
+            p[jx] += 50.0                     # detune center post x by +50 nm
+            p[L.I_DCOMB] = 1750.0             # detune comb distance 1900→1750
+        else:
+            p[L.I_CAV] += 50.0
+    else:                                     # point 2 — different geometry
+        p[L.SL_CORR] = spec.corr0_nm + 30.0
+        p[L.SL_AVG] = spec.avg_w_nm - 5.0
+        p[L.SL_SHIFT] = 40.0
+        if comb:
+            p[jr] = 115.0
+            p[jx] -= 40.0
+            p[L.I_DCOMB] = 1820.0
+        else:
+            p[L.I_CAV] -= 30.0
+    return p
+
+
+def _assert_fd_legs_in_bounds(spec, p, indices, perturbation):
+    """Zero-GPU pre-check: the operating point AND every central-FD leg
+    (p_i ± perturbation) must sit inside param_bounds, or lumopt2's
+    _check_params kills the job on its first evaluation (2026-10-04 review:
+    the TM detune was 60/60 out of the TE shift trust bounds)."""
+    b = param_bounds(spec)
+    bad = [i for i, (v, (lo, hi)) in enumerate(zip(p, b)) if not lo <= v <= hi]
+    assert not bad, f"operating point outside bounds at indices {bad[:8]}..."
+    legs = [i for i in indices
+            if not (b[i][0] <= p[i] - perturbation and p[i] + perturbation <= b[i][1])]
+    assert not legs, f"FD legs ±{perturbation} nm leave bounds at indices {legs}"
+
+
+def run_validate_gradient(spec, out_dir, indices, perturbation=2.0, detune=1,
+                          point=None):
     """Gate B3: lumopt2's built-in adjoint-vs-FD check on chosen params.
 
     Runs at a DETUNED point, not the seed (measured 132636): the seed sits ON
@@ -3236,19 +3523,11 @@ def run_validate_gradient(spec, out_dir, indices, perturbation=2.0, detune=1):
     """
     lmpt = import_lumopt2()
     project, _ = make_project(spec, out_dir, lmpt)
-    p = seed_params(spec)
-    if detune == 1:
-        p[SL_SHIFT] = 20.0                    # off the (0, 200) lower bound
-        p[SL_R.start + COMB_N_HALF] = 100.0   # detune center post r 80→100
-        p[SL_X.start + COMB_N_HALF] += 50.0   # detune center post x by +50 nm
-        p[I_DCOMB] = 1750.0                   # detune comb distance 1900→1750
-    else:                                     # point 2 — different geometry
-        p[SL_CORR] = 355.0
-        p[SL_AVG] = 795.0
-        p[SL_SHIFT] = 40.0
-        p[SL_R.start + COMB_N_HALF] = 115.0
-        p[SL_X.start + COMB_N_HALF] -= 40.0
-        p[I_DCOMB] = 1820.0
+    # point: an explicit operating point (nm vector) replaces detune_params —
+    # TE lane 2026-10-04: the TM detune (all shifts 20 nm) violates the
+    # 15 nm shift trust bounds and detunes the cavity by 2.4 µm at n_free 60.
+    p = np.asarray(point, float) if point is not None else detune_params(spec, detune)
+    _assert_fd_legs_in_bounds(spec, p, indices, perturbation)
     # RAW-vs-RAW (fix 2026-08-23): lumopt2's FD side never sees the attached
     # penalty (it calls fom.calculate_fom), so the adjoint side must not
     # either — at the detune points the elong guard's pen_grad is NONZERO
@@ -3262,7 +3541,7 @@ def run_validate_gradient(spec, out_dir, indices, perturbation=2.0, detune=1):
     return res
 
 
-def run_adjoint_only(spec, out_dir, indices, detune=1):
+def run_adjoint_only(spec, out_dir, indices, detune=1, point=None):
     """Adjoint gradient WITHOUT the FD half (2 sims, ~50 min vs ~7 h).
 
     For gradient-fix iteration: FD is config-independent and already stored
@@ -3272,19 +3551,8 @@ def run_adjoint_only(spec, out_dir, indices, detune=1):
     """
     lmpt = import_lumopt2()
     project, _ = make_project(spec, out_dir, lmpt)
-    p = seed_params(spec)
-    if detune == 1:
-        p[SL_SHIFT] = 20.0
-        p[SL_R.start + COMB_N_HALF] = 100.0
-        p[SL_X.start + COMB_N_HALF] += 50.0
-        p[I_DCOMB] = 1750.0
-    else:
-        p[SL_CORR] = 355.0
-        p[SL_AVG] = 795.0
-        p[SL_SHIFT] = 40.0
-        p[SL_R.start + COMB_N_HALF] = 115.0
-        p[SL_X.start + COMB_N_HALF] -= 40.0
-        p[I_DCOMB] = 1820.0
+    p = np.asarray(point, float) if point is not None else detune_params(spec, detune)
+    _assert_fd_legs_in_bounds(spec, p, indices, 0.0)
     # RAW gradient (fix 2026-08-23): the stored FD tables these prints are
     # compared against are penalty-free (see run_validate_gradient) — the
     # wrapped gradient would subtract a nonzero pen_grad at the detune

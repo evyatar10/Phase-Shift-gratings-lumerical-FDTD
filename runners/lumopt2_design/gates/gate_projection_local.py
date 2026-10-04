@@ -235,5 +235,138 @@ check("ratchet FIX bounds drift to one slack below best",
 check("teeth: old acc-anchored form accepts all three (the ratchet)",
       v_old == [True, True, True], f"{v_old}")
 
+# -- 10) optimizer upgrades U1-U4 (2026-10-04) ------------------------------
+import os as _os, pickle as _pk  # noqa: E402
+sp = eng.CampaignSpec()
+check("U1-U4 spec knobs default OFF",
+      sp.wgp_noise_freeze is False and sp.wgp_noise_stop == 3
+      and sp.wgp_reuse_broyden is False and sp.wgp_mode_mac is None
+      and sp.wgp_range_alpha == 1.0 and sp.wgp_range_cap_frac is None)
+
+# U4 (Feppon et al. 2020 separate range cap). (a) defaults bit-identical to
+# the PRE-edit _ns2_step: snapshots/ns2_step_ref.pkl was written by running
+# the OLD function on 6 fixed regimes (mid-band, clamped/free/binding ξ_C
+# restore, collinear degrade, gLam=None) before the edit.
+_ref = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                     "snapshots", "ns2_step_ref.pkl")
+with open(_ref, "rb") as f:
+    ref_cases = _pk.load(f)
+ok = len(ref_cases) == 6
+for name, args, st_ref, ph_ref, dg_ref in ref_cases:
+    for kw in ({}, {"range_alpha": 1.0, "range_cap_nm": None}):
+        s_, p_, d_ = eng._ns2_step(*args, **kw)
+        ok = ok and np.array_equal(s_, st_ref) and p_ == ph_ref and d_ == dg_ref
+check("U4 defaults bit-identical to pre-edit _ns2_step (6 cases x 2)", ok)
+# (b) range_alpha=0.5: gT=0 isolates ξ_C (ξ_J = 0) ⇒ the step IS ξ_C
+a10 = (gW8, gL8, D, W_TGT + 0.15, W_TGT, MARG, LAM_TGT + 0.20, LAM_TGT,
+       LAM_MARG)
+xc1, _, _ = eng._ns2_step(np.zeros(N), *a10, 1e9)
+xc5, _, _ = eng._ns2_step(np.zeros(N), *a10, 1e9, range_alpha=0.5)
+check("U4 range_alpha=0.5 halves xi_C", np.allclose(xc5, 0.5 * xc1,
+                                                    rtol=1e-12, atol=0.0))
+check("U4 range_alpha=0.5 halves the restoration",
+      np.isclose(float(gW8 @ xc5), -0.5 * (0.15 - MARG / 2.0), rtol=1e-9))
+check("teeth: range_alpha=0.5 changes the step", not np.allclose(xc5, xc1))
+# ξ_J part (full step minus its ξ_C) keeps BOTH orthogonalities
+sh5, _, _ = eng._ns2_step(gT8, *a10, 10.0, range_alpha=0.5)
+xj = sh5 - xc5
+rw = abs(gW8 @ xj) / (np.linalg.norm(gW8) * np.linalg.norm(xj))
+rl = abs(gL8 @ xj) / (np.linalg.norm(gL8) * np.linalg.norm(xj))
+check("U4 alpha=0.5: gW.xi_J = gLam.xi_J = 0", max(rw, rl) < 1e-12,
+      f"worst rel {max(rw, rl):.2e}")
+# (c) range_cap_nm=1.0 bounds ‖ξ_C‖∞: rows scaled ×1e-3 ⇒ unclamped ξ_C ≫ 1
+a10s = (gW8 * 1e-3, gL8 * 1e-3) + a10[2:]
+xbig, _, _ = eng._ns2_step(np.zeros(N), *a10s, 1e9)
+xcap, _, _ = eng._ns2_step(np.zeros(N), *a10s, 1e9, range_cap_nm=1.0)
+check("teeth: unclamped xi_C exceeds 1 nm (cap test is live)",
+      float(np.max(np.abs(xbig))) > 1.0, f"{np.max(np.abs(xbig)):.3g}")
+check("U4 range_cap_nm=1.0 bounds |xi_C|_inf <= 1",
+      float(np.max(np.abs(xcap))) <= 1.0 * (1 + 1e-12))
+check("U4 range cap is scalar (parallel)", np.allclose(_dir(xcap), _dir(xbig),
+                                                       atol=1e-12))
+src10 = open(eng.__file__, encoding="utf-8").read()
+check("U4 wired: _step_of threads range_alpha / range_cap_nm",
+      "range_alpha=range_alpha" in src10
+      and "_cap(a) * range_frac" in src10)
+
+# U1 (noise-aware cap, Cao/Berahas/Scheinberg 2205.03667): the reject rule
+SL = 1.5e-3
+check("U1 noise reject keeps the cap",
+      eng._reject_cap(20.0, 1.0e-3, SL, True) == (20.0, True))
+check("U1 negative predicted gain counts by magnitude",
+      eng._reject_cap(20.0, -1.0e-3, SL, True) == (20.0, True))
+check("U1 non-noise reject halves",
+      eng._reject_cap(20.0, 5.0e-3, SL, True) == (10.0, False))
+check("U1 non-noise floor 2 nm", eng._reject_cap(3.0, 5.0e-3, SL, True)
+      == (2.0, False))
+check("teeth: freeze=False halves the noise case too",
+      eng._reject_cap(20.0, 1.0e-3, SL, False) == (10.0, False)
+      and eng._reject_cap(20.0, 5.0e-3, SL, False) == (10.0, False))
+check("U1 wired: reject branch uses _reject_cap + stop rule + persistence",
+      "_reject_cap(cap_state, dT_pred_trial, slack" in src10
+      and "n_noise_rej >= noise_stop" in src10
+      and '"n_noise_rej": n_noise_rej' in src10
+      and 'int(ost.get("n_noise_rej", 0))' in src10
+      and 'rec["dT_pred_trial"] = dT_pred_trial' in src10)
+
+# U2 (Broyden secant on the reused row, Walther & Biegler)
+g_true = rng.standard_normal(N)
+g_old = g_true + 0.3 * rng.standard_normal(N)
+dp10 = rng.standard_normal(N)
+dW10 = float(g_true @ dp10)
+g_new, info = eng._broyden_update(g_old, dp10, dW10, 0.01)
+check("U2 secant: |g.dp - dW| ~ 0 after one update",
+      abs(float(g_new @ dp10) - dW10) < 1e-12 * np.linalg.norm(dp10) ** 2,
+      f"{abs(float(g_new @ dp10) - dW10):.2e}")
+check("U2 logged residual is the pre-update one",
+      np.isclose(info["broyden_dW_resid"], dW10 - float(g_old @ dp10),
+                 rtol=1e-12))
+v_perp = rng.standard_normal(N)
+v_perp -= (v_perp @ dp10) / (dp10 @ dp10) * dp10
+check("U2 unchanged orthogonal to dp",
+      np.isclose(float(g_new @ v_perp), float(g_old @ v_perp), rtol=1e-10))
+check("U2 error to g_true shrinks",
+      np.linalg.norm(g_new - g_true) < np.linalg.norm(g_old - g_true))
+g_sk, info_sk = eng._broyden_update(g_old, dp10, dW10, 0.06)
+check("U2 skip when |dlam| > 0.05", np.array_equal(g_sk, g_old)
+      and info_sk == {"broyden_skipped": "dlam"})
+check("U2 skip when dlam unknown",
+      eng._broyden_update(g_old, dp10, dW10, None)[1]
+      == {"broyden_skipped": "dlam"})
+check("teeth: no-update path leaves the residual unchanged (and large)",
+      abs(float(g_sk @ dp10) - dW10) == abs(float(g_old @ dp10) - dW10)
+      and abs(float(g_old @ dp10) - dW10) > 1e-3)
+check("U2 wired: reuse branch applies _broyden_update on softW",
+      "_broyden_update(" in src10 and 'float(sw) - acc["softw"]' in src10)
+
+# U3 (MAC mode tracking, Kim & Kim 2000)
+with _tf.TemporaryDirectory() as td:
+    xg = np.linspace(-40.0, 40.0, 801)
+    SIG = 2.0
+    def _npz(name, x, I):
+        pth = _os.path.join(td, name)
+        np.savez_compressed(pth, x_um=x, I=I, lam_pk_nm=1566.4)
+        return pth
+    g0 = _npz("g0.npz", xg, np.exp(-xg ** 2 / (2 * SIG ** 2)))
+    xg2 = np.linspace(-35.0, 35.0, 1001)        # different grid: interp path
+    g0b = _npz("g0b.npz", xg2, np.exp(-xg2 ** 2 / (2 * SIG ** 2)))
+    gs = _npz("gs.npz", xg, np.exp(-(xg - 3 * SIG) ** 2 / (2 * SIG ** 2)))
+    two = _npz("two.npz", xg, np.exp(-(xg - 2 * SIG) ** 2 / (2 * SIG ** 2))
+               + np.exp(-(xg + 2 * SIG) ** 2 / (2 * SIG ** 2)))
+    m_self = eng.profile_mac(g0, g0)
+    m_grid = eng.profile_mac(g0, g0b)
+    m_shift = eng.profile_mac(g0, gs)
+    m_two = eng.profile_mac(g0, two)
+    check("U3 MAC self == 1", abs(m_self - 1.0) < 1e-12, f"{m_self!r}")
+    check("U3 MAC self across grids ~ 1", abs(m_grid - 1.0) < 1e-4,
+          f"{m_grid:.6f}")
+    check("U3 MAC 3-width shift < 0.1", m_shift < 0.1, f"{m_shift:.4f}")
+    check("U3 MAC two-lobe < 0.9", m_two < 0.9, f"{m_two:.4f}")
+    check("U3 missing file -> None",
+          eng.profile_mac(g0, _os.path.join(td, "nope.npz")) is None)
+check("U3 wired: mode hop rejects exactly like the λ jump",
+      "lam_jump or mode_hop or" in src10
+      and 'acc[\'eval_num\']' in src10 and '"eval_num": int(it)' in src10)
+
 print(("\nALL PASS" if not fails else f"\nFAILED: {fails}"))
 sys.exit(1 if fails else 0)

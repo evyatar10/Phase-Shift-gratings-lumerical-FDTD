@@ -286,6 +286,16 @@ job/array ID and the task count — or a prominent "NOT dispatched because Y". R
 a requested run silently never submitted (hours lost); a "2-sim" comparison quietly dispatched
 as 5 sims.
 
+**Never send a destructive command to a real server in a test, probe or example, not even one
+you expect to be blocked.** On 2026-10-04 a guard test sent `rm -rf ~/containers`,
+`find ~ -name '*.h5' -delete` and `scancel` to Athena from a Python script, expecting a guard to
+refuse them. The guard was bypassed (on Windows, `subprocess` resolves executables from the
+parent's PATH, not from `env=`), so the commands really ran: the Lumerical containers were
+deleted and a running job was killed. Test safety logic offline only (dry-run flags, `*.invalid`
+hosts). A delete or `scancel` inside a script needs the same explicit user approval as a typed
+one. Recovery for accidental deletes on Athena: NFS snapshots in `~/.snapshot/{hourly,daily}.*`.
+Copy back with `cp -an`, never overwriting.
+
 ### 3.2 Never re-measure a stored result
 
 This is the rule the user has enforced most often ("if we have a result somewhere don't do

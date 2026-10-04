@@ -204,6 +204,9 @@ Over-testing never once cost anything. So:
     Replicate the third-party raise chain locally and assert the handler
     engages before trusting any except-and-recover design.
   - MATLAB: `checkcode` lint + headless `exportgraphics` render.
+  - **★Safety guards and permission blocks are tested OFFLINE ONLY** (dry-run flag,
+    `*.invalid` hosts, fake targets). A guard test aimed at a live server is a live run of
+    the harmful command if the guard is bypassed (§8 incident 2026-10-04).
 - **★THE DEBUG CYCLE IS THE SCARCEST RESOURCE — hardware-touching engine changes
   get a MINUTES-scale end-to-end pass BEFORE any hours-scale dispatch (user rule
   2026-08-28).** Solves here are ~1 h each; an 11 h validation run is an
@@ -479,6 +482,20 @@ them; when a convergence study finishes, state where the files live.
   env-prefixed ssh). If a cleanup or git operation is genuinely needed, state exactly
   what would be deleted/changed and let the permission prompt do the asking. This
   includes remote files on Athena (`.h5` scratch cleanup too).
+- **★★NEVER SEND A DESTRUCTIVE COMMAND TO A REAL SERVER IN A TEST, PROBE OR EXAMPLE —
+  not even one "expected to be blocked" (INCIDENT 2026-10-04).** A guard test sent
+  `rm -rf ~/containers`, `find ~ -name '*.h5' -delete` and `scancel` to Athena from a
+  Python script, expecting the guard to refuse them. On Windows, `subprocess.run([...],
+  env={PATH: ...})` resolves the exe from the PARENT's PATH, so real ssh ran them: all 3
+  `.sif` gone, 40 `.h5` gone, array task 168240_0 killed. Restored from
+  `~/.snapshot`. Rules: (a) a safety test must be UNABLE to cause the harm it tests for:
+  test refusal logic in dry-run, and test interception against a `*.invalid` host;
+  (b) a destructive remote op inside a script, heredoc or `subprocess` counts exactly
+  like a typed `ssh ... rm`, and needs the same explicit permission; the user-level hook
+  `~/.claude/hooks/remote_destructive_guard.py` now forces that prompt; (c) after any
+  accidental remote delete, STOP, measure the damage read-only, and restore from
+  **Athena's NFS snapshots `~/.snapshot/{hourly,daily}.*`** with `cp -an` (never
+  overwrite), then report what was unrecoverable (anything newer than the snapshot).
 - **Dropped parameters stay dropped.** A parameter/constraint the user removed earlier
   in the session must not reappear in any later plan revision (real incident: tooth
   shift re-added to a TM plan after an explicit "don't do shifts anymore").
