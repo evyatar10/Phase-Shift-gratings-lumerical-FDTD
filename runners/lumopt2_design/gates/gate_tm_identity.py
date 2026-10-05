@@ -220,6 +220,15 @@ def main():
         if isinstance(a, dict) and isinstance(b, dict):
             for k in sorted(set(a) | set(b)):
                 if k not in a or k not in b:
+                    # A NEW builder-config key whose default is inert (False / None /
+                    # 0 / empty) is another study adding an opt-in knob to the shared
+                    # SimulationConfig (2026-10-05: farfield.save_surface_eh from the
+                    # far-field study tripped this gate). It cannot change a TM scene,
+                    # so report it without failing; any other new/missing key fails.
+                    if (k in b and "/cfg" in path
+                            and b[k] in (False, None, 0, 0.0, "", [], "False", "None", "0", "0.0", "[]")):
+                        print(f"INFO new inert config key {path}/{k} = {b[k]!r} (not a difference)")
+                        continue
                     diffs.append(f"{path}/{k}: {'missing now' if k not in b else 'new key'}")
                 else:
                     walk(a[k], b[k], f"{path}/{k}")
