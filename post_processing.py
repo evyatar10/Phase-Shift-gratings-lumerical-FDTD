@@ -36,6 +36,7 @@ import config
 from sim_helpers import (
     extract_and_process_field_profile,
     extract_farfield,
+    extract_monitor_surface_eh,
     extract_monitor_nearfield,
     extract_monitor_polarimetry,
     find_bragg_resonance,
@@ -310,11 +311,14 @@ def extract_farfield_data(sim, cfg, lam_res_m=None) -> dict:
                               complex_fields=getattr(cfg.farfield, "save_complex", False),
                               lam_target_m=lam_res_m)
         result[f"farfield_{key}"] = ff if ff is not None else {}
-        pol = extract_monitor_polarimetry(sim.fdtd, monitor_name, normal)
+        pol = extract_monitor_polarimetry(sim.fdtd, monitor_name, normal, lam_res_m)
         result[f"polarimetry_{key}"] = pol if pol is not None else {}
         if cfg.farfield.save_nearfield:
             nf = extract_monitor_nearfield(sim.fdtd, monitor_name)
             result[f"nearfield_{key}"] = nf if nf is not None else {}
+        if getattr(cfg.farfield, "save_surface_eh", False):
+            eh = extract_monitor_surface_eh(sim.fdtd, monitor_name, lam_res_m)
+            result[f"surface_{key}"] = eh if eh is not None else {}
 
     return result
 

@@ -178,3 +178,11 @@ dispatched. Write-up: docs/radiation_cancellation_review_2026-10-05.pdf.
   Toy acceptance criteria adopted from G8: per-step dT_meas/dT_pred in [0.5, 1.5], total-row
   width ratio in [0.7, 1.3], lambda move 0.20-0.30 nm for a predicted 0.25, every accepted
   point inside [18.8386, 19.4034] um (S1), at least one fresh-gradient direction.
+Turn 3 (same session, 15:54): REVIEW of the far-field fix (python_tools/farfield_surface.py + save_surface_eh).
+GPT: kernel/signs/mirror rules pass, reran --selftest; BUG: cropped faces left a strip open at each corner (1.6 %
+field) -> FIXED (endpoints interpolated, self-test grid now misaligned); add parity-purity assert -> DONE; 15 um taper
+leakage 5e-5; "far = tube flux" is not exact once tapered; the 7.3 % (tube) vs 8.55 % (ports) gap is NOT the taper
+and Claude's grating-end explanation is untested; extractor pulls the whole band to read lambda (NOT changed, noted).
+Results after the fix (IGUM 100034): A/B/C controls identical; power through the surface 7.33 / 0.69 / 6.5 % vs
+port loss 8.55 / 2.63 / 8.21 %; TE tables unchanged within 1 point (corr 0.978), TM reshuffles (0.932) and is
+taper-sensitive. Open: one run with the grating ends inside the monitors.

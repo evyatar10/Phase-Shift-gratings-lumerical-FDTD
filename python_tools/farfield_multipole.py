@@ -18,6 +18,10 @@ Method
      gives s_y, side monitor gives s_z). Directions near the +-x axis (both |ny|
      and |nz| small) are in neither monitor's good half space -> reported as the
      "grazing band" power fraction, never hidden.
+     ★2026-10-05: this stitch is only right within ~40 deg of each monitor's
+     normal (finite aperture; the two disagree at the 45 deg seam). When the
+     .mat holds surface_top / surface_side (FarFieldConfig.save_surface_eh) the
+     far field comes from farfield_surface.py instead (one closed tube).
   2. Transverse vector-harmonic projection (Jackson 9.7 basis):
         E(n) = sum_lm  a_M(l,m) X_lm(n) + a_E(l,m) n x X_lm(n),
         X_lm = L Y_lm / sqrt(l(l+1)),   a = <basis, E> over the sphere,
@@ -184,7 +188,14 @@ def analyze(mat_path, lmax=200, write_csv=False):
     top, side = _grid(m["farfield_top"]), _grid(m["farfield_side"])
     lam_ff = float(m["farfield_top"].lam) * 1e9
     lam_res = float(m["resonance_wavelength_nm"]); fwhm = abs(float(m["spectral_fwhm_nm"]))
-    x, w, phi, E_th, E_ph, info = full_sphere_field(top, side, lmax)
+    if "surface_top" in m and "surface_side" in m:
+        # preferred: ONE closed tube (farfield_surface.py) -- no seam between two planar projections
+        from farfield_surface import sphere_field
+        x, w, phi, E_th, E_ph, info = sphere_field(m, lmax)
+        print(f"\n  [tube projection] far/tube power {info['P_far_over_tube']:.3f} | radiated: tube {info['tube_loss']*100:.2f}%"
+              f"  far field {info['far_loss']*100:.2f}%  (ports: 1-T-R at resonance)")
+    else:
+        x, w, phi, E_th, E_ph, info = full_sphere_field(top, side, lmax)
     aE, aM = multipoles(x, w, phi, E_th, E_ph, lmax)
     P = np.abs(aE) ** 2 + np.abs(aM) ** 2
     P_l = P.sum(axis=1); PE_l = (np.abs(aE) ** 2).sum(1); PM_l = (np.abs(aM) ** 2).sum(1)

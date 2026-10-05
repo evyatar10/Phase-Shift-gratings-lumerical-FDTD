@@ -70,6 +70,17 @@ from runners.sweeps import itai_hh_nt60w20 as hh
 from simulation_config import SimulationConfig
 
 SMOKE = False                     # True = one tiny end-to-end row (see docstring)
+# ROUND "A" (2026-09-29, done) = the 6 ROWS below with planar projections only.
+# ROUND "B" (2026-10-05): rows A@6.8, B, C again, now ALSO storing complex E and H on both
+# monitors (save_surface_eh) -> far field from one closed tube, python_tools/farfield_surface.py.
+# Why a re-run: round A's planar projections disagree at the 45 deg seam (side/top power 1.3 TE,
+# 2.3 TM) -- finite monitor aperture, reproduced with an analytic dipole; the raw monitor fields
+# were not stored, so the tube projection cannot be made from round A files. Same numerics, so
+# T / lambda / Q / width must reproduce round A exactly (that is the in-study control).
+# Run on IGUM (round A was Athena): results/ dir is keyed by this module's name, so the same file
+# names land in results_from_igum/farfield_sph_20um/ and round A's Athena files are not touched.
+# Jobs: IGUM 100029 (smoke, PASS: far/tube power 0.99, tube loss 1.33 % vs ports 1.36 %).
+ROUND = "B"
 
 N_SIDE        = 98
 FF_X_SPAN_UM  = 80.0
@@ -97,6 +108,8 @@ ROWS = [
                                    hh.CAVITY_W_NM, HH_TEETH, LAM_B_NM, WIN_B_NM,  6.8,  6.81),
     ("TM", 516.83,  325.0, 800.0,  None,           None,     LAM_C_NM, WIN_C_NM,  8.0,  8.80),
 ]
+if ROUND == "B":
+    ROWS = [ROWS[0], ROWS[4], ROWS[5]]
 if SMOKE:
     ROWS = [("TE", 500.0, 250.0, 800.0, None, None, 1560.0, 20.0, 6.8, 6.81)]
 
@@ -109,7 +122,8 @@ BASE.monitors.record_2d_fields = False   # 2D planes were 350 MB at N=10 (smoke 
 BASE.farfield.enabled = True
 BASE.farfield.save_complex = True
 BASE.farfield.save_nearfield = False
-BASE.farfield.farfield_x_span_m = (8.0 if SMOKE else FF_X_SPAN_UM) * 1e-6
+BASE.farfield.save_surface_eh = (ROUND == "B")
+BASE.farfield.farfield_x_span_m = (30.0 if SMOKE else FF_X_SPAN_UM) * 1e-6
 BASE.farfield.ff_resolution = 101 if SMOKE else FF_RES
 BASE.farfield.farfield_freq_points = 11 if SMOKE else FF_FREQ_PTS
 

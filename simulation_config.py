@@ -394,6 +394,11 @@ class FarFieldConfig:
                                                 # Pin False for arm-length monitors (~100s of MB
                                                 # per row); the polarimetry reduction (scalars +
                                                 # 1D x-profiles) is always saved regardless.
+    save_surface_eh: bool = False               # Store complex E and H on both monitors at the
+                                                # resonance point (~15 MB each) -> far field from one
+                                                # closed tube, python_tools/farfield_surface.py. The
+                                                # planar projections are only right within ~40 deg of
+                                                # each monitor's normal (aperture; 2026-10-05).
     save_complex: bool = False                  # Also store the complex far-field vectors
                                                 # Ex_c/Ey_c/Ez_c per monitor (~1.9 MB each) —
                                                 # needed by the response-matrix (Green's) study,

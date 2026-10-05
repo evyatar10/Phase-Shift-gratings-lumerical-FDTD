@@ -78,6 +78,40 @@ def extract_farfield(fdtd, monitor_name, ff_res=201, idx_f=1, complex_fields=Fal
     return out
 
 
+def extract_monitor_surface_eh(fdtd, monitor_name, lam_target_m=None):
+    """
+    Complex E and H on a planar far-field monitor at ONE frequency (the recorded
+    point nearest lam_target_m), sliced inside Lumerical so only that point
+    crosses to Python. Input of python_tools/farfield_surface.py (far field from
+    one closed tube instead of two planar projections).
+
+    Returns dict x, y, z (m), E, H (nx, nt, 3) complex64, pos (m, the monitor's
+    normal coordinate), lam (m), source_power (W, same CW normalization as the
+    fields); None on failure.
+    """
+    print(f"  Extracting surface E/H: {monitor_name}")
+    try:
+        lam_arr = np.atleast_1d(np.squeeze(fdtd.getresult(monitor_name, "E")["lambda"])).astype(float)
+        idx = 1 if lam_target_m is None else int(np.argmin(np.abs(lam_arr - lam_target_m))) + 1
+        fdtd.eval(f"""
+        rE = getresult('{monitor_name}', 'E'); rH = getresult('{monitor_name}', 'H');
+        sEH_E = pinch(rE.E, 4, {idx}); sEH_H = pinch(rH.H, 4, {idx});
+        sEH_x = rE.x; sEH_y = rE.y; sEH_z = rE.z; sEH_p = sourcepower(rE.f({idx}));
+        """)
+        E = np.squeeze(fdtd.getv("sEH_E")).astype(np.complex64)
+        H = np.squeeze(fdtd.getv("sEH_H")).astype(np.complex64)
+        x, y, z = (np.atleast_1d(np.squeeze(fdtd.getv(v))).astype(float) for v in ("sEH_x", "sEH_y", "sEH_z"))
+        if E.ndim != 3 or E.shape[-1] != 3 or H.shape != E.shape:
+            raise ValueError(f"unexpected field shapes E{E.shape} H{H.shape}")
+        pos = float(y[0]) if y.size == 1 else float(z[0])
+        print(f"    lam = {lam_arr[idx - 1] * 1e9:.3f} nm (point {idx}/{lam_arr.size}), E{E.shape}, normal position {pos * 1e6:.3f} um")
+        return {"x": x, "y": y, "z": z, "E": E, "H": H, "pos": pos,
+                "lam": float(lam_arr[idx - 1]), "source_power": float(np.squeeze(fdtd.getv("sEH_p")))}
+    except Exception as e:
+        print(f"    ERROR: surface E/H not extracted from {monitor_name} [{e}]")
+        return None
+
+
 def extract_monitor_nearfield(fdtd, monitor_name):
     """
     Extract the 2D E-field recorded on a planar profile monitor surface.
@@ -102,7 +136,7 @@ def extract_monitor_nearfield(fdtd, monitor_name):
     }
 
 
-def extract_monitor_polarimetry(fdtd, monitor_name, normal):
+def extract_monitor_polarimetry(fdtd, monitor_name, normal, lam_target_m=None):
     """
     Polarization-resolved Poynting flux through a planar profile monitor,
     reduced SERVER-SIDE to scalars + 1D x-profiles (the full complex E/H maps
@@ -130,13 +164,18 @@ def extract_monitor_polarimetry(fdtd, monitor_name, normal):
         # E/H arrays: (nx, ny, nz, nf, 3) — single recorded frequency
         E = np.squeeze(rE["E"])          # -> (nx, nt, 3), nt = transverse pts
         Hf = np.squeeze(rH["H"])
+        lam_arr = np.atleast_1d(np.squeeze(rE["lambda"])).astype(float)
+        i_f = 0
+        if E.ndim == 4:                  # band-recording monitor: take the point nearest the resonance
+            i_f = int(np.argmin(np.abs(lam_arr - lam_target_m))) if lam_target_m is not None else 0
+            E, Hf = E[:, :, i_f, :], Hf[:, :, i_f, :]
         if E.ndim != 3 or E.shape[-1] != 3 or Hf.shape != E.shape:
             raise ValueError(f"unexpected field shapes E{E.shape} H{Hf.shape}")
         x = np.atleast_1d(np.squeeze(rE["x"]))
         t_ax = np.atleast_1d(np.squeeze(rE["z"] if normal == "y" else rE["y"]))
         if E.shape[0] != x.size or E.shape[1] != t_ax.size:
             raise ValueError(f"axes mismatch E{E.shape} x{x.size} t{t_ax.size}")
-        lam = float(np.atleast_1d(np.squeeze(rE["lambda"]))[0])
+        lam = float(lam_arr[i_f])
 
         if normal == "y":
             term_tm = 0.5 * np.real(E[..., 2] * np.conj(Hf[..., 0]))
@@ -167,7 +206,7 @@ def extract_monitor_polarimetry(fdtd, monitor_name, normal):
 
     try:
         out["flux_norm"] = float(np.atleast_1d(
-            np.squeeze(fdtd.transmission(monitor_name)))[0])
+            np.squeeze(fdtd.transmission(monitor_name)))[i_f])
     except Exception as e:
         print(f"    WARN: transmission() failed [{e}]")
         out["flux_norm"] = np.nan
