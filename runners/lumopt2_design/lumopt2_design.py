@@ -68,6 +68,7 @@ import config
 from sim_helpers import (apply_monitor_overrides, find_bragg_resonance,
                          extract_envelope_peaks, calculate_fwhm_relative)
 from runners.scatterers import _common
+from runners.lumopt2_design import v3_step as v3s
 
 NM = 1e-9
 C0 = 299792458.0
@@ -515,6 +516,28 @@ class CampaignSpec:
     # the violation beyond the deadband (marg/2) instead of |W − W_tgt|.
     # Default False = every existing lane unchanged.
     wgp_filter_band: bool = False
+    # ★★v3 STEP ENGINE (2026-10-05, user "go v3"; design = GPT review F2-F5,
+    # math + gate in v3_step.py / gates/gate_v3_local.py). Default False =
+    # every existing lane unchanged. Requires wgp_ns2 (reuse of its plumbing).
+    # wgp_v3      — the step is ONE bounded problem (v3_step.qp_step): trust
+    #               radius + parameter bounds + the width BAND + a per-step
+    #               bound on the predicted resonance move. No projection-then-
+    #               clip, no separate restoration, no λ equality: λ is an
+    #               algorithmic aid, re-centred on every accepted point.
+    #               The width row is the TOTAL moving-resonance derivative
+    #               gW_fixedλ + c_W·gλ with c_W = dW/dλ MEASURED per eval from
+    #               the same forward's neighbouring-λ profiles.
+    # wgp_v3_peak — objective = 3-point-parabola peak value T(λ*) instead of
+    #               the windowed p=12 softmax (whose frozen-window gradient pays
+    #               F/12 per unit ln(linewidth) — docs/fom_linewidth_bias_
+    #               check_2026-10-05.txt). FOM is then in T units.
+    # wgp_v3_dlam_nm — bound on |gλ·d| per step (≈ ¼ spectral linewidth).
+    # wgp_v3_band_um — (W_lo, W_hi) for the MEASURED width; None = the spec
+    #               band fwhm0·(RHO_DN, RHO_UP) shrunk by wgp_margin_um each side.
+    wgp_v3: bool = False
+    wgp_v3_peak: bool = False
+    wgp_v3_dlam_nm: float = 0.2
+    wgp_v3_band_um: tuple = None
     # ★2026-10-05 (GPT review A2 / A6), default False = existing lanes unchanged:
     # wgp_total_cap — one inf-norm cap on the SUM of null + restoration steps;
     # wgp_cond_norm — scale-free degeneracy test, drop the dead row not the λ row.
@@ -829,6 +852,24 @@ def make_fct(wl_nm):
             return anp.mean(anp.abs(T) ** P_SOFTMAX) ** (1.0 / P_SOFTMAX)
         idx = np.where(np.abs(wl_nm - lam_pk) <= WIN_FWHM_MULT * fwhm)[0]
         return anp.mean(anp.abs(T)[idx] ** P_SOFTMAX) ** (1.0 / P_SOFTMAX)
+
+    return fct
+
+
+def make_fct_peak(wl_nm):
+    """v3 objective: the resonance PEAK VALUE by a 3-point parabola through the
+    sampled maximum (grid uniform in frequency → index space is the right
+    abscissa). Index selection is stop-gradient; autograd gives the three
+    sample weights. No window, so no linewidth incentive and no sample-count
+    jumps (softmax: +0.075 T per 100 % broadening, MEASURED synthetic)."""
+    wl_nm = np.asarray(wl_nm, dtype=float)
+
+    def fct(T):
+        Tp = np.abs(_plain(T))
+        lam_pk, t_pk, _ = measure_peak(wl_nm, Tp)
+        if t_pk < DEAD_T_FLOOR:
+            raise RuntimeError(f"dead device: peak T {t_pk:.4g} < {DEAD_T_FLOOR}")
+        return v3s.peak3(anp.abs(T), int(np.argmin(np.abs(wl_nm - lam_pk))))
 
     return fct
 
@@ -1803,6 +1844,29 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                     # the spec observable, side by side on EVERY eval.
                     row["softw_um"] = round(float(soft_width_of_line(
                         px, pI, spec.pitch_nm / 2000.0)), 6)
+                if pI is not None and getattr(spec, "wgp_v3", False) and fwhm:
+                    # ★c_W = dW/dλ at FIXED geometry (v3 total width row): softW
+                    # of the SAME forward's profile at λ_pk and ±¼ linewidth.
+                    # One extra field read, zero solves. A failure here must
+                    # not kill the eval — the step falls back to two rows.
+                    try:
+                        dl_ = abs(float(wl[1] - wl[0]))
+                        m_ = max(2, int(round(0.25 * fwhm / dl_)))
+                        if m_ <= i_pk < len(wl) - m_:
+                            res_ = fdtd.getresult("field_profile", "E")
+                            ls_, ws_ = [], []
+                            for j_ in (i_pk - m_, i_pk, i_pk + m_):
+                                x_, I_, _ = _line_from_res(
+                                    res_, float(wl[j_]), spec.n_periods_side,
+                                    spec.pitch_nm)
+                                ls_.append(float(wl[j_]))
+                                ws_.append(float(soft_width_of_line(
+                                    x_, I_, spec.pitch_nm / 2000.0)))
+                            cw_, curved_ = v3s.cw_from_widths(ls_, ws_)
+                            row["cw_um_per_nm"] = round(float(cw_), 6)
+                            row["cw_curved"] = bool(curved_)
+                    except Exception as e_:
+                        row["cw_error"] = str(e_)[:120]
                 if getattr(spec, "width_grad", False):
                     # the FOM carrier's OWN sample (single-λ twin monitor) —
                     # this is what wg_anchor must be measured through, or the
@@ -1814,6 +1878,8 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                             spec.n_periods_side, spec.pitch_nm)
                         row["softw_adj_um"] = round(float(soft_width_of_line(
                             ax, aI, spec.pitch_nm / 2000.0)), 6)
+                        row["twin_lam_nm"] = round(
+                            float(np.squeeze(ra["lambda"])) / NM, 6)
                     except Exception:
                         pass
                     anc = getattr(spec, "wg_anchor", None)
@@ -2067,6 +2133,9 @@ def make_fct_v2(wl_nm, spec):
         # deadband, and cap the run below BEST_T9636's own e=132.6, i.e. it
         # would structurally forbid the campaign from reaching the basin it is
         # meant to test. The projection prices elongation exactly, via grad-W.
+        if getattr(spec, "wgp_v3_peak", False):
+            peak = make_fct_peak(wl_nm)
+            return lambda x: peak(x[:n_wl])
         return lambda x: base(x[:n_wl])
 
     def fct(x):
@@ -2725,6 +2794,22 @@ def run_projected(spec, project, cb, out_dir, p0):
     lo, hi = b[:, 0], b[:, 1]
     D = ((hi - lo) / 2.0) ** 2
     W_tgt, marg = float(spec.wgp_target_um), float(spec.wgp_margin_um)
+    # v3: the width is a BAND on the measured value, not a ride target
+    v3 = bool(getattr(spec, "wgp_v3", False))
+    if v3:
+        assert getattr(spec, "wgp_ns2", False), "wgp_v3 requires wgp_ns2"
+        if getattr(spec, "wgp_v3_band_um", None):
+            W_lo, W_hi = (float(v) for v in spec.wgp_v3_band_um)
+        else:
+            f0_ = float(getattr(spec, "fwhm0_um", None) or W_tgt)
+            W_lo, W_hi = RHO_DN * f0_ + marg, RHO_UP * f0_ - marg
+        assert W_lo < W_hi, "v3 width band is empty — margin too large"
+        dlam_b = float(getattr(spec, "wgp_v3_dlam_nm", 0.2))
+        print(f"[proj] v3 engine: width band [{W_lo:.4f}, {W_hi:.4f}] um, "
+              f"|dlam| <= {dlam_b} nm per step, peak objective "
+              f"{bool(getattr(spec, 'wgp_v3_peak', False))}", flush=True)
+    v3_last = None          # last qp_step result (diagnostics + active_cap)
+    pred_step = None        # predicted FOM gain of the trial being evaluated
     ppath = os.path.join(out_dir, f"{spec.label}_proj.jsonl")
     p = np.clip(np.asarray(p0, dtype=float), lo, hi)
     alpha, acc = float(spec.wgp_step), None       # acc = last ACCEPTED point
@@ -2806,10 +2891,35 @@ def run_projected(spec, project, cb, out_dir, p0):
                 "n_noise_rej": n_noise_rej, "retry_shrink": retry_shrink,
                 "ineligible": inelig})
 
-    def _step_of(gTv, gWv, Wv, a, gLamv=None, lamv=None, mutate=False):
-        """One step under the active law (ns2 two-constraint when armed,
-        else the 3-phase projection). Retry calls pass mutate=False."""
-        nonlocal ns2_diag
+    def _step_of(gTv, gWv, Wv, a, gLamv=None, lamv=None, mutate=False,
+                 p_base=None, cw=None):
+        """One step under the active law (v3 bounded problem; else ns2
+        two-constraint when armed, else the 3-phase projection). Retry calls
+        pass mutate=False."""
+        nonlocal ns2_diag, v3_last
+        if v3:
+            # total moving-resonance width row when both pieces exist; else
+            # the fixed-λ row (the λ trust row then bounds the cross term)
+            gWr = (gWv + float(cw) * gLamv
+                   if (cw is not None and gLamv is not None) else gWv)
+            rows, bands = [gWr], [(W_lo - Wv, W_hi - Wv)]
+            if gLamv is not None:
+                rows.append(np.asarray(gLamv, dtype=float))
+                bands.append((-dlam_b, dlam_b))
+            q = v3s.qp_step(gTv, rows, bands, D, lo - p_base, hi - p_base,
+                            _cap(a))
+            v3_last = q
+            gain = float(gTv @ q["d"])
+            free = float(np.sum(np.abs(gTv) * np.minimum(
+                _cap(a), np.maximum(hi - p_base, p_base - lo))))
+            dg = {"lam": float(q["mu"][0]),     # the TRUE width multiplier
+                  "rho_T": (gain / free if free > 0 else 0.0),
+                  "condM": None,
+                  "rW_um": float(Wv - min(max(Wv, W_lo), W_hi)),
+                  "rLam_nm": None, "ns2_degraded": False}
+            if mutate:
+                ns2_diag = dg
+            return q["d"], "v3-" + q["mode"], dg["lam"]
         if ns2 and gLamv is not None and lam_tgt is not None:
             s_, ph, dg = _ns2_step(
                 gTv, gWv, gLamv, D, Wv, W_tgt, marg, lamv, lam_tgt, lam_marg,
@@ -2866,7 +2976,8 @@ def run_projected(spec, project, cb, out_dir, p0):
                 n_rej += 1
             reuse_dirty = True
             step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha,
-                                        acc.get("gLam"), acc.get("lam_pk"))
+                                        acc.get("gLam"), acc.get("lam_pk"),
+                                        p_base=acc["p"], cw=acc.get("cw"))
             p = np.clip(acc["p"] + step, lo, hi)
             print(f"[proj {it}] NO WIDTH READ — treating as a rejected step, "
                   f"alpha -> {alpha:.4g}, retrying from the accepted point",
@@ -2879,7 +2990,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                                     "phase": "no-width-retry"}) + "\n")
             continue
         W = float(row["fwhm_env_um"])
-        h = abs(W - W_tgt)
+        h = (max(0.0, W_lo - W, W - W_hi) if v3 else abs(W - W_tgt))
         rec = {"it": it, "t": time.time(), "fom": fom, "W": W, "alpha": alpha,
                "cap_nm": _cap(alpha)}
         if range_alpha != 1.0:
@@ -2928,7 +3039,7 @@ def run_projected(spec, project, cb, out_dir, p0):
         # compares the VIOLATION beyond the deadband, not the distance to the
         # band centre — otherwise any step that lands a hair closer to W_tgt
         # is accepted regardless of its FOM, even with both points in band.
-        hv = max(0.0, h - marg / 2.0) if filter_band else h
+        hv = h if v3 else (max(0.0, h - marg / 2.0) if filter_band else h)
         if acc and (lam_jump or mode_hop or
                     not (fom > fom_ref
                          - float(getattr(spec, "wgp_fom_slack", 1e-4))
@@ -2971,7 +3082,8 @@ def run_projected(spec, project, cb, out_dir, p0):
             reuse_dirty = True
             p_rej = p
             step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha,
-                                        acc.get("gLam"), acc.get("lam_pk"))
+                                        acc.get("gLam"), acc.get("lam_pk"),
+                                        p_base=acc["p"], cw=acc.get("cw"))
             p = np.clip(acc["p"] + step, lo, hi)
             # ★DUPLICATE RETRY guard (GPT follow-up F1; gate §11 T9): a
             # restoration-dominated step sits BELOW the cap, so shrinking the
@@ -2992,6 +3104,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                       f"halved to {float(np.max(np.abs(p - acc['p']))):.3g} nm "
                       f"(the law re-proposed a rejected geometry)", flush=True)
             rec.update(phase=phase + "-retry", lam=lam)
+            pred_step = float(acc["gT"] @ (p - acc["p"]))
         else:
             # ★wgp_reuse_k decision — BEFORE compute_gradient so the width
             # adjoint solve is skipped from the queue. Reuse only when the
@@ -3019,7 +3132,8 @@ def run_projected(spec, project, cb, out_dir, p0):
                          # REAL excursion forces a fresh solve. marg/2 here
                          # blocked reuse whenever any restoration was active,
                          # which is d1's normal regime (found 2026-08-31).
-                         and abs(W - W_tgt) <= marg)
+                         and ((W_lo <= W <= W_hi) if v3
+                              else abs(W - W_tgt) <= marg))
             spec._wg_reuse = bool(reuse_now)
             gT = np.asarray(project.compute_gradient(p), dtype=float)  # fwd cached
             if reuse_now:
@@ -3172,7 +3286,21 @@ def run_projected(spec, project, cb, out_dir, p0):
             # gW_eff (not raw gW) is what the step is BUILT from, so it is also
             # what the retry branch and the dw_pred audit must use — otherwise
             # both silently disagree with the step whenever wgain ≠ 1.
-            if cap_adapt and acc is not None:
+            if v3 and cap_adapt and acc is not None and pred_step is not None:
+                # v3 radius rule: model agreement on the step just accepted
+                # (v3_step.radius_update), starting from the radius USED.
+                r_used_ = cap_state * retry_shrink
+                cap_state, rtag_ = v3s.radius_update(
+                    r_used_, pred_step, fom - acc["fom"], slack,
+                    (v3_last or {}).get("active_cap", 0.0),
+                    grow=float(spec.wgp_cap_grow),
+                    cap_max=float(spec.wgp_cap_max_nm))
+                rec.update(v3_radius=rtag_, dT_meas=float(fom - acc["fom"]),
+                           dT_pred_prev=float(pred_step))
+                print(f"[proj {it}] v3 radius {r_used_:.3g} -> {cap_state:.3g} "
+                      f"({rtag_}; dT meas {fom - acc['fom']:+.2e} vs pred "
+                      f"{pred_step:+.2e})", flush=True)
+            if cap_adapt and acc is not None and not v3:
                 # ★trust-region growth: only on a VERIFIED accepted step —
                 # both constraints measurably held (absolute bounds; a
                 # relative dlam_pred test is ill-posed under ns2 where the
@@ -3190,7 +3318,7 @@ def run_projected(spec, project, cb, out_dir, p0):
             n_acc += 1
             n_noise_rej = 0
             rej_trials = []
-            if cap_adapt and retry_shrink < 1.0:
+            if cap_adapt and retry_shrink < 1.0 and not v3:
                 # the accepted trial used cap×shrink: adopt THAT radius instead
                 # of snapping back to the larger base (repeated overshoot)
                 cap_state = max(cap_state * retry_shrink, 2.0)
@@ -3198,11 +3326,13 @@ def run_projected(spec, project, cb, out_dir, p0):
             acc = {"p": p.copy(), "fom": fom, "W": W, "h": h, "hv": hv,
                    "gT": gT, "gW": gW_eff, "gW_raw": gW, "gLam": gLam_vec,
                    "lam_pk": lam_pk_row, "eval_num": int(it),
+                   "cw": (row.get("cw_um_per_nm") if v3 else None),
                    "softw": (float(row.get("softw_adj_um") or row["softw_um"])
                              if (row.get("softw_adj_um") or row.get("softw_um"))
                              is not None else None)}
             step, phase, lam = _step_of(gT, gW_eff, W, alpha,
-                                        gLam_vec, lam_pk_row, mutate=True)
+                                        gLam_vec, lam_pk_row, mutate=True,
+                                        p_base=p, cw=acc.get("cw"))
             if ns2 and (gLam_vec is None or lam_tgt is None):
                 # chain skipped / curvature floor / no λ read — this step ran
                 # the single-constraint law on the FIXED-λ gW. Loud: its width
@@ -3235,6 +3365,7 @@ def run_projected(spec, project, cb, out_dir, p0):
             # step, added to the budget the reuse gate checks (reset to 0
             # whenever the width row is solved fresh).
             reuse_travel += float(np.max(np.abs(p - acc["p"])))
+            pred_step = float(gT @ (p - acc["p"]))     # for the v3 radius rule
             alpha = min(alpha * 1.2, float(spec.wgp_step) * 4.0)
             rec.update(phase=phase, lam=lam, wgain=wgain,
                        dw_pred=float(gW_eff @ (p - acc["p"])),  # post-clip audit
@@ -3256,6 +3387,13 @@ def run_projected(spec, project, cb, out_dir, p0):
                            rLam_nm=ns2_diag.get("rLam_nm"))
                 if ns2_diag.get("ns2_degraded"):
                     rec["ns2_degraded"] = True
+            if v3 and v3_last is not None:
+                rec.update(v3_mode=v3_last["mode"],
+                           v3_mu=[float(m_) for m_ in v3_last["mu"]],
+                           v3_pred_rows=[float(r_) for r_ in v3_last["pred"]["rows"]],
+                           v3_active_cap=float(v3_last["active_cap"]),
+                           v3_row_active=[bool(b_) for b_ in v3_last["row_active"]],
+                           cw=acc.get("cw"))
             if ns2 or cap_adapt:
                 # per-block inf-norm shares of the step — the D-anisotropy
                 # starvation readout (which blocks actually move)

@@ -127,6 +127,16 @@ SPEC = dataclasses.replace(
     max_iter=60, max_feval=120,
 )
 
+# ── v3 step engine variant (2026-10-05, user "go v3") — SPEC above stays the
+# BASELINE (d1 ns2 engine + review fixes) so the two can be compared on the same
+# seed, anchors and C factors (GPT F6 paired study). v3 = bounded QP step, total
+# moving-resonance width row with measured dW/dλ, λ as a re-centred per-step
+# trust bound (¼ of the 1.0 nm linewidth), 3-point-parabola peak objective.
+SPEC_V3 = dataclasses.replace(
+    SPEC, label="lumopt2_te_s1_v3",
+    wgp_v3=True, wgp_v3_peak=True, wgp_v3_dlam_nm=0.25,
+)
+
 N_TASKS = 1
 
 

@@ -27,6 +27,7 @@ import config                                                   # noqa: E402
 from runners.lumopt2_design import lumopt2_design as eng        # noqa: E402
 from runners.lumopt2_design.campaign_te_s1 import SPEC as S1    # noqa: E402
 from runners.lumopt2_design.campaign_te_s2 import SPEC as S2    # noqa: E402
+from runners.lumopt2_design.campaign_te_s1 import SPEC_V3 as S1V3   # noqa: E402
 
 sys.path.insert(0, os.path.dirname(config.LUMAPI_PATH))
 import lumapi                                                   # noqa: E402
@@ -149,6 +150,8 @@ if __name__ == "__main__":
         allok &= gate(spec, wd)
         if "--generate" in sys.argv:
             allok &= generate_smoke(spec, wd)
+    if "--generate" in sys.argv:           # v3 engine variant: same scene, v3 fct/flags
+        allok &= generate_smoke(S1V3, wd)
     from runners.lumopt2_design.validate_te import check_points
     print("== C-recipe operating point + FD legs vs bounds ==")
     allok &= check_points()

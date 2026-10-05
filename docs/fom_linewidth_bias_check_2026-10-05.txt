@@ -1,0 +1,51 @@
+=== S1: step 20.000 pm, gamma 1.014 nm = 50.7 samples/FWHM, window 253 samples
+  FOM(g x .8/.9/1/1.1/1.2): 0.70826 0.70835 0.70843 0.70828 0.70835   FOM/T0=0.7828
+  reviewer T0=.9 g=.45/.50/.55 on S1 grid: 0.70414 0.70440 0.70462
+  frozen  dF/dT0 0.78280  dF/dlng +0.05904  dF/dl0 -7.564e-05/nm   (autograd of real fct agrees)
+  true-local (tiny h) dF/dT0 0.78280 dF/dlng +0.05904 dF/dl0 -7.564e-05  | true-macro dF/dlng +0.00001 dF/dl0 +1.167e-03
+  T0-equiv of 100% broadening: frozen +0.0754   true-macro +0.00001   (theory 1/12*T0 = 0.0754)
+  gamma scan: 101 window events, |jump| max 2.90e-04 median 2.33e-04; sawtooth p-p 3.81e-04
+  lambda0 scan +-1.5 steps: 9 events, |jump| max 2.33e-04 median 2.33e-04; FOM p-p 2.36e-04
+  fano left/right HWHM fraction 0.550
+  [Lor] bias T*-T0 worst over offsets (x1e-6)  
+    g-scale :      0.5     0.71      1.0     1.41      2.0
+         raw: -1406.16  -697.91  -351.95  -177.06   -88.01
+           3:   -19.48    -4.84    -1.24    -0.32    -0.08
+           5:  -139.18   -35.14    -9.07    -2.32    -0.58
+           7:  -470.79  -121.30   -31.59    -8.12    -2.03
+  [Fano] bias T*-T0 worst over offsets (x1e-6)  (beta=0.1010)
+    g-scale :      0.5     0.71      1.0     1.41      2.0
+         raw: -1424.94  -709.18  -358.41  -180.66   -89.66
+           3:   -52.99   -16.71    -5.52    -1.85    -0.60
+           5:  -267.87   -82.68   -26.57    -8.66    -2.70
+           7:  -711.11  -215.95   -67.62   -21.40    -6.49
+  noise sigma 1e-05: std(T*)/sigma  raw: 1.02 (bias +34.59s)  3: 0.99 (bias +0.10s)  5: 0.70 (bias +0.86s)  7: 0.58 (bias +3.13s)  
+  noise sigma 1e-04: std(T*)/sigma  raw: 0.99 (bias +2.98s)  3: 1.01 (bias +0.23s)  5: 0.70 (bias +0.07s)  7: 0.57 (bias +0.31s)  
+  3-pt: weight FD err 1.4e-09; dT*/dlng at offs 0/.25/.45: +0.0e+00 +1.5e-06 +4.2e-06 | switch: dValue -2.7e-08, dT*/dl0 +1.63e-04->-1.64e-04/nm, dT*/dlng +4.9e-06->+4.9e-06, w [-0.125  0.75   0.375]->[ 0.375  0.75  -0.125]
+  5-pt: weight FD err 4.0e-10; dT*/dlng at offs 0/.25/.45: +1.8e-05 +2.3e-05 +3.3e-05 | switch: dValue -1.1e-07, dT*/dl0 +8.21e-04->-8.30e-04/nm, dT*/dlng +3.6e-05->+3.6e-05, w [-0.15   0.275  0.45   0.375  0.05 ]->[ 0.05   0.375  0.45   0.275 -0.15 ]
+  7-pt: weight FD err 4.2e-10; dT*/dlng at offs 0/.25/.45: +8.8e-05 +9.7e-05 +1.2e-04 | switch: dValue -2.3e-07, dT*/dl0 +1.78e-03->-1.80e-03/nm, dT*/dlng +1.2e-04->+1.2e-04, w [-0.134  0.107  0.259  0.322  0.295  0.178 -0.027]->[-0.027  0.178  0.295  0.322  0.259  0.107 -0.134]
+=== S2: step 4.000 pm, gamma 0.203 nm = 50.7 samples/FWHM, window 253 samples
+  FOM(g x .8/.9/1/1.1/1.2): 0.76154 0.76136 0.76173 0.76157 0.76143   FOM/T0=0.7829
+  frozen  dF/dT0 0.78286  dF/dlng +0.06348  dF/dl0 -8.136e-05/nm   (autograd of real fct agrees)
+  true-local (tiny h) dF/dT0 0.78286 dF/dlng +0.06348 dF/dl0 -8.136e-05  | true-macro dF/dlng +0.00001 dF/dl0 -8.136e-05
+  T0-equiv of 100% broadening: frozen +0.0811   true-macro +0.00002   (theory 1/12*T0 = 0.0811)
+  gamma scan: 82 window events, |jump| max 6.22e-04 median 2.56e-04; sawtooth p-p 5.70e-04
+  lambda0 scan +-1.5 steps: 3 events, |jump| max 1.11e-16 median 0.00e+00; FOM p-p 9.76e-07
+  fano left/right HWHM fraction 0.550
+  [Lor] bias T*-T0 worst over offsets (x1e-6)  
+    g-scale :      0.5     0.71      1.0     1.41      2.0
+         raw: -1508.79  -748.84  -377.64  -189.98   -94.44
+           3:   -20.81    -5.16    -1.32    -0.33    -0.08
+           5:  -148.88   -37.54    -9.66    -2.46    -0.61
+           7:  -503.87  -129.72   -33.73    -8.64    -2.15
+  [Fano] bias T*-T0 worst over offsets (x1e-6)  (beta=0.1010)
+    g-scale :      0.5     0.71      1.0     1.41      2.0
+         raw: -1528.94  -760.94  -384.57  -193.85   -96.20
+           3:   -56.73   -17.88    -5.90    -1.97    -0.64
+           5:  -286.85   -88.51   -28.43    -9.26    -2.88
+           7:  -761.65  -231.21   -72.36   -22.88    -6.93
+  noise sigma 1e-05: std(T*)/sigma  raw: 0.99 (bias +37.18s)  3: 0.98 (bias +0.07s)  5: 0.70 (bias +0.89s)  7: 0.57 (bias +3.35s)  
+  noise sigma 1e-04: std(T*)/sigma  raw: 1.01 (bias +3.20s)  3: 1.00 (bias +0.24s)  5: 0.69 (bias +0.07s)  7: 0.59 (bias +0.32s)  
+  3-pt: weight FD err 1.0e-09; dT*/dlng at offs 0/.25/.45: +0.0e+00 +1.6e-06 +4.5e-06 | switch: dValue -6.1e-09, dT*/dl0 +8.75e-04->-8.75e-04/nm, dT*/dlng +5.2e-06->+5.3e-06, w [-0.125  0.75   0.375]->[ 0.375  0.75  -0.125]
+  5-pt: weight FD err 3.0e-10; dT*/dlng at offs 0/.25/.45: +1.9e-05 +2.4e-05 +3.5e-05 | switch: dValue -2.6e-08, dT*/dl0 +4.42e-03->-4.43e-03/nm, dT*/dlng +3.8e-05->+3.8e-05, w [-0.15   0.275  0.45   0.375  0.05 ]->[ 0.05   0.375  0.45   0.275 -0.15 ]
+  7-pt: weight FD err 3.8e-10; dT*/dlng at offs 0/.25/.45: +9.4e-05 +1.0e-04 +1.3e-04 | switch: dValue -5.3e-08, dT*/dl0 +9.56e-03->-9.58e-03/nm, dT*/dlng +1.3e-04->+1.3e-04, w [-0.134  0.107  0.259  0.322  0.295  0.178 -0.027]->[-0.027  0.178  0.295  0.322  0.259  0.107 -0.134]

@@ -104,6 +104,12 @@ SPEC = dataclasses.replace(
     wg_src_tiles=4,                      # 2·(98·0.491+0.123)+2 = 98.5 µm / 49.1 nm = 2005 cells → 501/tile
 )
 
+# v3 variant (see campaign_te_s1.SPEC_V3); λ trust bound = ¼ of the 0.20 nm linewidth
+SPEC_V3 = dataclasses.replace(
+    SPEC, label="lumopt2_te_s2_v3",
+    wgp_v3=True, wgp_v3_peak=True, wgp_v3_dlam_nm=0.05,
+)
+
 N_TASKS = 1
 
 

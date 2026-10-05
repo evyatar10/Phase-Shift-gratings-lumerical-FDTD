@@ -63,7 +63,7 @@ from runners.lumopt2_design import campaign_te_s1 as S1M
 from runners.lumopt2_design import campaign_te_s2 as S2M
 
 SEEDS = {0: S1M, 1: S2M}
-N_TASKS = 20
+N_TASKS = 40      # 0-19 baseline engine (S1, S2) | 20-39 v3 engine (S1: 28 smoke, 29 toy; S2: 38, 39)
 
 # Provisional anchors for canaries ONLY (make_project needs a wg_anchor when
 # width_grad is on): the stored CONFORMAL widths of each family (job 164893).
@@ -151,16 +151,17 @@ def _field_spec(mod, seed_i, suffix, **kw):
         width_grad=True, wg_pure=True, n_wl_points=151, **kw)
 
 
-def _campaign_spec(mod, suffix, **kw):
+def _campaign_spec(mod, suffix, v3=False, **kw):
     for name in ("SCAN_CENTER_NM", "FWHM0_UM", "SOFTW0_UM", "ADJ_FIX_PORT",
                  "ADJ_FIX_FIELD"):
         assert getattr(mod, name) is not None, f"{mod.SPEC.label}: {name} unmeasured"
-    fields = dict(label=mod.SPEC.label + suffix, scan_center_nm=mod.SCAN_CENTER_NM,
+    base = mod.SPEC_V3 if v3 else mod.SPEC
+    fields = dict(label=base.label + suffix, scan_center_nm=mod.SCAN_CENTER_NM,
                   fwhm0_um=mod.FWHM0_UM, wgp_target_um=mod.FWHM0_UM,
                   wg_anchor={"softw": mod.SOFTW0_UM, "fwhm": mod.FWHM0_UM},
                   adj_fix_re=mod.ADJ_FIX_PORT[0], adj_fix_im=mod.ADJ_FIX_PORT[1])
     fields.update(kw)                     # the smoke overrides fwhm0_um=None (review #4)
-    spec = dataclasses.replace(mod.SPEC, **fields)
+    spec = dataclasses.replace(base, **fields)
     spec.adj_fix_field_re, spec.adj_fix_field_im = mod.ADJ_FIX_FIELD
     return spec
 
@@ -217,7 +218,16 @@ def _upgrade_markers(out_dir, label, require_reuse):
                          or r.get("broyden_skipped")),
              noise_reject=sum(1 for r in rows if r.get("noise_reject")),
              rejects=sum(1 for r in rows if "retry" in str(r.get("phase", ""))))
+    n["v3_mode"] = sum(1 for r in rows if r.get("v3_mode"))
+    n["v3_radius"] = sum(1 for r in rows if r.get("v3_radius"))
+    ev = [json.loads(l) for l in open(os.path.join(out_dir, f"{label}_evals.jsonl"),
+                                      encoding="utf-8")]
+    n["cw_measured"] = sum(1 for r in ev if r.get("cw_um_per_nm") is not None)
+    n["cw_errors"] = sum(1 for r in ev if r.get("cw_error"))
     print(f"[upgrade markers {label}] {n}")
+    if "_v3" in label and (n["v3_mode"] == 0 or n["cw_measured"] == 0):
+        raise RuntimeError("V3 run: no v3 step logged or dW/dlambda never measured "
+                           "(see cw_error in the evals log) — v3 engine not exercised")
     if require_reuse and n["reused"] == 0:
         raise RuntimeError("TOY: width row never REUSED — U2 (Broyden) unexercised; "
                            "do not start the campaign on this evidence")
@@ -225,8 +235,13 @@ def _upgrade_markers(out_dir, label, require_reuse):
 
 def main(task_idx):
     seed_i, k = divmod(int(task_idx), 10)
+    v3 = seed_i >= 2                     # tasks 20-39: the v3 step engine
+    seed_i %= 2
+    if v3 and k not in (8, 9):
+        raise ValueError(f"task {task_idx}: v3 variants exist only for k=8 (smoke) and k=9 (toy)")
     mod = SEEDS[seed_i]
-    out_dir = os.path.join(config.RESULTS_DIR, f"validate_te_s{seed_i + 1}")
+    out_dir = os.path.join(config.RESULTS_DIR,
+                           f"validate_te_s{seed_i + 1}" + ("_v3" if v3 else ""))
     os.makedirs(out_dir, exist_ok=True)
     L = eng.layout(mod.SPEC.n_free)
 
@@ -286,8 +301,9 @@ def main(task_idx):
         eng.run_adjoint_only(spec, out_dir, idx, point=te_point(spec))
         print(f"[te-s{seed_i+1} k7] Im{{Z_field}} for {labels}")
     elif k == 8:                                 # pipeline smoke
-        spec = _campaign_spec(mod, "_smoke", n_periods_side=70, two_kl_floor=0.0,
-                              fwhm0_um=None, max_iter=2, max_feval=4)
+        spec = _campaign_spec(mod, "_smoke", v3=v3, n_periods_side=70,
+                              two_kl_floor=0.0, fwhm0_um=None, max_iter=2,
+                              max_feval=4)
         best = eng.run_campaign(spec, out_dir)
         rows = [json.loads(l) for l in open(os.path.join(
             out_dir, f"{spec.label}_proj.jsonl"), encoding="utf-8")]
@@ -304,7 +320,7 @@ def main(task_idx):
         # row, so 3 iterates could structurally never exercise it (CLAUDE.md §5
         # engagement-conditions corollary). U1 (noise reject) cannot be forced —
         # its counter is reported, not asserted.
-        spec = _campaign_spec(mod, "_toy", max_iter=4, max_feval=8)
+        spec = _campaign_spec(mod, "_toy", v3=v3, max_iter=4, max_feval=8)
         best = eng.run_campaign(spec, out_dir)
         print(f"[te-s{seed_i+1} toy] best_fom {best['fom']:.5f} — read "
               f"{spec.label}_proj.jsonl: rho_T / rLam_nm / dW per iterate")
