@@ -80,3 +80,75 @@ calls: Claude appends a dated entry after every session (bottom). Read it, then 
   `docs/ask_gpt_algorithm_review_2026-10-04_prompt.md`). FAILED before starting: ChatGPT
   usage limit reached, retry after 2026-10-05 01:13. PENDING — run with:
   `python C:/Users/evyat/.claude/skills/ask-gpt/ask_gpt.py --dir <repo> --timeout-min 45 < docs/ask_gpt_algorithm_review_2026-10-04_prompt.md`
+- 2026-10-05 10:45 — STATE UPDATE before the review call (measured overnight, jobs 168581/582/
+  641/642/646): TE S1 width-adjoint C_field = (0.9668, +0.0363), residual <=0.2 % per param
+  (uncorrected adjoint already within 1.7 % of FD). TE S1 port-adjoint C = (0.9546, +0.1181),
+  signs 6/6, residuals corr +4.6/-2.5 %, avg +9.3 %, shift_1 +0.6 %, wcav -3.6 %, shift_30
+  -12.3 % (|Z| is ~1300x the gradient there). FD/Re/Im vectors are in the comment block of
+  runners/lumopt2_design/campaign_te_s1.py and in Claude's memory. The E-normal classes (corr,
+  avg) did NOT show the feared class-dependent failure at dx 50 nm PVA. Noise floor |dT| ~1e-5.
+  S1 pipeline smoke (job 168909) and the S2 C-port gate (168644) are running now.
+- 2026-10-05 10:21-10:45 — ALGORITHM REVIEW DELIVERED (answer kept verbatim at
+  docs/ask_gpt_algorithm_review_2026-10-05_answer.md; prompt at
+  docs/ask_gpt_algorithm_review_2026-10-04_prompt.md). GPT's verdict: keep the two-gradient
+  architecture; fix acceptance / stopping / delivery logic before a long campaign; novelty =
+  the application-specific spatial-width constraint + validated implementation, not a new
+  constrained-optimization principle. Claude's VERIFICATION and actions (same day):
+  * A7 (C fit grid too coarse) CONFIRMED: exact LSQ gives port C (0.945335, +0.117012), all
+    residuals <=5 % (shift_30 -0.1 %; the earlier -12.3 % was the 0.05 deg grid). fit_port now
+    exact LSQ + cond + leave-one-out. ADOPTED.
+  * A1 (identical retries -> false "converged") CONFIRMED in code: fixed with a temporary
+    retry_shrink (cap, cap/2, cap/4 = three DIFFERENT trials) and a noise reject now also
+    needs a small OBSERVED loss. ADOPTED.
+  * A4 (rejected lambda-jump / mode-hop trial selectable as best) CONFIRMED: ineligible list
+    in the optstate sidecar, _best_from_log skips it. ADOPTED.
+  * A5 (filter accepts any step closer to the band centre): new spec flag wgp_filter_band
+    (violation beyond the deadband); ON for TE, default off for TM. ADOPTED.
+  * NOT YET DONE (accepted as real, zero-GPU, queued): A2 (null+range step can reach 2x cap;
+    bounds clipping breaks tangency), A3 (lambda-restoration cross term W_lambda*h_lambda),
+    A6 (unit-dependent cond / row normalisation), A8 (Broyden secant uses broadband softw_um
+    while the gradient is the twin's softW), A9 (stale IFT stencil state), A10
+    (_row_of_params relative tolerance), A11 (shadow price is not the multiplier).
+  * NEEDS THE USER (method changes): B1/P4 replace the windowed softmax by an interpolated
+    T(lambda*) objective; P1 bounded composite QP step; lambda as band vs equality; P8
+    curvature; rewrite THEORY.md's "a scalar objective cannot do this" argument; the
+    paper-grade comparison vs SQP/AL with ablations.
+  * Disagreement / nuance kept by Claude: the measured d1 result (lambda held to the grid,
+    W in band, T +0.004) stands as evidence the step works in practice; GPT is right that it
+    does not prove convergence or gradient exactness.
+  Follow-up questions parked at docs/ask_gpt_followup_2026-10-05_prompt.md (resume the same
+  session; coordinate with the benchmark session before calling).
+
+### 2026-10-05 — far-field multipole cancellation (session 01a10af6, 2 turns; a different lane from the TE inverse design)
+Q: can Johnson-style multipole cancellation cut the pi-shift cavity leak at fixed width; which perturbation; is there
+a basis with one dominant term? Data: results_from_athena/farfield_sph_20um (A TE plain, B TE overshoot, C TM plain).
+GPT: (1) no x mirror symmetry in the built grating (both arms narrow-wide) -> Claude's "E_y odd in x" hypothesis wrong;
+(2) top/side far fields DISAGREE on the 45-deg seam (corr 0.85/0.80/0.41, power ratio 1.3/1.3/2.3) -> all multipole
+fractions indicative; (3) per-harmonic cancellation is the wrong primary coordinate; use min ||A + B N z||^2 and the
+SVD of the constrained real Jacobian (a controllable left singular vector = the meaningful "one term");
+(4) pure 2G second-harmonic teeth put carriers at +-3 beta, outside the light cone; (5) no FWHM-only leak bound
+(sinc^2 envelope); B vs A is ~15x in Q_rad; (6) on-axis dipoles remove <5 %.
+Claude verified (2) directly (A 0.847/1.31, C 0.411/2.26) and adopted (1)-(6). Claude's own result: A's leak is
+reproduced 75-89 % by sources within +-0.5 um of the pi shift (B control 19-26 %, scrambled null 0.00); GPT's
+top->side no-refit test passes one way (0.56-0.80), fails in reverse. GPT calls the ceiling optimistic (expects ~10 %
+realisable). OPEN: 4 lateral faces = open tube, endcaps cut the feed guide -> needs a checked projection;
+proposed Run 1 (certified far field + complex near field +-2 um) and Run 2 (one constrained perturbation). Nothing
+dispatched. Write-up: docs/radiation_cancellation_review_2026-10-05.pdf.
+- 2026-10-05 10:44-11:05 — FOLLOW-UP (resume of the review session; prompt
+  docs/ask_gpt_followup_2026-10-05_prompt.md, answer docs/ask_gpt_followup_2026-10-05_answer.md).
+  GPT: the fixes help but (i) restoration-dominated retries are still identical, (ii) an
+  ordinary reject after noise rejects can enlarge the effective radius, (iii) a
+  callback-triggered restart (recenter / width trip) can precede eligibility classification,
+  (iv) an accepted shrunken retry snaps back to the base cap, (v) the violation filter accepts
+  any violation decrease regardless of T loss. It specified: F2 the bounded composite step as
+  ONE convex QP in scaled coordinates (two band rows, box, a single inf-norm radius; OSQP);
+  F3 the 3-point/5-point parabola peak objective with gradient weights (use FREQUENCY spacing);
+  F4 the total moving-resonance width row g_W,res = g_w|lambda + c_W g_lambda with c_W measured
+  from same-forward neighbouring-lambda profiles; F5 lambda as a local trust bound re-centred on
+  the accepted resonance, not an equality; F6 a 6-configuration paired experiment matrix
+  (~156-168 GPU-h); F7 replacement wording for THEORY.md; F8 the cheapest decisive test =
+  central difference along the ACTUAL production direction for T, W and lambda (2-4 forwards).
+  Claude's actions same day: (i), (ii), (iv) FIXED in run_projected (duplicate-retry guard,
+  one effective radius, accept adopts the radius used) with driver-level gate tests; (iii)
+  and (v) accepted as real, not yet fixed. F2-F7 are method changes awaiting the user's
+  decision; F8 is folded into the toy's readout (predicted vs measured dT, dW, dlambda per step).

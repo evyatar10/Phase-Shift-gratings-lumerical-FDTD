@@ -56,8 +56,10 @@ SCAN_CENTER_NM = 1560.936    # MEASURED task 0 (job 168375_0, PVA): λ_pk 1560.9
                              # moved +5.2 nm, TE EXPECTED larger, unmeasured)
 FWHM0_UM       = 19.121      # MEASURED task 1 (168530_1, 10 nm/501): fwhm_env_um 19.1209; T 0.9053 Q 1539 λ 1560.900 — task 1: fwhm_env_um of the seed = the width SPEC
 SOFTW0_UM      = 18.738      # MEASURED task 1: softw_adj_um (the twin's OWN sample — wg_anchor must be measured through it; raw-line softw 18.756) — task 1: softw_um of the seed (anchor)
-ADJ_FIX_PORT   = None        # tasks 4+5 → validate_te fit (re, im); TM value (1.0561, 0.1239) is VOID here
-ADJ_FIX_FIELD  = None        # tasks 6+7 → fit_c_field.py; TM (0.4554, +0.1336) is VOID here
+ADJ_FIX_PORT   = (0.945335, +0.117012)   # MEASURED, EXACT LSQ 2026-10-05 (FD+Re 168581_4, Im 168582_5): resid corr +3.6/-3.7 %,
+                                     # avg +3.4 %, shift_1 -0.6 %, shift_30 -0.1 %, wcav -5.0 % -> PASS (all <=5 %). Held-out shift_30 -16.5 %
+                                     # (1300x cancellation: known only to ~15 % out of sample). The earlier grid fit's -12.3 % was a fit artifact.
+ADJ_FIX_FIELD  = (0.966720, +0.036560)   # MEASURED fit 2026-10-05 (FD+Re 168641_6, Im 168642_7): vector resid 0.012 %, per-param <=0.2 %, signs 3/3 PASS
 FOM_SLACK      = 5e-4        # MEASURED tasks 2,3 (168579): T spread 1e-5 for +0.5 nm sub-cell tooth moves (PVA is smooth); 50× margin, 3× tighter than TM's 1.5e-3
 
 N_SIDE   = 98                # Itai's length (user 2026-10-04); 2κL = 3.36 (DERIVED)
@@ -113,6 +115,7 @@ SPEC = dataclasses.replace(
     # gate_projection_local §10). TE lane is their first hardware user — the
     # k=8 pipeline smoke must show each one's log marker before the campaign.
     wgp_noise_freeze=True, wgp_noise_stop=3,   # cap frozen on noise-level rejects
+    wgp_filter_band=True,                      # filter on band VIOLATION, not distance to centre (review A5)
     wgp_reuse_broyden=True,                    # rank-1 update of the reused width row
     wgp_mode_mac=0.9,                          # mode-hop reject below this overlap
     wgp_range_alpha=0.5,                       # restore half the violation per step

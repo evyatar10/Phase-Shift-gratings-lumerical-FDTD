@@ -50,6 +50,7 @@ VALIDATION GATES (run before any campaign; validate_c325.py drives these)
   B4 known-answer mini-opt (comb dx)
 """
 
+import hashlib
 import json
 import os
 import sys
@@ -510,6 +511,10 @@ class CampaignSpec:
     # have been resolved by the measurement, so it says nothing about the
     # model and must not shrink the trust cap. wgp_noise_stop consecutive
     # such rejects ⇒ stop: converged within noise. Off ⇒ bit-identical.
+    # ★wgp_filter_band (2026-10-05, GPT review A5): filter feasibility arm on
+    # the violation beyond the deadband (marg/2) instead of |W − W_tgt|.
+    # Default False = every existing lane unchanged.
+    wgp_filter_band: bool = False
     wgp_noise_freeze: bool = False
     wgp_noise_stop: int = 3
     # ★wgp_reuse_broyden (2026-10-04, Walther & Biegler lagged-Jacobian SQP):
@@ -1717,6 +1722,10 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                     # consecutive line-search probes chain correctly)
                     spec._wg_lam_track = float(lam_pk)
                 i_pk = int(np.argmin(np.abs(wl - lam_pk)))
+                # stale-state guard (review A9): an ineligible spectrum must not
+                # leave the PREVIOUS eval's stencil for the gradient pass
+                spec._wg_lam_idx = None
+                spec._wg_dTp = None
                 if (getattr(spec, "wg_lam_chain", False) and fwhm
                         and 1 < i_pk < len(wl) - 2):
                     # i_pk within 1 of a band edge would make i_lo-1 / i_hi+1
@@ -2632,13 +2641,23 @@ def profile_mac(npz_a, npz_b):
     return ab ** 2 / (aa * bb) if aa > 0 and bb > 0 else None
 
 
-def _reject_cap(cap_state, dT_pred_trial, slack, freeze):
+def _reject_cap(cap_state, dT_pred_trial, slack, freeze, loss=None):
     """Trust cap after a filter reject -> (new_cap, noise). A reject whose
-    predicted gain |gT·Δp| is below 2×slack is a NOISE reject (Cao/Berahas/
-    Scheinberg arXiv 2205.03667): the measurement could not resolve the step,
-    so the cap stays. Otherwise the legacy rule: halve, floor 2 nm."""
-    noise = bool(freeze) and abs(dT_pred_trial) < 2.0 * slack
+    predicted gain |gT·Δp| is below 2×slack AND whose OBSERVED loss
+    (fom_ref − fom) is below 2×slack is a NOISE reject (Cao/Berahas/Scheinberg
+    arXiv 2205.03667): the measurement could not resolve the step, so the cap
+    stays. A small prediction with a LARGE measured loss is a wrong model, not
+    noise (GPT review 2026-10-05, A1) → the legacy rule: halve, floor 2 nm."""
+    noise = (bool(freeze) and abs(dT_pred_trial) < 2.0 * slack
+             and (loss is None or loss < 2.0 * slack))
     return (cap_state if noise else max(cap_state * 0.5, 2.0)), noise
+
+
+def _param_key(p):
+    """Stable identity of a parameter vector (nm, 1e-6 rounding) — used to mark
+    evaluations that were REJECTED for a λ jump / mode hop as ineligible for
+    best-row selection (GPT review A4: the eval log holds every trial)."""
+    return hashlib.md5(np.round(np.asarray(p, dtype=float), 6).tobytes()).hexdigest()[:16]
 
 
 def _broyden_update(gW, dp, dW_meas, dlam, dlam_max=0.05):
@@ -2715,6 +2734,16 @@ def run_projected(spec, project, cb, out_dir, p0):
     noise_freeze = bool(getattr(spec, "wgp_noise_freeze", False))
     noise_stop = int(getattr(spec, "wgp_noise_stop", 3))
     n_noise_rej = int(ost.get("n_noise_rej", 0))
+    # ★retry_shrink (GPT review A1, 2026-10-05): under cap_adapt the step is
+    # cap·ξ_J/‖ξ_J‖ — alpha does not enter — so a noise reject with a FROZEN
+    # cap re-proposed the IDENTICAL geometry and three copies were declared
+    # "converged". Each consecutive noise reject now halves a TEMPORARY factor
+    # (the persisted trust cap is untouched); any accept resets it. Three noise
+    # rejects are therefore three DIFFERENT scales (cap, cap/2, cap/4).
+    retry_shrink = float(ost.get("retry_shrink", 1.0))
+    rej_trials = []      # trials rejected since the last accept (duplicate guard)
+    inelig = list(ost.get("ineligible", []))
+    filter_band = bool(getattr(spec, "wgp_filter_band", False))
     range_alpha = float(getattr(spec, "wgp_range_alpha", 1.0))
     range_frac = getattr(spec, "wgp_range_cap_frac", None)
     mode_mac = getattr(spec, "wgp_mode_mac", None)
@@ -2743,7 +2772,8 @@ def run_projected(spec, project, cb, out_dir, p0):
                 "dwdlam": float(spec.wg_dwdlam), "lam_tgt_nm": lam_tgt,
                 "n_acc": n_acc, "n_rej": n_rej, "reuse_age": reuse_age,
                 "reuse_W0": reuse_W0, "reuse_travel": reuse_travel,
-                "n_noise_rej": n_noise_rej})
+                "n_noise_rej": n_noise_rej, "retry_shrink": retry_shrink,
+                "ineligible": inelig})
 
     def _step_of(gTv, gWv, Wv, a, gLamv=None, lamv=None, mutate=False):
         """One step under the active law (ns2 two-constraint when armed,
@@ -2779,7 +2809,7 @@ def run_projected(spec, project, cb, out_dir, p0):
         step, so the null-space property grad-W . d = 0 is preserved.
         """
         if cap_adapt:
-            return cap_state
+            return cap_state * retry_shrink
         return cap0 * min(1.0, a / a0)
     for it in range(spec.max_iter):
         fom = float(project.compute_fom(p))
@@ -2861,10 +2891,15 @@ def run_projected(spec, project, cb, out_dir, p0):
         # keeps Sun–Nocedal's intent (a noise-sized dip is not a real
         # rejection) while forbidding systematic downhill drift.
         fom_ref = max(acc["fom"], fom_best) if acc else fom
+        # ★wgp_filter_band (GPT review A5): the feasibility arm of the filter
+        # compares the VIOLATION beyond the deadband, not the distance to the
+        # band centre — otherwise any step that lands a hair closer to W_tgt
+        # is accepted regardless of its FOM, even with both points in band.
+        hv = max(0.0, h - marg / 2.0) if filter_band else h
         if acc and (lam_jump or mode_hop or
                     not (fom > fom_ref
                          - float(getattr(spec, "wgp_fom_slack", 1e-4))
-                         or h < acc["h"])):
+                         or hv < acc["hv"])):
             # minimal Fletcher-Leyffer filter. Reject: re-step from the
             # accepted point's STORED gradients at alpha/2 — no re-solve
             # (the trial forward is the bounded loss).
@@ -2875,22 +2910,54 @@ def run_projected(spec, project, cb, out_dir, p0):
             # λ-jump / mode-hop rejects are real failures, never "noise"
             new_cap, noise = _reject_cap(cap_state, dT_pred_trial, slack,
                                          noise_freeze
-                                         and not (lam_jump or mode_hop))
+                                         and not (lam_jump or mode_hop),
+                                         loss=fom_ref - fom)
             if cap_adapt:
-                cap_state = new_cap
+                # ONE effective radius (GPT follow-up F1, 2026-10-05): an
+                # ordinary reject halves the radius ACTUALLY used (cap×shrink)
+                # — halving the base and resetting shrink to 1 could ENLARGE
+                # the next trial (10×¼=2.5 → 5).
+                cap_state = new_cap if noise else max(
+                    cap_state * retry_shrink * 0.5, 2.0)
                 n_rej += 1
+            if lam_jump or mode_hop:
+                inelig.append(_param_key(p))   # never selectable as "best"
             if noise:
                 n_noise_rej += 1
+                retry_shrink *= 0.5            # the retry is a DIFFERENT step
                 rec["noise_reject"] = True
+                rec["retry_shrink"] = retry_shrink
                 print(f"[proj {it}] ★NOISE REJECT: predicted gain "
-                      f"{dT_pred_trial:+.2e} below 2×slack {2.0 * slack:.2e} — "
-                      f"cap frozen ({n_noise_rej}/{noise_stop})", flush=True)
+                      f"{dT_pred_trial:+.2e} and observed loss "
+                      f"{fom_ref - fom:+.2e} below 2×slack {2.0 * slack:.2e} — "
+                      f"cap kept, retry at ×{retry_shrink:g} "
+                      f"({n_noise_rej}/{noise_stop})", flush=True)
             else:
                 n_noise_rej = 0     # the stop rule counts CONSECUTIVE ones
+                retry_shrink = 1.0
             reuse_dirty = True
+            p_rej = p
             step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha,
                                         acc.get("gLam"), acc.get("lam_pk"))
             p = np.clip(acc["p"] + step, lo, hi)
+            # ★DUPLICATE RETRY guard (GPT follow-up F1; gate §11 T9): a
+            # restoration-dominated step sits BELOW the cap, so shrinking the
+            # cap re-delivers a geometry that was already rejected. Compare
+            # against EVERY trial rejected since the last accept (checking only
+            # the last one alternated between two geometries) and halve the
+            # delivered displacement until the retry is new — every forward is
+            # then a distinct test, so the noise count stays honest.
+            rej_trials.append(p_rej.copy())
+            while any(float(np.max(np.abs(p - r))) < 1e-9 for r in rej_trials):
+                p = np.clip(acc["p"] + 0.5 * (p - acc["p"]), lo, hi)
+                rec["dup_retry"] = True
+                if float(np.max(np.abs(p - acc["p"]))) < 1e-9:
+                    rec["stalled"] = True      # collapsed onto the accepted point
+                    break
+            if rec.get("dup_retry"):
+                print(f"[proj {it}] ★DUPLICATE RETRY avoided: delivered step "
+                      f"halved to {float(np.max(np.abs(p - acc['p']))):.3g} nm "
+                      f"(the law re-proposed a rejected geometry)", flush=True)
             rec.update(phase=phase + "-retry", lam=lam)
         else:
             # ★wgp_reuse_k decision — BEFORE compute_gradient so the width
@@ -2925,7 +2992,7 @@ def run_projected(spec, project, cb, out_dir, p0):
             if reuse_now:
                 gW = np.asarray(acc["gW_raw"], dtype=float)
                 if getattr(spec, "wgp_reuse_broyden", False):
-                    sw = row.get("softw_um")
+                    sw = row.get("softw_adj_um") or row.get("softw_um")   # twin sample first
                     if sw is None or acc.get("softw") is None:
                         rec["broyden_skipped"] = "nosoftw"
                     else:
@@ -2967,7 +3034,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                 #   theorem on the peak condition ∂T/∂λ = 0]
                 ffl = getattr(project.fom, "gfields_Tlo", None)
                 ffh = getattr(project.fom, "gfields_Thi", None)
-                dTp = float(getattr(spec, "_wg_dTp", 0.0))
+                dTp = float(getattr(spec, "_wg_dTp", 0.0) or 0.0)   # None = ineligible spectrum
                 # ★curvature floor (lit item 2, 2026-08-28): the IFT gain
                 # 1/dTp is UNBOUNDED as the peak flattens — a sign check alone
                 # lets a near-zero denominator rotate the null space wildly.
@@ -3089,11 +3156,18 @@ def run_projected(spec, project, cb, out_dir, p0):
                           f"{lam_pk_row - acc['lam_pk']:+.3f} nm)", flush=True)
             n_acc += 1
             n_noise_rej = 0
-            acc = {"p": p.copy(), "fom": fom, "W": W, "h": h,
+            rej_trials = []
+            if cap_adapt and retry_shrink < 1.0:
+                # the accepted trial used cap×shrink: adopt THAT radius instead
+                # of snapping back to the larger base (repeated overshoot)
+                cap_state = max(cap_state * retry_shrink, 2.0)
+            retry_shrink = 1.0
+            acc = {"p": p.copy(), "fom": fom, "W": W, "h": h, "hv": hv,
                    "gT": gT, "gW": gW_eff, "gW_raw": gW, "gLam": gLam_vec,
                    "lam_pk": lam_pk_row, "eval_num": int(it),
-                   "softw": (float(row["softw_um"])
-                             if row.get("softw_um") is not None else None)}
+                   "softw": (float(row.get("softw_adj_um") or row["softw_um"])
+                             if (row.get("softw_adj_um") or row.get("softw_um"))
+                             is not None else None)}
             step, phase, lam = _step_of(gT, gW_eff, W, alpha,
                                         gLam_vec, lam_pk_row, mutate=True)
             if ns2 and (gLam_vec is None or lam_tgt is None):
@@ -3167,7 +3241,11 @@ def run_projected(spec, project, cb, out_dir, p0):
                 rec["dlam_pred_nm"] = float(gl @ (p - acc["p"]))
                 spec._wg_gLam = None
         rec["cap_nm"] = _cap(alpha)               # actual cap after any change
-        fom_best = max(fom_best, fom)   # AFTER the filter test, never before
+        # AFTER the filter test, never before — and never from a trial REJECTED
+        # for a λ jump / mode hop (gate §11, 2026-10-05: such a trial's FOM set
+        # the acceptance bar and every later genuine improvement was rejected).
+        if not (lam_jump or mode_hop):
+            fom_best = max(fom_best, fom)
         rec["fom_best"] = fom_best
         _save_state()
         with open(ppath, "a") as f:
@@ -3175,6 +3253,11 @@ def run_projected(spec, project, cb, out_dir, p0):
         print(f"[proj {it}] {rec['phase']} fom {fom:.5f} W {W:.4f} "
               f"lam {rec.get('lam', 0.0):.4g} alpha {alpha:.3g} "
               f"cap {rec['cap_nm']:.3g}", flush=True)
+        if rec.get("stalled"):
+            print("[proj] STOPPED: every retry scale from the accepted point was "
+                  "rejected (retries collapsed onto it) — resolution-limited, "
+                  "not a convergence certificate", flush=True)
+            break
         if n_noise_rej >= noise_stop:
             print(f"[proj] CONVERGED WITHIN NOISE ({n_noise_rej} consecutive "
                   f"noise rejects)", flush=True)
@@ -3384,7 +3467,7 @@ def _row_of_params(spec, out_dir, p, tol=1e-6, need=()):
         for line in f:
             row = json.loads(line)
             if all(row.get(k) for k in need) and np.allclose(
-                    np.asarray(row["params"], dtype=float), p, atol=tol):
+                    np.asarray(row["params"], dtype=float), p, atol=tol, rtol=0.0):
                 return row
     return None
 
@@ -3407,10 +3490,13 @@ def _best_from_log(spec, out_dir, fallback, sigma0_um=None):
     best_fom = fallback["fom"]
     best_p = np.asarray(fallback["params"], dtype=float)
     lam = spec.scan_center_nm
+    inelig = set(_load_opt_state(out_dir, spec.label).get("ineligible", []))
     if os.path.exists(path):
         with open(path) as f:
             for line in f:
                 row = json.loads(line)
+                if inelig and _param_key(row["params"]) in inelig:
+                    continue        # rejected for a λ jump / mode hop
                 if sigma0_um and not (row.get("sigma_um") and
                         RHO_DN <= row["sigma_um"] / sigma0_um <= RHO_UP):
                     continue

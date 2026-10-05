@@ -51,7 +51,7 @@ FWHM0_UM       = 19.636      # MEASURED task 11 (168530_11, 2 nm/501): fwhm_env 
 SOFTW0_UM      = 19.558      # MEASURED task 11: softw_adj_um (twin sample; raw-line 19.609) — task 10
 ADJ_FIX_PORT   = None        # S1's fit, VERIFIED on S2 by tasks 14+15 (or S2's own)
 ADJ_FIX_FIELD  = None        # S1's fit, VERIFIED on S2 by tasks 16+17 (or S2's own)
-FOM_SLACK      = 1.5e-3      # EXPECTED until task 12 measures S2's floor
+FOM_SLACK      = 6.5e-4      # MEASURED tasks 12,13 (168646): T 0.9730749/0.9730747 vs anchor 0.9730877 -> |dT| 1.3e-5; 50x margin
 
 N_SIDE     = 98              # Itai's length (user 2026-10-04); 2κL = 5.11 on the seed vector
 N_FREE     = 60

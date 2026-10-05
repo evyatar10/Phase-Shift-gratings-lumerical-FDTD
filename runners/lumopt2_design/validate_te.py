@@ -61,7 +61,6 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 from runners.lumopt2_design import campaign_te_s1 as S1M
 from runners.lumopt2_design import campaign_te_s2 as S2M
-from runners.lumopt2_design.fit_c_field import fit as _fit_c
 
 SEEDS = {0: S1M, 1: S2M}
 N_TASKS = 20
@@ -167,19 +166,31 @@ def _campaign_spec(mod, suffix, **kw):
 
 
 def fit_port(fd, re, im, labels):
-    """C-recipe fit (fit_c_field.fit) + per-class residual + the ENGINE tuple."""
-    phi, s, r = _fit_c(fd, re, im)
-    a, b = s * np.cos(phi), -s * np.sin(phi)          # engine applies a*RE + b*IM
+    """C-recipe fit by EXACT linear least squares FD ≈ a·Re + b·Im (the engine
+    applies exactly a·RE + b·IM), full precision, with the design-matrix
+    condition number and leave-one-out held-out errors.
+    ★2026-10-05 (GPT review A7, verified): the old 0.05° phase grid + 4-decimal
+    tuple cannot resolve cancellation-dominated entries (|Z| up to 1300× the
+    gradient needs ~0.004° for 10 %) — it produced a spurious −12.3 % on
+    shift_30 where the exact fit gives −0.1 %."""
     fd, re, im = (np.asarray(v, float) for v in (fd, re, im))
+    A = np.stack([re, im], axis=1)
+    (a, b), *_ = np.linalg.lstsq(A, fd, rcond=None)
     model = a * re + b * im
-    print(f"C fit: s {s:.4f} phi {np.degrees(phi):+.2f} deg  vector resid {r:.3%}")
-    print(f"ENGINE TUPLE (adj_fix_re, adj_fix_im) = ({a:.4f}, {b:+.4f})")
+    print(f"C fit (exact LSQ): a {a:.6f} b {b:+.6f} | s {np.hypot(a, b):.5f} "
+          f"phi {np.degrees(np.arctan2(-b, a)):+.4f} deg | cond {np.linalg.cond(A):.0f} | "
+          f"vector resid {np.linalg.norm(model - fd) / np.linalg.norm(fd):.3%}")
+    print(f"ENGINE TUPLE (adj_fix_re, adj_fix_im) = ({a:.6f}, {b:+.6f})")
     worst = {}
-    for lab, m, f in zip(labels, model, fd):
+    for i, (lab, m, f) in enumerate(zip(labels, model, fd)):
         res = m / f - 1.0 if f != 0 else float("nan")
+        k = [j for j in range(len(fd)) if j != i]            # leave-one-out
+        (a1, b1), *_ = np.linalg.lstsq(A[k], fd[k], rcond=None)
+        loo = (a1 * re[i] + b1 * im[i]) / f - 1.0 if f != 0 else float("nan")
         cls = lab.split("_")[0]
         worst[cls] = max(worst.get(cls, 0.0), abs(res))
         print(f"  {lab:>9s}: FD {f:+.5e} model {m:+.5e} resid {res:+.1%} "
+              f"held-out {loo:+.1%} |Z|/|FD| {np.hypot(re[i], im[i]) / abs(f):.0f} "
               f"sign {'OK' if np.sign(m) == np.sign(f) else 'FLIP'}")
     print("  per-class worst |resid|: " + ", ".join(f"{k} {v:.1%}" for k, v in worst.items()))
     bad = [k for k, v in worst.items() if v > 0.10]
@@ -187,7 +198,29 @@ def fit_port(fd, re, im, labels):
         print(f"  ★FAIL >10 % in class(es) {bad}. If corr/avg fail while shift "
               f"passes → E-normal boundary error (TE hard case): try bc_patch, "
               f"not a bigger C.")
-    return (a, b), worst
+    return (float(a), float(b)), worst
+
+
+def _upgrade_markers(out_dir, label, require_reuse):
+    """Engagement audit of the 2026-10-04 optimizer upgrades on a hardware run:
+    count each feature's own log marker in <label>_proj.jsonl (U3 mac and U4
+    range_alpha fire every iterate; U2 broyden only on a REUSED row; U1 only on
+    a noise-level reject). A toy must have reused at least once or U2 was never
+    exercised on hardware."""
+    rows = [json.loads(l) for l in open(os.path.join(out_dir, f"{label}_proj.jsonl"),
+                                        encoding="utf-8")]
+    n = dict(iterates=len(rows),
+             mac=sum(1 for r in rows if r.get("mac") is not None),
+             range_alpha=sum(1 for r in rows if r.get("range_alpha") is not None),
+             reused=sum(1 for r in rows if r.get("gw_reused")),
+             broyden=sum(1 for r in rows if r.get("broyden_rel") is not None
+                         or r.get("broyden_skipped")),
+             noise_reject=sum(1 for r in rows if r.get("noise_reject")),
+             rejects=sum(1 for r in rows if "retry" in str(r.get("phase", ""))))
+    print(f"[upgrade markers {label}] {n}")
+    if require_reuse and n["reused"] == 0:
+        raise RuntimeError("TOY: width row never REUSED — U2 (Broyden) unexercised; "
+                           "do not start the campaign on this evidence")
 
 
 def main(task_idx):
@@ -264,11 +297,18 @@ def main(task_idx):
               f"{len(ran)}/{len(rows)} iterates | sidecar {side} — NOT physics (N=70)")
         if not ran or not side:
             raise RuntimeError("TE SMOKE FAIL: ns2 law never executed or no sidecar")
+        _upgrade_markers(out_dir, spec.label, require_reuse=False)
     elif k == 9:                                 # toy
-        spec = _campaign_spec(mod, "_toy", max_iter=3, max_feval=6)
+        # 4 iterates (not 3): the width-row REUSE first becomes eligible on the
+        # 2nd accepted iterate and the Broyden update (U2) only fires on a reused
+        # row, so 3 iterates could structurally never exercise it (CLAUDE.md §5
+        # engagement-conditions corollary). U1 (noise reject) cannot be forced —
+        # its counter is reported, not asserted.
+        spec = _campaign_spec(mod, "_toy", max_iter=4, max_feval=8)
         best = eng.run_campaign(spec, out_dir)
         print(f"[te-s{seed_i+1} toy] best_fom {best['fom']:.5f} — read "
               f"{spec.label}_proj.jsonl: rho_T / rLam_nm / dW per iterate")
+        _upgrade_markers(out_dir, spec.label, require_reuse=True)
     else:
         raise ValueError(task_idx)
 

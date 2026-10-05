@@ -2,10 +2,13 @@
 clip + restoration + legacy-off). Study: v2 width projection; 2026-08-25;
 no jobs. Run AFTER applying patch_projection.diff:  python gate_projection_local.py
 Exit 0 = all pass. Tests the REAL engine code (_proj_step, make_fct_v2,
-CampaignSpec) with synthetic gradient vectors — no lumapi, no FDTD."""
+CampaignSpec) with synthetic gradient vectors — no lumapi, no FDTD.
+Section 11 (2026-10-05) drives the REAL run_projected through a fake project
+(review fixes A1 noise retry, A4 ineligible rows, A5 filter band)."""
 import sys
 import numpy as np
 
+sys.stdout.reconfigure(encoding="utf-8")   # check names print λ (cp1252 console)
 sys.path.insert(0, r"c:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes"
                    r"\runners\lumopt2_design")
 import lumopt2_design as eng  # noqa: E402
@@ -367,6 +370,388 @@ with _tf.TemporaryDirectory() as td:
 check("U3 wired: mode hop rejects exactly like the λ jump",
       "lam_jump or mode_hop or" in src10
       and 'acc[\'eval_num\']' in src10 and '"eval_num": int(it)' in src10)
+
+# -- 11) DRIVER-LEVEL: the REAL run_projected through a FAKE project ---------
+# (2026-10-05, GPT review A1/A4/A5). No Lumerical: the project returns
+# scripted foms + fixed synthetic gradients; the fake callback writes the same
+# <label>_evals.jsonl rows and profiles/<label>_ev####.npz the real CampaignLog
+# writes. Spec = the REAL TE S1 campaign spec (296 params; ns2, cap_adapt,
+# λ-chain, reuse_k 5, broyden, MAC 0.9, filter_band, noise_freeze all live).
+# Mocked: project.compute_fom/compute_gradient, the gradient-from-fields
+# conversion (returns gW / gTlo / gThi), the log callback, spec._wg_dTp = −1.
+# Every eval sits at W = W_tgt, λ = λ_tgt unless stated (no restoration).
+import contextlib as _cl, dataclasses as _dc, inspect as _insp  # noqa: E402
+import io as _io, types as _ty  # noqa: E402
+sys.path.insert(0, r"c:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes")
+from runners.lumopt2_design.campaign_te_s1 import SPEC as TE_S1  # noqa: E402
+
+rng11 = np.random.default_rng(11)
+S11 = _dc.replace(TE_S1, label="gate11", max_iter=10)
+b11 = np.asarray(eng.param_bounds(S11), dtype=float)
+D11 = ((b11[:, 1] - b11[:, 0]) / 2.0) ** 2
+P0 = np.asarray(eng.seed_params(S11), dtype=float)
+W0, LAM0 = float(S11.wgp_target_um), float(S11.scan_center_nm)
+F0, SL11, CAP0 = 0.70, float(S11.wgp_fom_slack), float(S11.wgp_step_max_nm)
+gW11, gLo11, gHi11 = (rng11.standard_normal(len(P0)) for _ in range(3))
+gT_dir = rng11.standard_normal(len(P0))
+# scale gT so the full-cap ns2 step predicts a gain of 0.4×slack (< 2×slack):
+# the step direction is scale-free, gT·Δp is linear in |gT|
+s_u, _, _ = eng._ns2_step(gT_dir, gW11, gHi11 - gLo11, D11, W0, W0,
+                          S11.wgp_margin_um, LAM0, LAM0,
+                          S11.wgp_lam_margin_nm, CAP0)
+gT11 = gT_dir * (0.4 * SL11 / float(gT_dir @ s_u))
+XG = np.linspace(-40.0, 40.0, 801)
+GAUSS = np.exp(-XG ** 2 / 32.0)                                   # sigma 4 um
+TWO = np.exp(-(XG - 8) ** 2 / 32.0) + np.exp(-(XG + 8) ** 2 / 32.0)  # mode hop
+
+
+class _FakeProject:
+    def __init__(self, script, gT=None):
+        self.script, self.n = script, 0
+        self.gT = gT11 if gT is None else gT
+        self.fom = _ty.SimpleNamespace(gfields_W="W", gfields_Tlo="Tlo",
+                                       gfields_Thi="Thi")
+        self.fdtd_session = None
+        g = {"W": gW11, "Tlo": gLo11, "Thi": gHi11}
+        self.parametrization = _ty.SimpleNamespace(
+            compute_gradient_from_fields=lambda f, sess, p: g[f].copy())
+
+    def compute_fom(self, p):
+        self.n += 1
+        return self.script[self.n - 1]["fom"]
+
+    def compute_gradient(self, p):
+        return self.gT.copy()
+
+
+class _FakeLog:
+    def __init__(self, spec, out_dir, script):
+        self.spec, self.out_dir, self.script = spec, out_dir, script
+
+    def on_function_eval(self, project, it, p, fom):
+        e, lab = self.script[it], self.spec.label
+        # real callback: λ-stencil curvature; None = ineligible spectrum (T5)
+        self.spec._wg_dTp = None if e.get("stale") else -1.0
+        self.spec._wg_lam_idx = None if e.get("stale") else (0, 1)
+        # softw_adj_um (the twin's sample) differs from softw_um by an
+        # eval-DEPENDENT offset so T7 can tell which one the secant used
+        with open(_os.path.join(self.out_dir, f"{lab}_evals.jsonl"), "a") as f:
+            f.write(_json.dumps({"eval": int(it), "fom": float(fom),
+                                 "params": [float(v) for v in p],
+                                 "fwhm_env_um": e["W"], "lam_pk_nm": LAM0,
+                                 "softw_um": e["W"] - 0.4,
+                                 "softw_adj_um": e["W"] - 0.3 + 0.01 * it})
+                    + "\n")
+        pd = _os.path.join(self.out_dir, "profiles")
+        _os.makedirs(pd, exist_ok=True)
+        np.savez_compressed(_os.path.join(pd, f"{lab}_ev{int(it):04d}.npz"),
+                            x_um=XG, I=e.get("prof", GAUSS), lam_pk_nm=LAM0)
+
+
+def _drive(td, script, fn=None, gT=None, **kw):
+    """Run the real (or a source-patched) run_projected in td; artefacts."""
+    spec = _dc.replace(S11, **kw)
+    buf = _io.StringIO()
+    with _cl.redirect_stdout(buf):
+        (fn or eng.run_projected)(spec, _FakeProject(script, gT),
+                                  _FakeLog(spec, td, script), td, P0)
+    rd = lambda n: [_json.loads(l) for l in open(_os.path.join(td, n))]
+    return {"spec": spec, "out": buf.getvalue(),
+            "ev": rd(f"{spec.label}_evals.jsonl"),
+            "pr": rd(f"{spec.label}_proj.jsonl"),
+            "ost": eng._load_opt_state(td, spec.label)}
+
+
+def _trial_steps(r):
+    acc_p = np.asarray(r["ev"][0]["params"])
+    tr = [np.asarray(e["params"]) for e in r["ev"][1:4]]
+    steps = [float(np.max(np.abs(t - acc_p))) for t in tr]
+    gaps = [float(np.max(np.abs(tr[i] - tr[j])))
+            for i, j in ((0, 1), (0, 2), (1, 2))]
+    return steps, min(gaps)
+
+
+# T1 (A1): flat-within-noise ⇒ 3 DIFFERENT trials at cap, cap/2, cap/4,
+# persisted cap untouched, stop after exactly 3 via CONVERGED WITHIN NOISE
+flat = [dict(fom=F0, W=W0)] + [dict(fom=F0 - 1.2 * SL11, W=W0)] * 9
+with _tf.TemporaryDirectory() as td:
+    r1 = _drive(td, flat)
+st1, gap1 = _trial_steps(r1)
+check("T1 precondition: predicted |gT.dp| < 2*slack on every trial",
+      all(abs(r1["pr"][i]["dT_pred_trial"]) < 2 * SL11 for i in (1, 2, 3)),
+      str([round(r1["pr"][i]["dT_pred_trial"], 6) for i in (1, 2, 3)]))
+check("T1 three noise rejects, then stop (4 evals, marker fired)",
+      len(r1["ev"]) == 4 and "CONVERGED WITHIN NOISE" in r1["out"]
+      and all(r1["pr"][i].get("noise_reject") for i in (1, 2, 3)),
+      f"evals {len(r1['ev'])}")
+check("T1 trial steps = cap, cap/2, cap/4 (inf-norm, 1e-9)",
+      np.allclose(st1, [CAP0, CAP0 / 2, CAP0 / 4], rtol=0, atol=1e-9),
+      str([round(s, 12) for s in st1]))
+check("T1 three trials are DIFFERENT vectors", gap1 > 1e-6, f"min gap {gap1:.3g}")
+check("T1 persisted cap_nm unchanged", r1["ost"]["cap_nm"] == CAP0
+      and r1["ost"]["n_noise_rej"] == 3, f"cap {r1['ost']['cap_nm']}")
+# tooth: the PRE-FIX driver (retry_shrink never halves) — same source, one
+# token changed, exec'd in a copy of the module namespace
+src_rp = _insp.getsource(eng.run_projected)
+
+
+def _patched(*pairs):
+    """run_projected with source tokens replaced (the pre-fix behaviour)."""
+    src = src_rp
+    for old, new in pairs:
+        assert src.count(old) == 1, old
+        src = src.replace(old, new)
+    ns = dict(vars(eng))
+    exec(compile(src, eng.__file__, "exec"), ns)
+    return ns["run_projected"]
+
+
+# the duplicate-retry guard (T9) would mask the pre-fix rules the T1/T8
+# teeth isolate, so those teeth switch it off too
+NO_GUARD = ("while any(float(np.max(np.abs(p - r))) < 1e-9 "
+            "for r in rej_trials):", "while False:")
+pre_fix1 = _patched(("retry_shrink *= 0.5", "retry_shrink *= 1.0"), NO_GUARD)
+with _tf.TemporaryDirectory() as td:
+    r1t = _drive(td, flat, fn=pre_fix1)
+st1t, gap1t = _trial_steps(r1t)
+check("teeth: pre-fix driver proposes 3 IDENTICAL trials and 'converges'",
+      src_rp.count("retry_shrink *= 0.5") == 1 and gap1t == 0.0
+      and not gap1t > 1e-6 and "CONVERGED WITHIN NOISE" in r1t["out"],
+      f"steps {[round(s, 9) for s in st1t]}")
+
+# T2 (A1 2nd half): small prediction, LARGE observed loss ⇒ NOT noise, halve
+for cap_in, cap_out in ((CAP0, CAP0 / 2), (3.0, 2.0)):          # floor 2 nm
+    with _tf.TemporaryDirectory() as td:
+        r2 = _drive(td, [dict(fom=F0, W=W0), dict(fom=F0 - 20 * SL11, W=W0)],
+                    max_iter=2, wgp_step_max_nm=cap_in)
+    row2 = r2["pr"][1]
+    check(f"T2 cap {cap_in:g}: big loss is not noise, cap -> {cap_out:g}",
+          row2["phase"].endswith("-retry") and "noise_reject" not in row2
+          and abs(row2["dT_pred_trial"]) < 2 * SL11
+          and r2["ost"]["cap_nm"] == cap_out and r2["ost"]["n_noise_rej"] == 0,
+          f"cap {r2['ost']['cap_nm']} pred {row2['dT_pred_trial']:.2e}")
+check("teeth: without the loss arm the same reject WOULD be noise",
+      eng._reject_cap(CAP0, row2["dT_pred_trial"], SL11, True) == (CAP0, True))
+
+# T3 (A4): mode-hop trial with the HIGHEST fom must not be the best row
+hop = [dict(fom=F0, W=W0), dict(fom=F0 + 0.01, W=W0, prof=TWO),
+       dict(fom=F0 + 4 * SL11, W=W0)]
+with _tf.TemporaryDirectory() as td:
+    r3 = _drive(td, hop[:2], max_iter=2)
+    acc3 = [e for e, pr in zip(r3["ev"], r3["pr"])
+            if not pr["phase"].endswith("-retry")]
+    best_acc = max(acc3, key=lambda e: e["fom"])
+    fb = {"fom": -np.inf, "params": P0}
+    bp3, _ = eng._best_from_log(r3["spec"], td, fb)
+    hop_p = np.asarray(r3["ev"][1]["params"])
+    check("T3 precondition: hop trial rejected on MAC, highest fom in log",
+          r3["pr"][1]["mac"] < 0.9 and r3["pr"][1]["phase"].endswith("-retry")
+          and r3["ev"][1]["fom"] == max(e["fom"] for e in r3["ev"]),
+          f"mac {r3['pr'][1]['mac']:.4f}")
+    check("T3 hop key in ineligible list",
+          r3["ost"]["ineligible"] == [eng._param_key(hop_p)])
+    check("T3 _best_from_log returns the best ACCEPTED row",
+          np.allclose(bp3, best_acc["params"]) and not np.allclose(bp3, hop_p),
+          f"-> eval {best_acc['eval']} fom {best_acc['fom']}")
+    o3 = dict(r3["ost"], ineligible=[])           # tooth: list cleared
+    eng._save_opt_state(td, r3["spec"].label, o3)
+    bp3t, _ = eng._best_from_log(r3["spec"], td, fb)
+    check("teeth: cleared ineligible list -> the mode-hop row is returned",
+          np.allclose(bp3t, hop_p))
+# T3b (found by this gate 2026-10-05, fixed same day): a λ-jump / mode-hop
+# REJECT must not raise fom_best — else the hop's fom becomes the acceptance
+# bar, a genuine F0+4·slack improvement is rejected, and _best_from_log (the
+# restart point) picks that driver-rejected row
+def _ev_idx(r, p):
+    return [e["eval"] for e in r["ev"] if np.allclose(p, e["params"])]
+with _tf.TemporaryDirectory() as td:
+    r3b = _drive(td, hop, max_iter=3)
+    bp3b, _ = eng._best_from_log(r3b["spec"], td, fb)
+check("T3b post-hop improvement (MAC 1) ACCEPTED, anchor not raised",
+      not r3b["pr"][2]["phase"].endswith("-retry")
+      and r3b["pr"][1]["fom_best"] == F0 and r3b["pr"][2]["mac"] > 0.999,
+      f"{r3b['pr'][2]['phase']} fom_best {r3b['pr'][1]['fom_best']:.4f}")
+check("T3b _best_from_log returns it", _ev_idx(r3b, bp3b) == [2],
+      f"-> eval {_ev_idx(r3b, bp3b)}")
+FB_FIX = "if not (lam_jump or mode_hop):\n            fom_best = max(fom_best"
+ns3b = dict(vars(eng))
+exec(compile(src_rp.replace(FB_FIX, "if True:\n            fom_best = max("
+                            "fom_best"), eng.__file__, "exec"), ns3b)
+with _tf.TemporaryDirectory() as td:
+    r3bt = _drive(td, hop, max_iter=3, fn=ns3b["run_projected"])
+check("teeth: old unconditional fom_best update REJECTS it",
+      src_rp.count(FB_FIX) == 1 and r3bt["pr"][2]["phase"].endswith("-retry")
+      and r3bt["pr"][1]["fom_best"] == F0 + 0.01, r3bt["pr"][2]["phase"])
+
+# T5: stale stencil (callback cleared _wg_dTp/_wg_lam_idx to None on an
+# ineligible spectrum) — no float(None); chain skipped, ns2 fallback, continue
+stale = [dict(fom=F0, W=W0), dict(fom=F0, W=W0, stale=True), dict(fom=F0, W=W0)]
+with _tf.TemporaryDirectory() as td:
+    r5 = _drive(td, stale, max_iter=3)
+check("T5 stale stencil: chain skipped + ns2 fallback logged, loop continues",
+      len(r5["pr"]) == 3 and r5["pr"][1].get("lam_chain") == "skipped"
+      and r5["pr"][1].get("ns2_fallback") is True
+      and "ns2_fallback" not in r5["pr"][2],
+      f"{[(q['phase'], q.get('lam_chain')) for q in r5['pr']]}")
+DTP_FIX = 'float(getattr(spec, "_wg_dTp", 0.0) or 0.0)'
+ns5 = dict(vars(eng))
+exec(compile(src_rp.replace(DTP_FIX, 'float(getattr(spec, "_wg_dTp", 0.0))'),
+             eng.__file__, "exec"), ns5)
+try:
+    with _tf.TemporaryDirectory() as td:
+        _drive(td, stale, max_iter=3, fn=ns5["run_projected"])
+    raised5 = False
+except TypeError:
+    raised5 = True
+check("teeth: pre-fix float(_wg_dTp) raises TypeError on the stale eval",
+      src_rp.count(DTP_FIX) == 1 and raised5)
+
+# T6: _row_of_params is ABSOLUTE-tolerance only (rtol=0): at |p| ~ 1e4 the
+# default np.allclose rtol 1e-5 would match a 0.05 nm different vector
+with _tf.TemporaryDirectory() as td:
+    pa = np.full(4, 10000.0)
+    with open(_os.path.join(td, "gate6_evals.jsonl"), "w") as f:
+        f.write(_json.dumps({"params": pa.tolist(), "fwhm_env_um": 19.0}) + "\n")
+    s6 = _dc.replace(S11, label="gate6")
+    check("T6 exact params match (control)",
+          eng._row_of_params(s6, td, pa, tol=1e-6) is not None)
+    check("T6 0.05 nm at magnitude 1e4 does NOT match (tol 1e-6)",
+          eng._row_of_params(s6, td, pa + 0.05, tol=1e-6) is None)
+check("teeth: np.allclose default rtol WOULD match them",
+      np.allclose(pa, pa + 0.05, atol=1e-6))
+
+# T7: Broyden secant on a REUSED width row reads softw_adj_um (the twin's
+# sample), not softw_um. Two accepts at W = W_tgt ⇒ eval 1 reuses the row.
+with _tf.TemporaryDirectory() as td:
+    r7 = _drive(td, [dict(fom=F0, W=W0)] * 2, max_iter=2)
+q7, e7 = r7["pr"][1], r7["ev"]
+dp7 = np.asarray(e7[1]["params"]) - np.asarray(e7[0]["params"])
+want_adj = (e7[1]["softw_adj_um"] - e7[0]["softw_adj_um"]) - float(gW11 @ dp7)
+want_raw = (e7[1]["softw_um"] - e7[0]["softw_um"]) - float(gW11 @ dp7)
+check("T7 eval 1 reused the width row and ran the secant",
+      q7.get("gw_reused") == 1 and "broyden_dW_resid" in q7, str(
+          {k: q7.get(k) for k in ("gw_reused", "broyden_skipped")}))
+check("T7 secant residual == the softw_adj_um values",
+      np.isclose(q7.get("broyden_dW_resid", np.nan), want_adj, rtol=0,
+                 atol=1e-12), f"{q7.get('broyden_dW_resid')} vs {want_adj}")
+check("teeth: the softw_um residual differs (T7 discriminates)",
+      abs(want_adj - want_raw) > 1e-3)
+
+# T4 (A5): both points in the deadband, trial closer to W_tgt but 5×slack
+# worse ⇒ REJECT under filter_band; legacy (False) accepts it — the tooth
+band = [dict(fom=F0, W=W0 + 0.04), dict(fom=F0 - 5 * SL11, W=W0 + 0.01)]
+check("T4 precondition: both points inside marg/2",
+      max(abs(e["W"] - W0) for e in band) < S11.wgp_margin_um / 2)
+with _tf.TemporaryDirectory() as td:
+    r4 = _drive(td, band, max_iter=2)
+check("T4 filter_band=True rejects the in-band FOM loss",
+      r4["spec"].wgp_filter_band and r4["pr"][1]["phase"].endswith("-retry"),
+      r4["pr"][1]["phase"])
+with _tf.TemporaryDirectory() as td:
+    r4t = _drive(td, band, max_iter=2, wgp_filter_band=False)
+check("teeth: filter_band=False ACCEPTS it (legacy distance-to-centre arm)",
+      not r4t["pr"][1]["phase"].endswith("-retry"), r4t["pr"][1]["phase"])
+
+
+def _deliv(r):
+    """inf-norm displacement of every trial from the accepted eval 0."""
+    a = np.asarray(r["ev"][0]["params"])
+    return [float(np.max(np.abs(np.asarray(e["params"]) - a)))
+            for e in r["ev"][1:]]
+
+
+# T8 (F1a): noise, noise, ORDINARY reject from cap 10 — one effective radius,
+# never enlarged by a reject: trials 10, 5, 2.5, then max(1.25, 2.0) = 2.0
+seq8 = [dict(fom=F0, W=W0), dict(fom=F0 - 1.2 * SL11, W=W0),
+        dict(fom=F0 - 1.2 * SL11, W=W0), dict(fom=F0 - 20 * SL11, W=W0),
+        dict(fom=F0 - 1.2 * SL11, W=W0)]
+with _tf.TemporaryDirectory() as td:
+    r8 = _drive(td, seq8, max_iter=5)
+d8 = _deliv(r8)
+check("T8 trials 10, 5, 2.5, then 2.0 (<= 2.5) after the ordinary reject",
+      np.allclose(d8, [10.0, 5.0, 2.5, 2.0], rtol=0, atol=1e-9)
+      and "noise_reject" not in r8["pr"][3], str([round(v, 9) for v in d8]))
+OLD8 = "cap_state * retry_shrink * 0.5, 2.0)"
+with _tf.TemporaryDirectory() as td:
+    r8t = _drive(td, seq8, max_iter=5,
+                 fn=_patched((OLD8, "cap_state * 0.5, 2.0)"), NO_GUARD))
+d8t = _deliv(r8t)
+check("teeth: pre-fix (halve base, reset shrink) ENLARGES trial 4 to 5",
+      abs(d8t[3] - 5.0) < 1e-9, str([round(v, 9) for v in d8t]))
+
+# T9 (F1b): restoration-dominated retries — gT = 0, W just outside the
+# deadband, so the delivered step is pure ξ_C, far BELOW every cap; shrinking
+# the cap cannot change it. Every rejected trial must be a NEW geometry.
+seq9 = [dict(fom=F0, W=W0 + 0.06)] + [dict(fom=F0 - 1.2 * SL11,
+                                           W=W0 + 0.06)] * 7
+z9 = np.zeros_like(gT11)
+with _tf.TemporaryDirectory() as td:
+    r9 = _drive(td, seq9, max_iter=8, gT=z9)
+d9, ev9 = _deliv(r9), [np.asarray(e["params"]) for e in r9["ev"]]
+gap9 = min(float(np.max(np.abs(ev9[i] - ev9[j])))     # incl. the accepted eval
+           for i in range(len(ev9)) for j in range(i))
+msg9 = (f"deliv {[f'{v:.4g}' for v in d9]} dup "
+        f"{[int(bool(q.get('dup_retry'))) for q in r9['pr'][1:]]} "
+        f"conv {'CONVERGED WITHIN NOISE' in r9['out']}")
+check("T9 precondition: delivered step << every cap (restoration-only)",
+      d9[0] < 1.0, msg9)
+check("T9 trials s, s/2, s/4: no geometry evaluated twice",
+      len(d9) == 3 and gap9 > 1e-9
+      and np.allclose(d9, [d9[0], d9[0] / 2, d9[0] / 4], rtol=1e-6, atol=0),
+      msg9 + f" min gap {gap9:.3g}")
+check("T9 halved retries carry dup_retry; CONVERGED only after 3 distinct",
+      r9["pr"][1].get("dup_retry") and r9["pr"][2].get("dup_retry")
+      and len(r9["ev"]) == 4 and "CONVERGED WITHIN NOISE" in r9["out"]
+      and not any(q.get("stalled") for q in r9["pr"]), msg9)
+with _tf.TemporaryDirectory() as td:
+    r9t = _drive(td, seq9, max_iter=8, gT=z9,
+                 fn=_patched(NO_GUARD))
+tr9t = [np.asarray(e["params"]) for e in r9t["ev"][1:]]
+check("teeth: no duplicate guard -> 3 IDENTICAL trials, 'converged'",
+      len(tr9t) == 3 and all(np.array_equal(t, tr9t[0]) for t in tr9t)
+      and "CONVERGED WITHIN NOISE" in r9t["out"], f"evals {len(r9t['ev'])}")
+
+# T11: collapse path. Same restoration-only setup with the violation shrunk
+# so s ~ 1.5e-9 nm (ξ_C is linear in it): the 1st retry halves s -> s/2 (still
+# within 1e-9 of the rejected trial) -> s/4 (< 1e-9 from the accepted point)
+# ⇒ stalled=True and the resolution-limited STOP, never "CONVERGED".
+dW11 = 0.05 + 0.01 * 1.5e-9 / d9[0]
+seq11 = [dict(fom=F0, W=W0 + dW11)] + [dict(fom=F0 - 1.2 * SL11,
+                                            W=W0 + dW11)] * 7
+with _tf.TemporaryDirectory() as td:
+    r11 = _drive(td, seq11, max_iter=8, gT=z9)
+d11 = _deliv(r11)
+check("T11 collapse: stalled row + STOPPED, no CONVERGED, 2 evals",
+      len(r11["ev"]) == 2 and r11["pr"][1].get("stalled")
+      and "[proj] STOPPED" in r11["out"]
+      and "CONVERGED WITHIN NOISE" not in r11["out"],
+      f"s {d11[0]:.3g} nm, evals {len(r11['ev'])}")
+with _tf.TemporaryDirectory() as td:
+    r11t = _drive(td, seq11, max_iter=3, gT=z9, fn=_patched(
+        ('rec["stalled"] = True', 'pass')))
+check("teeth: without the stall stop a geometry < 1e-9 from the accepted "
+      "point is re-solved", len(r11t["ev"]) == 3 and _deliv(r11t)[1] < 1e-9
+      and "[proj] STOPPED" not in r11t["out"],
+      f"deliv {[f'{v:.3g}' for v in _deliv(r11t)]}")
+
+# T10 (F1c): noise reject (shrink 0.5) then an ACCEPTED retry. The fake holds
+# W and λ fixed, so the "held" growth test PASSES: base 10 -> 15, then the
+# accepted radius 15 x 0.5 = 7.5 is adopted (pre-fix: snaps back to 15).
+seq10 = [dict(fom=F0, W=W0), dict(fom=F0 - 1.2 * SL11, W=W0),
+         dict(fom=F0, W=W0)]
+with _tf.TemporaryDirectory() as td:
+    r10 = _drive(td, seq10, max_iter=3)
+check("T10 accepted retry adopts the radius used (held: 15 x 0.5 = 7.5)",
+      r10["pr"][1].get("noise_reject") and abs(_deliv(r10)[1] - 5.0) < 1e-9
+      and not r10["pr"][2]["phase"].endswith("-retry")
+      and r10["ost"]["cap_nm"] == 7.5 and r10["ost"]["retry_shrink"] == 1.0,
+      f"cap {r10['ost']['cap_nm']}")
+with _tf.TemporaryDirectory() as td:
+    r10t = _drive(td, seq10, max_iter=3,
+                  fn=_patched(("cap_state = max(cap_state * retry_shrink, 2.0)",
+                              "cap_state = cap_state")))
+check("teeth: pre-fix accept snaps back to the (grown) base cap 15",
+      r10t["ost"]["cap_nm"] == 15.0, f"cap {r10t['ost']['cap_nm']}")
 
 print(("\nALL PASS" if not fails else f"\nFAILED: {fails}"))
 sys.exit(1 if fails else 0)
