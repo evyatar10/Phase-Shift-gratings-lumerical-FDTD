@@ -356,6 +356,80 @@ def qp_step(gT, rows, bands, D, lo_step, hi_step, cap_nm, restore_tol=None):
             "tau": tau, "iters": iters}
 
 
+# ---------------------------------------------------------------- restore with the λ trust
+RESTORE_FRAC = 0.5      # target share of the attainable width change y* when the QP falls short
+
+
+def restore_lam_step(gW, gLam, D, lo_step, hi_step, cap_nm, wband, lam_band):
+    """Width restoration that KEEPS the λ trust row (driver mode "restore_lam").
+
+    rows: gW·d ∈ wband (toward the band, no overshoot), gLam·d ∈ lam_band.
+    1) QP with the RESONANCE-NEUTRAL objective g_obj = gW − proj_D(gW → gLam),
+       so τ is sized by the usable direction (gate V13: the full row gave a
+       0.009 nm step under a 10 nm cap). restore_solver "qp".
+    2) y* = the attainable width change (LP, HiGHS: max sgn·gW·d over the λ
+       band, box and cap; the width band is NOT applied, so y* measures the
+       model's reach). Target y_t = sgn·min(|need|, ½|y*|), need = the band
+       edge distance (the nonzero end of wband). If the QP reaches less than
+       |y_t| — e.g. gW ∥ gLam, where g_obj = 0 and the QP step is ZERO (GPT
+       checkpoint H5.3) — return the MINIMUM-D-NORM step with gW·d = y_t under
+       the same λ band, box and cap ("minnorm"; qp_step with gT = 0 and an
+       equality width row). The LP vertex is never delivered: it puts every
+       parameter on the box/cap edge, far larger in 2-norm than any ascent
+       step on a linear width model. Only if the min-norm solve fails is the
+       vertex SCALED to y_t ("lp_scaled", t = y_t/y*; feasible because d = 0 is).
+    Direction: increase the width if wband[0] ≥ 0 (below the band), else
+    decrease. Returns qp_step's dict shape, mode "restore_lam".
+    """
+    gW, gLam, D = (np.asarray(v, dtype=float) for v in (gW, gLam, D))
+    lo_step, hi_step = np.asarray(lo_step, dtype=float), np.asarray(hi_step, dtype=float)
+    wband, lam_band = np.asarray(wband, dtype=float), np.asarray(lam_band, dtype=float)
+    for name, v in (("gW", gW), ("gLam", gLam), ("D", D), ("lo_step", lo_step), ("hi_step", hi_step),
+                    ("wband", wband), ("lam_band", lam_band), ("cap_nm", np.asarray(cap_nm, float))):
+        if not np.all(np.isfinite(v)):
+            raise ValueError(f"restore_lam_step: non-finite {name} (NaN/inf), refusing to build a step")
+    if not np.all(D > 0):
+        raise ValueError("restore_lam_step: D must be > 0 everywhere")
+    sgn = 1.0 if wband[0] >= 0.0 else -1.0
+    need = float(wband[1] if sgn > 0 else wband[0])
+    rows, bands = [gW, gLam], [tuple(wband), tuple(lam_band)]
+    den = float(gLam @ (D * gLam))
+    gobj = gW - (float(gW @ (D * gLam)) / den) * gLam if den > 0 else gW.copy()
+    s = np.sqrt(D)
+    if np.linalg.norm(s * gobj) <= 1e-9 * np.linalg.norm(s * gW):
+        gobj = np.zeros_like(gW)            # collinear: the projection is round-off only
+    q = qp_step(sgn * gobj, rows, bands, D, lo_step, hi_step, cap_nm)
+    y = float(gW @ q["d"])
+
+    lo, hi = np.maximum(lo_step, -cap_nm), np.minimum(hi_step, cap_nm)
+    lp = linprog(-sgn * gW, A_ub=np.vstack([gLam, -gLam]), b_ub=[lam_band[1], -lam_band[0]],
+                 bounds=list(zip(lo, hi)), method="highs")
+    y_star = float(gW @ lp.x) if lp.status == 0 else y
+    y_t = sgn * min(abs(need), RESTORE_FRAC * max(sgn * y_star, 0.0))
+    solver = "qp"
+    if sgn * y < sgn * y_t * (1 - 1e-9):
+        mn = qp_step(np.zeros_like(gW), rows, [(y_t, y_t), tuple(lam_band)], D, lo_step, hi_step, cap_nm)
+        ok = (mn["mode"] == "ascent" and mn["status"] == "ok"
+              and abs(float(gW @ mn["d"]) - y_t) <= 1e-6 * max(abs(y_t), 1e-12)
+              and lam_band[0] - 1e-9 <= float(gLam @ mn["d"]) <= lam_band[1] + 1e-9)
+        if ok:
+            q, solver = mn, "minnorm"
+        else:
+            d = np.clip((y_t / y_star) * lp.x, lo, hi) if y_star != 0 else np.zeros_like(gW)
+            yv = [float(gW @ d), float(gLam @ d)]
+            LU = np.array(bands)
+            nf = (hi_step - lo_step) >= FROZEN_SPAN_NM
+            q = dict(q, d=d, mu=np.zeros(2), status="ok", solver="lp_scaled", kkt=0.0,
+                     pred={"dT": float(sgn * gobj @ d), "rows": yv},
+                     viol=[float(max(0.0, LU[k, 0] - yv[k], yv[k] - LU[k, 1])) for k in range(2)],
+                     active_cap=float((nf & (np.abs(d) >= cap_nm * (1 - 1e-9))).sum() / max(nf.sum(), 1)),
+                     row_active=[False, False])
+            solver = "lp_scaled"
+    q["mode"], q["restore_solver"] = "restore_lam", solver
+    q["restore_lp_opt"], q["restore_target"] = y_star, y_t
+    return q
+
+
 # ---------------------------------------------------------------- F2 radius
 def radius_update(cap_nm, dT_pred, dT_meas, noise, active_cap, grow=1.5, cap_max=30.0, cap_min=2.0):
     """Trust-radius rule on an ACCEPTED step. Returns (new_cap, tag).

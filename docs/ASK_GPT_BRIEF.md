@@ -186,3 +186,19 @@ and Claude's grating-end explanation is untested; extractor pulls the whole band
 Results after the fix (IGUM 100034): A/B/C controls identical; power through the surface 7.33 / 0.69 / 6.5 % vs
 port loss 8.55 / 2.63 / 8.21 %; TE tables unchanged within 1 point (corr 0.978), TM reshuffles (0.932) and is
 taper-sensitive. Open: one run with the grating ends inside the monitors.
+Turn 4 (same session, 2026-10-05 ~21:50): CHECKPOINT on the v3 toy's first hardware step (docs/ask_gpt_toy_step1_2026-10-05_
+{prompt,answer}.md). Data sent: S1 toy step 0 accepted, dFOM pred +0.00694 / meas +0.007025; width pred +0.0873 / meas
++0.0778 um; no row active; S2 width-adjoint FD puzzle at +-4 nm (Re/FD 1.42/1.27/1.08).
+GPT: one well-predicted unconstrained ascent step, NOT a validation of constrained steering (needs a row-active step and
+a multi-bin lambda move); c_W curvature flag measures slope variation, not central-slope error -> use nested symmetric
+spans from the same forward; softW is scale-invariant so nonzero c_W means the spatial profile changes with lambda;
+radius: allow 10->15 nm once, then hold; S2: FD-nonlinearity plausible but unproved, a narrow line alone does not make a
+normalized width nonlinear, do NOT deploy the ill-conditioned complex fit, confirm with +-1 and +-0.5 nm (Richardson);
+S2 port gate (+-2 nm) deserves the same step-convergence check. Warnings: "FOM = 0.95 x t_pk" is wrong (T - F is a
+near-constant 0.0455, dF/dT = 0.997; reconcile PortResults transmission vs logged |S21|^2); Broyden twin-lambda
+correction trusted a flagged c_W; restore_lam stalls when gW || gLam; the 1.5x growth probe could drop the lambda row;
+the "noise floor" tasks perturb outer teeth, so they bound response+numerics, not pure numerical noise.
+Claude's actions: multi-span c_W estimator (1/4, 1/8, 1/16 linewidth), growth probe only when both QPs are full ascent,
+Broyden correction requires a valid c_W, restore_lam fallback for the collinear case (LP / blended objective); S2 field
+FD rerun at +-1 nm (job 169360). NOT yet done: FOM-vs-logged-T reconciliation, port-gate step convergence, growth rule
+conditioned on width and lambda model errors, identical-geometry noise repeat.

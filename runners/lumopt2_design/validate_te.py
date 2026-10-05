@@ -289,10 +289,17 @@ def main(task_idx):
         print(f"[te-s{seed_i+1} k5] Im{{Z}} for {labels}")
     elif k == 6:                                 # C_field FD + Re
         idx, labels = _indices(mod.SPEC, 3)
-        spec = _field_spec(mod, seed_i, "_cfield_fd")
-        print(f"[te-s{seed_i+1} k6] indices {dict(zip(labels, idx))} — FD FIRST; "
-              f"Re = adjoint half at C_field=(1,0). Pair with k=7.")
-        eng.run_validate_gradient(spec, out_dir, idx, perturbation=4.0,
+        # ★FD step per seed (2026-10-05, MEASURED 168910/168911): on S2 the ±4 nm
+        # legs gave Re/FD = 1.42 / 1.27 / 1.08 (corr_1 / shift_1 / wcav) and no
+        # single C fits. Hypothesis: S2's linewidth is 0.20 nm (S1 1.0) and softW
+        # is sampled at a FIXED λ, so a 4 nm move of a cavity-adjacent tooth shifts
+        # the resonance by a sizeable fraction of the line → nonlinear FD. The S2
+        # rerun uses ±1 nm (fresh label; the ±4 nm vectors are kept in memory/logs).
+        pert = (4.0, 1.0)[seed_i]
+        spec = _field_spec(mod, seed_i, ("_cfield_fd", "_cfield_fd_p1")[seed_i])
+        print(f"[te-s{seed_i+1} k6] indices {dict(zip(labels, idx))} — FD FIRST "
+              f"(±{pert} nm); Re = adjoint half at C_field=(1,0). Pair with k=7.")
+        eng.run_validate_gradient(spec, out_dir, idx, perturbation=pert,
                                   point=te_point(spec))
     elif k == 7:                                 # C_field Im
         idx, labels = _indices(mod.SPEC, 3)

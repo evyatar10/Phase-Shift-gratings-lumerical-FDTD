@@ -1849,22 +1849,43 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                     # of the SAME forward's profile at λ_pk and ±¼ linewidth.
                     # One extra field read, zero solves. A failure here must
                     # not kill the eval — the step falls back to two rows.
+                    # ★estimator (GPT checkpoint H2, 2026-10-05): a symmetric
+                    # stencil's CENTRAL slope is right even when the profile is
+                    # curved across it, so "curved" must not be decided from one
+                    # span. Take centred slopes at ¼, ⅛ and 1/16 linewidth half-
+                    # spans (same forward, zero solves) and keep the NARROWEST
+                    # one that agrees with the next wider span to 20 %; only if
+                    # none agree is the slope flagged unresolved ("curved").
                     try:
                         dl_ = abs(float(wl[1] - wl[0]))
                         m_ = max(2, int(round(0.25 * fwhm / dl_)))
                         if m_ <= i_pk < len(wl) - m_:
                             res_ = fdtd.getresult("field_profile", "E")
-                            ls_, ws_ = [], []
-                            for j_ in (i_pk - m_, i_pk, i_pk + m_):
+
+                            def _w_at(j_):
                                 x_, I_, _ = _line_from_res(
                                     res_, float(wl[j_]), spec.n_periods_side,
                                     spec.pitch_nm)
-                                ls_.append(float(wl[j_]))
-                                ws_.append(float(soft_width_of_line(
-                                    x_, I_, spec.pitch_nm / 2000.0)))
-                            cw_, curved_ = v3s.cw_from_widths(ls_, ws_)
+                                return float(soft_width_of_line(
+                                    x_, I_, spec.pitch_nm / 2000.0))
+
+                            spans_ = sorted({m_, max(1, m_ // 2), max(1, m_ // 4)},
+                                            reverse=True)
+                            slopes_ = [(_w_at(i_pk + h_) - _w_at(i_pk - h_))
+                                       / float(wl[i_pk + h_] - wl[i_pk - h_])
+                                       for h_ in spans_]
+                            cw_, curved_ = slopes_[-1], True
+                            for k_ in range(len(slopes_) - 1, 0, -1):
+                                ref_ = max(abs(slopes_[k_]), abs(slopes_[k_ - 1]), 1e-12)
+                                if abs(slopes_[k_] - slopes_[k_ - 1]) <= 0.2 * ref_:
+                                    cw_, curved_ = slopes_[k_], False
+                                    break
+                            if len(slopes_) == 1:
+                                curved_ = False
                             row["cw_um_per_nm"] = round(float(cw_), 6)
                             row["cw_curved"] = bool(curved_)
+                            row["cw_slopes"] = [round(float(v_), 6) for v_ in slopes_]
+                            row["cw_spans_nm"] = [round(h_ * dl_, 5) for h_ in spans_]
                     except Exception as e_:
                         row["cw_error"] = str(e_)[:120]
                 if getattr(spec, "width_grad", False):
@@ -2940,14 +2961,11 @@ def run_projected(spec, project, cb, out_dir, p0):
                 # resonance (D-metric projection). With the full row the QP's
                 # step scale τ is set by the λ-aligned part the λ bound then
                 # cancels — gate V13 measured a 0.009 nm step under a 10 nm cap.
-                gl_ = rows[1]
-                den_ = float(gl_ @ (D * gl_))
-                gobj_ = (gWr - (float(gWr @ (D * gl_)) / den_) * gl_
-                         if den_ > 0 else gWr)
-                q = v3s.qp_step(gobj_ if below else -gobj_, [gWr, gl_],
-                                [wband, bands[1]], D, lo - p_base,
-                                hi - p_base, _cap(a))
-                q["mode"] = "restore_lam"
+                # v3s.restore_lam_step: that projected QP, plus an LP check and
+                # a κ-blend / LP-vertex fallback when gW ∥ gλ (GPT H5.3: the
+                # projection is then 0 and the step was zero).
+                q = v3s.restore_lam_step(gWr, rows[1], D, lo - p_base,
+                                         hi - p_base, _cap(a), wband, bands[1])
             q["cw_state"] = cw_state
             if mutate:
                 if cw_state != "ok":
@@ -2958,9 +2976,18 @@ def run_projected(spec, project, cb, out_dir, p0):
                 # radius changes the step even when no component sits ON the
                 # cap. Solve the same problem at 1.5× (milliseconds) and record
                 # the extra predicted gain — the radius rule grows on THAT.
-                q15 = v3s.qp_step(gTv, rows, bands, D, lo - p_base, hi - p_base,
-                                  min(_cap(a) * 1.5, float(spec.wgp_cap_max_nm)))
-                q["gain_1p5"] = float(gTv @ q15["d"]) - float(gTv @ q["d"])
+                # Only for a genuine ascent step, and only if the larger-radius
+                # problem is ALSO a full ascent (GPT checkpoint H5.4: the raw QP
+                # may drop the λ row; a gain bought that way, or any probe in
+                # restoration, must not justify growth).
+                q["gain_1p5"] = 0.0
+                if q["mode"] == "ascent":
+                    q15 = v3s.qp_step(gTv, rows, bands, D, lo - p_base,
+                                      hi - p_base,
+                                      min(_cap(a) * 1.5, float(spec.wgp_cap_max_nm)))
+                    if q15["mode"] == "ascent":
+                        q["gain_1p5"] = (float(gTv @ q15["d"])
+                                         - float(gTv @ q["d"]))
             v3_last = q
             gain = float(gTv @ q["d"])
             free = float(np.sum(np.abs(gTv) * np.minimum(
@@ -3218,6 +3245,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                         # softW (µm), not fwhm_env: the row's own observable
                         dW_ = float(sw) - acc["softw"]
                         if (v3 and acc.get("cw") is not None
+                                and not acc.get("cw_bad")
                                 and row.get("twin_lam_nm") is not None
                                 and acc.get("twin_lam") is not None):
                             # the twin's λ moved between the two samples: take

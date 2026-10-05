@@ -12,7 +12,7 @@ import time
 
 import autograd
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import linprog, minimize
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))))
@@ -426,6 +426,94 @@ check("  tooth: the raw parabola there extrapolates above every sample",
       To[1] - Do_ ** 2 / (8 * Bo) > To.max(), f"{To[1] - Do_ ** 2 / (8 * Bo):.4f}")
 
 
+# ================================================================ restore_lam_step (GPT H5.3)
+def rl_projected(gW, gLam, D, lo, hi, cap, wband, lam_band):
+    """The PRE-H5.3 driver rule: projected-objective QP only."""
+    sg = 1.0 if wband[0] >= 0 else -1.0
+    gobj = gW - (gW @ (D * gLam)) / (gLam @ (D * gLam)) * gLam
+    return dict(v3.qp_step(sg * gobj, [gW, gLam], [wband, lam_band], D, lo, hi, cap), mode="restore_lam")
+
+
+def rl_full(gW, gLam, D, lo, hi, cap, wband, lam_band):
+    """The pre-V13 rule: the FULL width row as the objective."""
+    sg = 1.0 if wband[0] >= 0 else -1.0
+    return dict(v3.qp_step(sg * gW, [gW, gLam], [wband, lam_band], D, lo, hi, cap), mode="restore_lam")
+
+
+g, A, _, D, lo, hi, cap = instance(np.random.default_rng(59), 40, 2, "engine")
+gL, DL = A[1], 0.25
+# collinear gW = c·gλ: the projected QP is zero ⇒ minimum-D-norm step to the target
+# y_t = sgn·min(need, ½·|c|·dl) (y* = |c|·dl: the λ allowance is the whole reach)
+coll = []
+for c_, wb in ((0.3, (0.0, 5.0)), (-0.3, (0.0, 5.0)), (0.3, (-5.0, 0.0)), (0.3, (0.0, 0.02))):
+    q = v3.restore_lam_step(c_ * gL, gL, D, lo, hi, cap, wb, (-DL, DL))
+    sg = 1.0 if wb[0] >= 0 else -1.0
+    want = sg * min(abs(wb[1] if sg > 0 else wb[0]), 0.5 * abs(c_) * DL)
+    coll.append((abs(q["pred"]["rows"][0] - want), abs(gL @ q["d"]), in_box(q["d"], lo, hi, cap),
+                 q["restore_solver"], q["mode"], want))
+check("restore_lam_step collinear ⇒ width change = sgn·min(need, ½|c|·dl) (allowance- AND need-limited), "
+      "|gλ·d| <= dl, box",
+      all(e_ < 1e-6 and lam_ <= DL + 1e-9 and box_ and mode_ == "restore_lam" and sv_ == "minnorm"
+          for e_, lam_, box_, sv_, mode_, _ in coll),
+      str([(round(w_, 4), f"{e_:.1e}", sv_) for e_, _, _, sv_, _, w_ in coll]))
+# pre-H5.3: the projected objective is pure ROUND-OFF here, and qp_step's τ scales
+# that noise up to the radius — the old step was noise-directed (it happens to
+# reach ±|c|·dl on this instance and ~0 in V20; either outcome is luck)
+gobj0 = 0.3 * gL - (0.3 * gL @ (D * gL)) / (gL @ (D * gL)) * gL
+q0 = rl_projected(0.3 * gL, gL, D, lo, hi, cap, (0.0, 5.0), (-DL, DL))
+rnd = np.linalg.norm(np.sqrt(D) * gobj0) / np.linalg.norm(np.sqrt(D) * 0.3 * gL)
+check("  tooth: the pre-H5.3 projected objective is round-off (|g_obj|_D/|gW|_D < 1e-12)",
+      rnd < 1e-12, f"ratio {rnd:.1e}; old rule's width change on this instance {q0['pred']['rows'][0]:+.3g}")
+# generic, radius-limited (±1 pattern on equal-D params: QP gain = LP reach) ⇒ the
+# projected QP itself, unchanged, radius filled
+n_ = 40
+Dp, lop, hip = np.full(n_, 100.0 ** 2), np.full(n_, -100.0), np.full(n_, 100.0)
+gLp = np.random.default_rng(61).standard_normal(n_)
+pat = np.zeros(n_)
+pat[:10] = np.random.default_rng(62).choice([-1.0, 1.0], 10)
+pat -= (pat @ (Dp * gLp)) / (gLp @ (Dp * gLp)) * gLp
+gWp = 0.01 * gLp + 0.01 * pat
+qg = v3.restore_lam_step(gWp, gLp, Dp, lop, hip, 10.0, (0.0, 50.0), (-DL, DL))
+qg0 = rl_projected(gWp, gLp, Dp, lop, hip, 10.0, (0.0, 50.0), (-DL, DL))
+check("restore_lam_step generic case = the projected QP (solver qp), radius filled",
+      qg["restore_solver"] == "qp" and np.array_equal(qg["d"], qg0["d"])
+      and abs(np.abs(qg["d"]).max() - 10.0) < 1e-9, f"max|d| {np.abs(qg['d']).max():.6f}")
+# dense random rows (the engine family): the D-weighted QP reaches far less than the
+# box LP ⇒ min-norm step to ½·y*, never the LP vertex (every param on the box edge)
+qd = v3.restore_lam_step(g, gL, D, lo, hi, cap, (0.0, 1e6), (-DL, DL))
+qd0 = rl_projected(g, gL, D, lo, hi, cap, (0.0, 1e6), (-DL, DL))
+lb_, ub_ = boxes(lo, hi, cap)
+d_lp = linprog(-g, A_ub=np.vstack([gL, -gL]), b_ub=[DL, DL], bounds=list(zip(lb_, ub_)), method="highs").x
+nf_d = (hi - lo) >= v3.FROZEN_SPAN_NM
+at_cap_d = float(np.mean(np.abs(qd["d"][nf_d]) >= cap * (1 - 1e-9)))
+at_cap_lp = float(np.mean((np.abs(d_lp[nf_d] - lb_[nf_d]) < 1e-9) | (np.abs(d_lp[nf_d] - ub_[nf_d]) < 1e-9)))
+check("restore_lam_step dense case: minnorm to ½·y*, ‖d‖₂ < LP vertex's, few params at the cap",
+      qd["restore_solver"] == "minnorm" and abs(qd["pred"]["rows"][0] - 0.5 * qd["restore_lp_opt"]) < 1e-6
+      and np.linalg.norm(qd["d"]) < np.linalg.norm(d_lp) and at_cap_d <= 0.25 < at_cap_lp
+      and abs(gL @ qd["d"]) <= DL + 1e-9 and in_box(qd["d"], lo, hi, cap),
+      f"y {qd['pred']['rows'][0]:.4g} = ½·{qd['restore_lp_opt']:.4g} (projected QP {qd0['pred']['rows'][0]:.4g}); "
+      f"‖d‖₂ {np.linalg.norm(qd['d']):.3g} vs LP vertex {np.linalg.norm(d_lp):.3g}; "
+      f"at cap {at_cap_d:.0%} vs LP at box edge {at_cap_lp:.0%}")
+# lp_scaled fallback: force the min-norm solve to fail ⇒ t·d_lp, feasible, on target
+qp_ok = v3.qp_step
+v3.qp_step = lambda gT_, *a_, **k_: (dict(qp_ok(gT_, *a_, **k_), status="solver_failed")
+                                    if not np.any(gT_) else qp_ok(gT_, *a_, **k_))
+try:
+    qs = v3.restore_lam_step(g, gL, D, lo, hi, cap, (0.0, 1e6), (-DL, DL))
+finally:
+    v3.qp_step = qp_ok
+check("restore_lam_step min-norm failure ⇒ lp_scaled: t·d_lp on target, inside λ band and box",
+      qs["restore_solver"] == "lp_scaled" and abs(qs["pred"]["rows"][0] - 0.5 * qs["restore_lp_opt"]) < 1e-6
+      and abs(gL @ qs["d"]) <= DL + 1e-9 and in_box(qs["d"], lo, hi, cap),
+      f"y {qs['pred']['rows'][0]:.4g}, ‖d‖₂ {np.linalg.norm(qs['d']):.3g}")
+try:
+    v3.restore_lam_step(np.r_[np.nan, gL[1:]], gL, D, lo, hi, cap, (0.0, 1.0), (-DL, DL))
+    nan_ok = False
+except ValueError:
+    nan_ok = True
+check("restore_lam_step non-finite gW ⇒ ValueError", nan_ok)
+
+
 # ================================================================ DRIVER (V1-V7)
 # 2026-10-05. The REAL eng.run_projected / make_fct_v2 / make_log_callback on
 # campaign_te_s1.SPEC_V3 (296 params, ns2 plumbing + v3 + peak objective).
@@ -533,12 +621,27 @@ def drive(script, gT, fn=None, post=None, **kw):
 SRC_RP = inspect.getsource(eng.run_projected)
 
 
-def patched(old, new):
-    """run_projected with ONE source line replaced (the pre-fix behaviour)."""
-    assert SRC_RP.count(old) == 1, old
+def patched(old, new, *more):
+    """run_projected with source lines replaced (the pre-fix behaviour);
+    more = extra (old, new) pairs."""
+    src = SRC_RP
+    for o_, n_ in ((old, new),) + more:
+        assert src.count(o_) == 1, o_
+        src = src.replace(o_, n_)
     ns = dict(vars(eng))
-    exec(compile(SRC_RP.replace(old, new), eng.__file__, "exec"), ns)
+    exec(compile(src, eng.__file__, "exec"), ns)
     return ns["run_projected"]
+
+
+@contextlib.contextmanager
+def swap_restore(fn):
+    """Temporarily replace v3_step.restore_lam_step (the engine calls it via the module)."""
+    saved = v3.restore_lam_step
+    v3.restore_lam_step = fn
+    try:
+        yield
+    finally:
+        v3.restore_lam_step = saved
 
 
 @contextlib.contextmanager
@@ -883,12 +986,9 @@ check("V13 (iii) FAST fixture: W climbs monotonically INTO the band within 6 acc
       and all(b > a for a, b in zip(acc_f[:n_to_band + 1], acc_f[1:n_to_band + 1]))
       and acc_f[n_to_band] <= W_HI + 1e-9,
       f"W−W_lo {[round(w - W_LO, 3) for w in acc_f]}; in band after {n_to_band} steps")
-r13ft = restore_run(gW_fast, 2, fn=patched(
-    "q = v3s.qp_step(gobj_ if below else -gobj_, [gWr, gl_],",
-    "q = v3s.qp_step(gWr if below else -gWr, [gWr, gl_],"))
-r13st = restore_run(gW_smoke, 2, fn=patched(
-    "q = v3s.qp_step(gobj_ if below else -gobj_, [gWr, gl_],",
-    "q = v3s.qp_step(gWr if below else -gWr, [gWr, gl_],"))
+with swap_restore(rl_full):
+    r13ft = restore_run(gW_fast, 2)
+    r13st = restore_run(gW_smoke, 2)
 st_t = [restore_audit(r)[0][0] if restore_audit(r) else None for r in (r13ft, r13st)]
 check("  tooth: full-row objective (pre-fix) delivers a sliver of the cap (smoke-shaped gW)",
       st_t[1] is not None and st_t[1] < 0.05 * CAPV,
@@ -905,8 +1005,9 @@ check("V13 SLOW (nearly λ-aligned gW): monotone progress, radius/band-limited s
       r13["exc"] is None and all(b > a for a, b in zip(W_seq, W_seq[1:]))
       and all(st >= 0.99 * cap or wp >= room - 1e-7 for st, cap, wp, room, _ in au_s)
       and all(abs(b - a) <= DLAM + 1e-9 for (_, a), (_, b) in zip(acc13, acc13[1:])),
-      f"gain {gain_s:.4f} um/step ⇒ ~{(W_LO - W_seq[-1]) / gain_s:.0f} more steps to the band "
-      f"(W−W_lo now {W_seq[-1] - W_LO:+.3f})" if gain_s > 0 else "no progress")
+      (f"gain {gain_s:.4f} um/step; " + (f"in band after {next(i for i, w in enumerate(W_seq) if w >= W_LO)} steps"
+       if W_seq[-1] >= W_LO else f"~{(W_LO - W_seq[-1]) / gain_s:.0f} more steps to the band")
+       + f" (W−W_lo now {W_seq[-1] - W_LO:+.3f})") if gain_s > 0 else "no progress")
 r13t = restore_run(gW_smoke, 1, fn=patched(
     'if q["mode"] != "ascent" and gLamv is not None:', "if False:"))
 check("  tooth: pre-fix first step drops the λ row and predicts a multi-nm resonance move",
@@ -936,6 +1037,73 @@ for lag in (0.3, 0.1):
 check("V16 twin lag 0.3 nm ⇒ cw_state curved, |λ pred| <= ½·dlam; lag 0.1 ⇒ ok, full bound used",
       res16[0.3][0] == "curved" and abs(res16[0.3][1]) <= DLAM / 2 + 1e-7
       and res16[0.1][0] == "ok" and abs(res16[0.1][1]) > DLAM / 2 + 1e-3, str(res16))
+
+# -- V18 GROWTH PROBE POLICY. (a) restore_lam steps never feed a probe gain
+pairs18 = [(r13f["pr"][k], r13f["pr"][k + 1]) for k in range(len(r13f["pr"]) - 1)
+           if r13f["pr"][k].get("v3_mode") == "restore_lam"]
+check("V18 (a) after every restore_lam step: v3_gain_1p5 == 0 and the radius rule never grows",
+      pairs18 and all(nx.get("v3_gain_1p5") == 0.0 and nx.get("v3_radius") != "grow" for _, nx in pairs18),
+      str([(nx.get("v3_gain_1p5"), nx.get("v3_radius")) for _, nx in pairs18]))
+r18t = restore_run(gW_fast, 7, fn=patched('if q["mode"] == "ascent":', "if True:",
+                                          ('if q15["mode"] == "ascent":', "if True:")))
+pairs18t = [r18t["pr"][k + 1] for k in range(len(r18t["pr"]) - 1)
+            if r18t["pr"][k].get("v3_mode") == "restore_lam"]
+check("  tooth: the unconditional probe (pre-H5.4) logs a NONZERO gain after a restore step",
+      any(abs(nx.get("v3_gain_1p5") or 0.0) > 0 for nx in pairs18t),
+      str([(round(nx.get("v3_gain_1p5") or 0.0, 6), nx.get("v3_radius")) for nx in pairs18t]))
+# (b) a 1.5× probe that is not a full ascent. A larger radius only ENLARGES the box,
+# so the LP feasibility of the pair cannot be lost — this state is unreachable
+# geometrically; it is forced with a stub that marks every probe solve "dropped".
+qp0 = v3.qp_step
+
+
+def qp_probe_dropped(*a, **k):
+    r_ = qp0(*a, **k)
+    return dict(r_, mode="ascent_dropped_row") if a[6] > CAPV + 1e-9 else r_
+
+
+v3.qp_step = qp_probe_dropped
+try:
+    r18b = drive([dict(fom=lin, W=W0)] * 2, gT10, max_iter=2)
+finally:
+    v3.qp_step = qp0
+check("V18 (b) probe solve not a full ascent ⇒ gain_1p5 == 0, no grow (same run grows without the stub: V5 a')",
+      r18b["pr"][1].get("v3_gain_1p5") == 0.0 and r18b["pr"][1].get("v3_radius") != "grow"
+      and r5k["pr"][1].get("v3_radius") == "grow", str(r18b["pr"][1].get("v3_radius")))
+
+# -- V19 BROYDEN GUARD: a flagged c_W at the accepted eval ⇒ NO twin-λ correction
+s19 = [dict(fom=lin, W=W0, cw=CW11, curved=True, twin=TW0, sw_adj=18.80),
+       dict(fom=lin, W=W0, cw=CW11, curved=True, twin=TW0 + DTW, sw_adj=18.83)]
+r19 = drive(s19, gT10, max_iter=2)
+dp19 = np.asarray(r19["ev"][1]["params"]) - np.asarray(r19["ev"][0]["params"])
+want19 = (18.83 - 18.80) - float(gWv @ dp19)
+check("V19 cw flagged at acc ⇒ residual = Δsoftw_adj − gW·Δp (no cw·Δtwin_λ term)",
+      r19["pr"][1].get("gw_reused") == 1 and abs(r19["pr"][1].get("broyden_dW_resid", np.nan) - want19) < 1e-9,
+      f"logged {r19['pr'][1].get('broyden_dW_resid')} want {want19:.9f} (V11 clean-cw case corrected)")
+s19b = [dict(e, lam=LAM0 + 0.1 * i) for i, e in enumerate(s19)]
+r19b = drive(s19b, gT10, max_iter=2)
+check("V19 cw flagged + |Δλ| 0.1 > 0.05 ⇒ Broyden update skipped as before",
+      r19b["pr"][1].get("broyden_skipped") == "dlam", str(r19b["pr"][1].get("broyden_skipped")))
+
+# -- V20 COLLINEAR RESTORE at driver level: gW = c·gλ exactly, W 0.6 µm below the band
+C20 = 0.3
+W20 = W_LO - 0.6
+Wf20 = lambda p: W20 + float(C20 * gLamv @ (np.asarray(p) - P0))
+Lf20 = lambda p: LAM0 + float(gLamv @ (np.asarray(p) - P0))
+s20 = [dict(fom=lin, W=Wf20, lam=Lf20, cw=0.0)] * 2
+with grads(gW=C20 * gLamv):
+    r20 = drive(s20, gT10, max_iter=2)
+    with swap_restore(rl_projected):
+        r20t = drive(s20, gT10, max_iter=2)
+q20 = r20["pr"][0]
+st20 = float(np.max(np.abs(np.asarray(r20["ev"][1]["params"]) - P0)))
+check("V20 collinear gW = c·gλ: v3-restore_lam, W pred = min(need, ½|c|·dl_eff) = 0.0375, nonzero step, not stalled",
+      q20["phase"] == "v3-restore_lam" and abs(q20["v3_pred_rows"][0] - 0.5 * C20 * DLAM) < 1e-6
+      and abs(q20["v3_pred_rows"][1]) <= DLAM + 1e-7 and st20 > 0
+      and not any(q.get("stalled") for q in r20["pr"]),
+      f"W pred {q20['v3_pred_rows'][0]:.6f} λ pred {q20['v3_pred_rows'][1]:+.4f} step {st20:.4g} nm")
+check("  tooth: projected-only restore (pre-H5.3) predicts ZERO width change here",
+      abs(r20t["pr"][0]["v3_pred_rows"][0]) < 1e-9, f"{r20t['pr'][0]['v3_pred_rows'][0]:.1e}")
 
 modes_all = [q.get("v3_mode") for q in ALL_V3_PR]
 check("no proj row of ANY unpatched v3 drive has v3_mode ascent_dropped_row",
@@ -1047,6 +1215,44 @@ _, eat = real_cb_row(far, specs14[False])
 _, ebt = real_cb_row(ctr, wide14[False])
 check("  tooth: wgp_v3=False raises RecenterNeeded and WidthTrip on the same calls",
       isinstance(eat, eng.RecenterNeeded) and isinstance(ebt, eng.WidthTrip), f"{eat!r} / {ebt!r}")
+
+# -- V17 REAL callback: multi-span c_W estimator (¼, ⅛, 1/16 linewidth half-spans)
+class FakeFdtdW(FakeFdtd):
+    """T7 spectrum; profile FWHM = fw(λ − λ_pk) µm (clipped to 1..200)."""
+    def __init__(self, fw):
+        super().__init__()
+        f_ = np.clip(fw(wl_nm - LAMPK7), 1.0, 200.0)
+        I_ = np.exp(-4.0 * np.log(2.0) * x7[:, None] ** 2 / f_[None, :] ** 2)
+        E_ = np.zeros((x7.size, 2, wl_nm.size, 3))
+        E_[:, :, :, 0] = np.sqrt(I_)[:, None, :]
+        self.F = dict(FIELD7, E=E_)
+
+    def getresult(self, mon, key):
+        return self.F if mon == "field_profile" else super().getresult(mon, key)
+
+
+r17 = {}
+for nm_, fw_ in (("linear", lambda x: W0 + 0.3 * x),
+                 ("quadratic", lambda x: W0 + 0.3 * x + 2.0 * x ** 2),
+                 ("cubic", lambda x: W0 + 0.01 * x + 10.0 * x ** 3)):
+    r17[nm_] = real_cb_row(FakeFdtdW(fw_))[0]
+lin17, quad17, cub17 = r17["linear"], r17["quadratic"], r17["cubic"]
+sl = lin17.get("cw_slopes") or []
+check("V17 (i) linear width: all span slopes equal (1 %), not curved, spans logged",
+      len(sl) == 3 and max(sl) - min(sl) <= 0.01 * abs(np.mean(sl)) and lin17["cw_curved"] is False
+      and len(lin17.get("cw_spans_nm", [])) == 3,
+      f"slopes {sl} spans {lin17.get('cw_spans_nm')}")
+check("V17 (ii) strong SYMMETRIC curvature: central slope 0.3 within 5 %, NOT curved",
+      quad17.get("cw_curved") is False and abs(quad17["cw_um_per_nm"] - 0.3) / 0.3 < 0.05,
+      f"cw {quad17.get('cw_um_per_nm')} slopes {quad17.get('cw_slopes')}")
+h17 = quad17["cw_spans_nm"][0]
+_, old_flag = v3.cw_from_widths([LAMPK7 - h17, LAMPK7, LAMPK7 + h17],
+                                [W0 + 0.3 * x + 2.0 * x ** 2 for x in (-h17, 0.0, h17)])
+check("  tooth: the old single-span 3-point estimator flags the same profile curved",
+      old_flag, f"widest half-span {h17} nm")
+check("V17 (iii) odd cubic: adjacent slopes disagree > 20 % ⇒ curved, NARROWEST slope reported",
+      cub17.get("cw_curved") is True and cub17["cw_um_per_nm"] == cub17["cw_slopes"][-1],
+      f"slopes {cub17.get('cw_slopes')} → cw {cub17.get('cw_um_per_nm')}")
 
 print("V3 LOCAL GATE: ALL PASS" if not FAILS else f"V3 LOCAL GATE: FAIL ({len(FAILS)}): {FAILS}")
 sys.exit(1 if FAILS else 0)
