@@ -1,0 +1,202 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\setlength{\parskip}{3pt}\setlength{\parindent}{0pt}
+\title{Radiation cancellation in a $\pi$ shift sidewall Bragg cavity\\[2pt]
+\large Analytical model and status, version 7}
+\author{For Evyatar Rubin, Rosenthal group, Technion}
+\date{5 October 2026. Replaces v6.2 (27 September) and the review note of 5 October.}
+\begin{document}
+\maketitle
+Labels: \textbf{M} measured, \textbf{D} derived from measured values, \textbf{E} expected. Devices, all $N=98$
+per side, mode width 19 to 20\,$\mu$m: A = TE plain (corr 250), B = TE overshoot apodization, C = TM plain
+(corr 325). Corrected far fields: \texttt{results\_from\_igum/farfield\_sph\_20um/} (IGUM 100034).
+
+\section{Bottom line}
+\begin{enumerate}\setlength{\itemsep}{1pt}
+\item \textbf{One formula.} The far field is that of the polarization current $\Delta\varepsilon\mathbf E$
+radiating in uniform oxide, Eq.~(\ref{eq:A}). Harmonics, features and cancellation follow by linear algebra.
+\item \textbf{Cancelling one spherical harmonic does not work here.} The largest harmonic group of A holds
+19\,\%, so at most $1.24\times$ in $Q_{\rm rad}$. The table also depends on the choice of origin (a 0.19\,$\mu$m
+shift moves the magnetic dipole from 3 to 19\,\%), because the grating has no mirror symmetry in $x$.
+\item \textbf{The right object is the response matrix, not a basis.} Cancellation is a least squares problem
+on the whole sphere, Eq.~(\ref{eq:ls}). A dominant ``single term'' exists only if one controllable pattern
+(a singular vector of the response) carries most of the leak.
+\item \textbf{Plain TE leaks from the junction.} 83\,\% of A's pattern is reproduced by sources within
+$\pm0.5$\,$\mu$m of the $\pi$ shift (B 19\,\%, C 42\,\%, null 0). This is a ceiling for redesigning the innermost
+teeth, not a prediction; an independent estimate (GPT) of the realisable part is of order 10\,\%.
+\item \textbf{The apodized device B is a distributed radiator}: a job for the inverse design, not for a few
+knobs. \textbf{Plain TM} sends two thirds of its leak into a grazing needle: a job for a periodic comb.
+\item \textbf{Envelope shaping stays the large lever}: B is at least $15\times$ better than A in $Q_{\rm rad}$.
+Mode width alone sets no lower bound on the leak.
+\item \textbf{Phase.} A feature inside the core has only a sign and a size. Only a comb offset or a position in
+the cladding gives a continuous phase. A pure second harmonic of the corrugation puts nothing in the light cone.
+\item \textbf{The far field error is fixed.} Flat monitor projections are right only within $40^\circ$ of the
+monitor normal. The new projection uses one surface around the waveguide and certifies itself. TE results
+changed by less than one point; TM is still uncertain at grazing angles.
+\item \textbf{New:} 1.2 to 1.9 points of the port loss do not come from the cavity, most likely end scattering
+(E). If so, $Q_i$ does not depend on length and B radiates four times less than its port loss says.
+\item \textbf{Lengthening to the Q3dB device should not change the harmonic percentages} (E, one run needed).
+Removing a fraction $f$ of the leak multiplies $Q_{3\rm dB}$ by $1/(1-f)$.
+\end{enumerate}
+
+\section{Model}
+\textbf{Setting.} Axes: $x$ along the guide, $y$ transverse, $z$ vertical; $e^{-i\omega t}$.
+$n_{\rm SiN}=1.97$, $n_c=1.444$, uniform oxide outside. At 1559\,nm $k=5.82$\,$\mu$m$^{-1}$; $\beta=6.28$ (TE) and
+6.08 (TM), just outside the light cone. $\Delta\varepsilon=1.80$ in SiN; a feature changes it by
+$\delta\varepsilon_P=\mp1.80$.
+
+\textbf{Exact far field} (contrast moved to the right of Maxwell's equations, oxide Green tensor):
+\begin{equation}\label{eq:A}
+\mathbf A(\hat{\mathbf r})=(\mathsf I-\hat{\mathbf r}\hat{\mathbf r})\!\int\!\Delta\varepsilon\,\mathbf E\,
+e^{-ik\hat{\mathbf r}\cdot\mathbf r}d^3r,\qquad
+\frac{dP}{d\Omega}=\frac{k_0^4}{32\pi^2\eta}|\mathbf A|^2,\qquad Q_{\rm rad}=\frac{\omega U}{P}.
+\end{equation}
+\textbf{Harmonics.} $\mathbf A=\sum[\alpha_{lm}\mathbf X_{lm}+\beta_{lm}\hat{\mathbf r}\times\mathbf X_{lm}]$,
+powers add. In terms of the near field,
+\[
+\alpha_{lm}=4\pi(-i)^l\!\int\!\Delta\varepsilon\,j_l(kr)\mathbf X^*_{lm}\!\cdot\mathbf E\,d^3r,\qquad
+\beta_{lm}=\frac{4\pi i(-i)^l}{k}\!\int\!\Delta\varepsilon\,\mathbf E\cdot\nabla\times[j_l(kr)\mathbf X^*_{lm}]d^3r .
+\]
+Since $j_l\sim(kr)^l$, order $l$ lives at $r\sim l/k$ ($l=3$ is the first tooth). Selection rules come only from
+the $y$ and $z$ mirrors (TE: electric $l+m$ even, magnetic $l+m$ odd; TM the converse). There is no $x$ rule:
+both arms are built in the same order, and the standing wave has a node at $x=-0.125$ and an antinode at
+$+0.125$\,$\mu$m (M). \emph{This replaces the symmetry section of v6.2.}
+
+\textbf{Adding a feature} (exact to first order):
+\begin{equation}\label{eq:split}
+\mathbf A_{\rm new}-\mathbf A_c=\underbrace{\mathcal R[\delta\varepsilon_P\mathbf E_0]}_{\text{frozen field}}
++\underbrace{\mathcal R[\Delta\varepsilon\,\delta\mathbf E]}_{\text{redistribution}}
++\delta k\,\partial_k\mathcal R[\Delta\varepsilon\mathbf E_0].
+\end{equation}
+The first term is the feature radiating in the unchanged field (closed form, for screening). The second is the
+change of the cavity field; only a run measures it. A moved sidewall uses $\mathbf E_\parallel$ and $D_\perp$.
+\begin{itemize}\setlength{\itemsep}{0pt}
+\item \emph{Small feature} ($R\lesssim0.15$\,$\mu$m): a dipole
+$\mathbf p=\varepsilon_0\delta\varepsilon_PV_PL\,\mathbf E_0(\mathbf r_p)$ with phase
+$e^{-ik\hat{\mathbf r}\cdot\mathbf r_p}$; $L=1.30$ for an oxide hole in SiN. At the origin it is a pure dipole;
+displaced, its power spreads over the orders (share in $l=1,2,3,4$): $kx_p=1$: 0.86, 0.13, 0.01, 0;
+$kx_p=2$: 0.55, 0.36, 0.08, 0.01; $kx_p=4$: 0.14, 0.29, 0.33, 0.18. One tooth is $kx_p=1.5$, so no feature
+radiates a single order.
+\item \emph{Pair} at $\pm x_p$: factor $2\cos(kx_p\sin\theta\cos\varphi)$; a sign, no phase.
+\item \emph{Comb} of period $\Lambda_2$ and offset $\delta x$: a narrow band at $u_x=(\beta-K_2)/k$ with phase
+$\phi_2=2\pi\delta x/\Lambda_2$; to aim at $u_x$ use $\Lambda_2=2\pi/(\beta+k|u_x|)$.
+\end{itemize}
+
+\textbf{Cancellation.} With real knobs $\mathbf q$, response columns $\mathsf B=\partial\mathbf A/\partial\mathbf q$,
+and $\mathsf N$ the null space of the width and resonance sensitivities:
+\begin{equation}\label{eq:ls}
+\min_{\mathbf z}\|\mathbf A_c+\mathsf{BN}\mathbf z\|^2,\qquad
+\eta^2=\frac{\|\mathsf P_{\mathsf{BN}}\mathbf A_c\|^2}{\|\mathbf A_c\|^2},\qquad
+\text{one knob: }\ \frac{P(q)}{P_c}=1-\eta^2+\eta^2\Bigl(\frac q{q_*}-1\Bigr)^2 .
+\end{equation}
+$\eta^2$ is the removable fraction. A change of basis cannot raise it. The useful ``one term'' is a left singular
+vector of $\mathsf{BN}$ that carries most of $\mathbf A_c$; its right singular vector is the list of tooth
+changes. Cancelling $K$ complex channels at fixed width and resonance needs $2K+2$ real knobs. Removing a channel
+that holds a fraction $f$ gives at most $1/(1-f)$. It gets worse than the baseline for $q>2q_*$ or the wrong
+sign, which is likely when the feature feeds other channels, when the target is small, or when restoring the
+width rewrites $\mathbf A_c$. The objective must be $P_{\rm rad}/U$.
+
+\textbf{Mode width.} Decay rate $\gamma=\sqrt{\kappa^2-\delta_\beta^2}$, intensity width $\ln2/\gamma$. A feature
+shifts the resonance (second order effect on the width at gap centre); features repeating with the pitch change
+$\kappa$ at first order (oxide holes in narrow segments shorten the mode, in wide segments lengthen it);
+cladding posts at 1.5 to 2\,$\mu$m do neither. A centre feature is compensated most cheaply by the gap length.
+
+\textbf{Envelope.} The source carriers sit at $\pm\beta$, 0.46\,$\mu$m$^{-1}$ outside the cone; the leak is the
+envelope's Fourier content beyond that offset plus the junction. For the same 20\,$\mu$m width the scalar cone
+content is $9\times10^{-5}$ for $e^{-\gamma|x|}$, $3\times10^{-15}$ for a Gaussian, zero for $\mathrm{sinc}^2$ (D).
+The limits are practical: a Gaussian needs $\kappa=0.069$\,$\mu$m$^{-1}$ at the half width (plain: 0.034 to
+0.044), plus joins and finite length.
+
+\section{Far field measurement}
+\textbf{Error.} The harmonic tables were computed on two flat monitor projections stitched at $45^\circ$. They
+disagree there (side/top power 1.3 for TE, 2.3 for TM). Cause, shown with an exact dipole and no simulation: with
+monitors 2.15\,$\mu$m from the axis and $\pm3.4$\,$\mu$m wide, a flat projection keeps only 0.73 of the power at
+40 to $50^\circ$ from its normal and 0.38 at 50 to $60^\circ$. A larger box is worse.
+
+\textbf{Fix.} $\mathbf E$ and $\mathbf H$ on the crossing parts of the two monitors, with their mirror images,
+form one surface around the guide, open at the $x$ ends with a 15\,$\mu$m taper. One coherent surface integral
+gives the far field (\texttt{python\_tools/farfield\_surface.py}, engine flag \texttt{save\_surface\_eh}). It
+reproduces exact dipoles to 0.2\,\%; GPT reviewed it and one bug it found is fixed. Certificate on every result:
+far field power equals the flux through the surface.
+
+\section{Results}
+\begin{center}\small\begin{tabular}{lccc}\hline
+(M, corrected far field) & A (TE plain) & B (TE oversh.) & C (TM plain)\\\hline
+$T$ / $Q_L$ / width ($\mu$m) & 0.912 / 1694 / 19.1 & 0.973 / 7696 / 19.6 & 0.915 / 1652 / 19.2\\
+far field power / surface flux & 1.000 & 0.986 & 0.974\\
+power through the surface (\% of input) & 7.33 & 0.69 & 6.5\\
+port loss $1-T-R$ (\%) & 8.55 & 2.63 & 8.21\\
+largest harmonic groups (\%) & E(3,$\pm$3) 19, M(1,0) 14, & M(2,$\pm$1) 6, & M(2,$\pm$2) 14, E(3,0) 9,\\
+ & M(2,$\pm$1) 13, E(4,$\pm$4) 12 & M(1,0) 4 & E(1,0) 8\\
+share in $l\le5$ / mean $l$ & 95.5 / 3.1 & 31 / 13.8 & 74 / 5.4\\
+share at $|u_x|>0.9$ (\%) & 9 & 11 & 67\\
+reachable from $\pm0.5$ / $\pm10$\,$\mu$m (D) & 0.83 / 0.88 & 0.19 / 0.74 & 0.42 / 0.50\\
+corrected vs stitched (correlation) & 0.978 & 0.970 & 0.932\\\hline
+\end{tabular}\end{center}
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{A} is a compact, low order radiator, spread over five groups. Cross check of the junction fit
+(fit on one part of the sphere, predict another): $+0.75$, $+0.66$, and one failure ($-0.41$). Supported, not
+proven. Which current component radiates is not established.
+\item \textbf{B} is high order and distributed (sources at $\pm6$, $\pm13$, $\pm25$\,$\mu$m).
+\item \textbf{C} depends on the end taper (6.6 to 5.9\,\%): needs longer monitors before it is quoted.
+\item \textbf{End loss.} The gap between rows 3 and 4 is 1.2 to 1.9 points in all three. With the cavity part
+alone, $Q_i$(A, $N=98$) $=4.35\times10^4$, equal to $4.41\times10^4$ at $N=166$ (D); for B,
+$Q_i\approx2\times10^6$ instead of $6\times10^5$ (E). Not yet tested directly.
+\item \textbf{Earlier results that stand} (from v6.2). Comb period: emission predicted at $u_x=-0.989$ for
+531\,nm; measured 531 locked ($+16\,\%$ $Q$ at fixed width), 545 harmful, 551 null. Comb phase:
+$T$ versus offset is a pure first harmonic, lock at $270^\circ$. TE post pair near the centre: loss 0.119 to
+0.093 at fixed width, a uniform scaling of the pattern, that is the redistribution term. Hole lattices change
+the width with the predicted sign (10.2 to 25.6\,$\mu$m against a 15.5\,$\mu$m control).
+\item \textbf{Superseded} (from v6.2): its TE harmonic content (8\,\% dipole, 28\,\% in $l=3$) and its ceiling of
+about 10\,\%, which holds only for on axis features (2\,\% here).
+\end{itemize}
+
+\section{What each knob can do (E unless marked)}
+\begin{center}\small\begin{tabular}{p{4.2cm}p{11.2cm}}\hline
+Innermost teeth, cavity length & The knobs for A. Ceiling 83\,\% (D), realisable part unknown. Strong width and
+resonance side effects, removed through $\mathsf N$.\\
+On axis holes or posts & 2 to 5\,\% (D). Dead end.\\
+Second set of teeth ($2G$) & Carriers at $\pm3\beta$, outside the cone. No direct lever.\\
+Tooth shifts along the arms & Continuous phase. The knobs for B; the inverse design uses them.\\
+Cladding comb & Narrow band with a phase dial. Suits the TM needle, not the broad TE hump.\\\hline
+\end{tabular}\end{center}
+
+\section{Q3dB devices}
+At $-3$\,dB, $Q_{3\rm dB}=(1-1/\sqrt2)Q_i=0.2929\,Q_i$; length only sets the coupling.
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Harmonic percentages when lengthened: predicted unchanged} within 1 to 2 points for the plain
+devices (E). The pattern is set by the junction; added mirror periods change the coupling, not the junction
+field. The TE Q3dB device is A lengthened from 98 to 166 periods. The radiated share of the input rises from
+7.3 to about 41\,\%: same pattern, more of it. B: unchanged if the added periods are plain mirror periods. TM:
+same expectation, least certain.
+\item \textbf{Value of a cancellation.} Removing a fraction $f$ gives $Q_{3\rm dB}/(1-f)$ and needs
+$\ln[1/(1-f)]/(2\kappa\Lambda)$ more periods per side. From $Q=12\,903$: $f=0.1$: 14\,300 (+3 periods);
+$f=0.3$: 18\,400 (+10); $f=0.5$: 25\,800 (+20). For scale, the TM comb pair reached $f\approx0.23$.
+\end{itemize}
+
+\section{Plan (nothing dispatched)}
+\begin{enumerate}\setlength{\itemsep}{1pt}
+\item Plain TE, $N=98$, monitors spanning the whole device (110\,$\mu$m), plus the complex field in
+$\pm2$\,$\mu$m around the $\pi$ shift. Decides the end loss and measures the junction source.
+\item Plain TE, $N=166$, surface fields stored. Pass: every harmonic group within 2 points of the $N=98$ table,
+correlation above 0.95.
+\item One perturbation of the innermost teeth chosen by Eq.~(\ref{eq:ls}); compare predicted and simulated
+radiation change, resonance, width, $P_{\rm rad}/U$. Decides between the 83\,\% ceiling and the 10\,\% estimate.
+\item Only if item 3 agrees: four to six junction knobs ($\pm h$ each, about ten short runs), solve, validate on
+one unseen geometry, then one Q3dB device.
+\item For B: give the inverse design the radiated power objective with the corrected projection.
+\end{enumerate}
+Calibration rules (v6.2): track the resonance, both mesh levels, measure the noise floor, control run with the
+scatterer explicitly off; a higher peak $T$ alone is not evidence, report $Q_i$, $Q_c$, width and resonance
+together.
+
+\section{References}
+Johnson, Fan, Mekis, Joannopoulos, APL 78, 3388 (2001): the mechanism. Johnson et al., PRE 65, 066611 (2002):
+shifting boundaries. Srinivasan, Painter, Opt.\ Express 10, 670 (2002); Englund et al., Opt.\ Express 13, 5961
+(2005); Quan, Lon\v car, Opt.\ Express 19, 18529 (2011): light cone design. Tran et al., PRB 79, 041101 (2009):
+band folding. Lalanne et al., Laser Photonics Rev.\ 12, 1700113 (2018): the rigorous form of
+Eq.~(\ref{eq:split}). Alaee et al., Opt.\ Commun.\ 407, 17 (2018): exact multipole moments. Full list,
+derivations and numerical checks: v6.2; detailed evidence for this version:
+\texttt{docs/radiation\_cancellation\_review\_2026-10-05.pdf}.
+\end{document}
