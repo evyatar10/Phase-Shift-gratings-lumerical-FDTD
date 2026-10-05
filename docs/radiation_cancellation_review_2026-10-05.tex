@@ -444,10 +444,130 @@ consistency test, about an assumed centre, and for on axis $y$ dipoles only. Use
 instead. Its remedy for the far field (closed surface with $\mathbf E$ and $\mathbf H$, guided modes handled at
 the ends) is what was implemented here.
 
-\textbf{Literature} (as in v6.2): Johnson, Fan, Mekis, Joannopoulos, APL 78, 3388 (2001), the mechanism; Johnson
-et al., PRE 65, 066611 (2002), shifting boundaries; Srinivasan and Painter, Opt.\ Express 10, 670 (2002), Englund
-et al., Opt.\ Express 13, 5961 (2005), Quan and Lon\v car, Opt.\ Express 19, 18529 (2011), light cone design of
-nanobeam cavities; Tran et al., PRB 79, 041101 (2009), band folding by a superimposed period; Lalanne et al.,
-Laser Photonics Rev.\ 12, 1700113 (2018), quasinormal mode perturbation theory, the rigorous form of the first
-order split; Alaee et al., Opt.\ Commun.\ 407, 17 (2018), exact multipole moments.
+\section{Remaining content of v6.2}
+Everything else that v6.2 contained, so that nothing is lost. Statements that today's work changes are marked.
+
+\textbf{What the model is for.} FDTD answers one geometry in hours and gives no reason. The model does three
+things FDTD cannot: it splits the loss into channels whose powers add, so the value of removing a channel is
+known before any run; it maps geometry to radiation linearly, so a cancelling feature is found by a small linear
+solve, not a sweep; and it gives a smooth, cheap objective for the inverse design in place of a noisy $Q$. The
+deliverable is a calibrated local model around the seed, with $\mathbf q$ a short vector of real geometry changes:
+\[
+\mathbf d\simeq\mathbf d_0+\mathsf B\mathbf q,\qquad L\simeq L_0+\boldsymbol\ell^{\!\top}\mathbf q,\qquad
+\omega\simeq\omega_0+\mathbf f^{\!\top}\mathbf q,\qquad
+\min\|\mathbf d_0+\mathsf B\mathbf q\|^2\ \text{with}\ \boldsymbol\ell^{\!\top}\mathbf q=0,\ \mathbf f^{\!\top}\mathbf q=0,
+\]
+where $\mathbf d$ holds the complex channel amplitudes normalised so that $\|\mathbf d\|^2=\omega/Q_i$ and $L$ is
+the mode width. This is the structure of the ns2 adjoint step with radiated power in place of transmission.
+``Harmonic'' has three meanings: angular multipoles $(l,m)$ label far field patterns, grating harmonics
+$2\pi p/\Lambda$ label the geometry, optical harmonics are not part of this work; ``channel'' always means an
+angular pattern. Definitions: $Q_L$ from the transmission linewidth; $Q_i$, $Q_c$ from $T$ and $R$ at resonance;
+mode width = half maximum above floor of the envelope of the $y$ integrated $|\mathbf E|^2$ at $z=0$.
+
+\textbf{When cancellation hurts (the three reasons).} The feature's pattern is not the channel it targets and
+feeds others; the target channel is small, so $q_*$ and the safe window are small; the feature changes the
+width, and restoring it through the corrugation rewrites $\mathbf A_c$. For TE the risk is larger than for TM:
+$E_y$ peaks on the axis and is enhanced by $L=1.3$ inside a hole, so a centre hole is a strong radiator and a
+strong detuner while the dipole channel it addresses is small. Why ``cancel $l=3$'' is no better than ``cancel
+the dipole'': to cancel the cavity's $l=3$ with the pairs available, most of the pair's power lands in $l=2$ and
+$l=4$, where the cavity also radiates but with unrelated phases (a pair at 0.75\,$\mu$m has 4\,\% of its own
+power in $l=3$, 33\,\% in $l=2$, 30\,\% in $l=4$).
+
+\textbf{Mode width, details.} Plain device $\kappa_g\simeq0.044$\,$\mu$m$^{-1}$ (v6.2; 0.034 from the q3db
+calibration at corr 250). The resonance shift of a feature is blue for oxide; at exact gap centre it changes the
+width only at second order (0.6\,\% of width per nm for the plain device, quadratic), at first order if the seed
+sits off centre or the local $\kappa(x)$ near the centre is comparable to the detuning. The 0.365\,$\mu$m/nm in
+the adjoint code is a path derivative fitted along an optimiser trajectory, not this derivative; a gap length
+sweep (\texttt{cavity\_neg\_detuning\_nm}) measures it in three to five runs. Holes at the tooth transitions add
+in quadrature (a smaller change); a detuned period beats and changes the average $\kappa$ little while radiating
+at the folded angle. The comb: width 19.97 to 19.90\,$\mu$m, $\lambda$ $+10$\,pm. For a centre feature the cheap
+way to hold the resonance is the gap: $L_{\rm gap}=-(f_C/f_G)A_C$,
+$\mathbf b_{\rm eff}=\mathbf b_C-(f_C/f_G)\mathbf b_G$,
+$A_{C*}=-\mathrm{Re}\langle\mathbf b_{\rm eff},\mathbf A_c\rangle/\|\mathbf b_{\rm eff}\|^2$, and the remaining
+width change $(\ell_C-\ell_Gf_C/f_G)A_{C*}$ is checked against the measured envelope, which gates every decision.
+A comb supplies two controls (size, offset), a centre hole one. Measured width signs (TM hole lattice against a
+15.5\,$\mu$m control): holes in the narrow segments 10.2\,$\mu$m (corrugation trimmed); shifted a quarter pitch
+12.5; period 545: 16.0 with $Q$ 1209 to 918; untrimmed matched lattice: resonance destroyed; in core 531\,nm comb
+on the 517\,nm pitch: 25.6\,$\mu$m.
+
+\textbf{Procedure of v6.2 for connecting model and simulation} (the Plan section above is its updated form).
+(1) Baseline run, port driven, run to full decay; the far field frequency must sit on the resonance (0.07\,nm off
+is 6\,\% of the $N=80$ linewidth and half the $N=166$ linewidth). (2) A far field that passes the consistency
+test: closed surface with $\mathbf E$ and $\mathbf H$, guided modes handled at the ends, window on the long
+faces, transform in Python; validate that far field power equals box flux and that the result is stable when the
+ends move. \emph{Done today, with the lateral surface and taper.} (3) Channel analysis: one channel or region
+above $f\simeq0.7$ means a few features; one compact region with many $(l,m)$ means an aimed comb; spread means
+the model is the optimiser's objective. (4) Screen without runs from the baseline field. (5) Calibrate: gap
+sweep first, then $\pm h$ pairs per kept coordinate with the resonance tracked, both mesh levels, the noise
+floor rule, the control run with the scatterer explicitly off; later an adjoint with a plane wave source from
+the target direction gives whole rows of $\mathsf B$. (6) Solve and validate on one unseen combined geometry;
+report predicted and simulated complex amplitudes, $Q_i$, $Q_c$, width and resonance together; a higher peak $T$
+alone is not evidence. Three remarks on observables: peak transmission depends on the balance of port coupling
+and internal loss, so a higher peak can come from changed coupling; a $Q$ peak with extra nodal lines is
+supporting evidence, the targeted coefficient passing through zero with a loss budget is the proof; a fixed
+optical mode width keeps the spatial averaging of the ultrasound field fixed, but not the strain optic overlap or
+the optical bandwidth, which shrinks as $Q$ rises. Suppressing one channel does not create a bound state in the
+continuum.
+
+\textbf{Devices and numbers quoted in v6.2.} Plain TE $N=80$: corr 300, $Q_L=1411$, width 15.6\,$\mu$m,
+$T=0.876$. Plain TE $N=166$: corr 250, $Q_L=12\,903$, width 20.5\,$\mu$m. Overshoot seed (Nt60/W20):
+$Q_i=6.1\times10^5$ at $N=98$, $1.16\times10^6$ at $N=130$ (port based; see item 8), width 19.7\,$\mu$m, strongly
+overcoupled. TM evanescent tail: 3.6\,\% at 1.9\,$\mu$m, 0.5\,\% at 3\,$\mu$m, which is why the 551\,nm comb at
+standoff did nothing. The TE comb: 590\,nm aims at $u_x=-0.75$, 580\,nm at 0.78. Born test for superposition:
+spacings of 270 and 1080\,nm pass, 135, 405, 540 fail. One seed run costs 0.3 to 0.6 GPU hours, a ten point
+calibration 3 to 6.
+
+\textbf{v6.2's own far field test and indicative numbers (superseded by Sec.~\ref{sec:data}).} In the octant
+$u_y,u_z>0.2$, $|u_x|<0.9$ its files gave a top/side magnitude correlation of 0.12 (TE) and 0.22 (TM) and power
+ratios 0.22 and 0.68; it blamed single plane projections with the bus waveguide leaving through the plane ends.
+Its indicative TE $N=80$ content: $f_{\rm ED}=0.08$, $f_{\rm MD}=0.02$; by order $l=1..8$: 0.10, 0.10, 0.28,
+0.19, 0.10, 0.08, 0.02, 0.02; 55\,\% of the power at $0.6<|u_x|<0.9$. Its removable fractions (frozen field,
+complex knob): centre feature 0.08; pairs at $\pm0.25$ to $\pm1.5$\,$\mu$m 0.005 to 0.06; centre plus two pairs
+0.12; centre plus seven pairs to 3\,$\mu$m 0.14 (real knobs 0.10 best, 0.04 worst); two row post comb 0.02. Its
+conclusion, ``frozen field cancellation by small features is worth at most about 10\,\% for TE'', holds for the
+on axis features it tested and is replaced by item 4 for the junction teeth.
+
+\textbf{Numerical checks of v6.2.} The multipole formulas, the dipole share formulas and the point dipole
+formula were checked against an independent computation (four random dipoles, far field on a Gauss Legendre
+grid, projection to $l=14$): agreement to $6\times10^{-9}$, Parseval to six digits. Scripts delivered with v6.2:
+\texttt{verify\_multipole.py}, \texttt{check\_l1.py}, \texttt{check\_l1b.py}, \texttt{ff\_inspect.py},
+\texttt{ff\_channels.py}, \texttt{ff\_features.py}. Not verified there: the local field factor for a real finite
+hole.
+
+\textbf{Derivation (v6.2 Appendix A, in outline).} (1) Maxwell with the contrast on the right:
+$\nabla\times\nabla\times\mathbf E-k^2\mathbf E=k_0^2\Delta\varepsilon\mathbf E$, $k^2=\varepsilon_ck_0^2$; nothing
+approximated. (2) Outgoing solution with the oxide Green tensor
+$\mathsf G=(\mathsf I+\nabla\nabla/k^2)e^{ik|\mathbf r-\mathbf r'|}/4\pi|\mathbf r-\mathbf r'|$:
+$\mathbf E(\mathbf r)=k_0^2\int\mathsf G\cdot\Delta\varepsilon\mathbf E\,d^3r'$, an exact identity (Johnson's
+Eq.~1). (3) Far field: $\mathsf G\to(\mathsf I-\hat{\mathbf r}\hat{\mathbf r})e^{ikr}e^{-ik\hat{\mathbf r}\cdot\mathbf r'}/4\pi r$.
+(4) Adding a feature: subtract the perturbed and unperturbed equations and keep first order; $\delta\mathbf E$ is
+defined up to a multiple of $\mathbf E_0$ and the solvability condition fixes $\delta k_0$; numerically one
+tracks the resonance. (5) Small feature: the field inside is the quasi static one,
+$E_{\rm in}=2\varepsilon_{\rm out}E_{\rm ext}/(\varepsilon_{\rm in}+\varepsilon_{\rm out})$ for a cylinder in a
+transverse field and $E_{\rm in}=\varepsilon_{\rm out}E_{\rm out}/\varepsilon_{\rm in}$ for a slab normal to
+$\mathbf E$. (6) Projection on a channel uses
+$\int\mathbf X^*_{lm}e^{-ik\hat{\mathbf r}\cdot\mathbf r'}d\Omega=4\pi(-i)^lj_l(kr')\mathbf X^*_{lm}(\hat{\mathbf r}')$.
+(7) Dipole channel:
+$\mathbf p_c/\varepsilon_0=\int\Delta\varepsilon[(j_0-j_2/2)\mathbf E+\tfrac32j_2(\hat{\mathbf r}\cdot\mathbf E)\hat{\mathbf r}]d^3r$,
+the exact dipole moment of an extended source. In 2D the same steps give Johnson's Eq.~(3),
+$a_m\propto\int J_m(kr)e^{-im\varphi}\Delta\varepsilon E_zd^2r$.
+
+\textbf{Literature} (the full list of v6.2). Johnson, Fan, Mekis, Joannopoulos, APL 78, 3388 (2001): the
+mechanism. Karalis, Johnson, Joannopoulos, Opt.\ Lett.\ 29, 2309 (2004): discrete channels, relevant once a
+substrate is present. Johnson et al., PRE 65, 066611 (2002): shifting boundaries. Englund, Fushman,
+Vu\v ckovi\'c, Opt.\ Express 13, 5961 (2005); Srinivasan, Painter, Opt.\ Express 10, 670 (2002); Quan, Deotare,
+Lon\v car, APL 96, 203102 (2010); Quan, Lon\v car, Opt.\ Express 19, 18529 (2011): light cone design of nanobeam
+cavities. Nakamura et al., Opt.\ Express 24, 9541 (2016): real space maps of leaky components. Tran, Combri\'e,
+De Rossi, PRB 79, 041101 (2009); Portalupi et al., Opt.\ Express 18, 16064 (2010): band folding by a
+superimposed period. Rybin et al., PRL 119, 243901 (2017); Bogdanov et al., Adv.\ Photonics 1, 016001 (2019);
+Odit et al., Adv.\ Mater.\ 33, 2003804 (2021); Gladyshev, Frizyuk, Bogdanov, PRB 102, 075103 (2020): channel
+cancellation in single resonators, symmetry classification. Takata et al., Opt.\ Express 31, 11864 (2023): few
+parameter symmetry guided design. Fernandez-Corbaton et al., Opt.\ Express 23, 33044 (2015); Alaee et al.,
+Opt.\ Commun.\ 407, 17 (2018): exact multipole moments. Lalanne et al., Laser Photonics Rev.\ 12, 1700113 (2018):
+quasinormal mode perturbation theory, the rigorous form of the first order split. Loulas et al., ACS Photonics
+12, 1524 (2025): 2D vector multipoles. Chao et al., Opt.\ Express 34, 7337 (2026): bounds based initialisation of
+inverse design. La et al., Laser Photonics Rev.\ (2026), doi 10.1002/lpor.202501030: light ultrasound interaction
+in a $\pi$ shifted fibre grating, the sensor side. Sci.\ Rep.\ (2026), doi 10.1038/s41598-026-51041-9: SiN Bragg
+mirrors, apodisation, coupling versus mirror loss. Ansys, ``Far field projections in FDTD overview''. No
+publication was found applying channel cancellation to a sidewall Bragg cavity at fixed mode width.
 \end{document}
