@@ -515,6 +515,11 @@ class CampaignSpec:
     # the violation beyond the deadband (marg/2) instead of |W − W_tgt|.
     # Default False = every existing lane unchanged.
     wgp_filter_band: bool = False
+    # ★2026-10-05 (GPT review A2 / A6), default False = existing lanes unchanged:
+    # wgp_total_cap — one inf-norm cap on the SUM of null + restoration steps;
+    # wgp_cond_norm — scale-free degeneracy test, drop the dead row not the λ row.
+    wgp_total_cap: bool = False
+    wgp_cond_norm: bool = False
     wgp_noise_freeze: bool = False
     wgp_noise_stop: int = 3
     # ★wgp_reuse_broyden (2026-10-04, Walther & Biegler lagged-Jacobian SQP):
@@ -2500,7 +2505,8 @@ def _proj_step(gT, gW, D, W, W_tgt, marg, alpha, step_max_nm):
 
 
 def _ns2_step(gT, gW, gLam, D, W, W_tgt, marg, lam_nm, lam_tgt_nm, lam_marg_nm,
-              cap_nm, range_alpha=1.0, range_cap_nm=None):
+              cap_nm, range_alpha=1.0, range_cap_nm=None,
+              total_cap=False, cond_norm=False):
     """Two-constraint null+range-space step (d1, 2026-08-30) — Feppon form.
 
     d = cap·ξ_J/‖ξ_J‖_∞ + ξ_C  with  A = [gW, gLam],  M = AᵀDA:
@@ -2535,7 +2541,24 @@ def _ns2_step(gT, gW, gLam, D, W, W_tgt, marg, lam_nm, lam_tgt_nm, lam_marg_nm,
         hs.append(_resid(lam_nm, lam_tgt_nm, lam_marg_nm))
     A = np.stack(cols, axis=1)                    # (n, r)
     M = A.T @ (D[:, None] * A)                    # r×r
-    condM = float(np.linalg.cond(M)) if M.shape[0] > 1 else 1.0
+    if cond_norm and M.shape[0] > 1:
+        # ★cond_norm (GPT review A6, 2026-10-05): cond(AᵀDA) depends on the
+        # UNITS of the rows (µm/nm vs nm/nm) — rescaling the width row by 1e-5
+        # flipped a healthy pair to "degraded". Test the SCALE-FREE correlation
+        # matrix instead, and when one row is numerically zero drop THAT row
+        # (the old order dropped the healthy λ row and returned a free step).
+        dg_ = np.diag(M).copy()
+        dead = dg_ <= 1e-300
+        if dead.any() and not dead.all():
+            keep = int(np.argmin(dead))               # the healthy row
+            degraded = True
+            A, hs = A[:, [keep]], [hs[keep]]
+            M = A.T @ (D[:, None] * A)
+    if cond_norm and M.shape[0] > 1:
+        dn_ = np.sqrt(np.diag(M))
+        condM = float(np.linalg.cond(M / np.outer(dn_, dn_)))
+    else:
+        condM = float(np.linalg.cond(M)) if M.shape[0] > 1 else 1.0
     if M.shape[0] > 1 and (not np.isfinite(condM) or condM > 1e8):
         # near-collinear D^½gW ∥ D^½gLam — drop the λ column, keep width
         degraded = True
@@ -2574,6 +2597,14 @@ def _ns2_step(gT, gW, gLam, D, W, W_tgt, marg, lam_nm, lam_tgt_nm, lam_marg_nm,
     if mC > c_cap:                                # scalar clamp: ξ_J part keeps
         xi_C = xi_C * (c_cap / mC)                # both orthogonalities
     step = step + xi_C
+    if total_cap:
+        # ★total_cap (GPT review A2): the null part and the restoration were
+        # capped SEPARATELY, so the delivered step could reach 2× the trust
+        # radius. One scalar on the sum keeps ξ_J's orthogonality and scales
+        # the restoration linearly (A·d = −γ·h).
+        mS = float(np.max(np.abs(step)))
+        if mS > cap_nm:
+            step = step * (cap_nm / mS)
     phase = "ns2" if not np.any(h) else "ns2+restore"
     if degraded:
         phase = "ns2_degraded"
@@ -2784,7 +2815,9 @@ def run_projected(spec, project, cb, out_dir, p0):
                 gTv, gWv, gLamv, D, Wv, W_tgt, marg, lamv, lam_tgt, lam_marg,
                 _cap(a), range_alpha=range_alpha,
                 range_cap_nm=(_cap(a) * range_frac
-                              if range_frac is not None else None))
+                              if range_frac is not None else None),
+                total_cap=bool(getattr(spec, "wgp_total_cap", False)),
+                cond_norm=bool(getattr(spec, "wgp_cond_norm", False)))
             if mutate:
                 ns2_diag = dg
             return s_, ph, dg["lam"]

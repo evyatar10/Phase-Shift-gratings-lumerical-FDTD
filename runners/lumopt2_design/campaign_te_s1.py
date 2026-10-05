@@ -116,6 +116,7 @@ SPEC = dataclasses.replace(
     # k=8 pipeline smoke must show each one's log marker before the campaign.
     wgp_noise_freeze=True, wgp_noise_stop=3,   # cap frozen on noise-level rejects
     wgp_filter_band=True,                      # filter on band VIOLATION, not distance to centre (review A5)
+    wgp_total_cap=True, wgp_cond_norm=True,    # one cap on the summed step; scale-free degeneracy test (review A2/A6)
     wgp_reuse_broyden=True,                    # rank-1 update of the reused width row
     wgp_mode_mac=0.9,                          # mode-hop reject below this overlap
     wgp_range_alpha=0.5,                       # restore half the violation per step

@@ -753,5 +753,62 @@ with _tf.TemporaryDirectory() as td:
 check("teeth: pre-fix accept snaps back to the (grown) base cap 15",
       r10t["ost"]["cap_nm"] == 15.0, f"cap {r10t['ost']['cap_nm']}")
 
+# T12-T14: direct _ns2_step checks of total_cap / cond_norm (GPT review A2/A6,
+# 2026-10-05), on section 8's vectors (gT8, gW8, gL8, real-conditioning D).
+# T12 total_cap: null part at the cap AND ξ_C just under it (9.9 nm). One
+# scalar on the sum ⇒ both constraint rows scale by the SAME γ.
+xc_1, _, _ = eng._ns2_step(np.zeros(N), gW8, gL8, D, W_TGT + MARG / 2 + 0.1,
+                           W_TGT, MARG, LAM_TGT + LAM_MARG + 0.15, LAM_TGT,
+                           LAM_MARG, 1e9)
+k12 = 9.9 / float(np.max(np.abs(xc_1)))           # ξ_C is linear in h
+hW12, hL12 = 0.1 * k12, 0.15 * k12
+a12 = (gT8, gW8, gL8, D, W_TGT + MARG / 2 + hW12, W_TGT, MARG,
+       LAM_TGT + LAM_MARG + hL12, LAM_TGT, LAM_MARG, 10.0)
+s12, _, _ = eng._ns2_step(*a12, total_cap=True)
+s12o, _, _ = eng._ns2_step(*a12)
+gW12, gL12 = float(gW8 @ s12) / -hW12, float(gL8 @ s12) / -hL12
+check("T12 total_cap: |step|_inf <= cap 10",
+      float(np.max(np.abs(s12))) <= 10.0 + 1e-9,
+      f"{np.max(np.abs(s12)):.6g}")
+check("T12 one common gamma in (0,1] on both constraint rows",
+      abs(gW12 - gL12) < 1e-9 * abs(gW12) and 0.0 < gW12 <= 1.0,
+      f"gamma W {gW12:.9f} lam {gL12:.9f}")
+check("teeth: total_cap=False delivers |step|_inf > cap",
+      float(np.max(np.abs(s12o))) > 10.0, f"{np.max(np.abs(s12o)):.4f}")
+
+# T13 cond_norm: rescaling the width row's UNITS (×1e-5) must not degrade a
+# healthy pair nor turn the tangent. Mid-band (h = 0) so the step is the pure
+# null-space direction, which is invariant to row scaling.
+a13 = (D, W_TGT, W_TGT, MARG, LAM_TGT, LAM_TGT, LAM_MARG, 10.0)
+r13 = {sc: eng._ns2_step(gT8, gW8 * sc, gL8, *a13, cond_norm=True)
+       for sc in (1.0, 1e-5)}
+dev13 = float(np.linalg.norm(_dir(r13[1.0][0]) - _dir(r13[1e-5][0])))
+check("T13 cond_norm: both scalings stay ns2, not degraded",
+      all(r13[sc][1] == "ns2" and r13[sc][2]["ns2_degraded"] is False
+          for sc in r13), str([(r13[sc][1], r13[sc][2]["condM"]) for sc in r13]))
+check("T13 cond_norm: step direction unchanged by the 1e-5 row scaling",
+      dev13 < 1e-9, f"|du| {dev13:.2e}")
+_, ph13o, dg13o = eng._ns2_step(gT8, gW8 * 1e-5, gL8, *a13)
+check("teeth: cond_norm=False flips to ns2_degraded at 1e-5",
+      ph13o == "ns2_degraded" and dg13o["ns2_degraded"],
+      f"{ph13o} condM {dg13o['condM']:.3g}")
+
+# T14 dead width row (gW = 0 exactly), healthy gLam, λ 0.1 nm beyond its band
+hL14 = 0.1
+a14 = (gT8, np.zeros(N), gL8, D, W_TGT, W_TGT, MARG,
+       LAM_TGT + LAM_MARG + hL14, LAM_TGT, LAM_MARG, 10.0)
+s14, ph14, dg14 = eng._ns2_step(*a14, cond_norm=True)
+free14 = D * gT8 * (10.0 / float(np.max(np.abs(D * gT8))))
+check("T14 dead gW: λ row kept, gLam.step == -h_lam, degraded",
+      np.isclose(float(gL8 @ s14), -hL14, rtol=1e-9) and dg14["ns2_degraded"]
+      and ph14 == "ns2_degraded" and not np.allclose(s14, free14),
+      f"{ph14} gLam.d {float(gL8 @ s14):+.6g}")
+with np.errstate(all="ignore"):
+    s14o, ph14o, _ = eng._ns2_step(*a14)
+check("teeth: cond_norm=False returns the FREE step (λ uncontrolled)",
+      ph14o == "ns2_free" and np.allclose(s14o, free14, rtol=1e-12)
+      and abs(float(gL8 @ s14o) + hL14) > 1e-3,
+      f"{ph14o} gLam.d {float(gL8 @ s14o):+.4g}")
+
 print(("\nALL PASS" if not fails else f"\nFAILED: {fails}"))
 sys.exit(1 if fails else 0)
