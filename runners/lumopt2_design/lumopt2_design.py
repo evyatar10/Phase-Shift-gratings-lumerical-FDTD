@@ -3441,6 +3441,13 @@ def run_projected(spec, project, cb, out_dir, p0):
                 # of snapping back to the larger base (repeated overshoot)
                 cap_state = max(cap_state * retry_shrink, 2.0)
             retry_shrink = 1.0
+            # gradient vectors of every ACCEPTED point (KB each): without them a
+            # row anomaly cannot be diagnosed afterwards (toy 169105, it 1:
+            # |gW| grew 8x, refresh cos -0.56, vectors were gone)
+            np.savez_compressed(
+                os.path.join(out_dir, f"{spec.label}_grads_it{int(it):03d}.npz"),
+                p=p, gT=gT, gW=gW, gW_eff=gW_eff,
+                gLam=(gLam_vec if gLam_vec is not None else np.zeros(0)))
             acc = {"p": p.copy(), "fom": fom, "W": W, "h": h, "hv": hv,
                    "gT": gT, "gW": gW_eff, "gW_raw": gW, "gLam": gLam_vec,
                    "lam_pk": lam_pk_row, "eval_num": int(it),
