@@ -247,6 +247,36 @@ Q3dB version would be correspondingly better than the port based extrapolation, 
 measurement limit above $Q\sim5\times10^4$. One run of a long plain device with the surface fields stored
 checks both statements at once.
 
+\subsection*{What happens to the harmonic percentages when the device is lengthened}
+\textbf{Prediction (E, not yet measured): for the plain devices the percentages stay the same.} The percentages
+describe the \emph{shape} of the radiation pattern, and the shape is set by where the light leaves and with
+what field. For the plain TE device that is the junction, within $\pm0.5$\,$\mu$m of the $\pi$ shift. Adding
+mirror periods at the outer ends changes how strongly the cavity is coupled to the bus, not the field at the
+junction, so the same pattern is radiated, only stronger. The TE Q3dB device is exactly device A lengthened
+from 98 to 166 periods (same pitch, corrugation and width).
+\begin{center}\small\begin{tabular}{p{5.3cm}p{9.2cm}}\hline
+Quantity & From $N=98$ to the Q3dB length\\\hline
+Harmonic percentages, plain TE & unchanged within about 1 to 2 points (E). Table of Sec.~\ref{sec:data}: M(1,0) 13.6,
+E(3,$\pm$3) 19.0, M(2,$\pm$1) 12.6, E(4,$\pm$4) 12.2, E(2,$\pm$2) 11; $l\le5$ holds 95.5\,\%\\
+Radiation $Q_i$ & unchanged, $4.4\times10^4$ (D, item 8)\\
+Radiated share of the input power & rises from 7.3\,\% to about 41\,\% at $-3$\,dB ($1-T-R$ with $T=0.5$,
+$R=(1-\sqrt T)^2$): same pattern, more of it\\
+Standing wave purity $|h|$ & may rise from 0.77: a more weakly coupled cavity is closer to a pure standing wave.
+This is the one place a small reshuffle could come from\\
+End scattering & not part of the cavity pattern at any length; negligible share of the loss at $-3$\,dB\\
+Overshoot device & pattern unchanged \emph{if} the extra periods are plain mirror periods outside the 60
+apodized ones: its sources sit at $\pm6$, $\pm13$, $\pm25$\,$\mu$m, all inside the apodized part (E)\\
+Plain TM & expected unchanged for the same reason, but its grazing needle is not yet certified, so this is the
+weakest of the three statements\\\hline
+\end{tabular}\end{center}
+What would change the percentages is a change of the junction or of the envelope (corrugation, apodization,
+any cancelling feature), not length. This matters for the plan: if it holds, the harmonic content and every
+cancellation response can be measured on the short, cheap device and applied to the Q3dB one. \textbf{It is a
+prediction and needs one run to confirm:} plain TE at $N=166$ with the surface fields stored, compared harmonic
+by harmonic with the $N=98$ table above. Pass criterion, fixed now: every harmonic group within 2 points and
+far field correlation above 0.95.
+
+\subsection*{What a cancellation is worth at the $-3$\,dB point}
 If a junction change removes a fraction $f$ of the leak at fixed width, then $Q_i\to Q_i/(1-f)$ and the device
 must be lengthened by $\Delta N=\ln[1/(1-f)]/(2\kappa\Lambda)$ periods per side to return to $-3$\,dB
 ($\kappa=0.034$\,$\mu$m$^{-1}$, $\Lambda=0.5$\,$\mu$m). For the TE Q3dB device ($Q=12\,903$ at $N=166$):
@@ -280,7 +310,144 @@ projection at more than one wavelength has to be saved.
 \item Cylindrical harmonics about $x$ or a $k_x$ spectrum are convenient for the long apodized device, but they
 do not concentrate the leak either.
 \end{itemize}
-Where the two analyses differ: Claude's frozen field ceiling for the junction of A is 75 to 89\,\%; GPT expects
+Where the two analyses differ: Claude's frozen field ceiling for the junction of A is 83\,\%; GPT expects
 the realisable part to be of order 10\,\% and regards the ceiling as optimistic until a real wall move is
 measured. Items 2 and 3 of the plan decide between them.
+
+\appendix
+\section{The analytical model of v6.2, carried over (with corrections marked)}
+This appendix keeps the content of the earlier note (``Analytical model for radiation channel cancellation'',
+v6.2, 27 September 2026) so that this document stands alone. Derivations are in v6.2, Appendix A; neither
+analysis found an error in the formulas.
+
+\textbf{Setting.} Axis $x$, transverse $y$, vertical $z$, time dependence $e^{-i\omega t}$. $n_{\rm SiN}=1.97$,
+$n_c=1.444$; uniform oxide everywhere else. At 1559\,nm: $k=n_ck_0=5.82$\,$\mu$m$^{-1}$, $1/k=0.17$\,$\mu$m;
+$\beta=6.28$ (TE, pitch 500) and 6.08\,$\mu$m$^{-1}$ (TM, pitch 517), just outside the light cone. Total contrast
+$\Delta\varepsilon=\varepsilon-n_c^2=1.80$ in SiN; a feature changes it by $\delta\varepsilon_P=\mp1.80$ (oxide
+hole in SiN, SiN post in oxide).
+
+\textbf{Exact far field.} Moving the contrast to the right of Maxwell's equations makes the core a source in
+uniform oxide:
+\[
+\mathbf E\to\frac{k_0^2e^{ikr}}{4\pi r}\mathbf A(\hat{\mathbf r}),\quad
+\mathbf A=\mathcal R[\Delta\varepsilon\mathbf E]=(\mathsf I-\hat{\mathbf r}\hat{\mathbf r})\!\int\!\Delta\varepsilon\,\mathbf E\,
+e^{-ik\hat{\mathbf r}\cdot\mathbf r}d^3r,\quad
+\frac{dP}{d\Omega}=\frac{k_0^4}{32\pi^2\eta}|\mathbf A|^2,\quad Q_{\rm rad}=\frac{\omega U}{P}.
+\]
+$\mathbf A$ is the Fourier transform of the source on the sphere $|\mathbf q|=k$. $\mathcal R$ is linear;
+everything else is bookkeeping.
+
+\textbf{Multipole form.} With $\mathbf X_{lm}=\mathbf LY_{lm}/\sqrt{l(l+1)}$,
+$\mathbf A=\sum[\alpha_{lm}\mathbf X_{lm}+\beta_{lm}\hat{\mathbf r}\times\mathbf X_{lm}]$ and
+$P\propto\sum(|\alpha_{lm}|^2+|\beta_{lm}|^2)$: magnetic and electric multipoles, powers add (Johnson's
+argument). Near field form:
+\[
+\alpha_{lm}=4\pi(-i)^l\!\int\!\Delta\varepsilon\,j_l(kr)\,\mathbf X^*_{lm}\!\cdot\mathbf E\,d^3r,\qquad
+\beta_{lm}=\frac{4\pi i(-i)^l}{k}\!\int\!\Delta\varepsilon\,\mathbf E\cdot\nabla\times[j_l(kr)\mathbf X^*_{lm}]\,d^3r .
+\]
+Since $j_l\sim(kr)^l$, a source of radius $R$ needs $l\sim kR$. Dipole shares without any harmonics:
+$f_{\rm ED}=\frac{3}{8\pi}|\int\mathbf A\,d\Omega|^2/\int|\mathbf A|^2d\Omega$, and the same with
+$\hat{\mathbf r}\times\mathbf A$ for $f_{\rm MD}$.
+\emph{Correction:} v6.2 fixed the origin at the cavity centre and assumed $E_y$ even in $x$. The grating has no
+$x$ mirror symmetry and the shares move with the origin at the 0.2\,$\mu$m scale (item 2); only the $y$ and $z$
+parities are selection rules (TE: electric $l+m$ even, magnetic $l+m$ odd; TM the converse).
+
+\textbf{Adding a feature: exact first order split.}
+\[
+\mathbf A_{\rm new}-\mathbf A_c=\underbrace{\mathcal R[\delta\varepsilon_P\mathbf E_0]}_{\text{frozen field}}
++\underbrace{\mathcal R[\Delta\varepsilon\,\delta\mathbf E]}_{\text{redistribution}}
++\delta k\,\partial_k\mathcal R[\Delta\varepsilon\mathbf E_0],\qquad
+(\nabla\!\times\!\nabla\!\times-k_0^2\varepsilon)\delta\mathbf E=k_0^2\delta\varepsilon_P\mathbf E_0+2k_0\delta k_0\varepsilon\mathbf E_0 .
+\]
+The first term is the feature's own radiation in the unchanged cavity field (closed form, used for screening).
+The second is the change of the cavity field caused by the feature; it has no closed form and is what a finite
+difference run measures. Both are first order.
+
+\textbf{Small feature} ($R\lesssim0.15$\,$\mu$m): a point dipole,
+\[
+\mathcal R[\delta\varepsilon_P\mathbf E_0]\simeq(\mathsf I-\hat{\mathbf r}\hat{\mathbf r})\frac{\mathbf p}{\varepsilon_0}
+e^{-ik\hat{\mathbf r}\cdot\mathbf r_p}S(\hat{\mathbf r}),\qquad
+\mathbf p=\varepsilon_0\,\delta\varepsilon_PV_PL\,\mathbf E_0(\mathbf r_p),
+\]
+with $S$ the shape factor of the feature. Local field factor $L=2\varepsilon_{\rm SiN}/(\varepsilon_{\rm SiN}+\varepsilon_c)=1.30$ for a vertical oxide
+cylinder in SiN; at a sidewall use the core side $E_y$ (the cladding side value is $1.86\times$ larger). A
+feature at the origin is a pure dipole; displaced by $x_p$ its power spreads over the orders:
+\begin{center}\small\begin{tabular}{cccccccc}\hline
+$kx_p$ & $l=1$ & 2 & 3 & 4 & 5 & 6 & 7\\\hline
+0 & 1.00 & 0 & 0 & 0 & 0 & 0 & 0\\
+1 & 0.86 & 0.13 & 0.01 & 0 & 0 & 0 & 0\\
+2 & 0.55 & 0.36 & 0.08 & 0.01 & 0 & 0 & 0\\
+4 & 0.14 & 0.29 & 0.33 & 0.18 & 0.05 & 0.01 & 0\\
+6 & 0.06 & 0.10 & 0.16 & 0.26 & 0.24 & 0.13 & 0.04\\\hline
+\end{tabular}\end{center}
+One tooth from the centre is already $kx_p\simeq1.5$. This table is why a feature cannot be told to radiate one
+order.
+
+\textbf{Pair, comb, phase.} Two equal dipoles at $\pm x_p$:
+$\mathbf A_P=2\cos(kx_p\sin\theta\cos\varphi)(\mathsf I-\hat{\mathbf r}\hat{\mathbf r})\mathbf p/\varepsilon_0$; a
+sign, no continuous phase. A periodic comb of period $\Lambda_2$ and offset $\delta x$ under an envelope $f$:
+\[
+\mathbf A_P\propto\Delta\varepsilon_2\,e^{i\phi_2}\,\widetilde{(gf)}\bigl(k\sin\theta\cos\varphi-(\beta-K_2)\bigr),\qquad
+\phi_2=\frac{2\pi\delta x}{\Lambda_2},\quad u_x=\frac{\beta-K_2}{k},\quad\Lambda_2=\frac{2\pi}{\beta+k|u_x|}.
+\]
+It emits a narrow band around $u_x$ with a continuous phase set by its offset. A feature inside the core is
+driven by a standing wave: a sign and a size, nothing else, so it moves a channel amplitude along one line of
+the complex plane. Only a comb offset or a position in the cladding gives a phase. Moving a boundary is not a
+small volume change: use the continuous fields $\mathbf E_\parallel$ and $D_\perp$ (Johnson 2002).
+
+\textbf{Cancellation condition, ceiling, when it hurts.} With feature patterns $\mathbf b_j$ and real strengths
+$q_j$, $P\propto\|\mathbf A_c+\sum q_j\mathbf b_j\|^2$. One feature:
+\[
+q_*=-\frac{\mathrm{Re}\langle\mathbf b,\mathbf A_c\rangle}{\|\mathbf b\|^2},\qquad
+\eta^2=\frac{[\mathrm{Re}\langle\mathbf b,\mathbf A_c\rangle]^2}{\|\mathbf b\|^2\|\mathbf A_c\|^2},\qquad
+\frac{P(q)}{P_c}=1-\eta^2+\eta^2\Bigl(\frac q{q_*}-1\Bigr)^2 .
+\]
+Several features: $\mathrm{Re}(\mathsf G)\mathbf q=-\mathrm{Re}\,\mathbf b$ with
+$G_{ij}=\langle\mathbf b_i,\mathbf b_j\rangle$. Cancelling a fraction $a$ of the amplitude of a channel holding
+a fraction $f$: $P_{\rm new}/P_c=(1-f)+f|1-a|^2$; 90\,\% gives at most $10\times$, 50\,\% gives $2\times$, 8\,\%
+gives $1.09\times$. The loss rises above the baseline for $q>2q_*$ or the wrong sign.
+
+\textbf{Mode width (two mechanisms).} A feature shifts the resonance,
+\[
+\frac{\Delta\omega}{\omega}\simeq-\frac12\,\frac{\delta\varepsilon_PLV_P|\mathbf E_0(\mathbf r_p)|^2}{\int\varepsilon|\mathbf E_0|^2d^3r},
+\]
+which changes the decay rate $\gamma=\sqrt{\kappa_g^2-\delta_\beta^2}$ (intensity width $\ln2/\gamma$) only at
+second order at gap centre. Features repeating with the pitch change $\kappa$ at first order: oxide holes in the
+narrow segments shorten the mode, in the wide segments lengthen it; cladding posts at 1.5 to 2\,$\mu$m do neither
+to a measurable degree. Constraint and feasibility: with $\mathsf N$ spanning the null space of the width and
+resonance rows,
+\[
+\mathsf C=\begin{bmatrix}\mathrm{Re}(\mathsf{BN})\\\mathrm{Im}(\mathsf{BN})\end{bmatrix},\quad
+\mathbf y=\begin{bmatrix}\mathrm{Re}\,\mathbf d_0\\\mathrm{Im}\,\mathbf d_0\end{bmatrix},\quad
+\mathbf z_*=-\mathsf C^+\mathbf y,\quad
+\rho=\frac{\|(\mathsf I-\mathsf{CC}^+)\mathbf y\|^2}{\|\mathbf y\|^2},
+\]
+where $\rho$ is the fraction the family cannot remove at fixed width. Cancelling one complex channel under both constraints is four real
+conditions.
+
+\textbf{Results of v6.2 that stand (they do not depend on the far field files).}
+\begin{itemize}
+\item Comb period: the TM comb emission is predicted at $u_x=-0.989$ (531\,nm), $-0.970$ (536), $-0.936$ (545),
+$-0.915$ (551); measured: 531 locked ($+16.3\,\%$ $Q$ at fixed width), 536 slightly worse, 545 harmful, 551 null.
+\item Phase circle: $T(0^\circ,90^\circ,180^\circ,270^\circ)=0.8694,0.8586,0.8689,0.8797$ fits a pure first
+harmonic in the comb offset, as $e^{i\phi_2}$ requires; lock at $270^\circ$.
+\item TE post pair near the centre (two $r=80$\,nm SiN posts at $x=0$ and 270\,nm, $y=\pm700$\,nm): loss 0.119 to
+0.093 at fixed width, a near uniform scaling of the whole pattern, that is the redistribution term, not the
+cancellation of a channel.
+\item Numbers: $L=1.30$; $\varepsilon_{\rm SiN}/\varepsilon_c=1.86$; TM evanescent decay 1.75\,$\mu$m$^{-1}$;
+superposition holds to 4.4\,\% for $r=80$\,nm posts at 1.08\,$\mu$m spacing; linewidths 1.1\,nm ($N=80$),
+0.12\,nm ($N=166$).
+\end{itemize}
+\textbf{Results of v6.2 that are superseded.} Its channel content for TE $N=80$ (8\,\% dipole, 28\,\% in $l=3$) and
+its removable fractions (centre feature 0.08, pairs up to 0.14) were computed on far field files that failed the
+consistency test, about an assumed centre, and for on axis $y$ dipoles only. Use Sec.~\ref{sec:data} and item 4
+instead. Its remedy for the far field (closed surface with $\mathbf E$ and $\mathbf H$, guided modes handled at
+the ends) is what was implemented here.
+
+\textbf{Literature} (as in v6.2): Johnson, Fan, Mekis, Joannopoulos, APL 78, 3388 (2001), the mechanism; Johnson
+et al., PRE 65, 066611 (2002), shifting boundaries; Srinivasan and Painter, Opt.\ Express 10, 670 (2002), Englund
+et al., Opt.\ Express 13, 5961 (2005), Quan and Lon\v car, Opt.\ Express 19, 18529 (2011), light cone design of
+nanobeam cavities; Tran et al., PRB 79, 041101 (2009), band folding by a superimposed period; Lalanne et al.,
+Laser Photonics Rev.\ 12, 1700113 (2018), quasinormal mode perturbation theory, the rigorous form of the first
+order split; Alaee et al., Opt.\ Commun.\ 407, 17 (2018), exact multipole moments.
 \end{document}
