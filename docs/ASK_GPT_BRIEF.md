@@ -152,3 +152,29 @@ dispatched. Write-up: docs/radiation_cancellation_review_2026-10-05.pdf.
   one effective radius, accept adopts the radius used) with driver-level gate tests; (iii)
   and (v) accepted as real, not yet fixed. F2-F7 are method changes awaiting the user's
   decision; F8 is folded into the toy's readout (predicted vs measured dT, dW, dlambda per step).
+- 2026-10-05 15:30 — STATE: user said "go v3". IMPLEMENTED (commit 975032a): v3_step.py
+  (peak3, qp_step, cw_from_widths, radius_update) + engine integration behind wgp_v3 /
+  wgp_v3_peak; gate_v3_local (math vs a reference solver to 5e-11; driver checks V1-V7).
+  Claude's own check CONFIRMED your B1 (the softmax frozen-window gradient pays F/12 per unit
+  ln linewidth = +0.075 T per 100 % broadening; docs/fom_linewidth_bias_check_2026-10-05.txt).
+  Baseline smoke PASSED on hardware; v3 smoke running (job 169002); v3 toy (169105) then
+  baseline toy (169106) queued on TE S1. Code-review prompt for you:
+  docs/ask_gpt_v3_code_review_2026-10-05_prompt.md (resume the same session).
+- 2026-10-05 15:22-15:45 — v3 CODE REVIEW (answer docs/ask_gpt_v3_code_review_2026-10-05_answer.md).
+  GPT: QP formulation/dual correct (216 comparisons reproduced); integration gaps: cw_curved
+  ignored / missing c_W silent; width feasibility not an unconditional acceptance requirement;
+  "inactive cap => larger radius cannot change the step" is FALSE because tau depends on the cap;
+  duplicate halving can break restoration feasibility and the noise stop ignored feasibility;
+  missing-width retries bypass pred_step; markers count engagement not correctness; recenter
+  guard only on callback-best; Broyden mixes twin-lambda change into the secant; radius_update
+  grows on negative predicted gain; peak3 tie case jumps. Claude's actions (same hour): engine
+  fixes for width-reject, c_W validity state (degraded => halve the lambda bound, loud),
+  1.5x-radius growth probe, feasibility-aware stop, driver-side recenter of accepted points,
+  Broyden twin-lambda correction, stale-diagnostics after halving; Opus hardening v3_step
+  (status infeasible vs solver_failed, guards, radius_update pred>0, peak3 |r|>0.5 fallback)
+  and extending the gates. NOT yet done: retry that shrinks the BANDS with the radius (G6),
+  delta_lambda adaptation from predicted-vs-measured d lambda (G4), a directional
+  uncertainty guard for tiny gT (G1), unified resonance definition for peak3 vs gLam (G7).
+  Toy acceptance criteria adopted from G8: per-step dT_meas/dT_pred in [0.5, 1.5], total-row
+  width ratio in [0.7, 1.3], lambda move 0.20-0.30 nm for a predicted 0.25, every accepted
+  point inside [18.8386, 19.4034] um (S1), at least one fresh-gradient direction.

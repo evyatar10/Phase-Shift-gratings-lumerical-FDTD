@@ -323,6 +323,109 @@ TABLE = [  # cap, pred, meas, noise, active, expect_cap, expect_tag
 bad = [row for row in TABLE if v3.radius_update(*row[:5]) != (float(row[5]), row[6])]
 check(f"radius_update: all {len(TABLE)} table rows (every branch + clamps + edges)", not bad, str(bad))
 
+# ================================================================ hardening (GPT v3 review G1/G3/G5)
+# status: a dual failure on a REACHABLE row set must not drop a row or restore
+for seed in range(41, 141):                        # first instance with an ACTIVE row
+    g, A, bands, D, lo, hi, cap = instance(np.random.default_rng(seed), 40, 2, "engine")
+    ref = v3.qp_step(g, A, bands, D, lo, hi, cap)
+    if ref["mode"] == "ascent" and any(ref["row_active"]):
+        break
+lb, ub = boxes(lo, hi, cap)
+dual0, slsqp0 = v3._dual_solve, v3._slsqp_ascent
+v3._dual_solve = lambda gg, *a: None if a[-1] == 0.0 else dual0(gg, *a)   # ascent dual "fails"
+fb = v3.qp_step(g, A, bands, D, lo, hi, cap)
+v3._slsqp_ascent = lambda *a: None                                          # ... and SLSQP too
+ff = v3.qp_step(g, A, bands, D, lo, hi, cap)
+yf0 = A[0] @ rng.uniform(lb, ub)
+band_no0 = [(yf0 + 0.01 * abs(yf0), yf0 + 0.02 * abs(yf0)) if yf0 > 0 else
+            (yf0 - 0.02 * abs(yf0), yf0 - 0.01 * abs(yf0))]                # excludes d = 0
+ff1 = v3.qp_step(g, A[:1], band_no0, D, lo, hi, cap)
+v3._dual_solve, v3._slsqp_ascent = dual0, slsqp0
+tauR = ref["tau"]
+check("status ok/dual on a normal instance; result carries viol per row",
+      ref["status"] == "ok" and ref["solver"] == "dual" and len(ref["viol"]) == 2
+      and row_viol(A, bands, ref["d"], cap) <= 1e-12
+      and np.allclose(ref["viol"], [max(0.0, L - a @ ref["d"], a @ ref["d"] - U)
+                                    for a, (L, U) in zip(A, bands)], rtol=0, atol=0),
+      f"{ref['status']}/{ref['solver']} viol {ref['viol']}")
+check("dual fails on reachable rows ⇒ SLSQP fallback, mode ascent, status ok, same optimum",
+      fb["mode"] == "ascent" and fb["status"] == "ok" and fb["solver"] == "slsqp"
+      and row_viol(A, bands, fb["d"], cap) <= 1e-7
+      and abs(objective(g, D, tauR, fb["d"]) - objective(g, D, tauR, ref["d"]))
+      <= 1e-6 * abs(objective(g, D, tauR, ref["d"])),
+      f"Δobj rel {abs(objective(g, D, tauR, fb['d']) - objective(g, D, tauR, ref['d'])) / abs(objective(g, D, tauR, ref['d'])):.1e}")
+check("both solvers fail ⇒ solver_failed, mode NOT downgraded, d feasible (0 in bands: scaled step)",
+      ff["status"] == "solver_failed" and ff["mode"] == "ascent" and in_box(ff["d"], lo, hi, cap)
+      and row_viol(A, bands, ff["d"], cap) <= 1e-9 and g @ ff["d"] >= 0, f"mode {ff['mode']}")
+check("both solvers fail, band excludes 0 ⇒ LP feasible vertex, solver_failed, feasible",
+      ff1["status"] == "solver_failed" and ff1["mode"] == "ascent" and in_box(ff1["d"], lo, hi, cap)
+      and row_viol(A[:1], band_no0, ff1["d"], cap) <= 1e-9, f"viol {ff1['viol']}")
+Ah_ = np.array(A) / (cap * np.abs(np.array(A)).sum(1))[:, None]
+check("  tooth: those rows ARE LP-reachable (the old code would have dropped/restored)",
+      v3._min_violation(Ah_, np.array([b[0] for b in bands]) / (cap * np.abs(np.array(A)).sum(1)),
+                        np.array([b[1] for b in bands]) / (cap * np.abs(np.array(A)).sum(1)),
+                        lb, ub) <= v3.FEAS_TOL)
+# restoration: every returned quantity from the FINAL multipliers, incl. at the iteration limit
+g, A, bands, D, lo, hi, cap = instance(np.random.default_rng(43), 40, 1, "engine")
+lb, ub = boxes(lo, hi, cap)
+far = [(bands[0][0] + 3 * cap * np.abs(A[0]).sum(), bands[0][1] + 4 * cap * np.abs(A[0]).sum())]
+rs = v3.qp_step(g, A, far, D, lo, hi, cap)
+mx0, v3.MAX_NEWTON = v3.MAX_NEWTON, 1
+rt = v3.qp_step(g, A, far, D, lo, hi, cap)
+v3.MAX_NEWTON = mx0
+y_hi = np.maximum(A[0] * lb, A[0] * ub).sum()
+cons_ok = all(np.allclose(r_["d"], np.clip(-D * (A[0] * r_["mu"][0]) / v3.RESTORE_EPS, lb, ub),
+                          rtol=0, atol=1e-12 * cap)
+              and abs(r_["viol"][0] - max(0.0, far[0][0] - A[0] @ r_["d"])) < 1e-12 * cap * np.abs(A[0]).sum()
+              for r_ in (rs, rt))
+check("restore: d / viol consistent with the FINAL μ (converged and MAX_NEWTON=1)", cons_ok,
+      f"status {rs['status']}/{rt['status']}, viol {rs['viol'][0]:.4g} vs LP min {far[0][0] - y_hi:.4g}")
+check("restore converged: status infeasible, viol = LP min violation (ε-prox)",
+      rs["mode"] == "restore" and rs["status"] == "infeasible"
+      and abs(rs["viol"][0] - (far[0][0] - y_hi)) <= 1e-3 * cap * np.abs(A[0]).sum())
+check("  tooth: at the limit the stale (μ=0) d = 0 differs from the returned d",
+      np.abs(rt["d"]).max() > 0 and rt["iters"] == 1)
+# guards: every non-finite input ⇒ ValueError
+g, A, bands, D, lo, hi, cap = instance(np.random.default_rng(47), 40, 2, "engine")
+bad_args = {"gT": 0, "rows": 1, "bands": 2, "D": 3, "lo_step": 4, "hi_step": 5, "cap_nm": 6}
+raised = []
+for nm_, k in bad_args.items():
+    args = [g.copy(), [a.copy() for a in A], [list(b) for b in bands], D.copy(), lo.copy(), hi.copy(), cap]
+    if nm_ == "rows":
+        args[1][0][3] = np.nan
+    elif nm_ == "bands":
+        args[2][1][1] = np.inf
+    elif nm_ == "cap_nm":
+        args[6] = np.nan
+    else:
+        args[k] = args[k].copy()
+        args[k][5] = np.nan if nm_ != "lo_step" else -np.inf
+    try:
+        v3.qp_step(*args)
+    except ValueError as e:
+        raised.append(nm_ in str(e))
+check("non-finite gT/rows/bands/D/lo/hi/cap ⇒ ValueError naming the input",
+      raised == [True] * len(bad_args), str(raised))
+# radius_update: never grow on a non-positive prediction
+check("radius_update pred = meas = −0.01, active cap ⇒ keep (not grow)",
+      v3.radius_update(10, -0.01, -0.01, 1e-5, 0.3) == (10.0, "keep")
+      and v3.radius_update(10, -1e-3, 1e-3, 1e-5, 0.3) == (10.0, "keep"))
+check("  tooth: the ratio test alone would have grown it (ratio 1, cap active)",
+      0.5 <= (-0.01) / (-0.01) <= 2.0)
+# peak3: tie jump documented; vertex outside the half-cell ⇒ sample fallback
+Tt = np.array([0.0, 0.9, 0.9, 0.8])
+check("peak3 tie (0,.9,.9,.8): left 1.0125 vs right 0.9125 (documented jump)",
+      abs(v3.peak3(Tt, 1) - 1.0125) < 1e-12 and abs(v3.peak3(Tt, 2) - 0.9125) < 1e-12,
+      f"{v3.peak3(Tt, 1):.4f} / {v3.peak3(Tt, 2):.4f}")
+To = np.array([0.0, 0.8, 0.85])
+go = autograd.grad(lambda x: v3.peak3(x, 1))(To)
+check("peak3 |r| > ½ (i not nearest the max) ⇒ plain sample, one-hot grad, r = 0",
+      v3.peak3(To, 1) == 0.8 and np.array_equal(go, np.eye(3)[1]) and v3.peak3_r(To, 1) == 0.0)
+Bo, Do_ = To[2] - 2 * To[1] + To[0], To[2] - To[0]
+check("  tooth: the raw parabola there extrapolates above every sample",
+      To[1] - Do_ ** 2 / (8 * Bo) > To.max(), f"{To[1] - Do_ ** 2 / (8 * Bo):.4f}")
+
+
 # ================================================================ DRIVER (V1-V7)
 # 2026-10-05. The REAL eng.run_projected / make_fct_v2 / make_log_callback on
 # campaign_te_s1.SPEC_V3 (296 params, ns2 plumbing + v3 + peak objective).
@@ -331,7 +434,7 @@ check(f"radius_update: all {len(TABLE)} table rows (every branch + clamps + edge
 # (writes the evals.jsonl rows + profile npz the real one writes). V7 runs the
 # REAL callback against a fake fdtd.getresult (lumopt2 stubbed: only its
 # BaseCallback import is needed). Same harness as gate_projection_local §11.
-import contextlib, dataclasses, io, json, tempfile, types   # noqa: E401,E402
+import contextlib, dataclasses, inspect, io, json, tempfile, types   # noqa: E401,E402
 from runners.lumopt2_design import lumopt2_design as eng    # noqa: E402
 from runners.lumopt2_design.campaign_te_s1 import SPEC_V3   # noqa: E402
 
@@ -384,12 +487,14 @@ class FakeLog:
 
     def on_function_eval(self, project, it, p, fom):
         e, lab = self.script[it], self.spec.label
-        self.spec._wg_dTp, self.spec._wg_lam_idx = -1.0, (0, 1)
+        stale = bool(e.get("stale"))            # ineligible spectrum: no λ stencil
+        self.spec._wg_dTp, self.spec._wg_lam_idx = (None, None) if stale else (-1.0, (0, 1))
         row = {"eval": int(it), "fom": float(fom), "params": [float(v) for v in p],
-               "fwhm_env_um": e["W"], "lam_pk_nm": LAM0,
-               "softw_um": e["W"] - 0.4, "softw_adj_um": e["W"] - 0.3}
-        if e.get("cw") is not None:
-            row["cw_um_per_nm"] = e["cw"]
+               "fwhm_env_um": e["W"], "lam_pk_nm": e.get("lam", LAM0),
+               "softw_um": e["W"] - 0.4, "softw_adj_um": e.get("sw_adj", e["W"] - 0.3)}
+        for k_src, k_row in (("cw", "cw_um_per_nm"), ("curved", "cw_curved"), ("twin", "twin_lam_nm")):
+            if e.get(k_src) is not None:
+                row[k_row] = e[k_src]
         with open(os.path.join(self.out_dir, f"{lab}_evals.jsonl"), "a") as f:
             f.write(json.dumps(row) + "\n")
         pd = os.path.join(self.out_dir, "profiles")
@@ -398,15 +503,45 @@ class FakeLog:
                             x_um=XG, I=GAUSS, lam_pk_nm=LAM0)
 
 
-def drive(script, gT, **kw):
+def drive(script, gT, fn=None, **kw):
+    """Run the real (or a patched) run_projected; artefacts + any exception."""
     spec = dataclasses.replace(SV, **kw)
-    buf = io.StringIO()
+    buf, exc = io.StringIO(), None
     with tempfile.TemporaryDirectory() as td:
         with contextlib.redirect_stdout(buf):
-            eng.run_projected(spec, FakeProject(script, gT), FakeLog(spec, td, script), td, P0)
+            try:
+                (fn or eng.run_projected)(spec, FakeProject(script, gT),
+                                          FakeLog(spec, td, script), td, P0)
+            except Exception as e:                  # noqa: BLE001 - returned to the caller
+                exc = e
         rd = lambda n: [json.loads(l) for l in open(os.path.join(td, n))]
-        return {"out": buf.getvalue(), "ev": rd(f"{spec.label}_evals.jsonl"),
+        return {"out": buf.getvalue(), "ev": rd(f"{spec.label}_evals.jsonl"), "exc": exc,
                 "pr": rd(f"{spec.label}_proj.jsonl"), "ost": eng._load_opt_state(td, spec.label)}
+
+
+SRC_RP = inspect.getsource(eng.run_projected)
+
+
+def patched(old, new):
+    """run_projected with ONE source line replaced (the pre-fix behaviour)."""
+    assert SRC_RP.count(old) == 1, old
+    ns = dict(vars(eng))
+    exec(compile(SRC_RP.replace(old, new), eng.__file__, "exec"), ns)
+    return ns["run_projected"]
+
+
+@contextlib.contextmanager
+def grads(gW=None, gLo=None, gHi=None):
+    """Temporarily swap the fake project's gW / gTlo / gThi CONTENTS in place."""
+    saved = [v.copy() for v in (gWv, gLov, gHiv)]
+    for v, new in zip((gWv, gLov, gHiv), (gW, gLo, gHi)):
+        if new is not None:
+            v[:] = new
+    try:
+        yield
+    finally:
+        for v, old in zip((gWv, gLov, gHiv), saved):
+            v[:] = old
 
 
 def steps_vs_cap(r):
@@ -490,20 +625,35 @@ check("V4 unreachable: mode restore, model width moves UP (pred > 0)",
       and q4b["v3_pred_rows"][0] > 0, f"{q4b['phase']} pred {q4b['v3_pred_rows'][0]:+.3e}")
 
 # -- V5 RADIUS RULE on the accept after it-0 (cap 10)
-# (a) needs the RADIUS to limit the step: with the full rows both bands bind
-# (V2: pred rows sit on the band edges, max|d| 9.59 < 10) ⇒ active_cap 0 ⇒
-# "keep" BY DESIGN. Weak rows (×1e-3) leave only the cap active.
+# (a') full rows: both bands bind, NO component on the cap (active_cap 0), but
+# τ ∝ cap, so a larger radius still changes d (GPT v3 review G5). The engine's
+# 1.5×-radius probe (rec v3_gain_1p5) must then license "grow".
 r5k = drive([dict(fom=lin, W=W0)] * 2, gT10, max_iter=2)
+g15k, prk = r5k["pr"][1].get("v3_gain_1p5"), r5k["pr"][1].get("dT_pred_prev")
+check("V5 (a') rows bind, cap inactive, probe gain > 5 % of pred, meas = pred ⇒ grow",
+      r5k["pr"][0]["v3_active_cap"] == 0.0 and g15k > 0.05 * abs(prk)
+      and (r5k["pr"][1].get("v3_radius"), r5k["ost"]["cap_nm"]) == ("grow", 15.0),
+      f"gain_1p5 {g15k:.3e} vs pred {prk:.3e} -> {r5k['pr'][1].get('v3_radius')}")
+# (a'') the step is fully determined (one-hot gT on corr[5]; width row = c·e_5
+# caps d_5 at 3 nm < cap): the 1.5× probe gains nothing ⇒ "keep"
+J5 = 5
+e5 = np.zeros(NP_)
+e5[J5] = 1.0
+gT1h = e5 * (10.0 * SLV / 3.0)                       # pred = 10 slack at the 3 nm row limit
+lin1h = lambda p: F0 + float(gT1h @ (np.asarray(p) - P0))
+with grads(gW=e5 * ((W_HI - W0) / 3.0), gLo=np.zeros(NP_), gHi=np.zeros(NP_)):
+    r5d = drive([dict(fom=lin1h, W=W0)] * 2, gT1h, max_iter=2)
+g15d = r5d["pr"][1].get("v3_gain_1p5")
+st5d = float(np.max(np.abs(np.asarray(r5d["ev"][1]["params"]) - P0)))
+check("V5 (a'') row-determined step: probe gain ~0 ⇒ keep, cap 10",
+      abs(g15d) <= 1e-12 and (r5d["pr"][1].get("v3_radius"), r5d["ost"]["cap_nm"]) == ("keep", 10.0)
+      and abs(st5d - 3.0) < 1e-6, f"gain_1p5 {g15d:.1e}, step {st5d:.6f}")
 g_keep = [g.copy() for g in (gWv, gLov, gHiv)]
 for g in (gWv, gLov, gHiv):
     g *= 1e-3
 r5a = drive([dict(fom=lin, W=W0)] * 2, gT10, max_iter=2)
 for g, k in zip((gWv, gLov, gHiv), g_keep):
     g[:] = k
-check("V5 (a') meas = pred but rows binding (cap inactive) ⇒ keep, cap 10",
-      (r5k["pr"][1].get("v3_radius"), r5k["ost"]["cap_nm"]) == ("keep", 10.0)
-      and r5k["pr"][0]["v3_active_cap"] == 0.0,
-      f"{r5k['pr'][1].get('v3_radius')} active_cap {r5k['pr'][0]['v3_active_cap']}")
 r5b = drive([dict(fom=F0, W=W0)] * 2, gT10, max_iter=2)
 gT04 = gT_pred(0.4)
 r5c = drive([dict(fom=F0, W=W0), dict(fom=F0 + 0.1 * SLV, W=W0)], gT04, max_iter=2)
@@ -515,14 +665,25 @@ check("V5 (b) meas 0 vs pred 10×slack, accepted ⇒ shrink 10 → 5", tags5[1] 
 check("V5 (c) |pred| < 2×slack ⇒ unresolved, cap 10 kept", tags5[2] == ("unresolved", 10.0),
       str(tags5[2]))
 
-# -- V6 RETRIES: noise reject ⇒ a DIFFERENT, smaller QP trial
-r6 = drive([dict(fom=F0, W=W0)] + [dict(fom=F0 - 1.2 * SLV, W=W0)] * 2, gT04, max_iter=3)
+# -- V6 RETRIES: noise reject ⇒ a DIFFERENT, smaller QP trial; stop classification
+NOISE3 = [dict(fom=F0 - 1.2 * SLV)] * 3
+r6 = drive([dict(fom=F0, W=W0)] + [dict(e, W=W0) for e in NOISE3], gT04, max_iter=4)
 e6 = [np.asarray(e["params"]) for e in r6["ev"]]
 check("V6 noise reject ⇒ retry is a different QP trial with step <= cap/2",
       r6["pr"][1].get("noise_reject") and float(np.max(np.abs(e6[2] - e6[1]))) > 1e-6
       and float(np.max(np.abs(e6[2] - e6[0]))) <= CAPV / 2 + 1e-9
       and steps_vs_cap(r6)[0] <= 1e-9,
       f"trial steps {[round(float(np.max(np.abs(v - e6[0]))), 6) for v in e6[1:]]}")
+check("V6 W INSIDE the band, 3 noise rejects ⇒ CONVERGED WITHIN NOISE",
+      len(r6["ev"]) == 4 and "CONVERGED WITHIN NOISE" in r6["out"]
+      and "restoration unresolved" not in r6["out"])
+W6o = W_LO - 0.05
+r6o = drive([dict(fom=F0, W=W6o)] + [dict(e, W=W6o) for e in NOISE3], gT04, max_iter=4)
+check("V6 W OUTSIDE the band (hv>0), 3 noise rejects ⇒ STOPPED restoration unresolved, NOT converged",
+      len(r6o["ev"]) == 4 and "restoration unresolved, NOT converged" in r6o["out"]
+      and "CONVERGED WITHIN NOISE" not in r6o["out"]
+      and all(r6o["pr"][k].get("noise_reject") for k in (1, 2, 3)),
+      f"evals {len(r6o['ev'])}")
 # restoration-only (gT = 0, W just below the band): the QP step sits under every cap
 z6 = np.zeros(NP_)
 
@@ -534,15 +695,97 @@ def dup_run(dW, n):
 
 r6d = dup_run(0.01, 8)
 d6 = [float(np.max(np.abs(np.asarray(e["params"]) - e6[0]))) for e in r6d["ev"][1:]]
-check("V6 dup guard under v3: trials s, s/2, s/4 distinct, CONVERGED after 4 evals",
+check("V6 dup guard under v3: trials s, s/2, s/4 distinct; out of band ⇒ STOPPED, not CONVERGED",
       len(d6) == 3 and np.allclose(d6, [d6[0], d6[0] / 2, d6[0] / 4], rtol=1e-6, atol=0)
       and d6[0] < 1.0 and all(r6d["pr"][k].get("dup_retry") for k in (1, 2))
-      and "CONVERGED WITHIN NOISE" in r6d["out"],
+      and "restoration unresolved, NOT converged" in r6d["out"]
+      and "CONVERGED WITHIN NOISE" not in r6d["out"],
       f"deliv {[f'{v:.4g}' for v in d6]}")
 r6s = dup_run(0.01 * 1e-9 / d6[0], 8)                # s ≈ 1e-9 nm ⇒ halving collapses
 check("V6 stalled path under v3: STOPPED, no CONVERGED",
       any(q.get("stalled") for q in r6s["pr"]) and "[proj] STOPPED" in r6s["out"]
       and "CONVERGED WITHIN NOISE" not in r6s["out"], f"evals {len(r6s['ev'])}")
+
+# -- V8 WIDTH REJECT: higher fom, but the measured width LEAVES the band
+s8 = [dict(fom=F0, W=W0), dict(fom=F0 + 10 * SLV, W=W_HI + 0.05)]
+r8 = drive(s8, gT10, max_iter=2)
+q8 = r8["pr"][1]
+check("V8 v3: width leaves the band ⇒ rejected (v3_width_reject), not noise, cap halved 10 → 5",
+      "v3_width_reject" in q8 and q8["phase"].endswith("-retry") and "noise_reject" not in q8
+      and r8["ost"]["cap_nm"] == 5.0,
+      f"{q8['phase']} hv {q8.get('v3_width_reject')} cap {r8['ost']['cap_nm']}")
+r8t = drive(s8, gT10, max_iter=2, wgp_v3=False, wgp_v3_peak=False)
+check("  tooth: non-v3 spec ACCEPTS the same trial (FOM buys the width violation)",
+      not r8t["pr"][1]["phase"].endswith("-retry"), r8t["pr"][1]["phase"])
+
+# -- V9 DEGRADED WIDTH ROW: cw missing / curved / no gλ ⇒ λ bound halved, loud
+cases9 = {"ok": dict(cw=0.3), "missing": dict(), "curved": dict(cw=0.3, curved=True),
+          "no_glam": dict(cw=0.3, stale=True)}
+res9 = {}
+for st_, extra in cases9.items():
+    r9 = drive([dict(fom=F0, W=W0, **extra)], gT10, max_iter=1)
+    q9 = r9["pr"][0]
+    lam_row = q9["v3_pred_rows"][1] if len(q9["v3_pred_rows"]) > 1 else None
+    res9[st_] = (q9.get("v3_cw_state"), "DEGRADED WIDTH ROW" in r9["out"], lam_row)
+ok9 = all(res9[k][0] == k and res9[k][1] for k in ("missing", "curved", "no_glam"))
+check("V9 degraded states logged + '★v3 DEGRADED WIDTH ROW' printed (missing/curved/no_glam)",
+      ok9 and res9["no_glam"][2] is None, str({k: v[:2] for k, v in res9.items()}))
+check("V9 degraded λ-row prediction <= ½·dlam; ok state uses the FULL bound (and no warning)",
+      all(abs(res9[k][2]) <= DLAM / 2 + 1e-7 for k in ("missing", "curved"))
+      and res9["ok"][0] == "ok" and not res9["ok"][1] and abs(res9["ok"][2]) > DLAM / 2 + 1e-3,
+      str({k: (round(v[2], 6) if v[2] is not None else None) for k, v in res9.items()}))
+
+# -- V10 RECENTER: an ACCEPTED v3 point beyond recenter_nm from the scan centre
+s10 = [dict(fom=F0, W=W0, lam=LAM0 + SV.recenter_nm + 0.1)]
+r10 = drive(s10, gT10, max_iter=3)
+check("V10 accepted peak > recenter_nm off centre ⇒ RecenterNeeded AFTER the proj row is logged",
+      isinstance(r10["exc"], eng.RecenterNeeded) and len(r10["pr"]) == 1
+      and not r10["pr"][0]["phase"].endswith("-retry"), repr(r10["exc"]))
+r10t = drive(s10, gT10, max_iter=1, wgp_v3=False, wgp_v3_peak=False)
+check("  tooth: non-v3 driver does NOT recenter (only the callback's best-FOM guard did)",
+      r10t["exc"] is None and len(r10t["pr"]) == 1)
+
+# -- V11 BROYDEN with the twin λ moving: secant on the FIXED-λ part only
+TW0, DTW, CW11 = LAM0 - 0.02, 0.04, 0.3
+s11 = [dict(fom=lin, W=W0, cw=CW11, twin=TW0, sw_adj=18.80),
+       dict(fom=lin, W=W0, cw=CW11, twin=TW0 + DTW, sw_adj=18.83)]
+r11 = drive(s11, gT10, max_iter=2)
+q11, e11 = r11["pr"][1], r11["ev"]
+dp11 = np.asarray(e11[1]["params"]) - np.asarray(e11[0]["params"])
+want11 = (18.83 - 18.80 - CW11 * DTW) - float(gWv @ dp11)
+res11 = q11.get("broyden_dW_resid", np.nan)
+check("V11 reused row: broyden_dW_resid == (Δsoftw_adj − cw·Δtwin_λ) − gW·Δp",
+      q11.get("gw_reused") == 1 and abs(res11 - want11) < 1e-9,
+      f"logged {res11} want {want11:.9f}")
+r11t = drive(s11, gT10, max_iter=2, fn=patched(
+    'dW_ -= float(acc["cw"]) * (row["twin_lam_nm"]', 'dW_ -= 0.0 * (row["twin_lam_nm"]'))
+res11t = r11t["pr"][1].get("broyden_dW_resid", np.nan)
+check("  tooth: without the correction the residual differs by cw·Δtwin_λ = 0.012",
+      abs((res11t - res11) - CW11 * DTW) < 1e-9, f"uncorrected {res11t:.9f}")
+
+# -- V12 STALE QP DIAGNOSTICS after an accepted duplicate-halved retry. Cap at
+# its 2 nm floor: an ordinary reject keeps 2 nm, the retry QP re-delivers the
+# rejected trial ⇒ halved ⇒ accepted. Weak rows (×1e-3) so the cap, not the
+# rows, limits the step (active_cap > 0 in the stale record — with the full
+# rows every step here is row-limited and the stale record could not grow).
+gT50 = gT_pred(50.0)
+lin50 = lambda p: F0 + float(gT50 @ (np.asarray(p) - P0))
+s12 = [dict(fom=lin50, W=W0), dict(fom=F0 - 20 * SLV, W=W0), dict(fom=lin50, W=W0)]
+weak = dict(gW=gWv * 1e-3, gLo=gLov * 1e-3, gHi=gHiv * 1e-3)
+with grads(**weak):
+    r12 = drive(s12, gT50, max_iter=3, wgp_step_max_nm=2.0)
+q12 = r12["pr"][2]
+check("V12 accepted halved retry: radius rule does not grow from the stale QP record",
+      r12["pr"][1].get("dup_retry") and not q12["phase"].endswith("-retry")
+      and q12.get("v3_radius") in ("keep", "unresolved", "shrink"),
+      f"dup {r12['pr'][1].get('dup_retry')} tag {q12.get('v3_radius')} "
+      f"pred {q12.get('dT_pred_prev')} meas {q12.get('dT_meas')}")
+with grads(**weak):
+    r12t = drive(s12, gT50, max_iter=3, wgp_step_max_nm=2.0, fn=patched(
+        "v3_last = dict(v3_last, active_cap=0.0, gain_1p5=0.0, halved=True)", "pass"))
+check("  tooth: pre-fix (stale record kept) GROWS the radius after the halved accept",
+      r12["pr"][0]["v3_active_cap"] > 0 and r12t["pr"][2].get("v3_radius") == "grow",
+      f"{r12t['pr'][2].get('v3_radius')}, it-0 active_cap {r12['pr'][0]['v3_active_cap']:.3g}")
 
 # -- V7 the REAL log callback's c_W block, fake fdtd.getresult
 LAMPK7 = float(wl_nm[250])
