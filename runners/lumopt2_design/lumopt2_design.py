@@ -1928,6 +1928,14 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                                       "elong": float(2.0 * p[L.SL_SHIFT].sum()),
                                       "corr_vec": tuple(float(v)
                                                         for v in p[L.SL_CORR])}
+                # ★v3 (MEASURED 169002 + GPT review F1/G4): these guards fire on
+                # a new callback-best FOM, i.e. BEFORE run_projected has
+                # accepted or rejected the trial — a λ-jump trial restarted the
+                # campaign and was adopted as the new start. Under v3 the
+                # driver owns all of it (λ-jump reject, width reject, recenter
+                # of ACCEPTED points), so the callback only logs.
+                if getattr(spec, "wgp_v3", False):
+                    return
                 if row.get("lam_pk_nm") and abs(row["lam_pk_nm"] - spec.scan_center_nm) > spec.recenter_nm:
                     raise RecenterNeeded(f"peak {row['lam_pk_nm']:.3f} vs center {spec.scan_center_nm}")
                 s = row.get("sigma_um")
@@ -2917,6 +2925,29 @@ def run_projected(spec, project, cb, out_dir, p0):
                 bands.append((-dl_eff, dl_eff))
             q = v3s.qp_step(gTv, rows, bands, D, lo - p_base, hi - p_base,
                             _cap(a))
+            if q["mode"] != "ascent" and gLamv is not None:
+                # ★MEASURED on hardware (v3 smoke 169002, it 0): with the width
+                # band unreachable the QP dropped the λ row and the peak moved
+                # +3.75 nm in ONE step (bound 0.25) — out of the window and far
+                # outside every linearisation (the single-λ twin then sampled
+                # 15 linewidths off resonance). The resonance bound is the
+                # model's trust region, not an optional aid: keep it, and spend
+                # the step on RESTORATION instead — move the width toward the
+                # band as far as the λ trust and the radius allow, no overshoot.
+                below = Wv < W_lo
+                wband = (0.0, W_hi - Wv) if below else (W_lo - Wv, 0.0)
+                # objective = the part of the width row that does NOT move the
+                # resonance (D-metric projection). With the full row the QP's
+                # step scale τ is set by the λ-aligned part the λ bound then
+                # cancels — gate V13 measured a 0.009 nm step under a 10 nm cap.
+                gl_ = rows[1]
+                den_ = float(gl_ @ (D * gl_))
+                gobj_ = (gWr - (float(gWr @ (D * gl_)) / den_) * gl_
+                         if den_ > 0 else gWr)
+                q = v3s.qp_step(gobj_ if below else -gobj_, [gWr, gl_],
+                                [wband, bands[1]], D, lo - p_base,
+                                hi - p_base, _cap(a))
+                q["mode"] = "restore_lam"
             q["cw_state"] = cw_state
             if mutate:
                 if cw_state != "ok":
@@ -3028,7 +3059,8 @@ def run_projected(spec, project, cb, out_dir, p0):
             print(f"[proj {it}] ns2: λ target latched at {lam_tgt:.3f} nm",
                   flush=True)
             _save_state()
-        lam_bound = getattr(spec, "wgp_lam_step_nm", None)
+        lam_bound = (2.0 * dlam_b if v3
+                     else getattr(spec, "wgp_lam_step_nm", None))
         lam_jump = (lam_bound is not None and acc is not None
                     and acc.get("lam_pk") is not None and lam_pk_row is not None
                     and abs(lam_pk_row - acc["lam_pk"]) > float(lam_bound))
@@ -3385,7 +3417,10 @@ def run_projected(spec, project, cb, out_dir, p0):
                    "gT": gT, "gW": gW_eff, "gW_raw": gW, "gLam": gLam_vec,
                    "lam_pk": lam_pk_row, "eval_num": int(it),
                    "cw": (row.get("cw_um_per_nm") if v3 else None),
-                   "cw_bad": bool(row.get("cw_curved")),
+                   "cw_bad": bool(row.get("cw_curved")) or bool(
+                       v3 and row.get("twin_lam_nm") is not None
+                       and lam_pk_row is not None
+                       and abs(row["twin_lam_nm"] - lam_pk_row) > dlam_b),
                    "twin_lam": row.get("twin_lam_nm"),
                    "softw": (float(row.get("softw_adj_um") or row["softw_um"])
                              if (row.get("softw_adj_um") or row.get("softw_um"))

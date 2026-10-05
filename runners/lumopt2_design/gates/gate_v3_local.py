@@ -489,9 +489,12 @@ class FakeLog:
         e, lab = self.script[it], self.spec.label
         stale = bool(e.get("stale"))            # ineligible spectrum: no λ stencil
         self.spec._wg_dTp, self.spec._wg_lam_idx = (None, None) if stale else (-1.0, (0, 1))
+        Wm = float(e["W"](p) if callable(e["W"]) else e["W"])
+        lm = e.get("lam", LAM0)
+        lm = float(lm(p) if callable(lm) else lm)
         row = {"eval": int(it), "fom": float(fom), "params": [float(v) for v in p],
-               "fwhm_env_um": e["W"], "lam_pk_nm": e.get("lam", LAM0),
-               "softw_um": e["W"] - 0.4, "softw_adj_um": e.get("sw_adj", e["W"] - 0.3)}
+               "fwhm_env_um": Wm, "lam_pk_nm": lm,
+               "softw_um": Wm - 0.4, "softw_adj_um": e.get("sw_adj", Wm - 0.3)}
         for k_src, k_row in (("cw", "cw_um_per_nm"), ("curved", "cw_curved"), ("twin", "twin_lam_nm")):
             if e.get(k_src) is not None:
                 row[k_row] = e[k_src]
@@ -503,8 +506,12 @@ class FakeLog:
                             x_um=XG, I=GAUSS, lam_pk_nm=LAM0)
 
 
-def drive(script, gT, fn=None, **kw):
-    """Run the real (or a patched) run_projected; artefacts + any exception."""
+ALL_V3_PR = []        # every proj row of every UNPATCHED v3 drive (global checks)
+
+
+def drive(script, gT, fn=None, post=None, **kw):
+    """Run the real (or a patched) run_projected; artefacts + any exception.
+    post(spec, out_dir) runs inside the tempdir (e.g. _best_from_log)."""
     spec = dataclasses.replace(SV, **kw)
     buf, exc = io.StringIO(), None
     with tempfile.TemporaryDirectory() as td:
@@ -515,8 +522,12 @@ def drive(script, gT, fn=None, **kw):
             except Exception as e:                  # noqa: BLE001 - returned to the caller
                 exc = e
         rd = lambda n: [json.loads(l) for l in open(os.path.join(td, n))]
-        return {"out": buf.getvalue(), "ev": rd(f"{spec.label}_evals.jsonl"), "exc": exc,
-                "pr": rd(f"{spec.label}_proj.jsonl"), "ost": eng._load_opt_state(td, spec.label)}
+        res = {"out": buf.getvalue(), "ev": rd(f"{spec.label}_evals.jsonl"), "exc": exc,
+               "pr": rd(f"{spec.label}_proj.jsonl"), "ost": eng._load_opt_state(td, spec.label),
+               "post": post(spec, td) if post else None}
+    if fn is None and spec.wgp_v3:
+        ALL_V3_PR.extend(res["pr"])
+    return res
 
 
 SRC_RP = inspect.getsource(eng.run_projected)
@@ -615,14 +626,33 @@ q4 = r4["pr"][0]
 check("V4 reachable: phase v3-*, width row reaches the band (pred >= W_lo − W)",
       q4["phase"].startswith("v3-") and q4["v3_pred_rows"][0] >= (W_LO - W4) - 1e-7,
       f"{q4['phase']} pred {q4['v3_pred_rows'][0]:+.4f} need {W_LO - W4:+.4f}")
-gW_keep = gWv.copy()
-gWv *= 1e-4                                          # weak width row: the band is out of reach
-r4b = drive([dict(fom=F0, W=W4)], gT10, max_iter=1)
-gWv[:] = gW_keep
+DL_MISSING = DLAM / 2                                # no cw in these rows ⇒ degraded bound
+with grads(gW=gWv * 1e-4):                           # weak width row: band out of reach alone
+    r4b = drive([dict(fom=F0, W=W4)], gT10, max_iter=1)
 q4b = r4b["pr"][0]
-check("V4 unreachable: mode restore, model width moves UP (pred > 0)",
-      q4b["v3_mode"] == "restore" and q4b["phase"] == "v3-restore"
-      and q4b["v3_pred_rows"][0] > 0, f"{q4b['phase']} pred {q4b['v3_pred_rows'][0]:+.3e}")
+check("V4 width alone unreachable ⇒ v3-restore_lam, λ pred <= dl_eff, 0 < W pred <= W_hi − W",
+      q4b["phase"] == "v3-restore_lam" and abs(q4b["v3_pred_rows"][1]) <= DL_MISSING + 1e-7
+      and 0 < q4b["v3_pred_rows"][0] <= W_HI - W4 + 1e-7,
+      f"{q4b['phase']} W pred {q4b['v3_pred_rows'][0]:+.3e} λ pred {q4b['v3_pred_rows'][1]:+.4f}")
+# the smoke-169002 shape: width reachable ALONE but only through a big resonance
+# move — gW = c·gλ + ε·g⊥ (c = 0.24 µm/nm; ε sized so g⊥ alone buys ~0.35 µm
+# per 10 nm step). The joint (W, λ) problem is infeasible ⇒ pre-fix dropped λ.
+g_perp = np.random.default_rng(37).standard_normal(NP_)
+g_perp -= (g_perp @ gLamv) / (gLamv @ gLamv) * gLamv
+nf_ = (bV[:, 1] - bV[:, 0]) >= v3.FROZEN_SPAN_NM
+gW_smoke = 0.24 * gLamv + 0.35 / (CAPV * np.abs(g_perp[nf_]).sum()) * g_perp
+with grads(gW=gW_smoke):
+    r4c = drive([dict(fom=F0, W=W4)], gT10, max_iter=1)
+    r4t = drive([dict(fom=F0, W=W4)], gT10, max_iter=1, fn=patched(
+        'if q["mode"] != "ascent" and gLamv is not None:', "if False:"))
+q4c, q4t = r4c["pr"][0], r4t["pr"][0]
+check("V4 (smoke shape) jointly unreachable ⇒ v3-restore_lam, λ pred <= dl_eff, partial W gain, no overshoot",
+      q4c["phase"] == "v3-restore_lam" and abs(q4c["v3_pred_rows"][1]) <= DL_MISSING + 1e-7
+      and 0 < q4c["v3_pred_rows"][0] <= W_HI - W4 + 1e-7,
+      f"W pred {q4c['v3_pred_rows'][0]:+.4f} λ pred {q4c['v3_pred_rows'][1]:+.4f}")
+check("  tooth: pre-fix (no restore_lam block) ⇒ ascent_dropped_row, |λ pred| > dl",
+      q4t["v3_mode"] == "ascent_dropped_row" and abs(q4t["v3_pred_rows"][1]) > DL_MISSING,
+      f"{q4t['v3_mode']} λ pred {q4t['v3_pred_rows'][1]:+.3f} nm, W pred {q4t['v3_pred_rows'][0]:+.3f}")
 
 # -- V5 RADIUS RULE on the accept after it-0 (cap 10)
 # (a') full rows: both bands bind, NO component on the cap (active_cap 0), but
@@ -787,6 +817,131 @@ check("  tooth: pre-fix (stale record kept) GROWS the radius after the halved ac
       r12["pr"][0]["v3_active_cap"] > 0 and r12t["pr"][2].get("v3_radius") == "grow",
       f"{r12t['pr'][2].get('v3_radius')}, it-0 active_cap {r12['pr'][0]['v3_active_cap']:.3g}")
 
+# -- V13 SMOKE 169002 REPRODUCED: W 1.26 µm below the band. The fake measurement
+# FOLLOWS the linear model (W, λ, fom linear in p); cw = 0 (state ok ⇒ full
+# 0.25 nm λ bound). restore_lam's objective is the RESONANCE-NEUTRAL part of
+# the width row (D-metric projection off gλ), so its τ is sized by the usable
+# direction and the step fills the radius (fixed 2026-10-05 after this gate
+# measured 0.009 nm steps under a 10 nm cap with the full-row objective).
+W13 = W_LO - 1.26
+sD = np.sqrt(DV)
+
+
+def restore_run(gW_fx, n, fn=None):
+    Wf = lambda p: W13 + float(gW_fx @ (np.asarray(p) - P0))
+    Lf = lambda p: LAM0 + float(gLamv @ (np.asarray(p) - P0))
+    with grads(gW=gW_fx):
+        return drive([dict(fom=lin, W=Wf, lam=Lf, cw=0.0)] * n, gT10, max_iter=n, fn=fn)
+
+
+def restore_audit(r):
+    """per restore_lam step: (max|Δp|, cap, width pred, band-edge room, λ pred)."""
+    ev = [np.asarray(e["params"]) for e in r["ev"]]
+    out = []
+    for k, q in enumerate(r["pr"][:-1]):
+        if q.get("v3_mode") == "restore_lam":
+            out.append((float(np.max(np.abs(ev[k + 1] - ev[k]))), q["cap_nm"],
+                        q["v3_pred_rows"][0], W_HI - q["W"], q["v3_pred_rows"][1]))
+    return out
+
+
+def gobj_gain(gW_fx, W, room=None):
+    """Width gain the resonance-neutral objective can deliver at P0 (reference);
+    room = the width row's upper band edge (default W_hi − W; large = uncapped)."""
+    gobj = gW_fx - (gW_fx @ (DV * gLamv)) / (gLamv @ (DV * gLamv)) * gLamv
+    q = v3.qp_step(gobj, [gW_fx, gLamv], [(0.0, W_HI - W if room is None else room), (-DLAM, DLAM)],
+                   DV, bV[:, 0] - P0, bV[:, 1] - P0, CAPV)
+    return q["pred"]["rows"][0]
+
+
+# FAST fixture: ≥ 50 % of gW's D-norm orthogonal to gλ. The neutral part is a
+# ±1 pattern on 20 corrugation params (equal D), so its QP gain per step equals
+# its LP reach (~0.35 µm): the band (1.26 µm away) is NOT reachable in one step
+# (⇒ restore_lam engages) but IS within ≤ 6 accepted steps. A dense random
+# neutral part would not do: its LP reach (all params at the cap) is ~10× its
+# D-weighted QP gain, so the first QP would already be feasible (plain ascent).
+g_pat = np.zeros(NP_)
+g_pat[:20] = np.random.default_rng(53).choice([-1.0, 1.0], 20)
+g_pat -= (g_pat @ (DV * gLamv)) / (gLamv @ (DV * gLamv)) * gLamv   # D-orthogonal to gλ
+k_fast = 0.35 / gobj_gain(g_pat, W13, room=1e9)   # radius-limited gain, not band-limited
+c_fast = 5e-4                                        # µm/nm: weak resonance coupling
+gW_fast = c_fast * gLamv + k_fast * g_pat
+orth_frac = np.linalg.norm(sD * k_fast * g_pat) / np.linalg.norm(sD * gW_fast)
+r13f = restore_run(gW_fast, 7)
+au_f = restore_audit(r13f)
+acc_f = [e["fwhm_env_um"] for e, q in zip(r13f["ev"], r13f["pr"]) if not q["phase"].endswith("-retry")]
+n_to_band = next((i for i, w in enumerate(acc_f) if w >= W_LO - 1e-9), None)
+check("V13 (i) every restore_lam step is radius- OR band-limited (never a sliver of the cap)",
+      au_f and all(st >= 0.99 * cap or wp >= room - 1e-7 for st, cap, wp, room, _ in au_f),
+      f"steps {[round(a[0], 3) for a in au_f]} caps {[a[1] for a in au_f]}; D-orth fraction {orth_frac:.2f}")
+check("V13 (ii) width pred >= 0 = the resonance-neutral reference; |λ pred| <= bound",
+      bool(au_f) and all(a[2] >= 0 and abs(a[4]) <= DLAM + 1e-7 for a in au_f)
+      and abs(au_f[0][2] - gobj_gain(gW_fast, W13)) < 1e-9,
+      f"W gain per step {[round(a[2], 4) for a in au_f]} um; λ preds {[round(a[4], 4) for a in au_f]}")
+check("V13 (iii) FAST fixture: W climbs monotonically INTO the band within 6 accepted steps",
+      r13f["exc"] is None and orth_frac >= 0.5 and n_to_band is not None and n_to_band <= 6
+      and all(b > a for a, b in zip(acc_f[:n_to_band + 1], acc_f[1:n_to_band + 1]))
+      and acc_f[n_to_band] <= W_HI + 1e-9,
+      f"W−W_lo {[round(w - W_LO, 3) for w in acc_f]}; in band after {n_to_band} steps")
+r13ft = restore_run(gW_fast, 2, fn=patched(
+    "q = v3s.qp_step(gobj_ if below else -gobj_, [gWr, gl_],",
+    "q = v3s.qp_step(gWr if below else -gWr, [gWr, gl_],"))
+r13st = restore_run(gW_smoke, 2, fn=patched(
+    "q = v3s.qp_step(gobj_ if below else -gobj_, [gWr, gl_],",
+    "q = v3s.qp_step(gWr if below else -gWr, [gWr, gl_],"))
+st_t = [restore_audit(r)[0][0] if restore_audit(r) else None for r in (r13ft, r13st)]
+check("  tooth: full-row objective (pre-fix) delivers a sliver of the cap (smoke-shaped gW)",
+      st_t[1] is not None and st_t[1] < 0.05 * CAPV,
+      f"pre-fix step {st_t[1]} nm (fast fixture {st_t[0]}) under cap {CAPV}")
+# SLOW fixture (documented): gW nearly aligned with gλ (gW_smoke) — monotone
+# progress, but the neutral part is small, so the band is many steps away.
+r13 = restore_run(gW_smoke, 7)
+acc13 = [(e["fwhm_env_um"], e["lam_pk_nm"]) for e, q in zip(r13["ev"], r13["pr"])
+         if not q["phase"].endswith("-retry")]
+W_seq = [w for w, _ in acc13]
+au_s = restore_audit(r13)
+gain_s = (W_seq[-1] - W_seq[0]) / max(len(W_seq) - 1, 1)
+check("V13 SLOW (nearly λ-aligned gW): monotone progress, radius/band-limited steps, λ inside the trust",
+      r13["exc"] is None and all(b > a for a, b in zip(W_seq, W_seq[1:]))
+      and all(st >= 0.99 * cap or wp >= room - 1e-7 for st, cap, wp, room, _ in au_s)
+      and all(abs(b - a) <= DLAM + 1e-9 for (_, a), (_, b) in zip(acc13, acc13[1:])),
+      f"gain {gain_s:.4f} um/step ⇒ ~{(W_LO - W_seq[-1]) / gain_s:.0f} more steps to the band "
+      f"(W−W_lo now {W_seq[-1] - W_LO:+.3f})" if gain_s > 0 else "no progress")
+r13t = restore_run(gW_smoke, 1, fn=patched(
+    'if q["mode"] != "ascent" and gLamv is not None:', "if False:"))
+check("  tooth: pre-fix first step drops the λ row and predicts a multi-nm resonance move",
+      r13t["pr"][0]["v3_mode"] == "ascent_dropped_row" and abs(r13t["pr"][0]["v3_pred_rows"][1]) > 1.0,
+      f"pre-fix λ pred {r13t['pr'][0]['v3_pred_rows'][1]:+.2f} nm")
+
+# -- V15 measured λ jump > 2·dlam: rejected, ineligible, never the best row
+best_of = lambda spec, td: eng._best_from_log(spec, td, {"fom": -np.inf, "params": P0})[0]
+r15 = drive([dict(fom=F0, W=W0), dict(fom=F0 + 10 * SLV, W=W0, lam=LAM0 + 0.6)], gT10,
+            max_iter=2, post=best_of)
+key15 = eng._param_key(r15["ev"][1]["params"])
+check("V15 Δλ 0.6 nm (> 2×0.25): rejected, key ineligible, _best_from_log skips it, no recenter",
+      r15["pr"][1]["phase"].endswith("-retry") and "lam_jump_nm" in r15["pr"][1]
+      and key15 in r15["ost"]["ineligible"] and r15["exc"] is None
+      and np.allclose(r15["post"], r15["ev"][0]["params"]),
+      f"{r15['pr'][1]['phase']} jump {r15['pr'][1].get('lam_jump_nm')}")
+r15b = drive([dict(fom=F0, W=W0), dict(fom=F0 + 10 * SLV, W=W0, lam=LAM0 + 0.4)], gT10, max_iter=2)
+check("V15 Δλ 0.4 nm (< 2×0.25) is NOT λ-rejected",
+      "lam_jump_nm" not in r15b["pr"][1] and not r15b["pr"][1]["phase"].endswith("-retry"),
+      r15b["pr"][1]["phase"])
+
+# -- V16 twin lag: |twin_lam − lam_pk| > dlam ⇒ c_W flagged ⇒ degraded step
+res16 = {}
+for lag in (0.3, 0.1):
+    q16 = drive([dict(fom=F0, W=W0, cw=0.3, twin=LAM0 + lag)], gT10, max_iter=1)["pr"][0]
+    res16[lag] = (q16.get("v3_cw_state"), q16["v3_pred_rows"][1])
+check("V16 twin lag 0.3 nm ⇒ cw_state curved, |λ pred| <= ½·dlam; lag 0.1 ⇒ ok, full bound used",
+      res16[0.3][0] == "curved" and abs(res16[0.3][1]) <= DLAM / 2 + 1e-7
+      and res16[0.1][0] == "ok" and abs(res16[0.1][1]) > DLAM / 2 + 1e-3, str(res16))
+
+modes_all = [q.get("v3_mode") for q in ALL_V3_PR]
+check("no proj row of ANY unpatched v3 drive has v3_mode ascent_dropped_row",
+      "ascent_dropped_row" not in modes_all,
+      f"{len(ALL_V3_PR)} rows; modes {sorted(set(m for m in modes_all if m))}")
+
 # -- V7 the REAL log callback's c_W block, fake fdtd.getresult
 LAMPK7 = float(wl_nm[250])
 RATE7 = 0.3                                          # µm/nm: profile FWHM grows linearly with λ
@@ -816,7 +971,8 @@ class FakeFdtd:
         raise KeyError(mon)
 
 
-def real_cb_row(fdtd):
+def real_cb_row(fdtd, spec=SV):
+    """(first evals.jsonl row, exception raised by on_function_eval or None)."""
     stub = types.ModuleType("lumopt2.utils.callbacks")
     stub.BaseCallback = object
     saved = {k: sys.modules.get(k) for k in ("lumopt2", "lumopt2.utils", "lumopt2.utils.callbacks")}
@@ -825,12 +981,16 @@ def real_cb_row(fdtd):
                         "lumopt2.utils.callbacks": stub})
     try:
         with tempfile.TemporaryDirectory() as td:
-            cb = eng.make_log_callback(SV, td, lmpt=object())
+            cb = eng.make_log_callback(spec, td, lmpt=object())
             proj = types.SimpleNamespace(load_forward_results=lambda: None,
                                          fdtd_session=types.SimpleNamespace(fdtd=fdtd))
+            exc = None
             with contextlib.redirect_stdout(io.StringIO()):
-                cb.on_function_eval(proj, 0, P0, 0.9)
-            return json.loads(open(os.path.join(td, f"{SV.label}_evals.jsonl")).readline())
+                try:
+                    cb.on_function_eval(proj, 0, P0, 0.9)
+                except Exception as e:              # noqa: BLE001 - returned to the caller
+                    exc = e
+            return json.loads(open(os.path.join(td, f"{spec.label}_evals.jsonl")).readline()), exc
     finally:
         for k, v in saved.items():
             if v is None:
@@ -839,16 +999,54 @@ def real_cb_row(fdtd):
                 sys.modules[k] = v
 
 
-row7 = real_cb_row(FakeFdtd())
+row7 = real_cb_row(FakeFdtd())[0]
 cw7 = row7.get("cw_um_per_nm")
 check("V7 REAL callback: cw_um_per_nm within 5 % of the profile's dFWHM/dλ = 0.3",
       cw7 is not None and abs(cw7 - RATE7) / RATE7 < 0.05 and "diag_error" not in row7,
       f"cw {cw7} curved {row7.get('cw_curved')} lam_pk {row7.get('lam_pk_nm')} "
       f"fwhm_nm {row7.get('fwhm_nm')} err {row7.get('diag_error') or row7.get('cw_error')}")
-row7e = real_cb_row(FakeFdtd(fail_field_call=2))    # 1st read = profile_line, 2nd = the c_W block
+row7e = real_cb_row(FakeFdtd(fail_field_call=2))[0]    # 1st read = profile_line, 2nd = the c_W block
 check("V7 getresult raising in the c_W block ⇒ row cw_error, no exception, eval logged",
       "cw_error" in row7e and "cw_um_per_nm" not in row7e and "diag_error" not in row7e
       and row7e.get("lam_pk_nm") is not None, f"cw_error {row7e.get('cw_error')!r}")
+
+# -- V14 REAL callback under v3: logs only — no RecenterNeeded / WidthTrip raise
+# (the driver owns those; MEASURED 169002: the callback restarted the campaign
+# on a λ-jump trial BEFORE the driver could reject it). A standing-wave-like
+# modulation (period 1 µm) gives fwhm_env_of_line its envelope peaks.
+I14 = np.exp(-4.0 * np.log(2.0) * x7 ** 2 / W0 ** 2) * (0.5 + 0.5 * np.cos(2 * np.pi * x7))
+E14 = np.zeros((x7.size, 2, wl_nm.size, 3))
+E14[:, :, :, 0] = np.sqrt(I14)[:, None, None]
+FIELD14 = dict(FIELD7, E=E14)
+crop14 = np.abs(x7) <= SV.n_periods_side * SV.pitch_nm / 1000.0
+FW14 = eng.fwhm_env_of_line(x7[crop14], I14[crop14])
+
+
+class FakeFdtd14(FakeFdtd):
+    def __init__(self, lam_pk_nm):
+        super().__init__()
+        self.T = 0.9 / (1.0 + ((wl_f - eng.C0 / (lam_pk_nm * 1e-9)) / gam_f) ** 2)
+
+    def getresult(self, mon, key):
+        if mon == "FDTD::ports::Port_2":
+            return {"S": np.sqrt(self.T).astype(complex), "lambda": wl_nm * 1e-9}
+        return FIELD14 if mon == "field_profile" else super().getresult(mon, key)
+
+
+far = FakeFdtd14(LAM0 + 3.0)                         # peak 3 nm from scan_center (recenter 2)
+ctr = FakeFdtd14(LAMPK7)                             # peak near the centre
+specs14 = {v: dataclasses.replace(SV, wgp_v3=v, fwhm0_um=FW14) for v in (True, False)}
+wide14 = {v: dataclasses.replace(SV, wgp_v3=v, fwhm0_um=FW14 / 1.05) for v in (True, False)}
+ra, ea = real_cb_row(far, specs14[True])
+rb, eb = real_cb_row(ctr, wide14[True])
+check("V14 v3 callback: λ 3 nm off centre / fwhm_env +5 % ⇒ NO raise, rows still logged",
+      FW14 is not None and ea is None and eb is None and abs(ra["lam_pk_nm"] - LAM0 - 3.0) < 0.05
+      and rb.get("fwhm_env_um") is not None and rb["fwhm_env_um"] / (FW14 / 1.05) > eng.RHO_UP,
+      f"fwhm_env {FW14}; lam {ra.get('lam_pk_nm')}; errs {ea!r}/{eb!r}")
+_, eat = real_cb_row(far, specs14[False])
+_, ebt = real_cb_row(ctr, wide14[False])
+check("  tooth: wgp_v3=False raises RecenterNeeded and WidthTrip on the same calls",
+      isinstance(eat, eng.RecenterNeeded) and isinstance(ebt, eng.WidthTrip), f"{eat!r} / {ebt!r}")
 
 print("V3 LOCAL GATE: ALL PASS" if not FAILS else f"V3 LOCAL GATE: FAIL ({len(FAILS)}): {FAILS}")
 sys.exit(1 if FAILS else 0)
