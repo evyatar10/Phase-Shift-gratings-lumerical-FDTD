@@ -141,3 +141,106 @@ for d = 1:3
     o = fullfile(D, '..', ['farfield_sph_20um_triangle_' short{d}]);
     savefig(f4, [o '.fig']); exportgraphics(f4, [o '.png'], 'Resolution', 150); fprintf('saved %s\n', o);
 end
+
+%% ── Report figures (v7 model note, 2026-10-05): CORRECTED far field (tube projection, IGUM 100034)
+% Input: results_from_igum/farfield_sph_20um/report_data.mat (prepared from the *_ff.mat files with
+% python_tools/farfield_surface.py + farfield_multipole.py). Output: farfield_v7_*.fig/.png next to it.
+DR = fullfile(fileparts(fileparts(fileparts(D))), 'results_from_igum', 'farfield_sph_20um');
+RD = load(fullfile(DR, 'report_data.mat'));
+tags = {'A', 'B', 'C'};
+nm3 = {'TE plain (corr 250 nm)', 'TE overshoot apodization', 'TM plain (corr 325 nm)'};
+col3 = [0.00 0.45 0.74; 0.85 0.33 0.10; 0.47 0.67 0.19];
+lab = @(S, d) {nm3{d}, sprintf('N = 98, \\lambda = %.2f nm, T = %.3f, mode width %.1f \\mum', S.lam_nm, S.T, S.fwhm_um)};
+
+% R1: where the light goes -- far-field intensity maps, top (+z) and side (+y) views, dB
+f = figure('Color', 'w', 'Position', [40 40 1500 900]);
+tl = tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+for v = 1:2
+    for d = 1:3
+        S = RD.(tags{d}); u = S.u_map;
+        if v == 1, M = S.map_top; yl = 'u_y'; vn = 'Top view (looking down, +z)'; else, M = S.map_side; yl = 'u_z'; vn = 'Side view (+y)'; end
+        ax = nexttile; imagesc(u, u, 10 * log10(M.')); set(ax, 'YDir', 'normal'); axis image; clim([-30 0]);
+        xlabel('u_x (along the waveguide)'); ylabel(yl);
+        title([lab(S, d), {vn}], 'FontSize', 9);
+    end
+end
+colormap(turbo); cb = colorbar; cb.Layout.Tile = 'east'; cb.Label.String = 'far-field intensity (dB, peak = 0)';
+title(tl, 'Where the radiated light goes (corrected far field at resonance)', 'FontSize', 12);
+save2(f, DR, 'farfield_v7_maps');
+
+% R2: how much power in each spherical-harmonic order l, electric + magnetic stacked, with cumulative share
+f = figure('Color', 'w', 'Position', [40 40 1500 460]);
+tl = tiledlayout(1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+for d = 1:3
+    S = RD.(tags{d}); l = 0:numel(S.PE_l) - 1; L = 25;
+    ax = nexttile; b = bar(l(1:L + 1), [S.PE_l(1:L + 1); S.PM_l(1:L + 1)].', 'stacked', 'BarWidth', 0.85);
+    b(1).FaceColor = [0.20 0.40 0.80]; b(2).FaceColor = [0.90 0.55 0.15];
+    ylabel('% of radiated power'); xlabel('order l'); xlim([-0.6 L + 0.6]); grid on;
+    yyaxis right; plot(l(1:L + 1), cumsum(S.PE_l(1:L + 1) + S.PM_l(1:L + 1)), 'k-o', 'MarkerSize', 3, 'LineWidth', 1.1);
+    ylim([0 100]); ylabel('cumulative %'); ax.YAxis(2).Color = 'k';
+    legend({'electric', 'magnetic', 'cumulative'}, 'Location', 'east', 'FontSize', 8);
+    title([lab(S, d), {sprintf('l \\leq 5: %.0f%%,  mean l = %.1f', sum(S.PE_l(1:6) + S.PM_l(1:6)), sum(l .* (S.PE_l + S.PM_l)) / 100)}], 'FontSize', 9);
+end
+title(tl, 'Spherical-harmonic content of the radiation, by order l (origin at the cavity centre)', 'FontSize', 12);
+save2(f, DR, 'farfield_v7_by_order');
+
+% R3: the full (l, |m|) tables, E + M summed, l <= 12
+f = figure('Color', 'w', 'Position', [40 40 1600 560]);
+tl = tiledlayout(1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+for d = 1:3
+    S = RD.(tags{d}); P = S.triE + S.triM; P(triu(true(13), 1)) = NaN;
+    ax = nexttile; im = imagesc(0:12, 0:12, P); set(im, 'AlphaData', ~isnan(P));
+    set(ax, 'YDir', 'normal', 'XTick', 0:12, 'YTick', 0:12, 'FontSize', 8, 'TickLength', [0 0]); clim([0 20]); box on;
+    for l = 0:12, for m = 0:l
+        if P(l + 1, m + 1) >= 0.5
+            text(m, l, sprintf('%.1f', P(l + 1, m + 1)), 'HorizontalAlignment', 'center', 'FontSize', 7, ...
+                 'Color', [0 0 0] + (P(l + 1, m + 1) > 11) * [1 1 1]);
+        end
+    end, end
+    xlabel('|m| (\pm m summed)'); ylabel('order l');
+    title([lab(S, d), {sprintf('shown: %.0f%% of the power (l \\leq 12)', sum(P(:), 'omitnan'))}], 'FontSize', 9);
+end
+colormap(flipud(hot)); cb = colorbar; cb.Layout.Tile = 'east'; cb.Label.String = '% of radiated power';
+title(tl, 'Power in each spherical harmonic (l, |m|), electric + magnetic', 'FontSize', 12);
+save2(f, DR, 'farfield_v7_lm_tables');
+
+% R4: two facts behind "cancel one harmonic does not work": the table moves with the origin, and
+% the leak comes from a compact spot (TE plain) vs a spread region (overshoot)
+f = figure('Color', 'w', 'Position', [40 40 1500 470]);
+tl = tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+S = RD.A; sh = {'shift_m190', 'shift_p000', 'shift_p190'}; shl = {'origin -0.19 \mum', 'origin 0', 'origin +0.19 \mum'};
+Y = zeros(8, 3); for k = 1:3, Y(:, k) = S.(sh{k})(2:9); end
+nexttile; bar(1:8, Y, 'BarWidth', 0.85); grid on; xlabel('order l'); ylabel('% of radiated power');
+legend(shl, 'Location', 'northeast'); title([lab(S, 1), {'Same field, origin moved by less than half a pitch'}], 'FontSize', 9);
+nexttile; hold on;
+for d = 1:3
+    S = RD.(tags{d}); plot(S.reach_L, 100 * S.reach, '-o', 'Color', col3(d, :), 'LineWidth', 1.5, 'MarkerFaceColor', col3(d, :));
+end
+set(gca, 'XScale', 'log'); grid on; ylim([0 100]); xlim([0.2 12]);
+xlabel('half-width of the source region around the \pi shift (\mum)'); ylabel('% of the leak pattern reproduced');
+legend(nm3, 'Location', 'southeast'); title({'Where the leak comes from (frozen-field fit, a ceiling)'; 'TE plain: 83% from \pm0.5 \mum, i.e. the junction'}, 'FontSize', 9);
+title(tl, 'Why one-harmonic cancellation fails, and what the leak is instead', 'FontSize', 12);
+save2(f, DR, 'farfield_v7_origin_and_source');
+
+% R5: the measurement error and the energy budget
+f = figure('Color', 'w', 'Position', [40 40 1500 450]);
+tl = tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+A = RD.aperture; nexttile; hold on;
+plot(A.angle_deg, A.box68, '-o', 'LineWidth', 1.6); plot(A.angle_deg, A.box12, '-s', 'LineWidth', 1.6);
+yline(1, 'k--'); xline(45, ':', 'seam between the two monitors', 'LabelOrientation', 'horizontal');
+grid on; ylim([0 1.3]); xlabel('angle from the monitor normal (deg)'); ylabel('projected / exact power');
+legend({'monitor 2.15 \mum from axis, \pm3.4 \mum wide (used)', 'monitor 5.15 \mum, \pm6 \mum (bigger box)'}, 'Location', 'southwest', 'FontSize', 8);
+title({'Old method: one flat monitor, exact dipole source'; 'right only within ~40\circ of its normal'}, 'FontSize', 9);
+nexttile; Bv = zeros(3, 2); for d = 1:3, Bv(d, :) = [RD.(tags{d}).loss_tube, RD.(tags{d}).loss_ports - RD.(tags{d}).loss_tube]; end
+b = bar(categorical(nm3, nm3), Bv, 'stacked'); b(1).FaceColor = [0.30 0.60 0.85]; b(2).FaceColor = [0.80 0.80 0.80];
+ylabel('% of input power'); grid on; ylim([0 11]);
+legend({'radiated by the cavity (through the surface)', 'rest of 1-T-R (likely the grating ends)'}, 'Location', 'northeast', 'FontSize', 8);
+title({'Loss budget at resonance (corrected method)'; 'part of the port loss is not cavity radiation'}, 'FontSize', 9);
+title(tl, 'The far-field measurement: what was wrong, and what the corrected one shows', 'FontSize', 12);
+save2(f, DR, 'farfield_v7_method_and_budget');
+fprintf('saved report figures in %s\n', DR);
+
+function save2(f, folder, name)
+savefig(f, fullfile(folder, [name '.fig']));
+exportgraphics(f, fullfile(folder, [name '.png']), 'Resolution', 170);
+end
