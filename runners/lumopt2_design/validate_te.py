@@ -237,14 +237,31 @@ def main(task_idx):
     seed_i, k = divmod(int(task_idx), 10)
     v3 = seed_i >= 2                     # tasks 20-39: the v3 step engine
     seed_i %= 2
-    if v3 and k not in (8, 9):
-        raise ValueError(f"task {task_idx}: v3 variants exist only for k=8 (smoke) and k=9 (toy)")
+    if v3 and k not in (1, 8, 9):
+        raise ValueError(f"task {task_idx}: tasks 20-39 exist only for k=1 (gate-point "
+                         f"forward), k=8 (smoke) and k=9 (toy)")
     mod = SEEDS[seed_i]
     out_dir = os.path.join(config.RESULTS_DIR,
                            f"validate_te_s{seed_i + 1}" + ("_v3" if v3 else ""))
     os.makedirs(out_dir, exist_ok=True)
     L = eng.layout(mod.SPEC.n_free)
 
+    if v3 and k == 1:                            # tasks 21 / 31: forward at the GATE point
+        # ★WHY (2026-10-05, jobs 168910/169360): the S2 field-adjoint FD came back
+        # [5.9e-4, 9.9e-4, 1.03e-2] at ±4 nm and [-2.0e-4, 1.6e-4, 1.00e-2] at ±1 nm —
+        # not step-converged, and no complex C fits either. The gates sample softW at
+        # SCAN_CENTER (the SEED's resonance) while te_point() detunes the device
+        # (shifts 5 nm, cavity +10 nm). On S2 the line is 0.20 nm wide; if the gate
+        # point's resonance sits a linewidth away, both gates measured an
+        # off-resonance profile. This one forward measures where it is.
+        spec = _forward_spec(mod, seed_i, "_gatepoint", scan_center_nm=_centre(mod),
+                             scan_width_nm=8.0, n_wl_points=(161, 321)[seed_i],
+                             recenter_nm=100.0, seed_override=tuple(te_point(mod.SPEC)))
+        row = eng.run_canary(spec, out_dir)
+        print(f"[te-s{seed_i+1} gate point] λ {row.get('lam_pk_nm')} vs gate λ "
+              f"{_centre(mod)} | linewidth {row.get('fwhm_nm')} nm | T {row.get('t_pk')} "
+              f"W {row.get('fwhm_env_um')} softW {row.get('softw_um')}")
+        return
     if k == 0:                                   # λ finder, wide window
         spec = _forward_spec(mod, seed_i, "_lamfind",
                              scan_center_nm=STORED_CONFORMAL_LAM[seed_i] + EXPECTED_PVA_SHIFT_NM,
