@@ -119,8 +119,10 @@ def check_points():
 
 # Resonance of the C-recipe operating point te_point() — the field adjoint samples
 # softW at ONE wavelength, so the gate must sit on THIS resonance, not the seed's.
-# MEASURED 169655 (S2): 1560.8789 vs seed 1560.464 = 2.0 linewidths off, which voided
-# the S2 field gates 168910/168911/169360. S1 (1.0 nm line) gates passed; not re-run.
+# MEASURED 169655 (S2): 1560.8789 vs seed 1560.464 = 2.0 linewidths off. The old S2
+# field gates 168910/168911/169360 measured a different (off-resonance) function, so
+# they are not comparable with on-resonance ones — not proof the adjoint was right.
+# S1 (1.0 nm line) gates passed; not re-run.
 GATE_LAM_NM = {1: 1560.878859628509}
 
 

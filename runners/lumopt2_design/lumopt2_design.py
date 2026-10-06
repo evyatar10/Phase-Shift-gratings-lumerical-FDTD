@@ -2981,11 +2981,11 @@ def run_projected(spec, project, cb, out_dir, p0):
                 # may drop the λ row; a gain bought that way, or any probe in
                 # restoration, must not justify growth).
                 q["gain_1p5"] = 0.0
-                if q["mode"] == "ascent":
+                if q["mode"] == "ascent" and q["status"] == "ok":
                     q15 = v3s.qp_step(gTv, rows, bands, D, lo - p_base,
                                       hi - p_base,
                                       min(_cap(a) * 1.5, float(spec.wgp_cap_max_nm)))
-                    if q15["mode"] == "ascent":
+                    if q15["mode"] == "ascent" and q15["status"] == "ok":
                         q["gain_1p5"] = (float(gTv @ q15["d"])
                                          - float(gTv @ q["d"]))
             v3_last = q
@@ -3450,7 +3450,9 @@ def run_projected(spec, project, cb, out_dir, p0):
             # row anomaly cannot be diagnosed afterwards (toy 169105, it 1:
             # |gW| grew 8x, refresh cos -0.56, vectors were gone)
             np.savez_compressed(
-                os.path.join(out_dir, f"{spec.label}_grads_it{int(it):03d}.npz"),
+                # time stamp: `it` restarts at 0 after every recenter/requeue
+                os.path.join(out_dir, f"{spec.label}_grads_it{int(it):03d}"
+                                      f"_{int(time.time())}.npz"),
                 p=p, gT=gT, gW=gW, gW_eff=gW_eff,
                 gLam=(gLam_vec if gLam_vec is not None else np.zeros(0)))
             acc = {"p": p.copy(), "fom": fom, "W": W, "h": h, "hv": hv,
@@ -3772,19 +3774,23 @@ def run_campaign(spec, out_dir, sigma0_um=None):
 
 
 def _row_of_params(spec, out_dir, p, tol=1e-6, need=()):
-    """First eval-log row matching params p and carrying every `need` key
-    (None if absent) — duplicate evals of the same p may differ in diagnostics."""
+    """NEWEST eval-log row matching params p and carrying every `need` key
+    (None if absent). Newest, not first (GPT review J1, 2026-10-06): a campaign
+    warm-started from a copied toy log re-evaluates the toy's point, and the
+    first match handed the driver the TOY's row (old window, old c_W) next to
+    fresh gradients; the same happens after any recenter."""
     path = os.path.join(out_dir, f"{spec.label}_evals.jsonl")
     if not os.path.exists(path):
         return None
     p = np.asarray(p, dtype=float)
+    match = None
     with open(path) as f:
         for line in f:
             row = json.loads(line)
             if all(row.get(k) for k in need) and np.allclose(
                     np.asarray(row["params"], dtype=float), p, atol=tol, rtol=0.0):
-                return row
-    return None
+                match = row
+    return match
 
 
 def _sigma_of_params(spec, out_dir, p, tol=1e-6):

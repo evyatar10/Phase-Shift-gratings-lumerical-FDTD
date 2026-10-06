@@ -202,3 +202,18 @@ Claude's actions: multi-span c_W estimator (1/4, 1/8, 1/16 linewidth), growth pr
 Broyden correction requires a valid c_W, restore_lam fallback for the collinear case (LP / blended objective); S2 field
 FD rerun at +-1 nm (job 169360). NOT yet done: FOM-vs-logged-T reconciliation, port-gate step convergence, growth rule
 conditioned on width and lambda model errors, identical-geometry noise repeat.
+Turn 5 (same session, 2026-10-06 ~12:40): VERIFICATION of the toy verdict fixes and the campaign start (docs/ask_gpt_
+campaign_start_2026-10-06_{prompt,answer}.md). Data sent: toy evals 0-3, row-active step 2 (width error +0.007 um),
+marg/2 acceptance tolerance, reuse off, restore_lam min-norm fallback, S2 gate point 2.03 linewidths off resonance,
+campaign 170253 warm-started from toy eval 3 (iterate-0 forward reproduced it to 2e-4 in T).
+GPT: row-active toy step is real progress; marg/2 tolerance defensible (5x the largest width error); CRITICAL: the
+driver's _row_of_params returned the FIRST log row with matching params, so after a warm start (copied toy log) or a
+recenter the fresh gradients were paired with the old row (old window, old c_W); gradient files overwrite across
+restarts; growth probe should also require solver status ok; restore_lam "need" should be the nearest-edge violation;
+the D metric favours wide-bound classes (coherent, not neutral); S2 off-resonance sampling is a plausible contributor,
+NOT proof the adjoint was right (a fixed-wavelength adjoint should match converged FD off resonance too); port gate
+had only ~0.07 nm red-side clearance; the 1e-5 noise floor is not a same-window measurement (window move gave 1.3e-4).
+Campaign pass bands for the first 3 iterates: width error <= 0.02 um, dT ratio 0.5-1.5, lambda error <= max(0.02 nm,
+25 %). Claude's actions (same hour): newest-row lookup (+ local test), time-stamped gradient files, status=="ok"
+for growth, softened the "voided" comment; did NOT stop 170253 (iterate-0 effect bounded: same geometry, W differs
+by 8e-5 um, the stale c_W was flagged so the lambda bound was halved = conservative); new code takes effect on restart.

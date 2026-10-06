@@ -1063,8 +1063,8 @@ pairs18 = [(r13f["pr"][k], r13f["pr"][k + 1]) for k in range(len(r13f["pr"]) - 1
 check("V18 (a) after every restore_lam step: v3_gain_1p5 == 0 and the radius rule never grows",
       pairs18 and all(nx.get("v3_gain_1p5") == 0.0 and nx.get("v3_radius") != "grow" for _, nx in pairs18),
       str([(nx.get("v3_gain_1p5"), nx.get("v3_radius")) for _, nx in pairs18]))
-r18t = restore_run(gW_fast, 7, fn=patched('if q["mode"] == "ascent":', "if True:",
-                                          ('if q15["mode"] == "ascent":', "if True:")))
+r18t = restore_run(gW_fast, 7, fn=patched('if q["mode"] == "ascent" and q["status"] == "ok":', "if True:",
+                                          ('if q15["mode"] == "ascent" and q15["status"] == "ok":', "if True:")))
 pairs18t = [r18t["pr"][k + 1] for k in range(len(r18t["pr"]) - 1)
             if r18t["pr"][k].get("v3_mode") == "restore_lam"]
 check("  tooth: the unconditional probe (pre-H5.4) logs a NONZERO gain after a restore step",
