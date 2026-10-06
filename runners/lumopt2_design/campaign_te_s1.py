@@ -149,8 +149,10 @@ def main(task_idx=0):
                       ("SOFTW0_UM", SOFTW0_UM), ("ADJ_FIX_PORT", ADJ_FIX_PORT),
                       ("ADJ_FIX_FIELD", ADJ_FIX_FIELD)):
         assert val is not None, f"{name} not measured — run validate_te first"
+    # v3 engine (user 2026-10-06 "yes"): warm-starts from the v3 toy 169105_29 —
+    # its evals.jsonl + optstate.json are copied into out_dir before dispatch.
     spec = dataclasses.replace(
-        SPEC, scan_center_nm=SCAN_CENTER_NM, fwhm0_um=FWHM0_UM,
+        SPEC_V3, scan_center_nm=SCAN_CENTER_NM, fwhm0_um=FWHM0_UM,
         wgp_target_um=FWHM0_UM, wg_anchor={"softw": SOFTW0_UM, "fwhm": FWHM0_UM},
         adj_fix_re=ADJ_FIX_PORT[0], adj_fix_im=ADJ_FIX_PORT[1])
     spec.adj_fix_field_re, spec.adj_fix_field_im = ADJ_FIX_FIELD
