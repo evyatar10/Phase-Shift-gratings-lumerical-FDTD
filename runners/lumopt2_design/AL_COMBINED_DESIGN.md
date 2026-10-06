@@ -1,5 +1,13 @@
 # One-adjoint combined objective (AL family) — implementation design
 
+October 7 review: this remains an unimplemented historical design. The live
+vendor code weights contributions after separate adjoint solves; MixedFom
+does not merge sources. Broadband/single-frequency weights, moving-resonance
+width derivatives and source-specific complex calibration need a real merged
+source test. Separate QP rows cannot be recovered from one scalar gradient
+without additional information. For corrected AL equations and the current
+launch recommendation, read `docs/TE_OBJECTIVE_DECISION_2026-10-07.md`.
+
 2026-08-28. Status: DESIGN ONLY — implementation starts after c1/b1 shadow-price
 traces justify it (decision criteria at the bottom). User-approved as the
 zero-GPU exploration; formulation may still change, so everything is
