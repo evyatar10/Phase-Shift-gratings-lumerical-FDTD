@@ -59,7 +59,7 @@ from an optimizer regression test or a fixed-grid improvement.
 
 ## Current limits
 
-At 01:07 Israel time, five of twelve S2 FD legs are complete; task170750_6 is
+At 02:40 Israel time, eight of twelve S2 FD legs are complete; task170750_9 is
 running. Final calibration, candidate integration, hardware smoke and N98
 validation are pending. Historical S1 final spatial profiles and raw spectra
 are not available in the local result bundle. See the saved-results audit
@@ -67,7 +67,7 @@ for exactly which measurements were reconstructed versus read from logs.
 
 The native thread heartbeat and separate read-only watcher are active. Their
 existence does not guarantee model availability after usage exhaustion. The
-account reported12% weekly Codex allowance remaining at 01:33 Israel time,
+account reported10% weekly Codex allowance remaining at 02:10 Israel time,
 reset October12 at10:44 Israel time. There is no defensible conversion of this
 percentage into guaranteed research hours or a number of tomorrow's runs.
 

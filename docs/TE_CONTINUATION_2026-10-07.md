@@ -8,6 +8,58 @@ the project `AGENTS.md` records that instruction.
 
 ## Overnight extension and current continuation
 
+02:40 Israel heartbeat: task170750_8 completed exit0 and task170750_9 is
+running on n306; eight of twelve FD legs complete. The new task08 scalar
+checkpoint is saved, with peak3(T_out)=0.9258425299757719,
+modal_peak3=0.9719109009213397 and lambda=1560.8782189638007nm. Final
+reconstruction/fit jobs remain dependency-pending. Watcher42384 is alive;
+one bounded read-only SSH check was used to refresh the older snapshot.
+No integration or dispatch occurred. The existing Sol worker
+`/root/objective_code_audit` now owns a NEW isolated fail-closed N98 pilot
+preparation and `TE_N98_PILOT_PREPARATION_2026-10-07.md`; do not duplicate
+that work or modify its files while active. Scope is offline runner/launch
+packet preparation only, no CAD/server action, calibration hash unset and
+qualified field-gradient evidence must remain visible. Prior candidates and
+production remain untouched. Inspect the worker's handoff before integration.
+
+02:10 Israel heartbeat: one bounded read-only SSH check succeeded. Task
+170750_7 completed with exit0 and task170750_8 is running on n306; seven of
+twelve FD legs are complete. Tasks9-12 are queued at the serial throttle,
+170752_0/1 and170754_2 remain dependency-pending. New immutable task07 was
+saved by the existing watcher helper. All seven completed legs have finite
+scalar observables and resonance inside their configured scan; this is not
+the pending calibration fit or gradient-validation verdict. Task07 has
+peak3(T_out)=0.9258033986058473, modal_peak3=0.971867567526548,
+lambda=1560.8782189638007nm. Quota221G/300G soft, watcher42384 alive with
+empty stderr. Ordinary Codex usage is allowed with 10% weekly allowance
+remaining. No new job, upload, cleanup, or production edit occurred.
+
+At 01:43 the user reaffirmed overnight continuation toward morning TE
+readiness. The existing heartbeat was updated, not duplicated, to include
+the morning evidence handoff and the user's periodic local-commit permission.
+The read-only watcher is alive with no stderr; calibration still has six of
+twelve FD legs complete. Full-campaign dispatch remains outside this scope.
+Morning handoff must distinguish completed checks from pending/failed gates,
+and include tested code identity, calibration verdict, objective/adjoint
+decisions, actual hardware evidence and exact launch/resume commands when
+available. Do not convert the morning target into an unsupported readiness claim.
+
+Heartbeat at 01:40 Israel time found no change since the fresh 01:37 watcher
+snapshot. Account-wide weekly Codex allowance is 11% remaining; ordinary
+usage is still allowed. Preserve capacity for the final calibration decision
+and integration, rather than repeating completed audits. No Git mutation,
+server connection or new dispatch was made in this follow-up. The next
+scientific action remains inspection of the full peak3 calibration vectors
+and unchanged held-out gates after the dependency chain completes.
+
+Readiness status at 01:39 Israel time: the fresh read-only watcher snapshot
+`20261006T223738Z` has task170750_6 complete and task170750_7 running;
+six of twelve FD legs are complete. Peak reconstruction and final fitting
+remain pending. The watcher process42384 is alive and its stderr is empty.
+The small hardware smoke and N98 validation have not run. Thirteen offline
+suites passing is not full optimization readiness. This check used the fresh
+local snapshot and did not create an additional SSH connection or submit jobs.
+
 Latest formulation review: read `TE_OBJECTIVE_DECISION_2026-10-07.md` for the
 user's transmission/constant-width priority, wavelength freedom, the corrected
 AL formulation, actual solve count and the reuse recommendation. Claude Opus
