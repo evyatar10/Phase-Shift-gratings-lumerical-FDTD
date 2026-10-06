@@ -111,7 +111,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/check_py_syntax.py",
+            "command": "python \"C:/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes/.claude/hooks/check_py_syntax.py\"",
             "timeout": 20,
             "statusMessage": "Checking Python syntax"
           }
