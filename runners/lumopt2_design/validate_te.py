@@ -117,6 +117,13 @@ def check_points():
     return ok
 
 
+# Resonance of the C-recipe operating point te_point() — the field adjoint samples
+# softW at ONE wavelength, so the gate must sit on THIS resonance, not the seed's.
+# MEASURED 169655 (S2): 1560.8789 vs seed 1560.464 = 2.0 linewidths off, which voided
+# the S2 field gates 168910/168911/169360. S1 (1.0 nm line) gates passed; not re-run.
+GATE_LAM_NM = {1: 1560.878859628509}
+
+
 def _centre(mod):
     assert mod.SCAN_CENTER_NM is not None, \
         f"{mod.SPEC.label}: run task k=0 first and paste SCAN_CENTER_NM"
@@ -138,7 +145,8 @@ def _forward_spec(mod, seed_i, suffix, **kw):
 def _port_spec(mod, seed_i, suffix, **kw):
     """Port-only gradient spec for the C_port recipe (no width entry)."""
     return dataclasses.replace(
-        _forward_spec(mod, seed_i, suffix, scan_center_nm=_centre(mod)),
+        _forward_spec(mod, seed_i, suffix,
+                      scan_center_nm=GATE_LAM_NM.get(seed_i, _centre(mod))),
         width_grad=False, **kw)
 
 
@@ -147,7 +155,8 @@ def _field_spec(mod, seed_i, suffix, **kw):
     config (fieldregion, tiles=4, GPU); coarse λ grid is the same physics for
     J = −softW (validate_c325 _w_spec note) and spares ~25 GB."""
     return dataclasses.replace(
-        _forward_spec(mod, seed_i, suffix, scan_center_nm=_centre(mod)),
+        _forward_spec(mod, seed_i, suffix,
+                      scan_center_nm=GATE_LAM_NM.get(seed_i, _centre(mod))),
         width_grad=True, wg_pure=True, n_wl_points=151, **kw)
 
 
@@ -293,14 +302,15 @@ def main(task_idx):
               f"the k=1 row; |ΔT| spread = the TE jitter floor → wgp_fom_slack")
     elif k == 4:                                 # C_port Re + FD
         idx, labels = _indices(mod.SPEC, 6)
-        spec = _port_spec(mod, seed_i, "_cport_fd")
+        spec = _port_spec(mod, seed_i, ("_cport_fd", "_cport_fd_c")[seed_i])
         print(f"[te-s{seed_i+1} k4] indices {dict(zip(labels, idx))} — FD FIRST in the "
               f"printout; Re = the adjoint half. Pair with k=5 (Im) in fit_port.")
         eng.run_validate_gradient(spec, out_dir, idx, perturbation=2.0,
                                   point=te_point(spec))
     elif k == 5:                                 # C_port Im
         idx, labels = _indices(mod.SPEC, 6)
-        spec = _port_spec(mod, seed_i, "_cport_im", adj_phase_fix=True,
+        spec = _port_spec(mod, seed_i, ("_cport_im", "_cport_im_c")[seed_i],
+                          adj_phase_fix=True,
                           adj_fix_re=0.0, adj_fix_im=1.0)
         eng.run_adjoint_only(spec, out_dir, idx, point=te_point(spec))
         print(f"[te-s{seed_i+1} k5] Im{{Z}} for {labels}")
@@ -313,14 +323,14 @@ def main(task_idx):
         # the resonance by a sizeable fraction of the line → nonlinear FD. The S2
         # rerun uses ±1 nm (fresh label; the ±4 nm vectors are kept in memory/logs).
         pert = (4.0, 1.0)[seed_i]
-        spec = _field_spec(mod, seed_i, ("_cfield_fd", "_cfield_fd_p1")[seed_i])
+        spec = _field_spec(mod, seed_i, ("_cfield_fd", "_cfield_fd_c")[seed_i])
         print(f"[te-s{seed_i+1} k6] indices {dict(zip(labels, idx))} — FD FIRST "
               f"(±{pert} nm); Re = adjoint half at C_field=(1,0). Pair with k=7.")
         eng.run_validate_gradient(spec, out_dir, idx, perturbation=pert,
                                   point=te_point(spec))
     elif k == 7:                                 # C_field Im
         idx, labels = _indices(mod.SPEC, 3)
-        spec = _field_spec(mod, seed_i, "_cfield_im",
+        spec = _field_spec(mod, seed_i, ("_cfield_im", "_cfield_im_c")[seed_i],
                            adj_fix_field_re=0.0, adj_fix_field_im=1.0)
         eng.run_adjoint_only(spec, out_dir, idx, point=te_point(spec))
         print(f"[te-s{seed_i+1} k7] Im{{Z_field}} for {labels}")
@@ -348,7 +358,7 @@ def main(task_idx):
         best = eng.run_campaign(spec, out_dir)
         print(f"[te-s{seed_i+1} toy] best_fom {best['fom']:.5f} — read "
               f"{spec.label}_proj.jsonl: rho_T / rLam_nm / dW per iterate")
-        _upgrade_markers(out_dir, spec.label, require_reuse=True)
+        _upgrade_markers(out_dir, spec.label, require_reuse=not v3)   # v3: reuse off
     else:
         raise ValueError(task_idx)
 

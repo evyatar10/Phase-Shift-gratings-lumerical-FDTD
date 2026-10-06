@@ -3122,7 +3122,12 @@ def run_projected(spec, project, cb, out_dir, p0):
         # compares the VIOLATION beyond the deadband, not the distance to the
         # band centre — otherwise any step that lands a hair closer to W_tgt
         # is accepted regardless of its FOM, even with both points in band.
-        hv = h if v3 else (max(0.0, h - marg / 2.0) if filter_band else h)
+        # ★v3 (MEASURED, toy 169105 it 3): the QP aims at the INNER band (marg
+        # inside the ±2 % spec); a row-active step predicted +0.0888 um, measured
+        # +0.0959 (ratio 1.08), landed 0.007 um past the inner edge and was
+        # rejected although 0.093 um inside the spec. Acceptance therefore keeps
+        # half the margin as tolerance: aim inside, accept up to marg/2 beyond.
+        hv = (max(0.0, h - marg / 2.0) if (v3 or filter_band) else h)
         # ★v3 (GPT v3 review H2): a trial whose width violation GREW (incl.
         # leaving the band from inside) is rejected whatever its FOM — a
         # transmission gain must never buy a width violation.

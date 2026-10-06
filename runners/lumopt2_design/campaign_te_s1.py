@@ -134,6 +134,10 @@ SPEC = dataclasses.replace(
 # trust bound (¼ of the 1.0 nm linewidth), 3-point-parabola peak objective.
 SPEC_V3 = dataclasses.replace(
     SPEC, label="lumopt2_te_s1_v3",
+    # width-row reuse OFF (toy 169105, MEASURED): its gate needs |ΔW| ≤ 0.025 um
+    # since the last fresh solve, but every v3 step moved W 0.08-0.12 um, so it
+    # never opened; near the band edge a stale row would also cost rejects.
+    wgp_reuse_k=0,
     wgp_v3=True, wgp_v3_peak=True, wgp_v3_dlam_nm=0.25,
 )
 

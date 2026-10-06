@@ -107,6 +107,10 @@ SPEC = dataclasses.replace(
 # v3 variant (see campaign_te_s1.SPEC_V3); λ trust bound = ¼ of the 0.20 nm linewidth
 SPEC_V3 = dataclasses.replace(
     SPEC, label="lumopt2_te_s2_v3",
+    # width-row reuse OFF (toy 169105, MEASURED): its gate needs |ΔW| ≤ 0.025 um
+    # since the last fresh solve, but every v3 step moved W 0.08-0.12 um, so it
+    # never opened; near the band edge a stale row would also cost rejects.
+    wgp_reuse_k=0,
     wgp_v3=True, wgp_v3_peak=True, wgp_v3_dlam_nm=0.05,
 )
 

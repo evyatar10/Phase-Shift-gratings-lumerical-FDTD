@@ -810,7 +810,7 @@ check("V6 noise reject ⇒ retry is a different QP trial with step <= cap/2",
 check("V6 W INSIDE the band, 3 noise rejects ⇒ CONVERGED WITHIN NOISE",
       len(r6["ev"]) == 4 and "CONVERGED WITHIN NOISE" in r6["out"]
       and "restoration unresolved" not in r6["out"])
-W6o = W_LO - 0.05
+W6o = W_LO - SV.wgp_margin_um / 2 - 0.03       # past the marg/2 acceptance tolerance
 r6o = drive([dict(fom=F0, W=W6o)] + [dict(e, W=W6o) for e in NOISE3], gT04, max_iter=4)
 check("V6 W OUTSIDE the band (hv>0), 3 noise rejects ⇒ STOPPED restoration unresolved, NOT converged",
       len(r6o["ev"]) == 4 and "restoration unresolved, NOT converged" in r6o["out"]
@@ -826,7 +826,8 @@ def dup_run(dW, n):
                  z6, max_iter=n)
 
 
-r6d = dup_run(0.01, 8)
+DW6 = SV.wgp_margin_um / 2 + 0.01                  # hv = 0.01 > 0 at the accepted point
+r6d = dup_run(DW6, 8)
 d6 = [float(np.max(np.abs(np.asarray(e["params"]) - e6[0]))) for e in r6d["ev"][1:]]
 check("V6 dup guard under v3: trials s, s/2, s/4 distinct; out of band ⇒ STOPPED, not CONVERGED",
       len(d6) == 3 and np.allclose(d6, [d6[0], d6[0] / 2, d6[0] / 4], rtol=1e-6, atol=0)
@@ -834,13 +835,13 @@ check("V6 dup guard under v3: trials s, s/2, s/4 distinct; out of band ⇒ STOPP
       and "restoration unresolved, NOT converged" in r6d["out"]
       and "CONVERGED WITHIN NOISE" not in r6d["out"],
       f"deliv {[f'{v:.4g}' for v in d6]}")
-r6s = dup_run(0.01 * 1e-9 / d6[0], 8)                # s ≈ 1e-9 nm ⇒ halving collapses
+r6s = dup_run(DW6 * 1e-9 / d6[0], 8)                # s ≈ 1e-9 nm ⇒ halving collapses
 check("V6 stalled path under v3: STOPPED, no CONVERGED",
       any(q.get("stalled") for q in r6s["pr"]) and "[proj] STOPPED" in r6s["out"]
       and "CONVERGED WITHIN NOISE" not in r6s["out"], f"evals {len(r6s['ev'])}")
 
 # -- V8 WIDTH REJECT: higher fom, but the measured width LEAVES the band
-s8 = [dict(fom=F0, W=W0), dict(fom=F0 + 10 * SLV, W=W_HI + 0.05)]
+s8 = [dict(fom=F0, W=W0), dict(fom=F0 + 10 * SLV, W=W_HI + SV.wgp_margin_um / 2 + 0.03)]
 r8 = drive(s8, gT10, max_iter=2)
 q8 = r8["pr"][1]
 check("V8 v3: width leaves the band ⇒ rejected (v3_width_reject), not noise, cap halved 10 → 5",
@@ -850,6 +851,24 @@ check("V8 v3: width leaves the band ⇒ rejected (v3_width_reject), not noise, c
 r8t = drive(s8, gT10, max_iter=2, wgp_v3=False, wgp_v3_peak=False)
 check("  tooth: non-v3 spec ACCEPTS the same trial (FOM buys the width violation)",
       not r8t["pr"][1]["phase"].endswith("-retry"), r8t["pr"][1]["phase"])
+
+# -- V21 marg/2 ACCEPTANCE TOLERANCE: a higher-FOM trial landing between W_hi and
+# W_hi + marg/2 is ACCEPTED, and the next QP's width band is negative-upper, so
+# the step pulls the width back inside the inner band
+W21 = W_HI + 0.6 * SV.wgp_margin_um / 2
+s21 = [dict(fom=F0, W=W0), dict(fom=F0 + 10 * SLV, W=W21)]
+r21 = drive(s21, gT10, max_iter=2)
+q21 = r21["pr"][1]
+check("V21 trial 0.03 um past W_hi (< marg/2): accepted, next width pred <= W_hi − W < 0 (pulls back)",
+      not q21["phase"].endswith("-retry") and "v3_width_reject" not in q21
+      and q21["v3_pred_rows"][0] <= (W_HI - W21) + 1e-7 < 0,
+      f"{q21['phase']} W pred {q21['v3_pred_rows'][0]:+.4f} (upper {W_HI - W21:+.4f})")
+r21t = drive(s21, gT10, max_iter=2, fn=patched(
+    "hv = (max(0.0, h - marg / 2.0) if (v3 or filter_band) else h)",
+    "hv = (h if v3 else (max(0.0, h - marg / 2.0) if filter_band else h))"))
+check("  tooth: without the marg/2 tolerance the same trial is a width reject",
+      "v3_width_reject" in r21t["pr"][1] and r21t["pr"][1]["phase"].endswith("-retry"),
+      r21t["pr"][1]["phase"])
 
 # -- V9 DEGRADED WIDTH ROW: cw missing / curved / no gλ ⇒ λ bound halved, loud
 cases9 = {"ok": dict(cw=0.3), "missing": dict(), "curved": dict(cw=0.3, curved=True),
@@ -882,7 +901,7 @@ check("  tooth: non-v3 driver does NOT recenter (only the callback's best-FOM gu
 TW0, DTW, CW11 = LAM0 - 0.02, 0.04, 0.3
 s11 = [dict(fom=lin, W=W0, cw=CW11, twin=TW0, sw_adj=18.80),
        dict(fom=lin, W=W0, cw=CW11, twin=TW0 + DTW, sw_adj=18.83)]
-r11 = drive(s11, gT10, max_iter=2)
+r11 = drive(s11, gT10, max_iter=2, wgp_reuse_k=5)     # SPEC_V3 has reuse off
 q11, e11 = r11["pr"][1], r11["ev"]
 dp11 = np.asarray(e11[1]["params"]) - np.asarray(e11[0]["params"])
 want11 = (18.83 - 18.80 - CW11 * DTW) - float(gWv @ dp11)
@@ -890,7 +909,7 @@ res11 = q11.get("broyden_dW_resid", np.nan)
 check("V11 reused row: broyden_dW_resid == (Δsoftw_adj − cw·Δtwin_λ) − gW·Δp",
       q11.get("gw_reused") == 1 and abs(res11 - want11) < 1e-9,
       f"logged {res11} want {want11:.9f}")
-r11t = drive(s11, gT10, max_iter=2, fn=patched(
+r11t = drive(s11, gT10, max_iter=2, wgp_reuse_k=5, fn=patched(
     'dW_ -= float(acc["cw"]) * (row["twin_lam_nm"]', 'dW_ -= 0.0 * (row["twin_lam_nm"]'))
 res11t = r11t["pr"][1].get("broyden_dW_resid", np.nan)
 check("  tooth: without the correction the residual differs by cw·Δtwin_λ = 0.012",
@@ -1074,14 +1093,14 @@ check("V18 (b) probe solve not a full ascent ⇒ gain_1p5 == 0, no grow (same ru
 # -- V19 BROYDEN GUARD: a flagged c_W at the accepted eval ⇒ NO twin-λ correction
 s19 = [dict(fom=lin, W=W0, cw=CW11, curved=True, twin=TW0, sw_adj=18.80),
        dict(fom=lin, W=W0, cw=CW11, curved=True, twin=TW0 + DTW, sw_adj=18.83)]
-r19 = drive(s19, gT10, max_iter=2)
+r19 = drive(s19, gT10, max_iter=2, wgp_reuse_k=5)
 dp19 = np.asarray(r19["ev"][1]["params"]) - np.asarray(r19["ev"][0]["params"])
 want19 = (18.83 - 18.80) - float(gWv @ dp19)
 check("V19 cw flagged at acc ⇒ residual = Δsoftw_adj − gW·Δp (no cw·Δtwin_λ term)",
       r19["pr"][1].get("gw_reused") == 1 and abs(r19["pr"][1].get("broyden_dW_resid", np.nan) - want19) < 1e-9,
       f"logged {r19['pr'][1].get('broyden_dW_resid')} want {want19:.9f} (V11 clean-cw case corrected)")
 s19b = [dict(e, lam=LAM0 + 0.1 * i) for i, e in enumerate(s19)]
-r19b = drive(s19b, gT10, max_iter=2)
+r19b = drive(s19b, gT10, max_iter=2, wgp_reuse_k=5)
 check("V19 cw flagged + |Δλ| 0.1 > 0.05 ⇒ Broyden update skipped as before",
       r19b["pr"][1].get("broyden_skipped") == "dlam", str(r19b["pr"][1].get("broyden_skipped")))
 
