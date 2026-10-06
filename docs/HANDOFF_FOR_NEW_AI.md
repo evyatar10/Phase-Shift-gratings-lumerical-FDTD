@@ -3083,8 +3083,8 @@ the place to look when a number in Part 1 needs its provenance.
 
 # Part 5 — Current state and a first-hour checklist
 
-> **UPDATE 2026-10-06:** §5.1–§5.2 describe the state of 2026-09-29. The current state (running jobs, the TE
-> campaign, git) is in **Part 6 §6.1, §6.2.5 and §6.10**. §5.3–§5.4 still apply, plus the additions marked 2026-10-06.
+> **UPDATE 2026-10-06:** §5.1–§5.2 describe the state of 2026-09-29. The current state (the TE campaign,
+> stopped 20:30, and git) is in **Part 6 §6.1, §6.2.6–§6.2.7 and §6.10**. §5.3–§5.4 still apply, plus the additions marked 2026-10-06.
 
 ## 5.1 The most recent study as of 2026-09-29 (superseded in detail by Part 6 §6.5)
 
@@ -3151,7 +3151,7 @@ and never `git add` generated figures or result data.
    `CLAUDE.md` or the relevant handoff **in the same session**.
 7. *(2026-10-06)* If the task touches the TE lane:
    - read Part 6 §6.2–§6.3 and memory `project_te_inverse_design_lane.md`;
-   - check the queue for jobs 170253 and 170505 first;
+   - nothing is running since 2026-10-06 20:30 (§6.2.7 has the resume recipe); check the queue anyway;
    - ask the user which session owns the lane (one owner per lane);
    - run `python runners/lumopt2_design/gates/run_all_gates.py` and check its **exit code** before any
      upload or dispatch.
@@ -3197,7 +3197,7 @@ Rows from the inverse-design engine use the **PVA mesher**. Rows from sweeps use
 | 10-04 | AI benchmark built (Fable vs GPT-6-Astra). `ask-gpt` skill built. **Guard-test incident** (~15:2x): real `rm -rf ~/containers` etc. on Athena, restored from snapshot. **TE inverse-design lane opened**: device-parametric engine, two seeds, `validate_te` gate ladder, first gates dispatched. Commit e121e05, which also committed this handoff for the first time. | §6.2, §6.7, §6.8 |
 | 10-04 → 05 night | Autonomous night. TE S1 C_port / C_field gates completed. GPT review postponed (ChatGPT quota, then laptop offline). | §6.2.3 |
 | 10-05 | GPT algorithm review + follow-up; fixes committed 525087f / 3dd914d / c8e1057. Far-field review with GPT: planar-projection error found and fixed (f8f5ef0; IGUM 100029 / 100034). Radiation-cancellation report v7 (44d1795). User: **"go v3"**. v3 engine built (975032a), GPT code review (721dfe9), smoke-driven fixes (2a9cef3). Baseline smoke 168909 PASS, v3 smoke 169002. **v3 toy 169105: first measured TE improvement** (22:05). Benchmark v2 finished. | §6.2–§6.5, §6.7 |
-| 10-06 | Toy finished (t_pk 0.9054 → 0.9346). S2 gate-point verdict (169655): the S2 field gates are VOID. Fixes 930120c / 59a5cf3. **S1 v3 campaign 170253 dispatched** (a4b006b). GPT verification turn 5 → a3fab34. S2 field C re-centred (170201 → eb5ef1f). S2 port gate 170505 dispatched. Benchmark v3 final: a TIE. Fable weekly credits exhausted until Thu 2026-10-08 21:00. | §6.2, §6.7 |
+| 10-06 | Campaign reached t_pk **0.9528** at 19.39 µm (eval 3); shift-starvation finding; **all runs stopped 20:30 at the user's request** (§6.2.7). Toy finished (t_pk 0.9054 → 0.9346). S2 gate-point verdict (169655): the S2 field gates are VOID. Fixes 930120c / 59a5cf3. **S1 v3 campaign 170253 dispatched** (a4b006b). GPT verification turn 5 → a3fab34. S2 field C re-centred (170201 → eb5ef1f). S2 port gate 170505 dispatched. Benchmark v3 final: a TIE. Fable weekly credits exhausted until Thu 2026-10-08 21:00. | §6.2, §6.7 |
 
 **Server state at ~14:30 (superseded by §6.2.6, read at ~20:00):**
 - `170253_0` (S1 v3 campaign) RUNNING 3:28 h of 96 h on n312.
@@ -3426,7 +3426,7 @@ of 170253:
 | 0 (= toy eval 3, iterate-0 forward) | 0.88965 | 0.93439 | 19.4105 | 1560.964 | 46 303 | 1545 | — | 11.2 nm |
 | 1 | 0.89491 | 0.93934 | 19.3989 | 1560.984 | 50 188 | 1546 | 0.98 | 11.2 → 16.9 |
 | 2 | 0.90116 | 0.94538 | 19.3917 | 1561.004 | 55 882 | 1548 | 0.95 | 16.9 → 25.3 |
-| 3 | 0.90860 | **0.95276** | 19.3850 | 1561.044 | **64 831** | 1550 | (not read) | 25.3 |
+| 3 | 0.90860 | **0.95276** | 19.3850 | 1561.044 | **64 831** | 1550 | 0.84 | 25.3 → 30 |
 
 - **S1 from seed to now:** t_pk 0.9054 → **0.9528** (+0.047), Q_i 31.8k → 64.8k (×2.04). Q_L is
   flat (1538 → 1550), so **the gain is lower radiation loss, not a narrower line.**
@@ -3488,6 +3488,33 @@ for them:**
 - `campaign_te_s2.py` now runs `SPEC_V3` (commit 52cbf9e).
 - Athena home quota is 253 / 300 G (hold line 285 G).
 
+
+### 6.2.7 ALL RUNS STOPPED — 2026-10-06 20:30 (user: "stop all runs for now")
+
+**Nothing of ours is running on Athena.** At 20:30 the user asked to stop everything. Cancelled:
+- **170253** (S1 v3 campaign) after 9 h 42 min.
+- **170505_14** (S2 port-gate FD half) after 6 h 15 min.
+
+170505_15 (the Im half) had already COMPLETED. The queue was verified empty afterwards, and the
+watcher agent was stopped.
+
+**What survives and what was lost (MEASURED from the files and `sacct`):**
+
+| Item | State |
+|---|---|
+| S1 campaign | **Best accepted: campaign eval 3, t_pk 0.95276, fwhm_env 19.3850 µm, λ 1561.044 nm, Q_i 64 831, Q_L 1550.** That is 7 accepted steps since the seed and 1 reject (the toy's width reject). Step 4's trial was in flight; that forward is the only loss (≤ 1 evaluation, by design). Step 3: dFOM +0.00744 vs predicted +0.00883 (ratio 0.84), width row still active (μ_W 0.0040), trust radius 30 nm (= `wgp_cap_max_nm`) |
+| S1 state files | On Athena, `results/campaign_te_s1/results/lumopt2_te_s1_v3/` (`*_evals.jsonl`, `*_proj.jsonl`, `*_optstate.json`, `*_grads_it000…003.npz`). **Local copy** of all of them in `results_from_athena/campaign_te_s1/`. optstate: cap 30, n_acc 7, n_rej 1 |
+| S2 port gate, Im half (170505_15) | **KEEP:** `[adjoint_only … C_port=(0.0,1.0) indices=[0, 29, 60, 120, 149, 295]]` = `[-8.71524851e-04, 3.73127120e-03, -6.67376252e-02, -1.93385823e-03, -1.28606055e+00, -1.72773639e-02]` (corr_1, corr_30, avg_1, shift_1, shift_30, wcav), label `lumopt2_te_s2_cport_im_c`, centred at 1560.8789. Valid only with an FD measured at the same centre and numerics |
+| S2 port gate, FD + Re half (170505_14) | **LOST.** 14 sequential solves on an l40s-public node; >6 h and not finished. `run_validate_gradient` has no resume, so a re-dispatch starts from zero. Before re-dispatching it, either add per-leg persistence or split it into per-index tasks, and pin a faster GPU (`--gpu=a100`): this is the §3.3 "long job without resume" defect |
+
+**How to resume (all EXPECTED, none approved yet):**
+1. **S1:** re-dispatch exactly as before. It cold-resumes from its own log (`_best_from_log` → eval 3, cap 30 from optstate):
+   `LUMOPT2_QOS=4d_1g LUMOPT2_TIME=96:00:00 SBATCH_MEM=256G bash athena/deploy_athena.sh --lumopt2-design=runners.lumopt2_design.campaign_te_s1 --gpu=a100`
+   - The restart picks up a3fab34: the newest-row lookup, time-stamped gradient files, and growth only when the solver reports ok.
+   - Its first forward re-evaluates eval 3: "iterate-0 forward, fields needed".
+   - **If the user approves proposal 1 of §6.2.6** (weight shifts like corrugation in the D metric), that is a code change *before* the re-dispatch. It needs a gate test and a GPT check.
+2. **S2:** re-run ONLY the FD half (validate_te task 14; the Im half is stored above) → `fit_port` → paste `ADJ_FIX_PORT` → v3 smoke (task 38) → toy (task 39) → campaign, which needs user approval.
+3. Probe license seats (from IGUM) and the queue first. Ask "Athena or IGUM?" unless the user names the cluster.
 
 ## 6.3 The v3 step engine — method (not yet in THEORY.md)
 
@@ -3827,13 +3854,11 @@ regenerated.
   - the old 1D far-field MATLAB engines (`plot_trench_farfield.m`, `plot_scat_*`), which still
     carry the measure error.
 
-## 6.10 Git state (2026-10-06)
+## 6.10 Git state (2026-10-06 20:35)
 
-- Branch `add-claude-rules-skills` at `eb5ef1f`, with 20 commits since `9b8de59`.
-- `origin` has everything up to `4a10623`; the 18 commits from `e121e05` to `eb5ef1f` are
-  **not pushed**.
-- Uncommitted: `.claude/settings.json` (one line), the untracked
-  `docs/farfield_sph_20um_handoff_2026-10-05.md`, and this handoff update.
+- Branch `add-claude-rules-skills` at `c38dc90` (22 commits since `9b8de59`) plus the commit that adds
+  §6.2.7. `origin` was level with `c38dc90` at 20:35, so everything up to it is pushed.
+- Working tree otherwise clean at 20:35.
 - Committing and pushing remain user-gated.
 
 ---
