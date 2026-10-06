@@ -50,7 +50,9 @@ SCAN_CENTER_NM = 1560.464    # MEASURED task 10 (job 168375_10, PVA): λ_pk 1560
 FWHM0_UM       = 19.636      # MEASURED task 11 (168530_11, 2 nm/501): fwhm_env 19.6360; T 0.97309 Q 7694 λ 1560.407 — task 10
 SOFTW0_UM      = 19.558      # MEASURED task 11: softw_adj_um (twin sample; raw-line 19.609) — task 10
 ADJ_FIX_PORT   = None        # S1's fit, VERIFIED on S2 by tasks 14+15 (or S2's own)
-ADJ_FIX_FIELD  = None        # S1's fit, VERIFIED on S2 by tasks 16+17 (or S2's own)
+ADJ_FIX_FIELD  = (0.983623, -0.088013)   # S2's OWN fit, MEASURED 170201 tasks 16+17 at the gate
+# point's resonance 1560.8789: vector resid 1.25 %, cond 4; corr_1 0.0 %, wcav −0.3 %, shift_1 +23.8 %
+# (a near-zero component, |FD| 16× below corr_1). S1's constant does NOT transfer (vector error 47 %).
 FOM_SLACK      = 6.5e-4      # MEASURED tasks 12,13 (168646): T 0.9730749/0.9730747 vs anchor 0.9730877 -> |dT| 1.3e-5; 50x margin
 
 N_SIDE     = 98              # Itai's length (user 2026-10-04); 2κL = 5.11 on the seed vector
