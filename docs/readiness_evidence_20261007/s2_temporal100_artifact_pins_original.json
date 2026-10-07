@@ -1,0 +1,38 @@
+{
+  "0:checkpoint": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_task00_original.json",
+    "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_00.json",
+    "sha256": "38dcd852f7bcb5e2ef7bb27cb4085257a5b70098d146e41d73b8038180d72f49",
+    "bytes": 725154
+  },
+  "0:ports": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_task00_ports.npz",
+    "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_00_80fyg6ue/ports.npz",
+    "sha256": "bffaa0eeaef4eb5b67aa76e5265e28b18e6a4962b1d8278838375b957f25d9b6",
+    "bytes": 134142
+  },
+  "1:checkpoint": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_task01_original.json",
+    "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_01.json",
+    "sha256": "2b15faebc6ba7a76853b5abba9189433bd454cddd6d1deaa0dcdc7d1bfaa03ce",
+    "bytes": 725276
+  },
+  "1:ports": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_task01_ports.npz",
+    "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_01_1evz7q9g/ports.npz",
+    "sha256": "3b6c27df21311ea0ded74979be9884f672bb355fea68b3f3fce6dd754416c522",
+    "bytes": 134142
+  },
+  "2:checkpoint": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_task02_original.json",
+    "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_02.json",
+    "sha256": "87120c5be4c4858613c46b72f069b50b73f11ba73e23b5503ee6cd01ce293e3e",
+    "bytes": 725742
+  },
+  "2:ports": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_task02_ports.npz",
+    "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_02_2e97_xtt/ports.npz",
+    "sha256": "86c4c722fdc366c980294e7f220ce038a4ed435dd4595c2fd2dbb8e15c812c38",
+    "bytes": 134142
+  }
+}

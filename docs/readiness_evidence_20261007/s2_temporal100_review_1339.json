@@ -1,0 +1,328 @@
+{
+  "schema": 1,
+  "status": "DIAGNOSTIC_ONLY_CALIBRATION_FAILED_UNCHANGED",
+  "no_automatic_approval": true,
+  "step_nm": 0.0625,
+  "duration_labels": [
+    "old_autoshutoff_67ps_approx",
+    "100"
+  ],
+  "provenance": {
+    "first_marker_sha256": "951c2025bf3255830a3b13e03a333b18bfb0ba59c86ee4e1c2b150ac078e2206",
+    "runner_sha256": "555f3d13b42c494171e7658cc4263c588ce418e5d937da1497d690824b41d44a",
+    "old_files": {
+      "center_checkpoint": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+      "center_ports": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4",
+      "s2_shift30_task02_original.json": "0711bf7b9cc7776ba9e2617b469d915ac624aca8e1efacf00043b340b4d1b2f2",
+      "s2_shift30_task02_ports.npz": "21f52f913408692c7f12787899e24de759161b76a634c42d65c2176efd1e5d32",
+      "s2_shift30_task03_original.json": "4529bc20329c5f9de15c1564268a88ec5fa16376f205779dc0a7d73154d9f2aa",
+      "s2_shift30_task03_ports.npz": "45a159c37374b2b606e39550b77e2652501eac20124a4708b3734d4f15af1d38"
+    },
+    "new_artifacts": {
+      "0": {
+        "checkpoint_sha256": "38dcd852f7bcb5e2ef7bb27cb4085257a5b70098d146e41d73b8038180d72f49",
+        "ports_sha256": "bffaa0eeaef4eb5b67aa76e5265e28b18e6a4962b1d8278838375b957f25d9b6",
+        "fsp_sha256": "bbabb63f63423309798471c4854706a8038147de6ed73f2b00921cfa6f335e7a",
+        "h5_sha256": "ab765cf93fa4619408fb45ebf548892c24ec1aaf6c74f2df5000c322c78f25f0",
+        "log_sha256": "2971d7c384f42ea707d600ed42ae69ab97aedd14c4c89c04b2254f272a826324"
+      },
+      "1": {
+        "checkpoint_sha256": "2b15faebc6ba7a76853b5abba9189433bd454cddd6d1deaa0dcdc7d1bfaa03ce",
+        "ports_sha256": "3b6c27df21311ea0ded74979be9884f672bb355fea68b3f3fce6dd754416c522",
+        "fsp_sha256": "0ae2a187fef94a44160026fe1d8fb7500a8ad6ba5aa3bd96c7e2c765c32445de",
+        "h5_sha256": "eddecf8c8ddf6d2252df10a23952cbfe47e247015c8c89d5fdbd30e6ec023afc",
+        "log_sha256": "07ca6b3a4631c3a94bff1577d9a699fc03a35f03aaad53835146bdfc3f029bc2"
+      },
+      "2": {
+        "checkpoint_sha256": "87120c5be4c4858613c46b72f069b50b73f11ba73e23b5503ee6cd01ce293e3e",
+        "ports_sha256": "86c4c722fdc366c980294e7f220ce038a4ed435dd4595c2fd2dbb8e15c812c38",
+        "fsp_sha256": "b0e374dfe8222a0eea0206448e00f83416f5eb55a46c3908d2731a82e44f7a3e",
+        "h5_sha256": "46f69a266ed2b8ed9032f62f0bdacd9ee5d986f407c81abdf8d1445a5abea1c0",
+        "log_sha256": "f1a60c9233d1dbdcd5b7f877c1a4b9192e29b91cda744995a9c5713645f0df7b"
+      }
+    }
+  },
+  "termination": {
+    "0": {
+      "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_00_80fyg6ue/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+      "log_sha256": "2971d7c384f42ea707d600ed42ae69ab97aedd14c4c89c04b2254f272a826324",
+      "iterations": 1499020,
+      "physical_time_s": 1e-10,
+      "requested_time_s": 1e-10,
+      "recorded_dt_s": 6.671026479768415e-17,
+      "delta_s": 0.0,
+      "status": 1,
+      "reason": "completed_full_simulation_time"
+    },
+    "1": {
+      "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_01_1evz7q9g/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+      "log_sha256": "07ca6b3a4631c3a94bff1577d9a699fc03a35f03aaad53835146bdfc3f029bc2",
+      "iterations": 1499020,
+      "physical_time_s": 1e-10,
+      "requested_time_s": 1e-10,
+      "recorded_dt_s": 6.671026479768415e-17,
+      "delta_s": 0.0,
+      "status": 1,
+      "reason": "completed_full_simulation_time"
+    },
+    "2": {
+      "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_02_2e97_xtt/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+      "log_sha256": "f1a60c9233d1dbdcd5b7f877c1a4b9192e29b91cda744995a9c5713645f0df7b",
+      "iterations": 1499020,
+      "physical_time_s": 1e-10,
+      "requested_time_s": 1e-10,
+      "recorded_dt_s": 6.671026479768415e-17,
+      "delta_s": 0.0,
+      "status": 1,
+      "reason": "completed_full_simulation_time"
+    }
+  },
+  "observables": {
+    "peak3_tout": {
+      "triplets": {
+        "old_autoshutoff_67ps_approx": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.9261405990582202,
+          "minus_peak3": 0.9263610110587633,
+          "center_peak3": 0.9257489820745417,
+          "peak_indices_plus_minus": [
+            250,
+            253
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.08250879819443567,
+            0.9792009972490889,
+            -0.06170979544352456
+          ],
+          "odd": -0.00011020600027156213,
+          "even": 0.0005018229839500732,
+          "central_derivative": -0.0017632960043449941,
+          "second_difference": 0.25693336778243747,
+          "exact_center_peak3_jacobian_projection": -0.0015797535103823073,
+          "moving_peak_minus_projection": -0.0001835424939626868,
+          "spectral_fd_max_abs": 0.5321600569764087,
+          "spectral_fd_rms": 0.16246475306005514,
+          "original_center_jacobian_projection": -0.0015797535103823073,
+          "original_center_peak_index": 252,
+          "original_center_peak3_weights": [
+            0.08250879819443567,
+            0.9792009972490889,
+            -0.06170979544352456
+          ],
+          "same_duration_center_jacobian_projection": -0.0015797535103823073,
+          "original_center_jacobian_provenance": {
+            "role": "Exact_repeated_nominal_67.39992ps_reference_not_original_stored_adjoint_field_center",
+            "checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+            "ports_sha256": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4"
+          },
+          "fixed_bins": {
+            "244": 0.3727911208115904,
+            "252": -0.009246934850171584,
+            "260": -0.384266269222449
+          },
+          "center_role": "same_duration_old_autoshutoff_67ps_approx"
+        },
+        "100": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.9332799826428907,
+          "minus_peak3": 0.9333060240371198,
+          "center_peak3": 0.9332865280044799,
+          "peak_indices_plus_minus": [
+            250,
+            253
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.0853026229418486,
+            0.9779356131866448,
+            -0.06323823612849339
+          ],
+          "odd": -1.3020697114562996e-05,
+          "even": 6.475335525446546e-06,
+          "central_derivative": -0.00020833115383300793,
+          "second_difference": 0.0033153717890286316,
+          "exact_center_peak3_jacobian_projection": 6.452871395494497e-05,
+          "moving_peak_minus_projection": -0.0002728598677879529,
+          "spectral_fd_max_abs": 0.5266578825157993,
+          "spectral_fd_rms": 0.16308694293811168,
+          "original_center_jacobian_projection": -0.0001906109716312025,
+          "original_center_peak_index": 252,
+          "original_center_peak3_weights": [
+            0.08250879819443567,
+            0.9792009972490889,
+            -0.06170979544352456
+          ],
+          "same_duration_center_jacobian_projection": 6.452871395494497e-05,
+          "original_center_jacobian_provenance": {
+            "role": "Exact_repeated_nominal_67.39992ps_reference_not_original_stored_adjoint_field_center",
+            "checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+            "ports_sha256": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4"
+          },
+          "fixed_bins": {
+            "244": 0.40309981826871155,
+            "252": -0.008696443001320553,
+            "260": -0.413836594280764
+          },
+          "center_role": "same_duration_100"
+        }
+      },
+      "same_geometry_temporal_differences": {
+        "100_minus_old_autoshutoff_67ps_approx": {
+          "center": {
+            "spectral_difference": {
+              "max_abs": 0.0075330856867494855,
+              "rms": 0.00163399113097036
+            },
+            "moving_peak3_difference": 0.007537545929938161
+          },
+          "plus": {
+            "spectral_difference": {
+              "max_abs": 0.007121155690438141,
+              "rms": 0.0015517193087195285
+            },
+            "moving_peak3_difference": 0.007139383584670478
+          },
+          "minus": {
+            "spectral_difference": {
+              "max_abs": 0.006939534117883284,
+              "rms": 0.0015112834889107623
+            },
+            "moving_peak3_difference": 0.00694501297835648
+          },
+          "central_derivative_difference": 0.0015549648505119862,
+          "even_difference": -0.0004953476484246266
+        }
+      }
+    },
+    "peak3_modal": {
+      "triplets": {
+        "old_autoshutoff_67ps_approx": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.9722146245646804,
+          "minus_peak3": 0.9724687116977816,
+          "center_peak3": 0.9718095820307666,
+          "peak_indices_plus_minus": [
+            249,
+            251
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            0.03000274203915746,
+            0.9967758770306171,
+            -0.026778619069774526
+          ],
+          "odd": -0.00012704356655057758,
+          "even": 0.0005320861004644017,
+          "central_derivative": -0.0020326970648092413,
+          "second_difference": 0.2724280834377737,
+          "exact_center_peak3_jacobian_projection": -0.001486865533514248,
+          "moving_peak_minus_projection": -0.0005458315312949933,
+          "spectral_fd_max_abs": 0.5853463162347419,
+          "spectral_fd_rms": 0.1735859791361903,
+          "original_center_jacobian_projection": -0.001486865533514248,
+          "original_center_peak_index": 250,
+          "original_center_peak3_weights": [
+            0.03000274203915746,
+            0.9967758770306171,
+            -0.026778619069774526
+          ],
+          "same_duration_center_jacobian_projection": -0.001486865533514248,
+          "original_center_jacobian_provenance": {
+            "role": "Exact_repeated_nominal_67.39992ps_reference_not_original_stored_adjoint_field_center",
+            "checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+            "ports_sha256": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4"
+          },
+          "fixed_bins": {
+            "244": 0.3410891241358991,
+            "252": -0.12482337846176073,
+            "260": -0.48451189115674165
+          },
+          "center_role": "same_duration_old_autoshutoff_67ps_approx"
+        },
+        "100": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.979742933539772,
+          "minus_peak3": 0.9797825048551728,
+          "center_peak3": 0.9797643000266578,
+          "peak_indices_plus_minus": [
+            249,
+            252
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            -0.04329707565866152,
+            0.9908290442727394,
+            0.05246803138592207
+          ],
+          "odd": -1.9785657700388537e-05,
+          "even": -1.580829185332533e-06,
+          "central_derivative": -0.0003165705232062166,
+          "second_difference": -0.0008093845428902569,
+          "exact_center_peak3_jacobian_projection": -0.00016082580976194312,
+          "moving_peak_minus_projection": -0.00015574471344427347,
+          "spectral_fd_max_abs": 0.5731990025220135,
+          "spectral_fd_rms": 0.1742867423049027,
+          "original_center_jacobian_projection": 0.010292781838645921,
+          "original_center_peak_index": 250,
+          "original_center_peak3_weights": [
+            0.03000274203915746,
+            0.9967758770306171,
+            -0.026778619069774526
+          ],
+          "same_duration_center_jacobian_projection": -0.00016082580976194312,
+          "original_center_jacobian_provenance": {
+            "role": "Exact_repeated_nominal_67.39992ps_reference_not_original_stored_adjoint_field_center",
+            "checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+            "ports_sha256": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4"
+          },
+          "fixed_bins": {
+            "244": 0.37613898846788807,
+            "252": -0.12786212014577014,
+            "260": -0.5138697624310238
+          },
+          "center_role": "same_duration_100"
+        }
+      },
+      "same_geometry_temporal_differences": {
+        "100_minus_old_autoshutoff_67ps_approx": {
+          "center": {
+            "spectral_difference": {
+              "max_abs": 0.008195675026301696,
+              "rms": 0.001731583083148557
+            },
+            "moving_peak3_difference": 0.007954717995891203
+          },
+          "plus": {
+            "spectral_difference": {
+              "max_abs": 0.007770342641292949,
+              "rms": 0.0016444019245785062
+            },
+            "moving_peak3_difference": 0.007528308975091602
+          },
+          "minus": {
+            "spectral_difference": {
+              "max_abs": 0.0075351381056893985,
+              "rms": 0.0016001002021528302
+            },
+            "moving_peak3_difference": 0.007313793157391224
+          },
+          "central_derivative_difference": 0.0017161265416030247,
+          "even_difference": -0.0005336669296497343
+        }
+      }
+    }
+  },
+  "limitations": [
+    "No physical pass, coefficient fit, noise bound or automatic150ps approval.",
+    "One parameter step does not establish h-convergence.",
+    "Old67ps is an approximate label; actual old times differ by geometry.",
+    "Remote FSP/H5/log completion and cold-resume verification stay with parent; this reader validates pinned saved metadata and local CP/NPZ bytes.",
+    "Original-center and same-duration peak3 Jacobian projections are fixed spectral-FD projections, not adjoint gradients."
+  ],
+  "artifact_manifest_sha256": {
+    "100": "94b062900bd3765dd4a3ef78543dd6998378720ed429264e5aa7833339d5e919"
+  },
+  "full_spectra_sha256": "5493ac5791dc296da26828718fdb1b36b5d62e8ac659699f83af82bdc1cb5f87",
+  "full_spectra_file": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_spectra_1339.json"
+}

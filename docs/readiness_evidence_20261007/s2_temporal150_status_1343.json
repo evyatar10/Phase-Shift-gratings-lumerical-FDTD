@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-07T13:42:11.192308+03:00",
+  "queue_rc": 0,
+  "queue": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n          171236_4 a100-publ lum_pipe evyatarr  R       1:55      1 n311\n          171236_5 a100-publ lum_pipe evyatarr  R       1:55      1 n311\n          171236_3 a100-publ lum_pipe evyatarr  R       1:56      1 n310\n",
+  "attempts": [
+    "task_03_yc61w355",
+    "task_04_k6m8pmaa",
+    "task_05_1jsw9c64"
+  ],
+  "logs": {
+    "task_03_yc61w355/s2_shift30_temporal_20261007_files/fwd_default_p0.log": "GPU 0 (precise): \n  Electromagnetic and auxiliary fields: 0.408 GiB\n  Grid and material coefficients: 0.034 GiB\n  Monitors: 1.116 GiB\n  Sources: 0.037 GiB\n  Total: 1.596 GiB\n\nEstimated memory use on the CPU (precise): \n  Electromagnetic and auxiliary fields: 0.000 GiB\n  Grid and material coefficients: 0.003 GiB\n  Monitors: 0.038 GiB\n  Sources: 0.000 GiB\n  Total: 0.041 GiB\n\n0.00449182% complete. Elapsed simulation time: 6.73774e-15 secs. Max time remaining: 1 hr, 6 mins, 34 secs. Auto Shutoff: 1\n",
+    "task_04_k6m8pmaa/s2_shift30_temporal_20261007_files/fwd_default_p0.log": "GPU 0 (precise): \n  Electromagnetic and auxiliary fields: 0.408 GiB\n  Grid and material coefficients: 0.034 GiB\n  Monitors: 1.116 GiB\n  Sources: 0.037 GiB\n  Total: 1.596 GiB\n\nEstimated memory use on the CPU (precise): \n  Electromagnetic and auxiliary fields: 0.000 GiB\n  Grid and material coefficients: 0.003 GiB\n  Monitors: 0.038 GiB\n  Sources: 0.000 GiB\n  Total: 0.041 GiB\n\n0.00449182% complete. Elapsed simulation time: 6.73774e-15 secs. Max time remaining: 1 hr, 6 mins, 52 secs. Auto Shutoff: 1\n",
+    "task_05_1jsw9c64/s2_shift30_temporal_20261007_files/fwd_default_p0.log": "GPU 0 (precise): \n  Electromagnetic and auxiliary fields: 0.408 GiB\n  Grid and material coefficients: 0.034 GiB\n  Monitors: 1.116 GiB\n  Sources: 0.037 GiB\n  Total: 1.596 GiB\n\nEstimated memory use on the CPU (precise): \n  Electromagnetic and auxiliary fields: 0.000 GiB\n  Grid and material coefficients: 0.003 GiB\n  Monitors: 0.038 GiB\n  Sources: 0.000 GiB\n  Total: 0.041 GiB\n\n0.00449182% complete. Elapsed simulation time: 6.73774e-15 secs. Max time remaining: 1 hr, 5 mins, 59 secs. Auto Shutoff: 1\n"
+  }
+}

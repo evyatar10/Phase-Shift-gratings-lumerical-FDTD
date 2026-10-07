@@ -1,0 +1,30 @@
+{
+  "status": "DIAGNOSTIC_ONLY_NO_CALIBRATION",
+  "operator": "Original saved peak3 Jacobian quadratures; not a new temporal adjoint or modal gradient",
+  "raw_original_peak3": [
+    0.20875441140949635,
+    -1.7084692721685926
+  ],
+  "diagnostics": {
+    "peak3_tout": {
+      "0.125": {
+        "ls_mixed_original_peak3": 0.0004258781457132932,
+        "flank_mixed_original_peak3": -3.3128191053499734e-05
+      },
+      "0.0625": {
+        "ls_mixed_original_peak3": -0.0008344419973014272,
+        "flank_mixed_original_peak3": -0.0005116120692217341
+      }
+    },
+    "peak3_modal": {
+      "0.125": {
+        "ls_mixed_original_peak3": -0.09105108353317506,
+        "flank_mixed_original_peak3": -0.07676324469099002
+      },
+      "0.0625": {
+        "ls_mixed_original_peak3": -0.0933819804479534,
+        "flank_mixed_original_peak3": -0.07760663428959305
+      }
+    }
+  }
+}

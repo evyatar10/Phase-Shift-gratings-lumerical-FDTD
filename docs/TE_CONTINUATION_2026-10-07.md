@@ -1,5 +1,48 @@
 # S2 calibration and restart correction continuation
 
+## Update13:41 Israel - 100ps completed and materially changed spectra;150ps171236 released
+
+All171216 tasks0..2 COMPLETED exit0 in35:45-35:51. Exact100ps/status1,
+1499020steps, dt6.671026479768415e-17s; frozen controls/source/API/grids and
+remote FSP/H5/NPZ/log content hashes passed cold verification. Strict local
+reader passed actual inputs. Completed FDTD count now29. Exact pinmap SHA
+94b062900bd3765dd4a3ef78543dd6998378720ed429264e5aa7833339d5e919.
+Raw100ps CP/NPZ files retained; review s2_temporal100_review_1339.json and
+full501 spectra s2_temporal100_spectra_1339.json, compact summary1341.
+
+For fixed h=.0625nm, Tout peak3 derivative changed -.001763296→-.000208331
+pernm, modal -.002032697→-.000316571 pernm. CenterTout increased.007537546
+to.933286528, modal increased.007954718 to.979764300. Same-duration even terms
+fell to+6.47534e-6 Tout,-1.58083e-6 modal. This measures substantial temporal
+sensitivity, not convergence/noise bounds or restored calibration. Old adjoint
+fields remain tied to old stopping conditions. No old S1 result is disproved.
+
+Lead reviewed full100ps results and released ONLY150ps tasks3..5 with separate
+immutable marker /work/data/s2_temporal150_review_20261007_1257.json SHA
+6cc6d9fd8cab5419b436b433725fbb2cc88b49f538628f897929217940527f51.
+New Athena array **171236_3..5** submitted13:40:15,3A100,8CPU256Geach,2hlimit,
+same frozen555f runner, no source upload. Output same temporal family.
+Fresh13:39 queue empty,226G/300Gsoft,shared0/50used plusIGUM101155queued7;
+newAthena21 plusqueuedIGUM7=28/50. IGUM stillpendingResources.
+
+Next inspect exact171236 status/checkpoints/logs; then use prepared strict150
+fetch helper C:/Users/evyat/AppData/Local/Temp/s2_temporal150_fetch_zpn4skx9/
+fetch_temporal150.py (six tests parentrerunpassed), explicitjob171236, markerpath
+above, exactSHA, existing s2_temporal_env_1257.json, NEW absolute output-dir.
+Archive s2_temporal150_fetch_reviewed_1333.zip. Reader supports all5optional150
+arguments; use both independentlypinned100/150maps. Compare fulltriplets at
+same h, entire spectra and same-duration Jacobian projections. Do not run any
+new solve by calling main during retrieval. No optimizer/coefficient release.
+At13:42 all171236tasks RUNNING on n310/n311 and actual GPU solver initialization
+passed; notcompleted. Usage13:41weekly62percentremaining, separatepoolsunknown.
+Latest localcommit498a126 before this new evidence. Current fullreadinessNO.
+Clarification to user: original code DID have a physics-related implementation
+bug: wavelength-selector adjoint differentiated Tout while its spectral slope
+used modal S power (~5percent mismatch on saved S1/S2). Fixed/regressiontested
+as documented in TE_RECOVERY_2026-10-06.md; full optimizerhardware stillpending.
+No demonstratedwrong geometry/TE monitorplacement. OriginalS1scalar evidence
+remains preliminary, not disproved by newS2temporal tests.
+
 ## Update13:27 Israel - both raw quadratures reproduced; fixed-bin comparison remains diagnostic
 
 CPU171225_0 Im COMPLETED exit0 in8:24. Raw original SHA

@@ -1,0 +1,27 @@
+{
+  "args": [
+    "python",
+    "-X",
+    "utf8",
+    "-B",
+    "C:/Users/evyat/AppData/Local/Temp/s2_temporal_analyzer_9dn8pm0k/analyze_temporal.py",
+    "--repo",
+    "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes",
+    "--existing-evidence-dir",
+    "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007",
+    "--100-pins",
+    "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_artifact_pins_original.json",
+    "--100-pins-sha256",
+    "94b062900bd3765dd4a3ef78543dd6998378720ed429264e5aa7833339d5e919",
+    "--100-marker",
+    "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_review_original.json",
+    "--output",
+    "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_review_1339.json",
+    "--spectra-output",
+    "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal100_spectra_1339.json"
+  ],
+  "returncode": 0,
+  "stdout": "",
+  "stderr": "",
+  "pins_sha256": "94b062900bd3765dd4a3ef78543dd6998378720ed429264e5aa7833339d5e919"
+}

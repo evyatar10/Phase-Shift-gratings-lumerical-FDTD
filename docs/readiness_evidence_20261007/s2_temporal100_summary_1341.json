@@ -1,0 +1,28 @@
+{
+  "status": "TEMPORAL_SENSITIVITY_MEASURED_GLOBAL_CALIBRATION_FAILED",
+  "completed_fdtd_count": 29,
+  "job": "171216_0..2",
+  "pins_sha256": "94b062900bd3765dd4a3ef78543dd6998378720ed429264e5aa7833339d5e919",
+  "full_review_sha256": "164608db7b0cf732ff21ba64fddeafd5b85b904906aa89b8e9720b913a11e239",
+  "observables": {
+    "peak3_tout": {
+      "center100": 0.9332865280044799,
+      "center_change": 0.007537545929938161,
+      "derivative_old": -0.0017632960043449941,
+      "derivative100": -0.00020833115383300793,
+      "same_duration_jacobian_projection": 6.452871395494497e-05,
+      "even100": 6.475335525446546e-06
+    },
+    "peak3_modal": {
+      "center100": 0.9797643000266578,
+      "center_change": 0.007954717995891203,
+      "derivative_old": -0.0020326970648092413,
+      "derivative100": -0.0003165705232062166,
+      "same_duration_jacobian_projection": -0.00016082580976194312,
+      "even100": -1.580829185332533e-06
+    }
+  },
+  "next_job": "171236_3..5",
+  "next_scope": "same center/shift30 +/- .0625nm at150ps; no new adjoint field recorder",
+  "next_marker_sha256": "6cc6d9fd8cab5419b436b433725fbb2cc88b49f538628f897929217940527f51"
+}

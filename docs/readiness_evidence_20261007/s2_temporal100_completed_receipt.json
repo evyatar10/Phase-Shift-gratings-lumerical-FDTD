@@ -1,0 +1,89 @@
+{
+  "at": "2026-10-07T13:37:56.510959+03:00",
+  "accounting": "171216_0|COMPLETED|0:0\n171216_0.batch|COMPLETED|0:0\n171216_0.extern|COMPLETED|0:0\n171216_1|COMPLETED|0:0\n171216_1.batch|COMPLETED|0:0\n171216_1.extern|COMPLETED|0:0\n171216_2|COMPLETED|0:0\n171216_2.batch|COMPLETED|0:0\n171216_2.extern|COMPLETED|0:0\n",
+  "verified_records": [
+    {
+      "task": 0,
+      "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_00.json",
+      "source": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_00_80fyg6ue/s2_shift30_temporal_20261007_files/fwd_default.fsp",
+      "ports": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_00_80fyg6ue/ports.npz",
+      "termination": {
+        "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_00_80fyg6ue/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+        "log_sha256": "2971d7c384f42ea707d600ed42ae69ab97aedd14c4c89c04b2254f272a826324",
+        "iterations": 1499020,
+        "physical_time_s": 1e-10,
+        "requested_time_s": 1e-10,
+        "recorded_dt_s": 6.671026479768415e-17,
+        "delta_s": 0.0,
+        "status": 1,
+        "reason": "completed_full_simulation_time"
+      }
+    },
+    {
+      "task": 1,
+      "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_01.json",
+      "source": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_01_1evz7q9g/s2_shift30_temporal_20261007_files/fwd_default.fsp",
+      "ports": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_01_1evz7q9g/ports.npz",
+      "termination": {
+        "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_01_1evz7q9g/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+        "log_sha256": "07ca6b3a4631c3a94bff1577d9a699fc03a35f03aaad53835146bdfc3f029bc2",
+        "iterations": 1499020,
+        "physical_time_s": 1e-10,
+        "requested_time_s": 1e-10,
+        "recorded_dt_s": 6.671026479768415e-17,
+        "delta_s": 0.0,
+        "status": 1,
+        "reason": "completed_full_simulation_time"
+      }
+    },
+    {
+      "task": 2,
+      "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_02.json",
+      "source": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_02_2e97_xtt/s2_shift30_temporal_20261007_files/fwd_default.fsp",
+      "ports": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_02_2e97_xtt/ports.npz",
+      "termination": {
+        "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_02_2e97_xtt/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+        "log_sha256": "f1a60c9233d1dbdcd5b7f877c1a4b9192e29b91cda744995a9c5713645f0df7b",
+        "iterations": 1499020,
+        "physical_time_s": 1e-10,
+        "requested_time_s": 1e-10,
+        "recorded_dt_s": 6.671026479768415e-17,
+        "delta_s": 0.0,
+        "status": 1,
+        "reason": "completed_full_simulation_time"
+      }
+    }
+  ],
+  "files": {
+    "0:checkpoint": {
+      "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_00.json",
+      "sha256": "38dcd852f7bcb5e2ef7bb27cb4085257a5b70098d146e41d73b8038180d72f49",
+      "bytes": 725154
+    },
+    "0:ports": {
+      "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_00_80fyg6ue/ports.npz",
+      "sha256": "bffaa0eeaef4eb5b67aa76e5265e28b18e6a4962b1d8278838375b957f25d9b6",
+      "bytes": 134142
+    },
+    "1:checkpoint": {
+      "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_01.json",
+      "sha256": "2b15faebc6ba7a76853b5abba9189433bd454cddd6d1deaa0dcdc7d1bfaa03ce",
+      "bytes": 725276
+    },
+    "1:ports": {
+      "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_01_1evz7q9g/ports.npz",
+      "sha256": "3b6c27df21311ea0ded74979be9884f672bb355fea68b3f3fce6dd754416c522",
+      "bytes": 134142
+    },
+    "2:checkpoint": {
+      "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_02.json",
+      "sha256": "87120c5be4c4858613c46b72f069b50b73f11ba73e23b5503ee6cd01ce293e3e",
+      "bytes": 725742
+    },
+    "2:ports": {
+      "path": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_02_2e97_xtt/ports.npz",
+      "sha256": "86c4c722fdc366c980294e7f220ce038a4ed435dd4595c2fd2dbb8e15c812c38",
+      "bytes": 134142
+    }
+  }
+}

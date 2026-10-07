@@ -1,0 +1,17 @@
+{
+  "status": "INDEPENDENT_ARITHMETIC_REVIEW_NO_PHYSICAL_PASS",
+  "rank": 2,
+  "condition": 4.320398895142239,
+  "units": "Transmission per nm of optimizer parameter shift30 index149; not wavelength derivative",
+  "metric_names": "Inherited peak3_tout/modal keys contain fixed-frequency values here, not moving-peak derivatives",
+  "heldout_center_relative_errors": {
+    "Tout_h0125": 0.1659,
+    "Tout_h00625": 0.0853,
+    "modal_h0125": 0.2904,
+    "modal_h00625": 0.3088
+  },
+  "limitations": "One residual degree of freedom; large flanks dominate norms; no independent parameter validation, temporal convergence or calibration.",
+  "comparator_guard_correction": "Use absolute relative error; current control values also pass absolute check. Archived original and corrected sources preserved; no data changed.",
+  "preservation_scope": "Original FSP bytes hashed before/after; original multi-GB H5 files checked by size/mtime, not full content hashes in this CPU diagnostic.",
+  "im_aux_max_relative": 5.196073874824369e-16
+}
