@@ -1,5 +1,17 @@
 # Full-optimization readiness criteria
 
+## Update 19:24 Israel — no readiness release
+
+Both clusters still time out on SSH (independent checks 19:23, exit 255).
+No new job or solve; 38 completed FDTD solves remain the verified count.
+Global calibration is FAILED, and physical gradient/mesh/domain evidence and
+optimizer hardware smoke remain incomplete. N98 is the production reference;
+optional N80 speed comparisons do not establish readiness. Sigma stability
+cannot certify FWHM: the live TE branches use measured envelope FWHM, verified
+and documented in commit feebf76. See the TOP continuation for the prepared
+replacement local CPU-inventory operator and exact recovery steps. No reliable
+completion date while access and physical-gradient blockers remain unresolved.
+
 ## Current state 19:15 Israel — both server connections timed out
 
 **Not ready for optimization.** Original calibration remains FAILED;38 FDTD

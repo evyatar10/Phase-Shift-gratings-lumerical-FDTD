@@ -1,5 +1,43 @@
 # S2 calibration and restart correction continuation
 
+## Current state 19:24 Israel — access still blocked; recovery operator prepared
+
+User asked to continue and requested a delivery estimate. Both independent
+bounded SSH checks failed with connection timeout at 19:23 (exit 255), saved
+in `readiness_evidence_20261007/access_recheck_192338.json`. No new submission,
+upload, cancellation or FDTD; count remains 38. IGUM 101434 is still only
+last-known queued, not freshly confirmed. Network/VPN restoration may be
+required; do not infer a stopped job from inaccessible SSH.
+
+Prepared a new local operator in TEMP/s2_time_inventory_recovery_6aycvzzh/
+dispatch_saved_times.py, SHA
+f04c45745cda1bf605f538e59302aae6586e89fe3cfeaae07964cf84fd26bbcc.
+Only its two local exclusive evidence filenames changed. Wrapper/helper hashes,
+remote paths and all new-only/preservation/resource checks remain unchanged.
+Compilation and exact restricted-diff checks passed; NOT executed remotely.
+Receipt: `readiness_evidence_20261007/s2_time_inventory_recovery_prepared_1927.json`
+(the receipt's actual timestamp is 19:24; filename suffix is an identifier).
+After access returns, reconcile exact queues/accounting and absence of a prior
+alternate inventory before executing this operator with expected helper SHA
+1e2c01427856409ea8e9b3ac45291f6fd350e7d42aaeecc8c3728cbbcb81ad92.
+
+Critical path: saved-result API inspection, then an evidence-supported temporal/
+gradient diagnosis; successful representative and held-out port/width-gradient
+checks; outstanding physical numerical checks; bounded optimizer/restart smoke.
+No automatic longer simulation, changed source, coefficient installation or
+optimizer release follows from a missing saved time trace. N80 is an optional
+speed investigation and cannot replace N98 production validation. Mesh/domain
+adequacy still needs evidence. Sigma is diagnostic only: commit feebf76 records
+the verified live TE width authority and historical rejected proxy.
+
+Delivery estimate remains conditional: recent 200 ps forwards took about
+70 minutes each after allocation. Several hours plus queue time is plausible
+only if the next diagnosis produces a straightforward fix; unresolved physics
+can take longer than a day. No promised readiness date. Actual account query
+at 19:23 showed 12% weekly allowance remaining; other/model pools unknown.
+No reset or purchase. Avoid repeated completed audits while hardware is blocked.
+Previous evidence checkpoint is committed as 39ec684.
+
 ## Current state 19:15 Israel — both server connections timed out
 
 **Not ready for optimization.** Original calibration remains FAILED;38 FDTD

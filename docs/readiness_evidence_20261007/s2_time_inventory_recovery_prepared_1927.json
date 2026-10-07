@@ -1,0 +1,9 @@
+{
+  "time_utc": "2026-10-07T16:24:29.090889+00:00",
+  "status": "PREPARED_ONLY_NO_UPLOAD_OR_DISPATCH",
+  "operator": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_time_inventory_recovery_6aycvzzh\\dispatch_saved_times.py",
+  "operator_sha256": "f04c45745cda1bf605f538e59302aae6586e89fe3cfeaae07964cf84fd26bbcc",
+  "wrapper_sha256": "9d81fca2d688f574e1526bd87cb44131109054d2d377a5f0269c8024614c8e9f",
+  "changes": "Only two local exclusive evidence filenames changed; remote private paths, preservation checks, helper hashes and job request unchanged. Existing-path guards remain.",
+  "required_before_execution": "Restore access; reconcile existing Athena queue and IGUM101434; verify no alternate inventory submitted remotely, fresh licenses/quota. The operator enforces new-only target paths."
+}
