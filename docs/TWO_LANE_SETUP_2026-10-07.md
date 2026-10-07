@@ -3,6 +3,40 @@
 Written 2026-10-07 by Claude (Opus 5.5) at the user's request. Audience: the
 GPT/Codex agent and the user. This file is the entry point for both lanes.
 
+## 0. Message to Codex (read this first)
+
+1. **You now work ONLY in** `C:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes_codex`
+   (branch `codex-te`). Your Athena base is `~/bragg_sim_codex` and your IGUM base
+   is `~/research/bragg_sim_igum_codex`; both are already set in your
+   `athena.conf`, `igum.conf` and job scripts. Never edit, deploy to or cancel
+   anything in Claude's lane (§2), including its job 171897.
+2. **Your previous pause is lifted.** The user directs both lanes to proceed at
+   **N = 80 periods/side, 60 free/side**, with the goal of raising peak T at
+   spatial envelope FWHM ≈ 20 µm.
+3. **Your main mistakes on 2026-10-07 (§6b), to avoid repeating:**
+   - The S2 finite-difference test used ±2 nm legs that moved a 0.20 nm-wide
+     resonance by ~0.18 nm. That is not a local derivative, so its "failure"
+     does not show the adjoint is wrong. Its small-step legs sat at the
+     1.3e-5 noise floor.
+   - You then spent ~40 solves on forensics of it.
+   - You blocked all TE work, S1 included, on that test, so zero optimizer
+     iterates ran for a day.
+4. **Engine choices you introduced that Claude reverted** (§6c): crash on a
+   missing gλ, FAILED exit at budget end, diagnostics sharing the width
+   measurement's try block, and NaN raising in log rows. We recommend you
+   adopt the reverts.
+5. **What you got right and Claude kept** (§6a): the λ-normalization fix, the
+   persistence/resume hardening, the persistent forward budget, the measured
+   width contract, the seat rule and the N98→N80 pair measurement.
+6. **Follow the main-goal checkpoint** (§3.5) at every milestone. When
+   acceptance is on measured T and W, a gradient error costs rejected steps,
+   not wrong results. The per-iterate gain ratio (measured ΔFOM / predicted)
+   is the live calibration check. Run a separate FD calibration only when that
+   ratio goes bad.
+7. **Pick a route that DIFFERS from Claude's lane** (§5), so that the
+   comparison teaches something. Report using the §7 table, and log any change
+   worth sharing in §9.
+
 ## 1. The decision
 
 The user wants two independent TE inverse-design efforts, one by Claude and
@@ -116,15 +150,20 @@ Codex should not run a second copy of the same N80 v3 lanes.
 
 ### 6c. Engine choices Claude reverted on `claude-te` only
 
-All 11 offline gates in the Claude lane are green after these changes.
+Codex introduced all four engine behaviours below in its integration
+(1b2d75e). None has fired yet; each can stop a run that would otherwise
+continue. All 11 offline gates in the Claude lane are green after the reverts.
 
-| Codex behaviour | claude-te behaviour | Why |
-|---|---|---|
-| Missing or nonfinite gλ raises and kills the campaign | DEGRADED step at ¼ trust radius, no λ row, logged loudly (as in a3fab34, plus the ¼ shrink) | A crash costs a redeploy, and a resume would hit the same point again. Acceptance is still measured. Gate V23 checks the ¼ bound, and a test confirms that without the shrink the step exceeds it. |
-| Port-diagnostic readouts share the width measurement's try block | Diagnostics in their own try | A diagnostic failure must not cost an eval its width; a missing width at iterate 0 is fatal. |
-| Budget exhaustion is an exception: job ends FAILED, no `_best.json`, afterok chains don't fire | Clean stop: `_best.json` written, exit 0 | The budget end is the normal end of a stage. |
-| NaN in a journal row raises outside any try | NaN/inf in journal rows written as null (the optimizer state file stays strict) | A diagnostic NaN must not kill a run. |
-| S2 calibration scripts and their 2 gates live in `runners/lumopt2_design/` | Moved unedited to `runners/archive/te_s2_calibration_codex_20261007/` | Off the Claude lane's path. They stay live on `codex-te`. |
+| Item | Before Codex (a3fab34) | Codex changed it to | claude-te now | Who was at fault |
+|---|---|---|---|---|
+| Missing or nonfinite gλ | Degraded step with NO λ limit; in smoke 169002 the resonance moved +3.75 nm in one step | Raise and kill the campaign | Degraded step at ¼ of the trust radius, no λ row, logged loudly. Gate V23 checks the ¼ bound, and a test confirms that without the shrink the step exceeds it. | **Both.** Codex correctly found a real weakness in our code; crashing was too drastic, because a resume hits the same point again. |
+| Budget exhaustion | No budget system; runs ended normally at max_feval | The new persistent budget (good, kept) ends the job as FAILED with no `_best.json`, and afterok chains don't fire | Clean stop: `_best.json` written, exit 0 | **Codex** |
+| Port-diagnostic readouts | Did not exist | Added inside the same try block as the width measurement, so a diagnostic failure loses the eval's width (fatal at iterate 0) | Diagnostics in their own try | **Codex** (new risk) |
+| NaN in a journal row | Written silently, harmless | `allow_nan=False` raises outside any try and kills the run | NaN/inf written as null (the optimizer state file stays strict) | **Codex** (new risk) |
+| S2 calibration scripts and their 2 gates | Did not exist | ~15 one-off scripts in `runners/lumopt2_design/` | Moved unedited to `runners/archive/te_s2_calibration_codex_20261007/` (still live on `codex-te`) | **Codex** (CLAUDE.md §10 accumulation) |
+
+Recommendation to Codex: adopt the first four reverts on `codex-te` too,
+by cherry-picking the engine part of claude-te commit `0a27c0e`.
 
 Kept from Codex in the Claude lane:
 - the λ-normalization fix;
