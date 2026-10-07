@@ -1,0 +1,19 @@
+{
+  "command": [
+    "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+    "-X",
+    "utf8",
+    "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_four_step_analysis_20261007_c317aab2\\test_four_steps.py"
+  ],
+  "exit_code": 0,
+  "test_count": 6,
+  "hashes": {
+    "compare_four_steps.py": "592f8c371f4934af1b5b281b6d828d9a301ac42d21458eccc2073c34ac75d52c",
+    "test_four_steps.py": "6fd15f2637326db11c5087cda5b44c7069ad9056c67d6355e88b1a30bc053446",
+    "existing_evidence_pins.json": "c37f9c7231b25547de9f4645004a5221ab91e6081a578f175848d7745d1bc6bc"
+  },
+  "repository_modifications": false,
+  "server_actions": false,
+  "CAD": false,
+  "FDTD": false
+}

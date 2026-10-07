@@ -1,3 +1,4 @@
 # Original checkpoint bytes are scientific provenance and must retain their SHA.
 docs/readiness_evidence_20261007/*original.json -text
 docs/readiness_evidence_20261007/corr30_convergence_parent_review.json -text
+docs/readiness_evidence_20261007/four_step_analysis/existing_evidence_pins.json -text

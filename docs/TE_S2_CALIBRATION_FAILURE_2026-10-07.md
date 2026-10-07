@@ -35,6 +35,35 @@ The coordinate API uses symmetry-unfolded getdata option2, checked against
 [official Ansys documentation](https://optics.ansys.com/hc/en-us/articles/360034409834-getdata-Script-command).
 No new field solve or old-project save was used for this provenance check.
 
+## Interpretation plan for the pending four-step and dEps checks
+
+Compare h = 2, 1, 0.5 and 0.25 nm without assuming smaller is automatically
+better. Report successive derivative differences, signs, both nominal centers,
+and peak3 spectral-Jacobian projections. A smooth halving trend on corr30 can
+justify a chosen step for remaining class probes, but cannot establish the
+full calibration. Nonmonotonic changes require further diagnosis; they do not
+alone identify solver noise, a mesh defect or non-differentiable geometry.
+
+The new stored-field probe must first reproduce its original h = 1 nm raw Re
+contraction, then Im, before its smaller dEps steps are interpreted. It uses
+original-forward Jacobians, whereas new forward differences use the repeated
+center for even terms. Preserve that distinction. If the new extraction does
+not reproduce the original contraction, diagnose the extraction/subset path
+before treating a discrepancy as physics. No coefficient is fitted by this
+probe. The six-class held-out gate and width/optimizer hardware gates remain.
+
+## Additional numerical control to record, 08:08 Israel
+
+Official [Ansys mesh-refinement guidance](https://optics.ansys.com/hc/en-us/articles/360034382614-Selecting-the-best-mesh-refinement-option-in-the-FDTD-simulation-object)
+recommends PVA for inverse design and distinguishes its `meshing refinement`
+accuracy setting from the `mesh refinement` method. It documents default5
+and maximum12. Our source sets the PVA method but does not explicitly set
+that accuracy integer; the completed provenance probe did not extract it.
+Therefore its actual value is currently unmeasured, not established as5.
+The prepared no-solve dEps probe will record it without changing it. This is
+a candidate control if finite-step sensitivity persists, not a diagnosed
+cause or permission to substitute a different numerical family silently.
+
 ## New center evidence and next diagnostic, 06:43 Israel
 
 The nominal repeat170901_0 completed exit0. Peak3(Tout) differs by+4.75118e-7

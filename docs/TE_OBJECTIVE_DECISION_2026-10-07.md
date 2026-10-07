@@ -73,8 +73,8 @@ The opt-in candidate implementation passed all thirteen offline suites,
 including ten focused modal-guard driver regressions. State, hashes and
 integration instructions are in `TE_MODAL_GUARD_CANDIDATE_2026-10-07.md`.
 The bounded pilot must explicitly set `wgp_modal_guard=True` and
-`best_metric="modal_peak3"`. Defaults remain off; production integration and
-hardware validation are pending. Offline tests do not establish modal-gradient
+`best_metric="modal_peak3"`. Defaults remain off. Production integration completed in commit1b2d75e;
+hardware validation remains blocked by failed S2 calibration. Offline tests do not establish modal-gradient
 accuracy or successful physical optimization.
 
 ## Wavelength: allow drift, retain local model validity

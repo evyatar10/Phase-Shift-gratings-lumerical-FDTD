@@ -9,6 +9,38 @@ the project `AGENTS.md` records that instruction.
 ## Overnight extension and current continuation
 
 
+## Current update 08:21 Israel — no-solve derivative check dispatched
+
+Athena **170950_0** submitted08:20:58, Re-only saved-field dEps-step probe.
+No GPU/FDTD solve,8CPUs/128G/45min,2h_2g/l40s-public. Scheduler dry-run
+170949 accepted; check actual startup next. Script SHA
+f948aa8eb686f031624da5ef1d13a24457662fc90f6b44efd64686d7edd90cb8;
+remote `/work/scripts/s2_deps_steps_20261007/probe_corr30_deps.py`, guarded
+helper40dd4878...99d. New output
+`/work/results/s2_corr30_deps_re_20261007T0820/deps_sensitivity.json`.
+Uses ORIGINAL Re forward/adjoint pair, exact original-forward peak3 Jacobian,
+three exact selected field slices, vendor assembly and single corr30 mesher
+steps1,.5,.25nm. h1 must reproduce stored peak-gradient task00 before harness
+fidelity is established; do not silently renormalize. Im not yet dispatched;
+review Re first, then serial128G Im (240G QOS/user memory cap).
+Eight offline tests pass; actual hidden local CAD exercises all three dEps
+steps,4objects,shape1246x51x17x1, finite synthetic contractions and restored
+nominal geometry. Local generated PVA refinement5; saved server value pending.
+All frozen production hashes and reviewed provenance SHA checked before
+exclusive new-file upload. Source package/hidden-CAD evidence preserved in
+`s2_deps_probe_reviewed_0821.zip`; receipt `s2_deps_re_dispatch.json`.
+Latest shared seats08:20 are28/50, plus7 committed queued IGUM. No new solve
+seats for this CPU CAD/index check. Athena170926 four GPU checks remain active,
+IGUM101155 remains pending Resources. Do not duplicate any of these jobs.
+
+Four-step offline analyzer and six tests are prepared under readiness evidence
+`four_step_analysis/`; six tests pass. Fetch names are documented there.
+Original small port-spectra archive also preserved locally as
+`s2_original_port_spectra_preserved.zip` (same bytes as original temp archive).
+No real four-step report yet; new endpoint checkpoints are required. Both Sol
+workers have completed their preparation; no worker owns production files.
+Focused local checkpoint f4fb0ee saved parallel rules/skills/diagnostics; no push.
+
 ## Current state 08:03 Israel — four Athena diagnostics running
 
 This section supersedes the historical status updates below. Athena array

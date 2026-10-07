@@ -26,6 +26,8 @@ is35/50 including queued IGUM. No failed coefficient has been installed.
   Array170906 has now completed both endpoints; the new four-step comparison
   is pending170926 results. Diagnostic sources remain frozen.
   Reviewed center evidence/protocol checkpoint: local commit **da5aa3d**.
+- Parallel-cluster rules, six validated skills, small-step evidence and new
+  convergence runner are saved in local commit **f4fb0ee**. No push.
 - Current code checkpoint: **1b2d75e**; failed-calibration evidence **40118f1**.
   Earlier documentation/evidence commits:
   27bcc6d, d23e6ac,811fa58,770cf17. No push, deletion, cancellation, container
@@ -48,7 +50,8 @@ Next agent: read the TOP of `TE_CONTINUATION_2026-10-07.md` for current job,
 hashes, exact output paths and review gate. Sources are frozen while the new
 diagnostic runs. The old recovery watcher has exited; the native30min heartbeat
 is active for the diagnostic. Actual account query06:40 reports100% remaining
-in its weekly codex bucket, versus6% at05:49; the cause is unknown. No reset
+in its weekly codex bucket, versus6% at05:49; the cause is unknown.
+The latest08:05 query reports94% remaining; no model-specific pool is exposed. No reset
 was redeemed by this workflow. Model-specific and Claude allowance are unknown.
 
 Detailed evidence and decisions:
