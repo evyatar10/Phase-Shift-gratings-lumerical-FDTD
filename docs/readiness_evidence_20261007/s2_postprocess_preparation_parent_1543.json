@@ -1,0 +1,38 @@
+{
+  "recorded_at": "2026-10-07T15:42:00.254573+03:00",
+  "step_analyzer": {
+    "path": "C:/Users/evyat/AppData/Local/Temp/s2_step150_analyzer_f016ee20465f/analyze_step150.py",
+    "sha256": "807758dad87f41eade0d12edb0ae4e16096e612778d5af6dbc286f784f06979e",
+    "parent_tests": 5,
+    "exit_code": 0,
+    "archive": "s2_step150_analyzer_prepared_1541.zip",
+    "actual_new_pair_not_yet_analyzed": true,
+    "parent_marker": "s2_temporal150_review_original.json",
+    "parent_marker_sha256": "6cc6d9fd8cab5419b436b433725fbb2cc88b49f538628f897929217940527f51"
+  },
+  "N80_blueprint": {
+    "parent_actual_matches_worker_exactly": true,
+    "mapped_property_count": 723,
+    "archive": "s2_N80_blueprint_verified_1541.zip",
+    "no_CAD_or_solve": true,
+    "actual_controls_unmeasured": true
+  },
+  "profile_preflight": {
+    "at": "2026-10-07T15:38:30+03:00",
+    "quota_GB": 228,
+    "soft_quota_GB": 300,
+    "shared_solve_seats_used": 14,
+    "shared_solve_seats_total": 50,
+    "GUI_seats_used": 3,
+    "GUI_seats_total": 50,
+    "h5py_import": "ModuleNotFoundError",
+    "required_action": "Use official CAD result API; optional metadata inventory unavailable; no package installation/container changes"
+  },
+  "usage": {
+    "used_percent": 57,
+    "remaining_percent": 43,
+    "window_minutes": 10080,
+    "model_specific_limits": "UNKNOWN",
+    "reset_redeemed": false
+  }
+}

@@ -92,3 +92,28 @@ by that consultation.
 
 Evidence: `readiness_evidence_20261007/te_mesh_length_reviewed_1520.zip`, including
 the full audit, measured inventory, parent equality check and corrected review.
+
+
+## Claude N80 argument located after user clarification
+
+Historical memory `project_inverse_design_cost_function.md`, section
+"Surrogate device length" datedAugust12, reports a TM corr325 ladder:
+N60/70/80/100/120 widths16.80/17.74/18.39/19.24/19.66um andT
+.967/.962/.952/.910/.844. It calls N80 only92% of an approximately20um
+asymptote, discusses finite mirror tails and loss visibility versus that old
+family's .0018 jitter estimate, and selectsN100 for corr325. The SAME record
+calls TE N80 a proven workhorse and says full-arm apodization needs additional
+extent beyond its active profile. This is family-specific historical evidence,
+not a measured currentS2 N80 result. Original ladder MATs have not been
+revalidated in this follow-up. Exact section and source hash preserved in
+`readiness_evidence_20261007/claude_N80_length_context_1553.json`.
+
+Do not import that old noise threshold, ratio-width surrogate policy or CMT
+rule as a new current acceptance gate. CurrentTE98/free60/widthbands remain.
+The newly recovered N98 fields support separating measurement-window effects
+from physical shortening. Preliminary strict-reader result on150ps center:
+SAME field cropped toN80 givesTout FWHM19.4921961178 vs19.6437170638um;
+modal19.4926729083 vs19.6401266506um. Half-height crossings remain near+/-9.75um,
+well within+/-39.2848um; changed envelope floor shifts the metric. This does
+not simulate physicalN80, prove noise or establish its suitability. Parent
+comparison reproduction and MAT publication are pending the reader packet.

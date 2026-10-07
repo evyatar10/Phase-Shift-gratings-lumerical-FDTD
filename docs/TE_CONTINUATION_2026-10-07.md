@@ -1,5 +1,47 @@
 # S2 calibration and restart correction continuation
 
+## Saved spatial profiles measured 15:48 Israel
+
+CPU171300_0 COMPLETED exit0 in77s, MaxRSS6888188KiB, **zero new FDTD solves**.
+Exact100/150 center profiles recovered through official hidden CAD; all8
+original checkpoint/FSP/H5/NPZ identities preserved. Report SHA
+01a6fe6540c7cf903de67cecc42a89c6318983301364b679b9da0870dede595a.
+Local originals `readiness_evidence_20261007/s2_saved_profiles_fetch_154823`,
+preserved in `s2_saved_profiles_originals_verified_1550.zip`.
+FWHM100->150ps: Tout19.644107414176432->19.643717063777355um;
+modal19.640975592116185->19.640126650574587um. Actual501 wavelengths equal
+ports; Eshape2008x39x1x501x3. PML8layers/profile1; yminAnti-Symmetric,
+zminSymmetric, otherfacesPML. Profile xspan98.49329um/yspan1.87065um/z0.
+This measures very small width duration sensitivity at this point; no mesh,
+N80 or global-gradient pass. Strict local comparison and MAT export pending.
+Container h5py absent but optional; no installation was needed.171276pair
+stillrunning at15:45; no duplicate/furtherFDTD release.
+
+## Current update 15:45 Israel — saved-field CPU extraction submitted
+
+Athena **171300_0** submitted15:44:30, CPU-only8CPU/128G/30min on2h_2g;
+no FDTD solve. Runtime SHA994c3e9757a10b5bd8ea211aaee8425c5d3540203a4da04b0439684163baf6ca.
+Reads exact100ps task00 and150ps task03 via hidden official CAD API; outputs
+`/work/results/s2_saved_spatial_profiles_20261007_1542`. Local prepared archive
+`readiness_evidence_20261007/s2_saved_profiles_prepared_1545.zip`, dispatch1542.
+Nine offline groups plus parent and independent review passed; actual extraction
+is pending. Container h5py is absent: optional metadata inventory reports
+UNAVAILABLE; official CAD extraction proceeds. No install/container change.
+Checks original FSP/H5/ports/source/vendor before/after; selected wavelength
+planes only cross to Python. Captures FWHM/sigma, nearby W(lambda), actual
+monitor coordinates and read-only BC/PML inventory. Inspect exact job/log/report;
+do not duplicate. Shared15:38 seats14/50solve,3/50GUI; quota228G/300Gsoft.
+
+171276 tasks0/1 still running at15:44; expected roughly16:00.33 new FDTD solves
+verified complete. Global calibration remainsFAILED; no optimizer or coefficients.
+Step analyzer five tests parent-pass and N80 blueprint actual exact reproduction
+are preserved in archives `s2_step150_analyzer_prepared_1541.zip` and
+`s2_N80_blueprint_verified_1541.zip`. N80 has no CAD/solve release. Both still
+need measured evidence. Exact parent150 marker is `s2_temporal150_review_original.json`,
+SHA6cc6d9fd8cab5419b436b433725fbb2cc88b49f538628f897929217940527f51.
+Actual latest account query43%weekly remaining; model-specific/Claude unknown,
+no reset/purchase. Reader worker preparing strict100/150 spatial comparison.
+
 ## IGUM completion verified 15:24 Israel
 
 IGUM101155_0 finished15:20:01, COMPLETED exit0 confirmed by exact scontrol

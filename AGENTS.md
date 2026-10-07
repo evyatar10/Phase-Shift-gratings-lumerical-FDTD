@@ -174,3 +174,15 @@ during waits without repeating completed audits. When only external results
 remain, maintain the already-authorized continuation and precise next actions.
 Preserve files and active source identities; planning never bypasses a failed
 gradient gate or authorizes the full optimization campaign.
+
+
+## Analysis files and parallel servers (user, October 7)
+
+Keep MAT as the user's normal exported/downloaded analysis format. Reuse
+existing MAT results and do heavy postprocessing on servers; preserve original
+solver FSP/H5 and checkpoint evidence. Export coordinates, spectra and profiles
+with definitions/units/provenance so widths can be recomputed. Read the
+pi-shift-inverse-design convergence-and-length reference for this workflow.
+Use Athena and IGUM concurrently when tasks are independent and resources fit.
+Prefer measured turnaround for sequential optimization and available slots for
+sweeps; check actual hardware and shared Lumerical seats across both clusters.

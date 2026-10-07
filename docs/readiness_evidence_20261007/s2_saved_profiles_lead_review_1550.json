@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-07T15:50:33.825560+03:00",
+  "job": "171300_0",
+  "state": "COMPLETED",
+  "exit_code": "0:0",
+  "elapsed_seconds": 77,
+  "MaxRSS_KiB": 6888188,
+  "new_FDTD_solves": 0,
+  "source_sha256": "994c3e9757a10b5bd8ea211aaee8425c5d3540203a4da04b0439684163baf6ca",
+  "all_eight_inputs_preserved": true,
+  "report_sha256": "01a6fe6540c7cf903de67cecc42a89c6318983301364b679b9da0870dede595a",
+  "measured": {
+    "100": {
+      "Tout": 19.644107414176432,
+      "modal": 19.640975592116185
+    },
+    "150": {
+      "Tout": 19.643717063777355,
+      "modal": 19.640126650574587
+    }
+  },
+  "verdict": "Width duration sensitivity measured at this N98 point; no mesh/length/global gradient pass. H5 optionalinventory unavailable; officialCAD extraction succeeded. Independentlocal comparison pending."
+}
