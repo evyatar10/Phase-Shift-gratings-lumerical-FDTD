@@ -1,0 +1,777 @@
+{
+  "schema": 1,
+  "status": "TEMPORAL200_COMPARISON_CALIBRATION_FAILED_UNCHANGED",
+  "no_automatic_approval": true,
+  "no_coefficient_fit": true,
+  "source_pins": {
+    "independently_supplied200_pinmap_sha256": "82b5a5df987e366b29523d1c2807399aca09cc025fe0f1a2e030007aa58afd26",
+    "completion": {
+      "completion_manifest_sha256": "e7fdd774efebb970b87eecc61336976c607bc962f2a0b179f63b358dccbf3adf",
+      "receipt_sha256": "37ec223b13863dd9f6d5c289d20686367bf5e7ba9e07dace8b429aa5d385e7f8",
+      "pins_sha256": "82b5a5df987e366b29523d1c2807399aca09cc025fe0f1a2e030007aa58afd26",
+      "job": "171390",
+      "cold_validation": "Pinned receipt independently revalidated locally; no CAD/solve call"
+    },
+    "released_environment_sha256": "b6ef6ac59939293f2ca8b0a78257d7c902fdc367c667f1ade8b452a2dcfd19d4",
+    "review_marker_sha256": "4fe3c0e7fc37cced733ac7cf7b2ee3de3536213ee938e23a1095dffc307cd44f",
+    "runner_sha256": "fa6a6528e34cb9c004604ec490543c3b0579d76224c936568c2e11e4f9996053",
+    "history_report_sha256": "929527d24122050acc41878b9e80b36d21550b2392de317120e93ac534352e8a",
+    "history_spectra_sha256": "b7bf52bf22561880c0238be4adee6a23913954ac2883298b57d62293068576a0",
+    "parent150": {
+      "marker": "/work/data/s2_temporal150_review_20261007_1257.json",
+      "marker_sha256": "6cc6d9fd8cab5419b436b433725fbb2cc88b49f538628f897929217940527f51",
+      "checkpoints": {
+        "3": {
+          "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_03.json",
+          "sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+          "ports_sha256": "a9a4b2e87379c645786ac8fc179852ad3bdec2a040c7fe2c8c1ae21342a5d90d",
+          "fsp_sha256": "724a8c5649d90b7442e8e706a37e07b532940771efa21e4660ab781e133da1bf",
+          "h5_sha256": "e96da50115864b429ef23c04cb72e594de33fa136192002131068c8588de25b7",
+          "termination": {
+            "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_03_yc61w355/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+            "log_sha256": "ab85f80f393f0dc2d984a0a2a4c241e17a8e1bd97eea68bffebb217941daf232",
+            "iterations": 2248530,
+            "physical_time_s": 1.5e-10,
+            "requested_time_s": 1.5e-10,
+            "recorded_dt_s": 6.671026479768415e-17,
+            "delta_s": 0.0,
+            "status": 1,
+            "reason": "completed_full_simulation_time"
+          }
+        },
+        "4": {
+          "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_04.json",
+          "sha256": "31ec8f2f72bfb1a5aa991240cec45c5fb515d18e82fc37d7cfac89703e75efe4",
+          "ports_sha256": "a92bb781482ec2cd01e688fb3dc25f7e86f33a16e3fc7289f629ba4267caac90",
+          "fsp_sha256": "acd321888c5860ce3c02ce31b9889ab8c6846bae8c0c8e6da1516178663d5995",
+          "h5_sha256": "6b94b8c6c0edab4066ad84f0c6955c94bbc4f9714e0332a93fe0511c15ab2cdc",
+          "termination": {
+            "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_04_k6m8pmaa/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+            "log_sha256": "40ed80265c740494c7bfd3af680d0af278e2959ec422ede961ec27f1d7460b7c",
+            "iterations": 2248530,
+            "physical_time_s": 1.5e-10,
+            "requested_time_s": 1.5e-10,
+            "recorded_dt_s": 6.671026479768415e-17,
+            "delta_s": 0.0,
+            "status": 1,
+            "reason": "completed_full_simulation_time"
+          }
+        },
+        "5": {
+          "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_05.json",
+          "sha256": "a0e9d73a0f8f0162c9f7a843ca24eb4c4c29e444b1fca2b692ffd5002feb571d",
+          "ports_sha256": "54694438904b08eaf9bdc7ef2c8a0a1b7c56183a39bdc3e1bcf6fa8309e4c688",
+          "fsp_sha256": "2c11c6a52289cc5d79ce489806e9ef00aae68ecb0b81f7d1c1fa046f2392cda4",
+          "h5_sha256": "df5eeaf3e2dc88a731ceaa71c5077fe97e819feb3090481572b1988decacae98",
+          "termination": {
+            "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_05_1jsw9c64/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+            "log_sha256": "8cd0907c94eac3eb1bf486c3589216a87cf2ab7a6818e1ffb60a30e58502fdd9",
+            "iterations": 2248530,
+            "physical_time_s": 1.5e-10,
+            "requested_time_s": 1.5e-10,
+            "recorded_dt_s": 6.671026479768415e-17,
+            "delta_s": 0.0,
+            "status": 1,
+            "reason": "completed_full_simulation_time"
+          }
+        }
+      }
+    },
+    "completed171276": {
+      "marker": "/work/data/s2_step150_review_20261007_1507.json",
+      "marker_sha256": "8cc8e9da52262b19f4fd51d98c11de1a686c7e61b8c8bf2b364944922677dc0f",
+      "checkpoints": {
+        "0": {
+          "checkpoint": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_00.json",
+          "sha256": "8d49988494fd09323821029a9e88adc96b06dec9e586da032278cb2e8c7dd5e6",
+          "ports_sha256": "4a3b52f5906eba2d8a8b7231df0caf5e2b1694f065d360fb8c55bdb40ad492f8",
+          "fsp_sha256": "42362557e0f08b6239ddcf6337ab059da4296c51293ebf2114a6f00c159b89f7",
+          "h5_sha256": "97814139be36c12a236fd48bff85e68d4a270a84b797d799ddf65342f53e3436",
+          "termination": {
+            "log": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_00_4f0zrw97/s2_shift30_step150_20261007_files/fwd_default_p0.log",
+            "log_sha256": "e8bf40d0a22d02bfd58f66d71ac5ca7129cc208ebac3651cc38cc4ba54158245",
+            "iterations": 2248530,
+            "physical_time_s": 1.5e-10,
+            "requested_time_s": 1.5e-10,
+            "recorded_dt_s": 6.671026479768415e-17,
+            "delta_s": 0.0,
+            "status": 1,
+            "reason": "completed_full_simulation_time"
+          }
+        },
+        "1": {
+          "checkpoint": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_01.json",
+          "sha256": "5d88d683852591d48d0a06b62ba763d3483c035be42d4f2467dbde591e5f692f",
+          "ports_sha256": "fcc4e8d2d2b2d0921fab0b2f4d2ae16667cd504ac1b869d29ee3bf813ca7ff48",
+          "fsp_sha256": "162ec00f08ec39f0dd4655944f9062ab71c3ee15b16480e2394e34b6eaf0b494",
+          "h5_sha256": "02b34c4cad6c0ec0ebd6a5c205a65591fa92cddd098af78c5e3f65bec9385172",
+          "termination": {
+            "log": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_01_6mkxcbum/s2_shift30_step150_20261007_files/fwd_default_p0.log",
+            "log_sha256": "5830d69d59256ce466c44334358a45e5968012afbfcbe55dd310a8aa6ec36959",
+            "iterations": 2248530,
+            "physical_time_s": 1.5e-10,
+            "requested_time_s": 1.5e-10,
+            "recorded_dt_s": 6.671026479768415e-17,
+            "delta_s": 0.0,
+            "status": 1,
+            "reason": "completed_full_simulation_time"
+          }
+        }
+      }
+    }
+  },
+  "controls_200": [
+    {
+      "property": "/ports/FDTD::ports::Port_1/phase",
+      "left_phase_deg": 18.625271537954255,
+      "right_phase_deg": 18.625271537954255,
+      "signed_difference_deg": 0.0,
+      "ULP_distance": 0,
+      "maximum_allowed_ULP": 2,
+      "zeros_must_match_bitwise": true,
+      "existing_geometry_comparison": {
+        "mapped_geometry_roundoff_differences": {},
+        "max_abs_geometry_delta_m": 0.0,
+        "all_other_snapshot_sections_exact": true,
+        "qualification": "Bounded FSP geometry serialization roundoff retained; no physical convergence claim"
+      },
+      "qualification": "Recorded cross-run phase roundoff only; cause unknown; no physics/noise tolerance",
+      "geometry_qualification": "Full new mapped point validated separately; intentional shift30 step excluded from nominal control comparison"
+    },
+    {
+      "property": "/ports/FDTD::ports::Port_1/phase",
+      "left_phase_deg": 18.625271537954255,
+      "right_phase_deg": 18.625271537954248,
+      "signed_difference_deg": -7.105427357601002e-15,
+      "ULP_distance": 2,
+      "maximum_allowed_ULP": 2,
+      "zeros_must_match_bitwise": true,
+      "existing_geometry_comparison": {
+        "mapped_geometry_roundoff_differences": {},
+        "max_abs_geometry_delta_m": 0.0,
+        "all_other_snapshot_sections_exact": true,
+        "qualification": "Bounded FSP geometry serialization roundoff retained; no physical convergence claim"
+      },
+      "qualification": "Recorded cross-run phase roundoff only; cause unknown; no physics/noise tolerance",
+      "geometry_qualification": "Full new mapped point validated separately; intentional shift30 step excluded from nominal control comparison"
+    },
+    {
+      "property": "/ports/FDTD::ports::Port_1/phase",
+      "left_phase_deg": 18.625271537954255,
+      "right_phase_deg": 18.625271537954255,
+      "signed_difference_deg": 0.0,
+      "ULP_distance": 0,
+      "maximum_allowed_ULP": 2,
+      "zeros_must_match_bitwise": true,
+      "existing_geometry_comparison": {
+        "mapped_geometry_roundoff_differences": {},
+        "max_abs_geometry_delta_m": 0.0,
+        "all_other_snapshot_sections_exact": true,
+        "qualification": "Bounded FSP geometry serialization roundoff retained; no physical convergence claim"
+      },
+      "qualification": "Recorded cross-run phase roundoff only; cause unknown; no physics/noise tolerance",
+      "geometry_qualification": "Full new mapped point validated separately; intentional shift30 step excluded from nominal control comparison"
+    }
+  ],
+  "cross_duration_controls": [
+    {
+      "property": "/ports/FDTD::ports::Port_1/phase",
+      "left_phase_deg": 18.625271537954255,
+      "right_phase_deg": 18.625271537954255,
+      "signed_difference_deg": 0.0,
+      "ULP_distance": 0,
+      "maximum_allowed_ULP": 2,
+      "zeros_must_match_bitwise": true,
+      "existing_geometry_comparison": {
+        "mapped_geometry_roundoff_differences": {},
+        "max_abs_geometry_delta_m": 0.0,
+        "all_other_snapshot_sections_exact": true,
+        "qualification": "Bounded FSP geometry serialization roundoff retained; no physical convergence claim"
+      },
+      "qualification": "Recorded cross-run phase roundoff only; cause unknown; no physics/noise tolerance"
+    },
+    {
+      "property": "/ports/FDTD::ports::Port_1/phase",
+      "left_phase_deg": 18.625271537954255,
+      "right_phase_deg": 18.625271537954248,
+      "signed_difference_deg": -7.105427357601002e-15,
+      "ULP_distance": 2,
+      "maximum_allowed_ULP": 2,
+      "zeros_must_match_bitwise": true,
+      "existing_geometry_comparison": {
+        "mapped_geometry_roundoff_differences": {},
+        "max_abs_geometry_delta_m": 0.0,
+        "all_other_snapshot_sections_exact": true,
+        "qualification": "Bounded FSP geometry serialization roundoff retained; no physical convergence claim"
+      },
+      "qualification": "Recorded cross-run phase roundoff only; cause unknown; no physics/noise tolerance"
+    },
+    {
+      "property": "/ports/FDTD::ports::Port_1/phase",
+      "left_phase_deg": 18.625271537954255,
+      "right_phase_deg": 18.625271537954255,
+      "signed_difference_deg": 0.0,
+      "ULP_distance": 0,
+      "maximum_allowed_ULP": 2,
+      "zeros_must_match_bitwise": true,
+      "existing_geometry_comparison": {
+        "mapped_geometry_roundoff_differences": {},
+        "max_abs_geometry_delta_m": 0.0,
+        "all_other_snapshot_sections_exact": true,
+        "qualification": "Bounded FSP geometry serialization roundoff retained; no physical convergence claim"
+      },
+      "qualification": "Recorded cross-run phase roundoff only; cause unknown; no physics/noise tolerance"
+    },
+    {
+      "phase_property": "/ports/FDTD::ports::Port_1/phase",
+      "left_phase_deg": 18.625271537954248,
+      "right_phase_deg": 18.625271537954255,
+      "signed_difference_deg": 7.105427357601002e-15,
+      "absolute_difference_deg": 7.105427357601002e-15,
+      "ULP_distance": 2,
+      "maximum_allowed_ULP": 2,
+      "zeros_must_match_bitwise": true,
+      "existing_persisted_geometry_comparison": {
+        "mapped_geometry_roundoff_differences": {},
+        "max_abs_geometry_delta_m": 0.0,
+        "all_other_snapshot_sections_exact": true,
+        "qualification": "Bounded FSP geometry serialization roundoff retained; no physical convergence claim"
+      },
+      "qualification": "Recorded cross-run Port_1 phase roundoff arithmetic only; cause not established; all other controls exact except unchanged original geometry serialization check; not physics or noise tolerance"
+    },
+    {
+      "phase_property": "/ports/FDTD::ports::Port_1/phase",
+      "left_phase_deg": 18.625271537954255,
+      "right_phase_deg": 18.625271537954255,
+      "signed_difference_deg": 0.0,
+      "absolute_difference_deg": 0.0,
+      "ULP_distance": 0,
+      "maximum_allowed_ULP": 2,
+      "zeros_must_match_bitwise": true,
+      "existing_persisted_geometry_comparison": {
+        "mapped_geometry_roundoff_differences": {},
+        "max_abs_geometry_delta_m": 0.0,
+        "all_other_snapshot_sections_exact": true,
+        "qualification": "Bounded FSP geometry serialization roundoff retained; no physical convergence claim"
+      },
+      "qualification": "Recorded cross-run Port_1 phase roundoff arithmetic only; cause not established; all other controls exact except unchanged original geometry serialization check; not physics or noise tolerance"
+    },
+    {
+      "phase_property": "/ports/FDTD::ports::Port_1/phase",
+      "left_phase_deg": 18.625271537954248,
+      "right_phase_deg": 18.625271537954255,
+      "signed_difference_deg": 7.105427357601002e-15,
+      "absolute_difference_deg": 7.105427357601002e-15,
+      "ULP_distance": 2,
+      "maximum_allowed_ULP": 2,
+      "zeros_must_match_bitwise": true,
+      "existing_persisted_geometry_comparison": {
+        "mapped_geometry_roundoff_differences": {},
+        "max_abs_geometry_delta_m": 0.0,
+        "all_other_snapshot_sections_exact": true,
+        "qualification": "Bounded FSP geometry serialization roundoff retained; no physical convergence claim"
+      },
+      "qualification": "Recorded cross-run Port_1 phase roundoff arithmetic only; cause not established; all other controls exact except unchanged original geometry serialization check; not physics or noise tolerance"
+    }
+  ],
+  "termination200": {
+    "0": {
+      "log": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_00_ijj9ydcu/s2_shift30_temporal200_20261007_files/fwd_default_p0.log",
+      "log_sha256": "a068f29004d693d6991b30673a3e5bbd5312d6e53310bd981a986268888b2a5f",
+      "iterations": 2998039,
+      "physical_time_s": 2e-10,
+      "requested_time_s": 2e-10,
+      "recorded_dt_s": 6.671026479768415e-17,
+      "delta_s": 0.0,
+      "status": 1,
+      "reason": "completed_full_simulation_time"
+    },
+    "1": {
+      "log": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_01_3rcx6ifx/s2_shift30_temporal200_20261007_files/fwd_default_p0.log",
+      "log_sha256": "12ecdaba619283cdf64a744260ff7ad14d84c6beb3c057cefc31f5d97c4400e6",
+      "iterations": 2998039,
+      "physical_time_s": 2e-10,
+      "requested_time_s": 2e-10,
+      "recorded_dt_s": 6.671026479768415e-17,
+      "delta_s": 0.0,
+      "status": 1,
+      "reason": "completed_full_simulation_time"
+    },
+    "2": {
+      "log": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_02_47mcx1av/s2_shift30_temporal200_20261007_files/fwd_default_p0.log",
+      "log_sha256": "979c52967dd253e065b5c170a4032f3e9de592182155cba25b777f49bab7ec23",
+      "iterations": 2998039,
+      "physical_time_s": 2e-10,
+      "requested_time_s": 2e-10,
+      "recorded_dt_s": 6.671026479768415e-17,
+      "delta_s": 0.0,
+      "status": 1,
+      "reason": "completed_full_simulation_time"
+    }
+  },
+  "observables": {
+    "peak3_tout": {
+      "triplets": {
+        "100": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.9332799826428907,
+          "minus_peak3": 0.9333060240371198,
+          "center_peak3": 0.9332865280044799,
+          "peak_indices_plus_minus": [
+            250,
+            253
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.0853026229418486,
+            0.9779356131866448,
+            -0.06323823612849339
+          ],
+          "odd": -1.3020697114562996e-05,
+          "even": 6.475335525446546e-06,
+          "central_derivative": -0.00020833115383300793,
+          "second_difference": 0.0033153717890286316,
+          "exact_center_peak3_jacobian_projection": 6.452871395494497e-05,
+          "moving_peak_minus_projection": -0.0002728598677879529,
+          "spectral_fd_max_abs": 0.5266578825157993,
+          "spectral_fd_rms": 0.16308694293811168,
+          "same_duration_center_J0_projection": 6.452871395494497e-05,
+          "fixed150_center_J0_projection": -0.0019779708744416197,
+          "fixed150_J0_peak_index": 252,
+          "fixed150_J0_weights": [
+            0.06345704599879229,
+            0.9870192040514117,
+            -0.05047625005020404
+          ],
+          "fixed150_J0_checkpoint_sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+          "fixed_bins": {
+            "244": 0.40309981826871155,
+            "252": -0.008696443001320553,
+            "260": -0.413836594280764
+          }
+        },
+        "150": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.9335627724801671,
+          "minus_peak3": 0.9335819993162721,
+          "center_peak3": 0.9335704173009669,
+          "peak_indices_plus_minus": [
+            250,
+            253
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.06345704599879229,
+            0.9870192040514117,
+            -0.05047625005020404
+          ],
+          "odd": -9.613418052500933e-06,
+          "even": 1.96859725265508e-06,
+          "central_derivative": -0.00015381468884001492,
+          "second_difference": 0.001007921793359401,
+          "exact_center_peak3_jacobian_projection": -0.0004483830822971384,
+          "moving_peak_minus_projection": 0.0002945683934571235,
+          "spectral_fd_max_abs": 0.5237536089948769,
+          "spectral_fd_rms": 0.16309034389247953,
+          "same_duration_center_J0_projection": -0.0004483830822971384,
+          "fixed150_center_J0_projection": -0.0004483830822971384,
+          "fixed150_J0_peak_index": 252,
+          "fixed150_J0_weights": [
+            0.06345704599879229,
+            0.9870192040514117,
+            -0.05047625005020404
+          ],
+          "fixed150_J0_checkpoint_sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+          "fixed_bins": {
+            "244": 0.40495800520495173,
+            "252": -0.007236326908024893,
+            "260": -0.4160978881629376
+          }
+        },
+        "200": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.9336692659460811,
+          "minus_peak3": 0.9337172135598448,
+          "center_peak3": 0.9337153394596903,
+          "peak_indices_plus_minus": [
+            250,
+            253
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.05738332683098704,
+            0.9891924953389944,
+            -0.04657582216998147
+          ],
+          "odd": -2.397380688184958e-05,
+          "even": -2.2099706727396473e-05,
+          "central_derivative": -0.0003835809101095933,
+          "second_difference": -0.011315049844426994,
+          "exact_center_peak3_jacobian_projection": -0.0005055398872017528,
+          "moving_peak_minus_projection": 0.00012195897709215949,
+          "spectral_fd_max_abs": 0.5245862875421929,
+          "spectral_fd_rms": 0.16309223041845336,
+          "same_duration_center_J0_projection": -0.0005055398872017528,
+          "fixed150_center_J0_projection": 9.899471476843306e-05,
+          "fixed150_J0_peak_index": 252,
+          "fixed150_J0_weights": [
+            0.06345704599879229,
+            0.9870192040514117,
+            -0.05047625005020404
+          ],
+          "fixed150_J0_checkpoint_sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+          "fixed_bins": {
+            "244": 0.4048976843477661,
+            "252": -0.006809812211119315,
+            "260": -0.4160061010506002
+          }
+        }
+      },
+      "temporal_differences": {
+        "150_minus_100": {
+          "central_derivative": 5.451646499299301e-05,
+          "same_duration_center_J0_projection": -0.0005129117962520834,
+          "even": -4.506738272791466e-06,
+          "same_geometry": {
+            "center": {
+              "peak3_difference": 0.00028388929648703876,
+              "spectral_difference": {
+                "max_abs": 0.0003909386394187475,
+                "rms": 8.985304470644557e-05
+              }
+            },
+            "plus": {
+              "peak3_difference": 0.00028278983727636486,
+              "spectral_difference": {
+                "max_abs": 0.0003997092260760171,
+                "rms": 9.185839229526835e-05
+              }
+            },
+            "minus": {
+              "peak3_difference": 0.00027597527915224074,
+              "spectral_difference": {
+                "max_abs": 0.0003947057922034647,
+                "rms": 9.046002250330896e-05
+              }
+            }
+          }
+        },
+        "200_minus_150": {
+          "central_derivative": -0.00022976622126957835,
+          "same_duration_center_J0_projection": -5.715680490461436e-05,
+          "even": -2.4068303980051553e-05,
+          "same_geometry": {
+            "center": {
+              "peak3_difference": 0.00014492215872341507,
+              "spectral_difference": {
+                "max_abs": 0.0001474965728635036,
+                "rms": 1.557384545744865e-05
+              }
+            },
+            "plus": {
+              "peak3_difference": 0.00010649346591407038,
+              "spectral_difference": {
+                "max_abs": 0.00011650750991321068,
+                "rms": 1.5680182882076164e-05
+              }
+            },
+            "minus": {
+              "peak3_difference": 0.00013521424357276768,
+              "spectral_difference": {
+                "max_abs": 0.00013514310911688643,
+                "rms": 1.5539195273872052e-05
+              }
+            }
+          }
+        },
+        "200_minus_100": {
+          "central_derivative": -0.00017524975627658534,
+          "same_duration_center_J0_projection": -0.0005700686011566977,
+          "even": -2.857504225284302e-05,
+          "same_geometry": {
+            "center": {
+              "peak3_difference": 0.00042881145521045383,
+              "spectral_difference": {
+                "max_abs": 0.0004875526870357083,
+                "rms": 9.24361944132349e-05
+              }
+            },
+            "plus": {
+              "peak3_difference": 0.00038928330319043525,
+              "spectral_difference": {
+                "max_abs": 0.0004550434161602057,
+                "rms": 8.917018738396186e-05
+              }
+            },
+            "minus": {
+              "peak3_difference": 0.0004111895227250084,
+              "spectral_difference": {
+                "max_abs": 0.0004832398473537669,
+                "rms": 9.196255795551355e-05
+              }
+            }
+          }
+        }
+      },
+      "existing150_h0125_pair": {
+        "half_step_nm": 0.125,
+        "plus_peak3": 0.9335484941530775,
+        "minus_peak3": 0.9335959677783789,
+        "center_peak3": 0.9335704173009669,
+        "peak_indices_plus_minus": [
+          249,
+          255
+        ],
+        "center_peak_index": 252,
+        "center_peak3_weights": [
+          0.06345704599879229,
+          0.9870192040514117,
+          -0.05047625005020404
+        ],
+        "odd": -2.3736812650720918e-05,
+        "even": 1.8136647612632117e-06,
+        "central_derivative": -0.00018989450120576734,
+        "second_difference": 0.0002321490894416911,
+        "exact_center_peak3_jacobian_projection": -0.0010602160488354978,
+        "moving_peak_minus_projection": 0.0008703215476297305,
+        "spectral_fd_max_abs": 0.5209568604007986,
+        "spectral_fd_rms": 0.16241147601764072
+      }
+    },
+    "peak3_modal": {
+      "triplets": {
+        "100": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.979742933539772,
+          "minus_peak3": 0.9797825048551728,
+          "center_peak3": 0.9797643000266578,
+          "peak_indices_plus_minus": [
+            249,
+            252
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            -0.04329707565866152,
+            0.9908290442727394,
+            0.05246803138592207
+          ],
+          "odd": -1.9785657700388537e-05,
+          "even": -1.580829185332533e-06,
+          "central_derivative": -0.0003165705232062166,
+          "second_difference": -0.0008093845428902569,
+          "exact_center_peak3_jacobian_projection": -0.00016082580976194312,
+          "moving_peak_minus_projection": -0.00015574471344427347,
+          "spectral_fd_max_abs": 0.5731990025220135,
+          "spectral_fd_rms": 0.1742867423049027,
+          "same_duration_center_J0_projection": -0.00016082580976194312,
+          "fixed150_center_J0_projection": -0.00033016185565574964,
+          "fixed150_J0_peak_index": 250,
+          "fixed150_J0_weights": [
+            -0.044293527344450426,
+            0.9903493542033017,
+            0.05394417314114871
+          ],
+          "fixed150_J0_checkpoint_sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+          "fixed_bins": {
+            "244": 0.37613898846788807,
+            "252": -0.12786212014577014,
+            "260": -0.5138697624310238
+          }
+        },
+        "150": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.979975189082036,
+          "minus_peak3": 0.9799956514725428,
+          "center_peak3": 0.9799716056663635,
+          "peak_indices_plus_minus": [
+            249,
+            252
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            -0.044293527344450426,
+            0.9903493542033017,
+            0.05394417314114871
+          ],
+          "odd": -1.023119525339622e-05,
+          "even": 1.381461092575531e-05,
+          "central_derivative": -0.0001636991240543395,
+          "second_difference": 0.007073080793986719,
+          "exact_center_peak3_jacobian_projection": 0.0003335961568220569,
+          "moving_peak_minus_projection": -0.0004972952808763964,
+          "spectral_fd_max_abs": 0.5708343250934869,
+          "spectral_fd_rms": 0.1742924579337817,
+          "same_duration_center_J0_projection": 0.0003335961568220569,
+          "fixed150_center_J0_projection": 0.0003335961568220569,
+          "fixed150_J0_peak_index": 250,
+          "fixed150_J0_weights": [
+            -0.044293527344450426,
+            0.9903493542033017,
+            0.05394417314114871
+          ],
+          "fixed150_J0_checkpoint_sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+          "fixed_bins": {
+            "244": 0.3785031160595471,
+            "252": -0.12670438699476172,
+            "260": -0.5159330470764258
+          }
+        },
+        "200": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.9799159872405548,
+          "minus_peak3": 0.9799757213023714,
+          "center_peak3": 0.9799571672203162,
+          "peak_indices_plus_minus": [
+            249,
+            252
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            -0.057099989287614644,
+            0.9827105230984094,
+            0.07438946618920525
+          ],
+          "odd": -2.986703090829268e-05,
+          "even": -1.1312948853037241e-05,
+          "central_derivative": -0.0004778724945326829,
+          "second_difference": -0.0057922298127550675,
+          "exact_center_peak3_jacobian_projection": -0.0006457644774178163,
+          "moving_peak_minus_projection": 0.0001678919828851334,
+          "spectral_fd_max_abs": 0.5702246228128516,
+          "spectral_fd_rms": 0.17429469617535293,
+          "same_duration_center_J0_projection": -0.0006457644774178163,
+          "fixed150_center_J0_projection": 0.0015947923874276232,
+          "fixed150_J0_peak_index": 250,
+          "fixed150_J0_weights": [
+            -0.044293527344450426,
+            0.9903493542033017,
+            0.05394417314114871
+          ],
+          "fixed150_J0_checkpoint_sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+          "fixed_bins": {
+            "244": 0.37842251271903127,
+            "252": -0.12631459337759843,
+            "260": -0.5157633394802312
+          }
+        }
+      },
+      "temporal_differences": {
+        "150_minus_100": {
+          "central_derivative": 0.00015287139915187709,
+          "same_duration_center_J0_projection": 0.000494421966584,
+          "even": 1.5395440111087844e-05,
+          "same_geometry": {
+            "center": {
+              "peak3_difference": 0.0002073056397057238,
+              "spectral_difference": {
+                "max_abs": 0.0003972516119252756,
+                "rms": 9.445255036090634e-05
+              }
+            },
+            "plus": {
+              "peak3_difference": 0.00023225554226391498,
+              "spectral_difference": {
+                "max_abs": 0.0004158418550298526,
+                "rms": 9.666409339267605e-05
+              }
+            },
+            "minus": {
+              "peak3_difference": 0.00021314661736993035,
+              "spectral_difference": {
+                "max_abs": 0.0003970756561446631,
+                "rms": 9.51600460913848e-05
+              }
+            }
+          }
+        },
+        "200_minus_150": {
+          "central_derivative": -0.00031417337047834337,
+          "same_duration_center_J0_projection": -0.0009793606342398732,
+          "even": -2.5127559778792552e-05,
+          "same_geometry": {
+            "center": {
+              "peak3_difference": -1.44384460473157e-05,
+              "spectral_difference": {
+                "max_abs": 0.00015329387475404577,
+                "rms": 1.6334302953369493e-05
+              }
+            },
+            "plus": {
+              "peak3_difference": -5.9201841481115736e-05,
+              "spectral_difference": {
+                "max_abs": 0.00012744519200447169,
+                "rms": 1.6642978593483968e-05
+              }
+            },
+            "minus": {
+              "peak3_difference": -1.9930170171322814e-05,
+              "spectral_difference": {
+                "max_abs": 0.00014909163707066408,
+                "rms": 1.683620041513715e-05
+              }
+            }
+          }
+        },
+        "200_minus_100": {
+          "central_derivative": -0.0001613019713264663,
+          "same_duration_center_J0_projection": -0.00048493866765587316,
+          "even": -9.732119667704708e-06,
+          "same_geometry": {
+            "center": {
+              "peak3_difference": 0.0001928671936584081,
+              "spectral_difference": {
+                "max_abs": 0.000514946052761478,
+                "rms": 9.70544202427269e-05
+              }
+            },
+            "plus": {
+              "peak3_difference": 0.00017305370078279925,
+              "spectral_difference": {
+                "max_abs": 0.00048348256320285277,
+                "rms": 9.320617583103562e-05
+              }
+            },
+            "minus": {
+              "peak3_difference": 0.00019321644719860753,
+              "spectral_difference": {
+                "max_abs": 0.0005183415245243461,
+                "rms": 9.667809222539822e-05
+              }
+            }
+          }
+        }
+      },
+      "existing150_h0125_pair": {
+        "half_step_nm": 0.125,
+        "plus_peak3": 0.9799437400348227,
+        "minus_peak3": 0.9800066397745121,
+        "center_peak3": 0.9799716056663635,
+        "peak_indices_plus_minus": [
+          247,
+          253
+        ],
+        "center_peak_index": 250,
+        "center_peak3_weights": [
+          -0.044293527344450426,
+          0.9903493542033017,
+          0.05394417314114871
+        ],
+        "odd": -3.1449869844712985e-05,
+        "even": 3.5842383038220405e-06,
+        "central_derivative": -0.0002515989587577039,
+        "second_difference": 0.0004587825028892212,
+        "exact_center_peak3_jacobian_projection": 0.0013131990525349223,
+        "moving_peak_minus_projection": -0.0015647980112926262,
+        "spectral_fd_max_abs": 0.5669531450958454,
+        "spectral_fd_rms": 0.17350957234839992
+      }
+    }
+  },
+  "limitations": [
+    "Fixed-center peak3-J0 times finite spectralFD is a projection, not an adjoint or infinitesimal derivative.",
+    "One h and three finite durations establish no noise floor, h-order, asymptotic convergence or automatic physics pass.",
+    "Local checkpoint/NPZ bytes and recorded source/API/geometry/axes/time identities are validated; remote originalFSP/H5/log rechecks belong to parent cold-fetch receipts."
+  ],
+  "full_spectra_sha256": "0806ffd82c50fcaf39c32d3733cbcf3d3b4c4b1d5072bea18208da32baa29ede",
+  "MAT_sha256": "8b616463226faa4aee9c3131b6cfacc135557c3e4f51ddb4679306e7bc709ac3"
+}

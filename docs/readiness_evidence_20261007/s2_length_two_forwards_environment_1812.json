@@ -1,0 +1,21 @@
+{
+  "S2_LEN_NATIVE_BASE": "/home/evyatarrubin/research/bragg_sim_igum",
+  "S2_LEN_REPO": "/home/evyatarrubin/research/bragg_sim_igum/project",
+  "S2_LEN_OUTPUT_ROOT": "/home/evyatarrubin/research/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007",
+  "S2_LEN_CAD_OUTPUT": "/home/evyatarrubin/research/bragg_sim_igum/results/s2_length_native_cad_20261007",
+  "S2_LEN_REFERENCE_CP": "/home/evyatarrubin/research/bragg_sim_igum/data/s2_length_native_20261007/reference_150_center_original.json",
+  "S2_LEN_REFERENCE_PROFILE": "/home/evyatarrubin/research/bragg_sim_igum/data/s2_length_native_20261007/reference_spatial_inventory_original.json",
+  "S2_LEN_REFERENCE_GRIDS": "/home/evyatarrubin/research/bragg_sim_igum/data/s2_length_native_20261007/reference_port_grids.json",
+  "LUMAPI_PATH": "/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumapi.py",
+  "S2_LEN_REVIEW_MARKER": "/home/evyatarrubin/research/bragg_sim_igum/data/s2_length_native_20261007/review_two_forwards.json",
+  "S2_LEN_REVIEW_SHA256": "d824bf5632c52defad99bf95be170d4921b011fea9dc455a50fdc29fb878f23a",
+  "SWEEP_KIND": "lumopt2_design",
+  "SWEEP_SPEC_MODULE": "runners.lumopt2_design.s2_length_fixed150",
+  "SWEEP_LIST": "/home/evyatarrubin/research/bragg_sim_igum/data/s2_length_native_20261007/two_tasks.txt",
+  "ATHENA_LICENSE": "1055@132.68.48.51",
+  "ATHENA_INTERCONNECT": "2325@132.68.48.51",
+  "REQUIRE_GPU": "1",
+  "KEEP_H5": "1",
+  "NTFY_TOPIC": "",
+  "WORK_DIR": "/home/evyatarrubin/research/bragg_sim_igum"
+}

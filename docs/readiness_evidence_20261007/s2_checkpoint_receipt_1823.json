@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-07T18:22:50.992804+03:00",
+  "archive": "s2_200ps_measured_and_length_release_1823.zip",
+  "sha256": "19e58cbe46ceee8471f5065d24bf22b6d676adf431fb15a79c67ea42688721dd",
+  "files": 200,
+  "bytes": 12218595,
+  "skill_validation": "both quick_validate exit0; instructions only updated",
+  "limits": "38 completed FDTD; IGUM101434 queued; global calibration failed; no optimizer"
+}

@@ -17,3 +17,9 @@ runners/lumopt2_design/s2_temporal_step150.py -text
 
 # Preserve reviewed fixed200ps diagnostic source fingerprint.
 runners/lumopt2_design/s2_temporal200_forward.py -text
+
+# Preserve native length diagnostic byte fingerprints.
+runners/lumopt2_design/s2_length_fixed150.py -text
+runners/lumopt2_design/s2_length_fixed_domain_build.py -text
+runners/lumopt2_design/s2_length_no_solve_guard.py -text
+runners/lumopt2_design/s2_length_reference_checks.py -text

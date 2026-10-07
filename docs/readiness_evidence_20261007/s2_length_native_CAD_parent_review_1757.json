@@ -1,0 +1,12 @@
+{
+  "status": "PARENT_NATIVE_CAD_REVALIDATED_NO_PHYSICS_PASS",
+  "report_sha256": "d18c4661da4c10240cf59a623b7b36cb7735dc32d1c32ef149829ecd6ddfdadd",
+  "runner_sha256": "9076fb3d693604048df40f465d0987310651ebb92c39105979aa43a12a662490",
+  "native_vs_Windows_final_snapshot_exact": {
+    "98": true,
+    "80": true
+  },
+  "vendor_matches_original_Athena": true,
+  "all_required_controls_and_retained_geometry_validated": true,
+  "FDTD_solves": 0
+}

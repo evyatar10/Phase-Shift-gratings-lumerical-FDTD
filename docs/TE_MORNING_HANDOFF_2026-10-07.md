@@ -1,5 +1,9 @@
 # TE readiness handoff — 2026-10-07
 
+## Update 18:20 Israel
+
+38 new solves complete. Actual 200 ps data still do not establish transmission-gradient convergence; global calibration remains FAILED. Spatial FWHM changed only +0.0005603 um (Tout profile) from 150 to 200 ps. Native IGUM CAD passed; physical N98/N80 pair 101434 is queued, not validated. See the TOP of TE_CONTINUATION_2026-10-07.md for exact measured evidence, frozen identities and next actions. No optimizer release.
+
 Current17:25:35 FDTD solves complete; fixed200ps Athena171390 tasks0/1/2
 running, no new length solve released. N98/N80 local CAD verified, native
 forward packet pending. Global calibration remains FAILED. Read TOP

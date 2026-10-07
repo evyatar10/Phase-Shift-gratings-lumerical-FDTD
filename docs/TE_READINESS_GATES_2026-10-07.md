@@ -1,5 +1,110 @@
 # Full-optimization readiness criteria
 
+## Current state 18:20 Israel — 200 ps measured; N98/N80 physical pair queued
+
+**Global calibration remains FAILED; no optimizer or failed coefficients released.**
+38 new FDTD solves are verified complete. Athena 171390 tasks 0/1/2 all
+completed 200 ps, exit 0, with strict cold checkpoint/artifact checks and local
+analysis. IGUM 101434 tasks 0=N98 and 1=N80 were submitted at 18:06:11;
+at 18:09 both were PENDING Resources. Do not duplicate them. N70 is deferred;
+N98/free60 remains production. The pair uses the same N98 box and 150 ps,
+so it measures physical length sensitivity, not a compact-box speedup.
+
+200 ps center Tout peak3 = 0.9337153394596903; modal peak3 = 0.9799571672203162.
+At h=0.0625 nm, Tout moving-peak FD = -0.000383580910110/nm and modal
+FD = -0.000477872494533/nm. These changed materially from 150 ps
+(-0.000153814688840 and -0.000163699124054/nm). Increasing duration has
+NOT established transmission-gradient convergence. No automatic 300 ps rung,
+new adjoint, or objective substitution is approved by this observation.
+Saved-spectrum observer diagnosis is in progress with the focused Sol worker.
+
+CPU-only Athena 171458 completed in 44 seconds, zero new FDTD solves.
+Strict actual 100/150/200 ps profile comparison passed: Tout-profile FWHM
+19.643717063777355 -> 19.644277361032174 um from 150 to 200 ps
+(+0.000560297254818 um). Modal-profile change +0.000466823373358 um.
+This is small measured temporal width sensitivity, not mesh/length/gradient
+convergence. The MAT exports are in
+results_from_athena/te_readiness_20261007/spatial_profiles_1558/:
+te_s2_fixed200_duration_spectra.mat and te_s2_spatial_100_150_200ps.mat.
+
+Evidence in docs/readiness_evidence_20261007/: s2_temporal200_review_1759.json,
+s2_temporal200_spectra_1759.json, s2_temporal200_independent_pins_1759.json,
+s2_saved200_profiles_fetch_1810.json, s2_saved200_profiles_receipt_original.json,
+s2_spatial_three_durations_1810.json. Original 200 center checkpoint SHA
+37fa4074d0dd5bfaa88bf6932b1ca1deed786620126b56f8a2d0c4cd44dbe029.
+
+IGUM CPU-only CAD qualification 101425 completed exit 0 in 63 seconds;
+both saved/reloaded native geometry snapshots equal the Windows reference
+exactly. Report SHA d18c4661da4c10240cf59a623b7b36cb7735dc32d1c32ef149829ecd6ddfdadd.
+This is build verification, not physical convergence. Its live scontrol record
+aged out; preserved verified completion, logs and unchanged artifacts are recorded.
+IGUM physical pair 101434 requests two typed A100s, 8 CPU/256G each, 2 hours,
+part-preempt/qos-preempt/acct-lumerical, array 0-1%2. Fourteen shared solver seats
+are planned. Fresh seat/queue/filesystem/user/group/project-quota checks passed
+before dispatch. Test-only start estimate 19:08:37 is not a promise; the actual 18:09 scontrol
+forecast instead showed October9 06:12:35. Queue start is uncertain; do not
+present the earlier test-only estimate as the live scheduler forecast.
+
+Frozen new runtime runners/lumopt2_design/s2_length_fixed150.py SHA
+9076fb3d693604048df40f465d0987310651ebb92c39105979aa43a12a662490;
+three private helpers are pinned in s2_length_two_forwards_environment_1812.json.
+Ten offline groups passed and native CAD was independently reviewed. Preserve
+these and existing production fingerprints while jobs depend on them.
+IGUM base /home/evyatarrubin/research/bragg_sim_igum; output
+results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007.
+Release marker data/s2_length_native_20261007/review_two_forwards.json SHA
+d824bf5632c52defad99bf95be170d4921b011fea9dc455a50fdc29fb878f23a.
+Successful release: s2_length_two_forwards_dispatch_1812.json (actual 18:06:11).
+Earlier failed preparation/release attempts remain preserved and submitted no jobs.
+A second focused Sol worker is preparing a strict read-only completion fetch;
+no postsolve evidence exists yet. Check actual GPU/thread allocation once running,
+then cold-check completed checkpoints and extract own/common-window profiles.
+
+Claude Opus 5.5 text-only review succeeded; corrected claims and exact response
+are preserved in claude_200ps_decision_review_1813.json and its archive. Actual
+peak3 Jacobian support must be used for cancellation analysis; unrelated spectral
+flanks do not establish it. Bin changes alone do not prove nonsmoothness, and
+spectral localization does not prove a slow-decay cause. Fitted observers remain
+exploratory, not an adopted FOM. Old adjoints are original-duration fields.
+
+Actual account query at 18:20: weekly 20% remaining; other/model/Claude pools
+unknown. No reset or purchase. Conserve for decisions and integration. Maintain
+the existing 30-minute heartbeat and storage checks; preserve all artifacts.
+Latest prior focused commit 96137b5; new runtime and this checkpoint await a
+focused reviewed commit. Historical states below are superseded by this section.
+
+## Current state 17:53 Israel — IGUM native CAD qualification running
+
+IGUM job **101425_0** submitted17:52:44, started17:52:45 on ece-ykasten1.
+Actual allocation8CPU/64G, no GPU,20minutes,acct-lumerical/part-preempt/qos-preempt.
+It builds/reloads N98/N80 under guarded CAD only, adds ZERO FDTD solves.
+Output `/home/evyatarrubin/research/bragg_sim_igum/results/s2_length_native_cad_20261007`;
+report `native_build_only_report.json`, log `jobs/logs/lum_array-101425_0.out`.
+At17:53 both builds had begun; no report yet. Inspect exact job/report before
+any physical length release. Original global gradient gate remains FAILED.
+
+Forward v2 source9076fb3d693604048df40f465d0987310651ebb92c39105979aa43a12a662490,
+TEMP/s2_length_fixed150_candidate_v2_dag_pm08. Ten offline groups independently
+rerun by root exit0; targeted independent review has no remaining code blocker.
+It adds cold saved-profile availability/axes evidence and exact feed-property
+checks. Prior3248 packet and original builder1788 remain preserved. Manifest
+cfd0217a8a9da38582e4f6786b977ca3579933b00816e5899877b7719e090e67.
+
+First IGUM metadata preflight failed before uploads because diagnostic helper
+s2_shift30_convergence.py was absent. The corrected new-only preparation added
+missing byte-verified frozen dependencies; every existing source was hash-checked
+and preserved. Remote metadata validation then passed. Archive
+`s2_length_native_candidate_and_CPU_release_1755.zip` preserves both attempts,
+packet/operator and exact dispatch. Standard native wrapper8ae77d2..., Python
+wrapper614eab929... verified. Prepared CPU wrappere74ab68...; no source overwrite.
+
+At17:51 GUIseats3/50; CPU-only release fresh queue/filesystem/user/group/project
+quota and scheduler test passed. No physical N80/N98 forward release marker exists;
+remote template is NOT_REVIEWED with no allowed tasks. Candidate code is now
+frozen while native101425 depends on it. No duplicate CAD submission or full
+optimization. Athena171390 exact200ps triplet still awaiting all completed
+checkpoints; latest measured17:43 percentages89/85/82 are below.
+
 ## Current state 17:25 Israel — N80 CAD verified; physical comparison pending
 
 Latest measured follow-up at17:25: Athena snapshot (filename1729, actual17:24:48)

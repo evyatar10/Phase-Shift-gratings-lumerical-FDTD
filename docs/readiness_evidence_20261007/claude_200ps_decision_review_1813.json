@@ -1,0 +1,22 @@
+{
+  "model_verified": "claude-opus-5-5",
+  "status": "SUCCESS_TEXT_ONLY_LEAD_CORRECTIONS_REQUIRED",
+  "adopted": [
+    "Prioritize bounded saved-spectrum observer diagnosis before another blind longer-duration triplet.",
+    "Compare full spectra, actual peak3 support terms and finite-step observer remainder; preserve fixed-bin versus tracked-peak distinction.",
+    "A fitted peak can be studied offline but is not adopted as the objective; retain the spatial-width constraint."
+  ],
+  "corrected_or_unproven": [
+    "Bins244/260 are outside the actual three-bin support; their opposite slopes do not quantify peak3 Jacobian cancellation. Compute actual weighted support terms.",
+    "The derivative-change identity from plus/minus duration differences is algebraically true, but does not prove deterministic finite-time drift versus run variation or its physical cause.",
+    "Peak-window/argmax changes do not by themselves prove nonsmoothness at the evaluated points.",
+    "Drift localized on a resonance does not identify slow resonance decay as its cause.",
+    "One repeat cannot establish a noise floor or exclude run variation globally, even if bitwise equal. An original-duration center repeat already exists; no new200 repeat yet.",
+    "One parameter at a new h/duration cannot quantitatively explain all six original calibration failures.",
+    "Observed fixed-bin agreement across two durations is measured sensitivity, not unconditional reference accuracy.",
+    "Spectral broadening must not be conflated with spatial FWHM; integrated transmission changes the objective but does not automatically violate a spatial-width constraint.",
+    "Matching forward/adjoint duration alone does not establish an exact finite-time adjoint gradient.",
+    "Tout center heights increase in the observed100/150/200 sequence; its peak derivative is nonmonotone. Preserve the observable when discussing monotonicity."
+  ],
+  "release": "No new gradient solve or objective change released by consultation. IGUM bounded length pair is independent."
+}

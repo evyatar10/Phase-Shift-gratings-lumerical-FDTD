@@ -5,13 +5,16 @@
 Decision: determine how removing the outer18 periods per side changes the
 current TE validation-point profile and spectrum, before choosing a shorter
 production device. N70 is deferred. N98 remains the production reference.
+N98 is a reference, not established infinite-length convergence. Agreement
+between two lengths measures sensitivity over that interval; a larger-N check
+may still be needed if the unresolved adoption decision depends on saturation.
 
 Reuse the verified N98 100/150ps fields, profile extraction, same-field crop
 scan and exact N80 mapping blueprint. A fresh hidden-CAD N98/N80 pair passed exact final geometry/control readbacks
-and independent review; its native IGUM forward packet remains in preparation. Hold the locked mesh, domain, port
+and independent review; native CAD101425 also passed. The physical IGUM pair101434 was submitted18:06 and is queued as of18:09. Hold the locked mesh, domain, port
 positions/phase/source, PML, profile coverage and all296 parameters fixed;
 only the outer mirror length and associated feed extension differ. Verify
-saved/reloaded geometry and controls. No length FDTD solve has been released.
+saved/reloaded geometry and controls. Two bounded length forwards are released; no result yet.
 
 An initial150ps pair can measure finite-duration length sensitivity in parallel
 with the running N98 200ps gradient diagnostic. It cannot establish N80 temporal
