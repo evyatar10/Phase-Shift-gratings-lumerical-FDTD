@@ -1,5 +1,83 @@
 # S2 calibration failure and bounded diagnosis
 
+## Update11:42 Israel - four smaller shift30 solves submitted
+
+Athena array **171162 tasks0-3** submitted11:41:31 for shift30(index149)
++/-0.125nm and +/-0.0625nm, one forward per task, original recovered center.
+These are diagnostic step choices, not certified converged gradients.
+Runner SHA7f0500a8a037961a3d72e3aa5d58ae2cd52ebbab2a8505f5395097adfac5c857;
+new immutable lead marker SHA50ef62531e338f57b5cbc78d05905a2cd5d805297407a4ba0913cedf3a5404df.
+Five focused offline tests and hidden CAD +0.0625nm passed; all723 geometry
+properties match, locked grids unchanged. Remote template/marker validation
+reverified completed first-wave checkpoints, spectra and preserved artifacts.
+Original dependencies/markers remain frozen; no release of eight other class legs.
+
+Each task requests A100,8CPUs,256G,2h,12h_4g; maximum4 concurrent.
+Preflight11:39: shared solve seats0/50, queued IGUM101155 commits7, new
+Athena commits28(total35/50); quota227G/300Gsoft/330Ghard; Athenaqueueempty.
+IGUM baseline remains PENDING Resources. Submission is not a completed solve:
+**22 completed new FDTD solves**, plus4 newly submitted and1 IGUMpending.
+Dry-run estimated12:21 start, not guaranteed. Inspect actual queue/startup next.
+Receipt/environment/original marker: readiness_evidence_20261007/s2_shift30_*.
+Expected root /work/results/diagnose_te_s2_shift30_convergence/results/s2_shift30_convergence_20261007.
+
+Isolated estimator comparison: quadratic7 not promising; quartic11 reduces
+cubic-model Tout local derivative ripple~29x but has~9.4e-6 height bias,
+mixed modal behavior and strong interpolant dependence. Neither removes
+actual shift30 even term~2.8-3.0e-4. Five tests and pinned actual-data analysis
+pass. Production objective unchanged; saved scalar Re/Im cannot directly
+supply7/11-sample Jacobians. Stored-field/source compatibility is under bounded
+review before any such reconstruction. Models are not physical calibration.
+Evidence: s2_peak_estimators_reviewed_1142.zip and s2_shift30_prepared_tests_1142.zip.
+Global calibration remains FAILED; no coefficient installed and no optimizer.
+
+## First-wave measured evidence and next check, 11:18 Israel
+
+**Global calibration remains FAILED; no coefficients are installed.** Access
+returned at11:12. All four170962 tasks completed around09:27, exit0, and
+their downloaded original checkpoints/NPZs passed full identity, grid and
+scalar-reproduction checks. Remote cold resume reused the same four results
+and checked retained artifacts. The completed NEW FDTD count is22. These
+checks establish evidence fidelity, not scientific calibration accuracy.
+
+| h0.5nm measurement | Previous derivative pernm | New derivative pernm | Observed change |
+|---|---:|---:|---:|
+| corr30 peak3(Tout) repeat | +3.667260923146e-5 | +3.694982916536e-5 | +0.75593% |
+| corr30 modal peak3 repeat | +4.408675869771e-5 | +4.177987100784e-5 | -5.23261% |
+| shift30 peak3(Tout), old h2 versus new h0.5 | -1.576796279270e-4 | -2.703278141175e-4 | Step sizes differ |
+
+shift30 Tout endpoint indices are241/263 around center252:11 bins each way.
+Its h0.5nm exact fixed-center spectral-Jacobian FD projection is
++3.858571312957e-4/nm, opposite to the moving peak's finite-step derivative.
+This is not proof the infinitesimal observables differ or that the adjoint is
+wrong. Two corr30 pairs do not estimate a statistical noise distribution;
+two shift30 sizes do not establish an asymptotic error order. Preserve all
+endpoint spectra and both old/new centers. Evidence:
+`readiness_evidence_20261007/s2_firstwave_measured_1113.json` and
+`s2_firstwave_spectra_1113.json`.
+
+The lead explicitly holds the remaining eight h0.5nm class legs. Do not
+extrapolate the corr30 result blindly or publish a later-stage marker.
+Instead CPU-only Re171145_0 was submitted11:17:22 to reproduce the five other
+classes' original h1 scalar contractions: indices0,60,120,149,295. Resources
+128G,8CPUs,45min,2h_2g/l40s-public,zeroGPU/noFDTD. Source SHA
+`0be8299d6607388f373876bf16b5f15e3d894220efcd770b9cccedd6f46d526d`;
+output `/work/results/s2_other_classes_h1_re_20261007T0901/other_classes_h1.json`.
+Inspect Re fidelity and preserved artifacts before serial Im. Receipt:
+`readiness_evidence_20261007/s2_other_classes_re_dispatch_1118.json`.
+
+Claude5.5's advisory response is saved in `claude_firstwave_review_1118.json`.
+The lead rejects its unsupported O(delta^2) peak-ripple cause claim pending
+the bounded TEMP-only current-objective code/model test. Available recovered
+adjoint outputs are scalar objective contractions, not a full exported
+wavelength-resolved adjoint Jacobian. No claim of objective failure, repaired
+gradient or passed calibration is adopted before those gates.
+
+The existing heartbeat resumed ACTIVE11:18. IGUM101155_0 is live-queue pending
+Resources11:15; its11:12 accounting DB error is not lost SSH access. Shared
+preflight pool0/50,queued IGUM commitment7; the CPU check adds no solve seats.
+Original source/result history and the unchanged10% calibration gate remain.
+
 ## Latest four-step and both-quadrature evidence
 
 **Calibration remains FAILED; no coefficient is installed.** Athena170926

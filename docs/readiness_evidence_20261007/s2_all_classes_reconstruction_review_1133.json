@@ -1,0 +1,96 @@
+{
+  "status": "RAW_RECONSTRUCTION_REPRODUCED_NOT_PHYSICAL_CALIBRATION",
+  "quadratures": {
+    "re": {
+      "job": "171145_0",
+      "report_sha256": "98ddf3b319561b5a51f2a2f62f6bd868cf910c6ad6068be17af1f56e85ef59eb",
+      "max_abs_relative_difference": 2.0447396667113287e-14,
+      "originals_preserved": true,
+      "gradient_field_sha256": "0db30b862bf16d07c415a66af164e60fd7af59cf39c3b565836b648b9078e89e",
+      "rows": [
+        {
+          "index": 0,
+          "label": "corr_1",
+          "raw_contraction": 0.00029327743576382616,
+          "original_1nm_raw_contraction": 0.00029327743576382313,
+          "relative_difference": 1.03511750743897e-14
+        },
+        {
+          "index": 60,
+          "label": "avg_1",
+          "raw_contraction": 0.010743148444375187,
+          "original_1nm_raw_contraction": 0.010743148444374972,
+          "relative_difference": 2.0022595064648088e-14
+        },
+        {
+          "index": 120,
+          "label": "shift_1",
+          "raw_contraction": 0.0003035759342601648,
+          "original_1nm_raw_contraction": 0.00030357593426015865,
+          "relative_difference": 2.0178616231461413e-14
+        },
+        {
+          "index": 149,
+          "label": "shift_30",
+          "raw_contraction": 0.20875441140950038,
+          "original_1nm_raw_contraction": 0.20875441140949622,
+          "relative_difference": 1.9943704730519277e-14
+        },
+        {
+          "index": 295,
+          "label": "wcav",
+          "raw_contraction": 0.0027148273266758066,
+          "original_1nm_raw_contraction": 0.002714827326675751,
+          "relative_difference": 2.0447396667113287e-14
+        }
+      ],
+      "same_selected_gradient_field_hash_as_corr30_probe": false
+    },
+    "im": {
+      "job": "171151_0",
+      "report_sha256": "793e3edfb9a4aba5d2b42f84baa6dfe1662a52349382cf3a1e2613ab1d06d6ea",
+      "max_abs_relative_difference": 1.4983873151989063e-15,
+      "originals_preserved": true,
+      "gradient_field_sha256": "8cf269f1a611307796db2b1a77020a35be11c7638ed0687c9471d77cf0580fd4",
+      "rows": [
+        {
+          "index": 0,
+          "label": "corr_1",
+          "raw_contraction": -0.0011577270164934126,
+          "original_1nm_raw_contraction": -0.0011577270164934144,
+          "relative_difference": -1.4983873151989063e-15
+        },
+        {
+          "index": 60,
+          "label": "avg_1",
+          "raw_contraction": -0.08865722602354459,
+          "original_1nm_raw_contraction": -0.08865722602354463,
+          "relative_difference": -4.695992113760342e-16
+        },
+        {
+          "index": 120,
+          "label": "shift_1",
+          "raw_contraction": -0.002569030277329279,
+          "original_1nm_raw_contraction": -0.00256903027732928,
+          "relative_difference": -5.06433348981448e-16
+        },
+        {
+          "index": 149,
+          "label": "shift_30",
+          "raw_contraction": -1.7084692721685912,
+          "original_1nm_raw_contraction": -1.708469272168592,
+          "relative_difference": -3.8990096317597674e-16
+        },
+        {
+          "index": 295,
+          "label": "wcav",
+          "raw_contraction": -0.022952049749731928,
+          "original_1nm_raw_contraction": -0.02295204974973194,
+          "relative_difference": -4.534819752202047e-16
+        }
+      ],
+      "same_selected_gradient_field_hash_as_corr30_probe": false
+    }
+  },
+  "calibration": "FAILED_UNCHANGED"
+}

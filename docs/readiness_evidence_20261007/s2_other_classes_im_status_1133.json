@@ -1,0 +1,62 @@
+{
+  "exit_code": 0,
+  "err": "...\r\n",
+  "checked_at": "2026-10-07T11:32:12.771498+03:00",
+  "data": {
+    "accounting": {
+      "exit_code": 0,
+      "out": "JobID|State|Elapsed|ExitCode|MaxRSS\n171151_0|COMPLETED|00:05:40|0:0|\n171151_0.batch|COMPLETED|00:05:40|0:0|19737136K\n171151_0.extern|COMPLETED|00:05:40|0:0|0\n",
+      "err": ""
+    },
+    "queue": {
+      "exit_code": 0,
+      "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n",
+      "err": ""
+    },
+    "report_exists": true,
+    "log_tail": " AM IDT 2026\nGPU:        none requested; no-solve CAD probe\nCPUs:       8\nSWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\nUsing CONSTANT Materials (object-defined dielectric): SiN=1.97, SiO2=1.444\n11:26:37 - INFO - Generating optimization project...\n11:26:41 - INFO - FDTD version '8.35.4572' meets the minimum requirement.\n/work/results/s2_other_classes_h1_im_20261007T1123/other_classes_h1.json\n[wrapper] python exit code: 0\nINFO:    Terminating fuse-overlayfs after timeout\nINFO:    Timeouts can be caused by a running background process\n============================================================\nFinished:  Wed Oct  7 11:32:02 AM IDT 2026\nExit code: 0\n============================================================\n",
+    "report_sha256": "793e3edfb9a4aba5d2b42f84baa6dfe1662a52349382cf3a1e2613ab1d06d6ea",
+    "review": {
+      "execution_error": null,
+      "originals_preserved": true,
+      "source_sha256": "0be8299d6607388f373876bf16b5f15e3d894220efcd770b9cccedd6f46d526d",
+      "classes": [
+        {
+          "index": 0,
+          "label": "corr_1",
+          "raw_contraction": -0.0011577270164934126,
+          "original_1nm_raw_contraction": -0.0011577270164934144,
+          "relative_difference": -1.4983873151989063e-15
+        },
+        {
+          "index": 60,
+          "label": "avg_1",
+          "raw_contraction": -0.08865722602354459,
+          "original_1nm_raw_contraction": -0.08865722602354463,
+          "relative_difference": -4.695992113760342e-16
+        },
+        {
+          "index": 120,
+          "label": "shift_1",
+          "raw_contraction": -0.002569030277329279,
+          "original_1nm_raw_contraction": -0.00256903027732928,
+          "relative_difference": -5.06433348981448e-16
+        },
+        {
+          "index": 149,
+          "label": "shift_30",
+          "raw_contraction": -1.7084692721685912,
+          "original_1nm_raw_contraction": -1.708469272168592,
+          "relative_difference": -3.8990096317597674e-16
+        },
+        {
+          "index": 295,
+          "label": "wcav",
+          "raw_contraction": -0.022952049749731928,
+          "original_1nm_raw_contraction": -0.02295204974973194,
+          "relative_difference": -4.534819752202047e-16
+        }
+      ]
+    }
+  }
+}

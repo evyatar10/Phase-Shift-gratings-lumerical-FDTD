@@ -1,0 +1,388 @@
+{
+  "schema": 1,
+  "diagnostic_status": "REVIEW_REQUIRED_CALIBRATION_FAILED_UNCHANGED",
+  "no_automatic_later_approval": true,
+  "provenance": {
+    "marker_sha256": "6722e1883338c0259b6fd2aa7386a2d12f1c5124708f590c1ce30a7c266f8d02",
+    "center_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+    "runner_sha256": "4f5f9d21cb95f5cfbcb1e0fc91ae960dc0dd57449c973369051c551c07c7bba1",
+    "observed_files": {
+      "s2_fdstep_task00_original.json": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+      "s2_fdstep_task00_ports.npz": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4",
+      "s2_fdstep_task01_original.json": "021ce215c64ccc13020f74af8d775f65ab97f73290e4b06f1f159297f8c7b04e",
+      "s2_fdstep_task01_ports.npz": "9f6d80043881877926d40a17f18e5c0e3863d8c93a6279a2a65277b96c626613",
+      "s2_fdstep_task02_original.json": "9e72cdc72197254594688dc0102d8a4b10155435244b545719ec4fd3fda4e808",
+      "s2_fdstep_task02_ports.npz": "eb140dc60e401b9472e942833437eebb74ac60f6f2641a7cd2a55c94fe1e5fe7",
+      "s2_half_classes_task00_original.json": "823ab4a4dd5d3e412a1b6a806d8ea76f058f5c640701dd5c01c604f89f35e33f",
+      "s2_half_classes_task00_ports.npz": "25395d232792378b5ff098ad050e39ebea59d68a4cf5c8e067d6b386f18acd23",
+      "s2_half_classes_task01_original.json": "3821b3b1c2b6dc6f3adf9337252b2eb7040d55b8125d31f42ef74e7b11fb31b1",
+      "s2_half_classes_task01_ports.npz": "50bcaee3c3538acef0e81497369553e3d8ac0db6743605aa6c2336a32ca21f9b",
+      "s2_half_classes_task02_original.json": "5e096a013ba9d2a5660fd3c46f8e90fa958de9a9999376ebe5b3e2b76acfd37b",
+      "s2_half_classes_task02_ports.npz": "3ee423f1292390318867b92a6c0d0fc911c1cdf529b6924c503e60cbbb3678f6",
+      "s2_half_classes_task03_original.json": "bd0406be1a52ef986173c77c73017dca83d0d67d0c8eb021baefca5f5aafec81",
+      "s2_half_classes_task03_ports.npz": "d1fc60b97fa46a2dab9ad2cc113d11622cffec6466bf2337292bd1fc5492b872"
+    },
+    "old_shift30": {
+      "available": true,
+      "half_step_nm": 2.0,
+      "source_roles": {
+        "available": true,
+        "archive": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_original_port_spectra_preserved.zip",
+        "archive_sha256": "b996142caf4a66d73336ed2845a564626e6fbd9e0e9a695ee89bf498e7522204",
+        "members": {
+          "base_ports.npz": "801520552a17d34afe2ec45f34d949120c3d7a8a302d4f677cf8fd27bd1c2906",
+          "task_09_ports.npz": "8328f93a60f698aab3ba0bdc99aec71b9c2cb639576df9c57f8301d26dfb8a92",
+          "task_10_ports.npz": "a5cefa0026fb2f58b59075848756456e1d7f1941c7051bae6088ce2c69466a95"
+        },
+        "center_export_checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_reference_task00_remote_original.json",
+        "center_export_sha256": "732ca5752ff2b0449a892ebafe7ba6a87a5ee1fce63bd929f8f7343bf50df13f",
+        "center_export_role": "stored_forward_export_not_fsp_creation",
+        "center_export_semantic_sha256": "215be6bec0ec217748830dd6ef7938d6124c2efbb373c0ddceef8530e2ca3d46",
+        "fd_roles": {
+          "9": {
+            "checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_09.json",
+            "sha256": "665f58076abce8635bc14d967e93df4a6d299b140017e2817af5c0020557072e",
+            "semantic_sha256": "834947440dc0ff94cf771fea4ce38a9151eedaa6451599aa5b598ecc70b49b3b",
+            "code": {
+              "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+              "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+              "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+              "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+              "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+              "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+              "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+              "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+            },
+            "role": "recovery_generated_forward_fd_leg"
+          },
+          "10": {
+            "checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_10.json",
+            "sha256": "4b992ac83cfdf3dd6379ad05d14f9d02c0164c8146b857cb02ae7665432035e0",
+            "semantic_sha256": "4e9a1bbe1a151226197a9aad772479d726f4ec3418837b203662155cd0639eba",
+            "code": {
+              "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+              "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+              "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+              "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+              "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+              "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+              "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+              "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+            },
+            "role": "recovery_generated_forward_fd_leg"
+          }
+        }
+      },
+      "qualification": "Center fingerprints an export; FD endpoints have separately pinned recovery creators. Code-map equality and complete original-solve provenance are not claimed."
+    }
+  },
+  "observables": {
+    "peak3_tout": {
+      "corr30_repeat": {
+        "previous": {
+          "half_step_nm": 0.5,
+          "plus_peak3": 0.9257661136285295,
+          "minus_peak3": 0.925729441019298,
+          "center_peak3": 0.9257489820745417,
+          "peak_indices_plus_minus": [
+            252,
+            252
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.08250879819443567,
+            0.9792009972490889,
+            -0.06170979544352456
+          ],
+          "odd": 1.8336304615729215e-05,
+          "even": -1.204750627925577e-06,
+          "central_derivative": 3.667260923145843e-05,
+          "second_difference": -9.638005023404617e-06,
+          "exact_center_peak3_jacobian_projection": 3.667761171812604e-05,
+          "moving_peak_minus_projection": -5.0024866676075166e-09,
+          "spectral_fd_max_abs": 0.001570851548164387,
+          "spectral_fd_rms": 0.0004711329072239502
+        },
+        "new": {
+          "half_step_nm": 0.5,
+          "plus_peak3": 0.9257653888137255,
+          "minus_peak3": 0.9257284389845601,
+          "center_peak3": 0.9257489820745417,
+          "peak_indices_plus_minus": [
+            252,
+            252
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.08250879819443567,
+            0.9792009972490889,
+            -0.06170979544352456
+          ],
+          "odd": 1.8474914582677915e-05,
+          "even": -2.0681753989393314e-06,
+          "central_derivative": 3.694982916535583e-05,
+          "second_difference": -1.654540319151465e-05,
+          "exact_center_peak3_jacobian_projection": 3.6949136736479976e-05,
+          "moving_peak_minus_projection": 6.924288758539923e-10,
+          "spectral_fd_max_abs": 0.0015715966036724538,
+          "spectral_fd_rms": 0.000471161312318682
+        },
+        "central_derivative_difference": 2.7721993389739907e-07,
+        "even_difference": -8.634247710137544e-07,
+        "plus_endpoint_peak_difference": -7.248148039540325e-07,
+        "minus_endpoint_peak_difference": -1.0020347378514316e-06,
+        "plus_spectral_difference": {
+          "max_abs": 1.547384617106573e-06,
+          "rms": 2.0621692929240584e-07
+        },
+        "minus_spectral_difference": {
+          "max_abs": 1.1979645840876074e-06,
+          "rms": 2.029337683750087e-07
+        },
+        "spectral_fd_difference": {
+          "max_abs": 1.933070147508431e-06,
+          "rms": 3.1230181447238527e-07
+        }
+      },
+      "shift30_half_step": {
+        "half_step_nm": 0.5,
+        "plus_peak3": 0.9258938664009438,
+        "minus_peak3": 0.9261641942150614,
+        "center_peak3": 0.9257489820745417,
+        "peak_indices_plus_minus": [
+          241,
+          263
+        ],
+        "center_peak_index": 252,
+        "center_peak3_weights": [
+          0.08250879819443567,
+          0.9792009972490889,
+          -0.06170979544352456
+        ],
+        "odd": -0.00013516390705875514,
+        "even": 0.00028004823346083896,
+        "central_derivative": -0.0002703278141175103,
+        "second_difference": 0.0022403858676867117,
+        "exact_center_peak3_jacobian_projection": 0.00038585713129568643,
+        "moving_peak_minus_projection": -0.0006561849454131967,
+        "spectral_fd_max_abs": 0.4653456899446605,
+        "spectral_fd_rms": 0.14975178393034996
+      },
+      "shift30_old_h2": {
+        "native_old_center": {
+          "half_step_nm": 2.0,
+          "plus_peak3": 0.9254833733305935,
+          "minus_peak3": 0.9261140918423015,
+          "center_peak3": 0.925748506956398,
+          "peak_indices_plus_minus": [
+            207,
+            297
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.08251513001017524,
+            0.9791981622184937,
+            -0.06171329222866893
+          ],
+          "odd": -0.0003153592558540197,
+          "even": 5.02256300495274e-05,
+          "central_derivative": -0.00015767962792700985,
+          "second_difference": 2.51128150247637e-05,
+          "exact_center_peak3_jacobian_projection": 0.00022990270853836593,
+          "moving_peak_minus_projection": -0.0003875823364653758,
+          "spectral_fd_max_abs": 0.21391013051843016,
+          "spectral_fd_rms": 0.0818173271612462
+        },
+        "repeated_center_even_terms": {
+          "half_step_nm": 2.0,
+          "plus_peak3": 0.9254833733305935,
+          "minus_peak3": 0.9261140918423015,
+          "center_peak3": 0.9257489820745417,
+          "peak_indices_plus_minus": [
+            207,
+            297
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.08250879819443567,
+            0.9792009972490889,
+            -0.06170979544352456
+          ],
+          "odd": -0.0003153592558540197,
+          "even": 4.975051190581059e-05,
+          "central_derivative": -0.00015767962792700985,
+          "second_difference": 2.4875255952905295e-05,
+          "exact_center_peak3_jacobian_projection": 0.00022986423172945874,
+          "moving_peak_minus_projection": -0.0003875438596564686,
+          "spectral_fd_max_abs": 0.21391013051843016,
+          "spectral_fd_rms": 0.0818173271612462
+        },
+        "hhalf_minus_h2_derivative": -0.00011264818619050043,
+        "spectral_fd_difference": {
+          "max_abs": 0.3906613636053958,
+          "rms": 0.10845046195344797
+        },
+        "center_peak_difference": 4.751181437168128e-07
+      }
+    },
+    "peak3_modal": {
+      "corr30_repeat": {
+        "previous": {
+          "half_step_nm": 0.5,
+          "plus_peak3": 0.9718320796139586,
+          "minus_peak3": 0.9717879928552609,
+          "center_peak3": 0.9718095820307666,
+          "peak_indices_plus_minus": [
+            250,
+            250
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            0.03000274203915746,
+            0.9967758770306171,
+            -0.026778619069774526
+          ],
+          "odd": 2.204337934885725e-05,
+          "even": 4.54203843092138e-07,
+          "central_derivative": 4.40867586977145e-05,
+          "second_difference": 3.633630744737104e-06,
+          "exact_center_peak3_jacobian_projection": 4.4091792754291935e-05,
+          "moving_peak_minus_projection": -5.034056577434042e-09,
+          "spectral_fd_max_abs": 0.0017323410644712878,
+          "spectral_fd_rms": 0.0005052267510508813
+        },
+        "new": {
+          "half_step_nm": 0.5,
+          "plus_peak3": 0.971829755786299,
+          "minus_peak3": 0.9717879759152912,
+          "center_peak3": 0.9718095820307666,
+          "peak_indices_plus_minus": [
+            250,
+            250
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            0.03000274203915746,
+            0.9967758770306171,
+            -0.026778619069774526
+          ],
+          "odd": 2.0889935503920487e-05,
+          "even": -7.1617997154938e-07,
+          "central_derivative": 4.1779871007840974e-05,
+          "second_difference": -5.72943977239504e-06,
+          "exact_center_peak3_jacobian_projection": 4.1810427092636716e-05,
+          "moving_peak_minus_projection": -3.0556084795742256e-08,
+          "spectral_fd_max_abs": 0.0017333528228828943,
+          "spectral_fd_rms": 0.0005052461615363206
+        },
+        "central_derivative_difference": -2.306887689873527e-06,
+        "even_difference": -1.170383814641518e-06,
+        "plus_endpoint_peak_difference": -2.3238276595227703e-06,
+        "minus_endpoint_peak_difference": -1.693996964924338e-08,
+        "plus_spectral_difference": {
+          "max_abs": 2.2950213499628447e-06,
+          "rms": 3.4533439928095914e-07
+        },
+        "minus_spectral_difference": {
+          "max_abs": 2.33450518882794e-06,
+          "rms": 2.7843548080099566e-07
+        },
+        "spectral_fd_difference": {
+          "max_abs": 3.729688142106724e-06,
+          "rms": 4.6860782650205116e-07
+        }
+      },
+      "shift30_half_step": {
+        "half_step_nm": 0.5,
+        "plus_peak3": 0.9719106989864588,
+        "minus_peak3": 0.9723113481229988,
+        "center_peak3": 0.9718095820307666,
+        "peak_indices_plus_minus": [
+          239,
+          261
+        ],
+        "center_peak_index": 250,
+        "center_peak3_weights": [
+          0.03000274203915746,
+          0.9967758770306171,
+          -0.026778619069774526
+        ],
+        "odd": -0.0002003245682700161,
+        "even": 0.00030144152396216484,
+        "central_derivative": -0.0004006491365400322,
+        "second_difference": 0.0024115321916973187,
+        "exact_center_peak3_jacobian_projection": 0.005836169136542778,
+        "moving_peak_minus_projection": -0.006236818273082811,
+        "spectral_fd_max_abs": 0.5025981789766799,
+        "spectral_fd_rms": 0.15908094128222375
+      },
+      "shift30_old_h2": {
+        "native_old_center": {
+          "half_step_nm": 2.0,
+          "plus_peak3": 0.971286134143864,
+          "minus_peak3": 0.972436246217795,
+          "center_peak3": 0.9718102149755974,
+          "peak_indices_plus_minus": [
+            205,
+            295
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            0.029957998184775972,
+            0.9967849973151656,
+            -0.026742995499941587
+          ],
+          "odd": -0.0005750560369655044,
+          "even": 5.097520523211774e-05,
+          "central_derivative": -0.0002875280184827522,
+          "second_difference": 2.548760261605887e-05,
+          "exact_center_peak3_jacobian_projection": 0.0009307872604208566,
+          "moving_peak_minus_projection": -0.0012183152789036087,
+          "spectral_fd_max_abs": 0.22567153012760063,
+          "spectral_fd_rms": 0.08503564504276294
+        },
+        "repeated_center_even_terms": {
+          "half_step_nm": 2.0,
+          "plus_peak3": 0.971286134143864,
+          "minus_peak3": 0.972436246217795,
+          "center_peak3": 0.9718095820307666,
+          "peak_indices_plus_minus": [
+            205,
+            295
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            0.03000274203915746,
+            0.9967758770306171,
+            -0.026778619069774526
+          ],
+          "odd": -0.0005750560369655044,
+          "even": 5.1608150062887326e-05,
+          "central_derivative": -0.0002875280184827522,
+          "second_difference": 2.5804075031443663e-05,
+          "exact_center_peak3_jacobian_projection": 0.0009311058458897182,
+          "moving_peak_minus_projection": -0.0012186338643724705,
+          "spectral_fd_max_abs": 0.22567153012760063,
+          "spectral_fd_rms": 0.08503564504276294
+        },
+        "hhalf_minus_h2_derivative": -0.00011312111805727998,
+        "spectral_fd_difference": {
+          "max_abs": 0.42818424415397244,
+          "rms": 0.11797130674369259
+        },
+        "center_peak_difference": -6.329448307695884e-07
+      }
+    }
+  },
+  "limitations": [
+    "No coefficient fit or later-stage marker creation.",
+    "Two corr30 pairs show observed repeat differences, not a noise sigma or statistical bound.",
+    "Two shift30 steps do not establish asymptotic order or exact infinitesimal derivative.",
+    "Fixed-center Jacobian and moving-peak FD may differ at finite step.",
+    "Saved scalar tolerance1e-12 is arithmetic verification, not a scientific gate.",
+    "Source paths/H5 relationships are checked; this offline tool does not open remote FSP/H5 or verify remote solver logs."
+  ],
+  "pins_sha256": "cff7165a1cc6e7c4aae9024b6ce3dda8d1c9d62dfc007040bd0deaf6f14c7581",
+  "spectra_file": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_firstwave_spectra_1113.json",
+  "spectra_sha256": "2cb073b617c65a1017195e61ece748f23a1f67aee362cb5fdadd57656fd4bf4a"
+}

@@ -1,5 +1,66 @@
 # Full-optimization readiness criteria
 
+## Update11:42 Israel - four smaller shift30 solves submitted
+
+Athena array **171162 tasks0-3** submitted11:41:31 for shift30(index149)
++/-0.125nm and +/-0.0625nm, one forward per task, original recovered center.
+These are diagnostic step choices, not certified converged gradients.
+Runner SHA7f0500a8a037961a3d72e3aa5d58ae2cd52ebbab2a8505f5395097adfac5c857;
+new immutable lead marker SHA50ef62531e338f57b5cbc78d05905a2cd5d805297407a4ba0913cedf3a5404df.
+Five focused offline tests and hidden CAD +0.0625nm passed; all723 geometry
+properties match, locked grids unchanged. Remote template/marker validation
+reverified completed first-wave checkpoints, spectra and preserved artifacts.
+Original dependencies/markers remain frozen; no release of eight other class legs.
+
+Each task requests A100,8CPUs,256G,2h,12h_4g; maximum4 concurrent.
+Preflight11:39: shared solve seats0/50, queued IGUM101155 commits7, new
+Athena commits28(total35/50); quota227G/300Gsoft/330Ghard; Athenaqueueempty.
+IGUM baseline remains PENDING Resources. Submission is not a completed solve:
+**22 completed new FDTD solves**, plus4 newly submitted and1 IGUMpending.
+Dry-run estimated12:21 start, not guaranteed. Inspect actual queue/startup next.
+Receipt/environment/original marker: readiness_evidence_20261007/s2_shift30_*.
+Expected root /work/results/diagnose_te_s2_shift30_convergence/results/s2_shift30_convergence_20261007.
+
+Isolated estimator comparison: quadratic7 not promising; quartic11 reduces
+cubic-model Tout local derivative ripple~29x but has~9.4e-6 height bias,
+mixed modal behavior and strong interpolant dependence. Neither removes
+actual shift30 even term~2.8-3.0e-4. Five tests and pinned actual-data analysis
+pass. Production objective unchanged; saved scalar Re/Im cannot directly
+supply7/11-sample Jacobians. Stored-field/source compatibility is under bounded
+review before any such reconstruction. Models are not physical calibration.
+Evidence: s2_peak_estimators_reviewed_1142.zip and s2_shift30_prepared_tests_1142.zip.
+Global calibration remains FAILED; no coefficient installed and no optimizer.
+
+## Current status 11:18 Israel — diagnostic progress, no calibration pass
+
+Access restored at11:12; all four170962 tasks completed exit0 around09:27.
+The first-wave analyzer and remote cold-resume/artifact checks passed their
+narrow evidence gates. Twenty-two NEW FDTD solves are complete; global S2
+calibration remains FAILED, and optimizer smoke/full optimization remain
+blocked. The existing heartbeat resumed ACTIVE at11:18.
+
+corr30 h0.5nm repeats differ by+0.75593% in Tout derivative and-5.23261%
+in modal derivative. shift30 h0.5nm derivative is-2.7032781e-4/nm, while its
+fixed-center finite-step spectral-Jacobian projection is+3.8585713e-4/nm
+with11-bin peak motion. These finite-step measurements establish neither
+an infinitesimal adjoint defect nor a universal small-step family rule.
+**Remaining FD tasks4–11 are held; do not release their marker yet.**
+
+CPU-only Re171145_0 was submitted11:17:22 for original h1 scalar contraction
+checks of five other classes (128G,8CPUs,45min,zeroGPU/noFDTD). Inspect its
+results before serial Im. The lead has not adopted Claude's unsupported
+quadratic peak-ripple claim; the bounded TEMP-only current-objective test
+is pending. No full wavelength-resolved adjoint Jacobian is currently exported.
+The unchanged10% per-class/held-out gate is not replaced by these checks.
+
+IGUM101155_0 remains queued Resources at11:15; its11:12 accounting DB error
+was not an SSH failure. Preflight pool0/50 occupied, queued IGUM commits7,
+quota233G/300G soft/330G hard. Re CPU processing adds no FDTD solve seats.
+See current continuation and readiness evidence
+`s2_firstwave_measured_1113.json`, `s2_other_classes_re_dispatch_1118.json`.
+
+## Historical access blocker, 09:03 Israel
+
 **09:03 access blocker:** both clusters timed out; local VPN adapter is disconnected. Last verified170962 running08:57, IGUM101155pending08:54. New five-class no-solve helper is locally tested but NOT uploaded/dispatched. See current continuation for exact resume steps. Failed scientific gates unchanged.
 
 This is the completion contract for the authorized overnight preparation.

@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "family": "s2_shift30_convergence_20261007",
+  "status": "APPROVED_FOR_BOUNDED_SHIFT30_TRANSLATION_STEP_DIAGNOSTIC",
+  "center_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+  "runner_sha256": "7f0500a8a037961a3d72e3aa5d58ae2cd52ebbab2a8505f5395097adfac5c857",
+  "code": {
+    "diagnose_te_s2_fdstep.py": "3bf24e3ea47600f1c08f13803c7ab29bc6cf8b95c08fef63152168b1069ee361",
+    "lumopt2_design.py": "53108bbd368dd699179ab65029628aa4c4b2d8ad687777f88b82f404a0952569",
+    "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+    "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+    "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+    "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+    "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+    "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+    "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8",
+    "s2_shift30_convergence.py": "7f0500a8a037961a3d72e3aa5d58ae2cd52ebbab2a8505f5395097adfac5c857",
+    "config.py": "da07ca3cf48d1cdbe947350678bb8b9699918a513752b207883007c93ac82795",
+    "s2_fdhalf_classes.py": "4f5f9d21cb95f5cfbcb1e0fc91ae960dc0dd57449c973369051c551c07c7bba1"
+  },
+  "task_map": [
+    [
+      0.125,
+      1
+    ],
+    [
+      0.125,
+      -1
+    ],
+    [
+      0.0625,
+      1
+    ],
+    [
+      0.0625,
+      -1
+    ]
+  ],
+  "output_root": "/work/results/diagnose_te_s2_shift30_convergence/results/s2_shift30_convergence_20261007",
+  "allowed_tasks": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "first_wave": {
+    "first_marker": "/work/data/s2_half_classes_first_review_20261007.json",
+    "first_marker_sha256": "6722e1883338c0259b6fd2aa7386a2d12f1c5124708f590c1ce30a7c266f8d02",
+    "provenance_report": "/work/results/s2_provenance_probe_20261007T0753/provenance.json",
+    "provenance_report_sha256": "a742c0d0921620a04d7e186a9baf7a1959d9752a40c7729815825265fe8c5c47",
+    "checkpoints": {
+      "0": {
+        "checkpoint": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_00.json",
+        "sha256": "823ab4a4dd5d3e412a1b6a806d8ea76f058f5c640701dd5c01c604f89f35e33f",
+        "ports_sha256": "25395d232792378b5ff098ad050e39ebea59d68a4cf5c8e067d6b386f18acd23",
+        "source": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_00_82tx55p3/lumopt2_te_s2_fdhalf_classcheck_20261007_files/fwd_default.fsp",
+        "h5": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_00_82tx55p3/lumopt2_te_s2_fdhalf_classcheck_20261007_files/fwd_default/fwd_default_output.h5",
+        "peak3_tout": 0.9257653888137255,
+        "peak3_modal": 0.971829755786299,
+        "lam_nm": 1560.8782189638007
+      },
+      "1": {
+        "checkpoint": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_01.json",
+        "sha256": "3821b3b1c2b6dc6f3adf9337252b2eb7040d55b8125d31f42ef74e7b11fb31b1",
+        "ports_sha256": "50bcaee3c3538acef0e81497369553e3d8ac0db6743605aa6c2336a32ca21f9b",
+        "source": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_01_v3c_4uex/lumopt2_te_s2_fdhalf_classcheck_20261007_files/fwd_default.fsp",
+        "h5": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_01_v3c_4uex/lumopt2_te_s2_fdhalf_classcheck_20261007_files/fwd_default/fwd_default_output.h5",
+        "peak3_tout": 0.9257284389845601,
+        "peak3_modal": 0.9717879759152912,
+        "lam_nm": 1560.8782189638007
+      },
+      "2": {
+        "checkpoint": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_02.json",
+        "sha256": "5e096a013ba9d2a5660fd3c46f8e90fa958de9a9999376ebe5b3e2b76acfd37b",
+        "ports_sha256": "3ee423f1292390318867b92a6c0d0fc911c1cdf529b6924c503e60cbbb3678f6",
+        "source": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_02_6xsjihfz/lumopt2_te_s2_fdhalf_classcheck_20261007_files/fwd_default.fsp",
+        "h5": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_02_6xsjihfz/lumopt2_te_s2_fdhalf_classcheck_20261007_files/fwd_default/fwd_default_output.h5",
+        "peak3_tout": 0.9258938664009438,
+        "peak3_modal": 0.9719106989864588,
+        "lam_nm": 1560.922220186102
+      },
+      "3": {
+        "checkpoint": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_03.json",
+        "sha256": "bd0406be1a52ef986173c77c73017dca83d0d67d0c8eb021baefca5f5aafec81",
+        "ports_sha256": "d1fc60b97fa46a2dab9ad2cc113d11622cffec6466bf2337292bd1fc5492b872",
+        "source": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_03_ti823jdr/lumopt2_te_s2_fdhalf_classcheck_20261007_files/fwd_default.fsp",
+        "h5": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007/task_03_ti823jdr/lumopt2_te_s2_fdhalf_classcheck_20261007_files/fwd_default/fwd_default_output.h5",
+        "peak3_tout": 0.9261641942150614,
+        "peak3_modal": 0.9723113481229988,
+        "lam_nm": 1560.8342202221515
+      }
+    }
+  },
+  "lead_verdict": "Lead reviewed exact completed firstwave checkpoints and spectra, successful cold-resume checks, all six raw Re/Im reconstructions, and isolated translation models. Shift30 h0.5 moves eleven spectral bins and its moving-peak derivative disagrees in sign with nominal-J spectral FD. Authorize only four forward-only shift30 +/-0.125 and +/-0.0625nm diagnostic solves to measure smaller-step behavior; these steps are not certified converged and model ripple is not a physical error bound. Preserve original FAILED global calibration, no fitted coefficient installation, no optimizer, and no release of other eight half-step class legs.",
+  "note": "Parent reviews provisional shift30 translation ladder and publishes NEW marker. Failed calibration unchanged."
+}

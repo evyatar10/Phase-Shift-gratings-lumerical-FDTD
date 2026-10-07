@@ -1,0 +1,9 @@
+{
+  "S2_SHIFT_REPO": "/work/project",
+  "S2_SHIFT_CENTER_CHECKPOINT": "/work/results/diagnose_te_s2_fdstep/results/lumopt2_te_s2_fdstep_diagnostic_20261007/task_00.json",
+  "S2_SHIFT_FIRSTWAVE_ROOT": "/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007",
+  "S2_SHIFT_FIRSTWAVE_MARKER": "/work/data/s2_half_classes_first_review_20261007.json",
+  "S2_SHIFT_OUTPUT_ROOT": "/work/results/diagnose_te_s2_shift30_convergence/results/s2_shift30_convergence_20261007",
+  "S2_SHIFT_REVIEW_MARKER": "/work/data/s2_shift30_review_20261007_1142.json",
+  "KEEP_H5": "1"
+}
