@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-07T18:43:10.329160+03:00",
+  "source_sha256": "70b49ad88d2f4b2dd2221460765e4fb056ece7e70030bfdc661e687622d78961",
+  "manifest_sha256": "104980e7eecd26dc59fab1bd7b62d5ed8502aeb8a643cd512a79b00c39a5d31f",
+  "archive": "s2_length_completion_fetch_verified_1844.zip",
+  "archive_sha256": "28587df0d792f4abb9fa1ccacb88f1c8f8ea4234957fcd3bcc2ab36971604272",
+  "parent_tests": "9 synthetic groups exit0; emitted AST parse passed",
+  "independent_review": "No blocker: live incomplete/failed accounting veto; exact last wrapper segment binds job/task/checkpoint; metadata/CP/port pins protected",
+  "limits": "IGUM101434 pending as18:26; no actual capture or completion yet. No new CAD/FDTD/dispatch.",
+  "scratch_note": "Worker first synthetic test removed only its own newly created TemporaryDirectory fixture; corrected to preserved mkdtemp for final tests. Existing project/server artifacts preserved."
+}

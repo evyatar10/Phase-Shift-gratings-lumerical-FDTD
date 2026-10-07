@@ -1,0 +1,79 @@
+{
+  "at": "2026-10-07T19:07:16.316073+03:00",
+  "job": "171516_0",
+  "state": "FAILED",
+  "exit_code": "1:0",
+  "elapsed_s": 32,
+  "FDTD_solves_added": 0,
+  "report": "s2_saved_times_report_original_1905.json",
+  "report_sha256": "1a3c8c110aa1c93521faf0d583b98d71d67980d98eeba62cd194cb68936e7f29",
+  "reason": "Requested Ey component absent from raw getdata names for all9 time monitors; inventory collected, export refused",
+  "all_inputs_preserved": true,
+  "input_identities": 71,
+  "FDTD_class_constructor_preserved": true,
+  "observations": {
+    "100": {
+      "time_input": {
+        "raw_names": "x  y  z  surface_normal  dimension  t  ",
+        "samples": 374755,
+        "sampling_rate_Hz": 3747549207879606.0,
+        "downsample": 4.0
+      },
+      "time_cavity": {
+        "raw_names": "x  y  z  surface_normal  dimension  t  ",
+        "samples": 374755,
+        "sampling_rate_Hz": 3747549207879606.0,
+        "downsample": 4.0
+      },
+      "time_output": {
+        "raw_names": "x  y  z  surface_normal  dimension  t  ",
+        "samples": 374755,
+        "sampling_rate_Hz": 3747549207879606.0,
+        "downsample": 4.0
+      }
+    },
+    "150": {
+      "time_input": {
+        "raw_names": "x  y  z  surface_normal  dimension  t  ",
+        "samples": 562133,
+        "sampling_rate_Hz": 3747549207879606.0,
+        "downsample": 4.0
+      },
+      "time_cavity": {
+        "raw_names": "x  y  z  surface_normal  dimension  t  ",
+        "samples": 562133,
+        "sampling_rate_Hz": 3747549207879606.0,
+        "downsample": 4.0
+      },
+      "time_output": {
+        "raw_names": "x  y  z  surface_normal  dimension  t  ",
+        "samples": 562133,
+        "sampling_rate_Hz": 3747549207879606.0,
+        "downsample": 4.0
+      }
+    },
+    "200": {
+      "time_input": {
+        "raw_names": "x  y  z  surface_normal  dimension  t  ",
+        "samples": 749510,
+        "sampling_rate_Hz": 3747549207879606.0,
+        "downsample": 4.0
+      },
+      "time_cavity": {
+        "raw_names": "x  y  z  surface_normal  dimension  t  ",
+        "samples": 749510,
+        "sampling_rate_Hz": 3747549207879606.0,
+        "downsample": 4.0
+      },
+      "time_output": {
+        "raw_names": "x  y  z  surface_normal  dimension  t  ",
+        "samples": 749510,
+        "sampling_rate_Hz": 3747549207879606.0,
+        "downsample": 4.0
+      }
+    }
+  },
+  "next": "Check alternate getresult E/H availability and output-component settings using a minimal new read-only CPU metadata packet; no unchanged rerun and no new FDTD yet.",
+  "primary_source": "https://optics.ansys.com/hc/en-us/articles/17518942465811-Getting-started-with-running-FDTD-on-GPU",
+  "qualification": "GPU time interpolation forcednone is documented; it alone does not explain missing raw components or prove all dataset fields unavailable. Stored UI coordinates/interpolation property do not establish actual Yee component locations."
+}

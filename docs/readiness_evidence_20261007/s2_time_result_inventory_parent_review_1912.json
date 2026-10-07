@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-07T19:10:43.611127+03:00",
+  "scope": "APPROVED_ONE_CPU_ONLY_ALTERNATE_SAVED_RESULT_INVENTORY_NO_FDTD",
+  "source_sha256": "1e2c01427856409ea8e9b3ac45291f6fd350e7d42aaeecc8c3728cbbcb81ad92",
+  "manifest_sha256": "3b6ce47449b2de108f1a97cf2eb29ca1fbca8aec1f99018ceca71dd5bd766598",
+  "tests": "4 owner/root groups0, targetedindependentreview no blocker, operatorAST/bashsyntax pass",
+  "archive": "s2_time_result_inventory_release_packet_1912.zip",
+  "sha256": "f5930787977db733943167c853c41a4e5f25335e3a994274e7d8e30f6b542a60",
+  "qualification": "Exact saved centers metadata only; no field transfer/source changes/solve. No alternate data availability or physics pass yet."
+}

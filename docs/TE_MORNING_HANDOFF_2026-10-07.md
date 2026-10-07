@@ -1,5 +1,9 @@
 # TE readiness handoff — 2026-10-07
 
+## Access and evidence update, 19:15 Israel
+
+Both cluster SSH connections now time out. No alternate time-result inventory was uploaded/submitted. CPU171516 raw-time export failed safely (noE/H in raw listing), all71inputs preserved; alternative getresult metadata check is reviewed and ready. See TOP continuation for exact recovery instructions.38FDTDcomplete; global calibrationFAILED, N80pair last-knownqueued, no optimizer release.
+
 ## Update 18:20 Israel
 
 38 new solves complete. Actual 200 ps data still do not establish transmission-gradient convergence; global calibration remains FAILED. Spatial FWHM changed only +0.0005603 um (Tout profile) from 150 to 200 ps. Native IGUM CAD passed; physical N98/N80 pair 101434 is queued, not validated. See the TOP of TE_CONTINUATION_2026-10-07.md for exact measured evidence, frozen identities and next actions. No optimizer release.

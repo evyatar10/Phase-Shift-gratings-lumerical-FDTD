@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-07T19:03:31.374773+03:00",
+  "scope": "APPROVED_ONE_CPU_ONLY_SAVED_CENTER_TIME_READOUT_NO_FDTD",
+  "source_pins": {
+    "read_saved_times.py": "0210def55c5998cb8f53c08323a73fae34b69fc58733568078768200b3618e2d",
+    "frozen_profile_io.py": "994c3e9757a10b5bd8ea211aaee8425c5d3540203a4da04b0439684163baf6ca"
+  },
+  "wrapper_sha256": "137a2d398ca286828c0d3e0112784220301f937cadc1da2a878463874d3ff896",
+  "reader_tests": "six offline groups owner+root exit0",
+  "operator_tests": "bash syntax, two emitted ASTs, singular/plural license parser and actual quota-format parser pass",
+  "independent_review": "No blocker at frozen0210 hash; actual CAD/time data and export cap remain runtime checks",
+  "components": [
+    "time_input:Ey",
+    "time_cavity:Ey",
+    "time_output:Ey"
+  ],
+  "max_raw_export_bytes": 268435456,
+  "source_files": "exact already completed100/150/200 center CPs and immutableFSP/H5; nosource modification",
+  "archive": "s2_saved_time_readout_release_packet_1905.zip",
+  "archive_sha256": "58ceec940b1deee6f72c207c7d9c8bcfa77eb86a26018788887d6ac7672914ce",
+  "global_calibration": "FAILED; no optimizer/adjoint/newFDTD release"
+}

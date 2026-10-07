@@ -1,5 +1,132 @@
 # S2 calibration and restart correction continuation
 
+## Current state 19:15 Israel — both server connections timed out
+
+**Not ready for optimization.** Original calibration remains FAILED;38 FDTD
+solves complete. Athena analysis-only171516 failed1:0 after32sec because raw
+time data contains no requestedEy component. All71inputs were preserved. Exact
+report1a3c8c...7f29 and verdict1908 are below; no new FDTD was attempted.
+
+Alternate result-API inventory is fully prepared and reviewed, but NOT uploaded
+or submitted. Source TEMP/s2_saved_time_result_inventory_c992ccaddc35/
+inventory_time_results.py SHA1e2c01427856409ea8e9b3ac45291f6fd350e7d42aaeecc8c3728cbbcb81ad92,
+manifest3b6ce47449b2de108f1a97cf2eb29ca1fbca8aec1f99018ceca71dd5bd766598;
+4offline tests pass in owner/root, independent narrowreview no blocker. Imports
+unchanged0210 and994c helpers. Queries getresult E/H availability, output flags,
+member shapes only; no field transfer/solve/save. Archive
+s2_time_result_inventory_release_packet_1912.zip SHA
+f5930787977db733943167c853c41a4e5f25335e3a994274e7d8e30f6b542a60.
+
+Its operator TEMP/s2_time_result_inventory_ops_zbmfg8vc/dispatch_saved_times.py
+failed at the FIRST IGUM GUI-seat precheck: SSH255 connection timeout. No upload,
+remote file, or job was created. Subsequent one-shot independent Athena check
+also SSH255 timed out. Saved s2_time_result_inventory_seats_1912.json and
+s2_athena_access_after_igum_timeout_1913.json. Do not immediately retry in a loop.
+Cause is unknown; VPN/network restoration may be needed. No settings/auth/MFA
+were changed. Existing IGUM101434 pair remains last-knownPENDING at18:50; its
+current state is UNKNOWN while disconnected. No cancellation/duplicate allowed.
+
+Next scheduled continuation: one bounded access check after the normal interval;
+if restored, reconcile exact jobs/output paths first. To dispatch the reviewed
+CPU-only alternate inventory, prepare a NEW operator evidence suffix because
+1912 seat-precheck output already exists; never blindly rerun it. Confirm remote
+script/output absence, freshGUIseats/queue/quota, same frozen source pins, then
+new-only upload/privateCPU job. No FDTD needed for this alternateAPI question.
+Do not infer missing field payload from rawAPI alone before this check.
+
+Global/active source fingerprints remain unchanged. No additional meaningful
+hardware work can proceed while both connections are unavailable. Current turn
+checkpoints this access blocker; preserve the existing30-minute continuation for
+a bounded later recovery check, and stop repeated full-work attempts if access
+remains blocked. Current account14%weeklyremaining at19:07; all other pools
+unknown; noreset/purchase. Latestcommitted11e709b, this milestone pendingcommit.
+
+## Current state 19:07 Israel — CPU raw-time export unavailable; alternate API check next
+
+Athena CPU-only171516_0 FAILED1:0 in32seconds. No new FDTD (count38).
+It successfully inventoried all nine time monitors in saved100/150/200 centers:
+raw getdata exposes only x/y/z/surface_normal/dimension/t, noE/H components.
+RequestedEy export therefore refused before waveform publication. All71 input
+identities and original FDTD class/constructor were preserved. ReportSHA
+1a3c8c110aa1c93521faf0d583b98d71d67980d98eeba62cd194cb68936e7f29,
+local s2_saved_times_report_original_1905.json; detailed verdict1908. Original
+failed job, private scripts and output remain untouched. Do not rerun unchanged.
+Samples per monitor:100ps374755,150ps562133,200ps749510; sampling rate
+3.747549207879606e15Hz, downsample4. These are usable time axes, not field traces.
+
+Next zero-FDTD diagnostic: Sol owner/objective_code_audit prepares a minimal NEW
+TEMP inventory-only extension for getresult monitor names, haveresult E/H and
+output-component flags, using the exact same immutable source identities. The
+rawAPI alone does not prove alternate dataset fields are unavailable. Official
+Ansys GPU documentation says time interpolation is forcednone while UI settings
+can remain unchanged, and illustrates getresult(timeMonitor,E). Thus the warning
+alone is not an explanation or evidence of a physical bug. No source/monitor
+change, fresh forward or adjoint is released by this failed readout. Root owns
+newCPU release only after bounded tests/review. Preserve frozen reader0210.
+
+IGUM101434 N98/N80 pair last18:50 stillPENDINGResources, noallocation/logs;
+Oct9forecast uncertain, no duplicate/cancel. Latestcompleted focusedcommit11e709b.
+Prepared/reviewed completionreader70b49 ready for eventual actualresults. Global
+calibration stillFAILED; width/mesh/length/gradient hardware gates remain honest.
+
+## Pending CPU readout preparation, 18:58 Israel
+
+NEW local wrapper TEMP/s2_saved_times_ops_9y5xrkcj/run_saved_times.sh SHA
+137a2d398ca286828c0d3e0112784220301f937cadc1da2a878463874d3ff896
+is prepared only. Intended private remote script/output suffix
+s2_saved_times_20261007_1900; not uploaded or submitted. It requests CPU only,
+8CPU/128G/30min, reads exact100/150/200 center files and explicitly selects
+Ey at three existing time points with256MiB export cap. Sol owns extractor
+TEMP/s2_saved_center_time_readout_6b39qi7t. Root caught fresh-session export
+registry bug before any execution; owner is fixing it and testing this flow,
+plus source/vendor/helper preservation. Require final hashes/tests/review before
+release. No new FDTD; count remains38 and global gateFAILED.
+
+Fresh resource18:50: IGUM101434stillpendingResources/noallocation/log, current
+Oct9forecast unchanged; Athenaempty,GUI1/50,solve0/50,local88.89GiBfree,
+Athena79.68GiBsoftheadroom,IGUM25.94TBfree/quotaheadroomunknown. BothSSH work.
+See s2_resource_status_worker_1850_summary.json. Actual account query around
+18:50:16%weeklyremaining,otherpoolsunknown,noreset/purchase.
+
+Source bandwidth lead is only a hypothesis: saved GLOBAL settings enable
+short-pulse optimization and record10.3fs/42.8THz despite2nm requested interval.
+They are not a measured actual injected waveform; active port overrides and
+saved traces remain to inspect. See source_bandwidth_hypothesis_1850.json and
+its primary Ansys source. Do not declare a causal physical bug or modify source
+settings from this observation. Earlier frozen report wording about broad
+excitation is qualified by this explicit distinction.
+
+## Follow-up 18:44 Israel — readers verified; saved-trace implementation underway
+
+Latest focused local commit **11e709b** preserves the observer analysis,
+resource originals and corrected Claude next-experiment review. Exact measured
+observer packet is archived in s2_temporal200_observer_diagnosis_reviewed_1839.zip
+(SHA23b554a7409efa8b55c5426c79f5d911a49d13e25ce4d5fba7e6742daabdb610).
+No new FDTD since the 38-solve count.
+
+IGUM101434 completion reader is frozen and independently reviewed: TEMP/
+s2_length_native_fetch_7febdd132a81/fetch_length_native.py SHA
+70b49ad88d2f4b2dd2221460765e4fb056ece7e70030bfdc661e687622d78961.
+Nine offline groups pass in worker and root. Emitted command AST passes.
+Archive s2_length_completion_fetch_verified_1844.zip and parent review record
+preserve exact CLI. It is read-only metadata/CP/port capture, no CAD/solve,
+and refuses live failed/incomplete accounting. Actual capture is UNTESTED
+because both jobs were still queued at the last18:26 check. Wait for exact
+completion; no duplicate jobs. Native bundled Python requires the documented
+lib/scilibs environment. Missing live accounting is explicitly labeled and
+requires strict job-bound last-wrapper plus cold terminal/checkpoint evidence.
+
+Sol worker /root/objective_code_audit now owns NEW TEMP saved100/150/200 center
+time-inventory implementation, following s2_saved_trace_review_plan_1835.json.
+Default inventory only, optional explicit bounded raw-component export; root
+must review/tests before a single scheduled CPU-only release. No network/CAD
+execution or FDTD yet. Do not duplicate that active work. No optimizer, extra
+duration/step ladder, adjoint or new FOM release.
+
+Actual18:34 allowance18% weekly remains; other/model/Claude limits unknown.
+Keep one focused implementation worker and reserve lead capacity for review.
+No reset/purchase. Read previous18:29 section for fresh resource/queue details.
+
 ## Follow-up 18:29 Israel — saved-data diagnosis and queue/storage checkpoint
 
 Focused local commit **ef5a909** preserves the reviewed length runtime and

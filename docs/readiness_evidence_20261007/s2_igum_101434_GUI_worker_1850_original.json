@@ -1,0 +1,68 @@
+{
+  "at_UTC": "2026-10-07T15:50:46.914763+00:00",
+  "exit_code": 0,
+  "stdout": "{\"at_UTC\": \"2026-10-07T15:50:46.907136+00:00\", \"jobs\": {\"0\": {\"argv\": [\"scontrol\", \"show\", \"job\", \"101434_0\"], \"exit_code\": 0, \"stdout\": \"JobId=101434 ArrayJobId=101434 ArrayTaskId=0 ArrayTaskThrottle=2 JobName=lum_pipeline_array\\n   UserId=evyatarrubin(1686581898) GroupId=domain users(1686400513) MCS_label=N/A\\n   Priority=10379 Nice=0 Account=acct-lumerical QOS=qos-preempt\\n   JobState=PENDING Reason=Resources Dependency=(null)\\n   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0\\n   RunTime=00:00:00 TimeLimit=02:00:00 TimeMin=N/A\\n   SubmitTime=2026-10-07T18:06:11 EligibleTime=2026-10-07T18:06:13\\n   AccrueTime=2026-10-07T18:06:13\\n   StartTime=2026-10-09T10:14:02 EndTime=2026-10-09T12:14:02 Deadline=N/A\\n   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-07T18:50:43 Scheduler=Backfill:*\\n   Partition=part-preempt AllocNode:Sid=igum-login1.staff.technion.ac.il:369038\\n   ReqNodeList=(null) ExcNodeList=(null)\\n   NodeList=\\n   NumNodes=1-1 NumCPUs=8 NumTasks=1 CPUs/Task=8 ReqB:S:C:T=0:0:*:*\\n   ReqTRES=cpu=8,mem=256G,node=1,billing=88,gres/gpu=1\\n   AllocTRES=(null)\\n   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*\\n   MinCPUsNode=8 MinMemoryNode=256G MinTmpDiskNode=0\\n   Features=(null) DelayBoot=00:00:00\\n   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)\\n   Command=/home/evyatarrubin/research/bragg_sim_igum/jobs/run_python_array.sh\\n   WorkDir=/home/evyatarrubin/research/bragg_sim_igum/jobs\\n   StdErr=/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_0.out\\n   StdIn=/dev/null\\n   StdOut=/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_0.out\\n   Power=\\n   TresPerNode=gres/gpu:A100:1\\n   TresPerTask=cpu:8\\n   MailUser=evyatar10.rubin@gmail.com MailType=ARRAY_TASKS,END,FAIL\\n   \\n\\n\", \"stderr\": \"\"}, \"1\": {\"argv\": [\"scontrol\", \"show\", \"job\", \"101434_1\"], \"exit_code\": 0, \"stdout\": \"JobId=101434 ArrayJobId=101434 ArrayTaskId=1 ArrayTaskThrottle=2 JobName=lum_pipeline_array\\n   UserId=evyatarrubin(1686581898) GroupId=domain users(1686400513) MCS_label=N/A\\n   Priority=10379 Nice=0 Account=acct-lumerical QOS=qos-preempt\\n   JobState=PENDING Reason=Resources Dependency=(null)\\n   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0\\n   RunTime=00:00:00 TimeLimit=02:00:00 TimeMin=N/A\\n   SubmitTime=2026-10-07T18:06:11 EligibleTime=2026-10-07T18:06:13\\n   AccrueTime=2026-10-07T18:06:13\\n   StartTime=2026-10-09T10:14:02 EndTime=2026-10-09T12:14:02 Deadline=N/A\\n   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-07T18:50:43 Scheduler=Backfill:*\\n   Partition=part-preempt AllocNode:Sid=igum-login1.staff.technion.ac.il:369038\\n   ReqNodeList=(null) ExcNodeList=(null)\\n   NodeList=\\n   NumNodes=1-1 NumCPUs=8 NumTasks=1 CPUs/Task=8 ReqB:S:C:T=0:0:*:*\\n   ReqTRES=cpu=8,mem=256G,node=1,billing=88,gres/gpu=1\\n   AllocTRES=(null)\\n   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*\\n   MinCPUsNode=8 MinMemoryNode=256G MinTmpDiskNode=0\\n   Features=(null) DelayBoot=00:00:00\\n   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)\\n   Command=/home/evyatarrubin/research/bragg_sim_igum/jobs/run_python_array.sh\\n   WorkDir=/home/evyatarrubin/research/bragg_sim_igum/jobs\\n   StdErr=/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_1.out\\n   StdIn=/dev/null\\n   StdOut=/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_1.out\\n   Power=\\n   TresPerNode=gres/gpu:A100:1\\n   TresPerTask=cpu:8\\n   MailUser=evyatar10.rubin@gmail.com MailType=ARRAY_TASKS,END,FAIL\\n   \\n\\n\", \"stderr\": \"\"}}, \"logs\": {\"0\": {\"path\": \"/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_0.out\", \"exists\": false}, \"1\": {\"path\": \"/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_1.out\", \"exists\": false}}, \"shared_GUI_seats\": {\"argv\": [\"/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/licensingclient/linx64/lmutil\", \"lmstat\", \"-c\", \"1055@132.68.48.51\", \"-f\", \"lum_fdtd_gui\"], \"exit_code\": 0, \"stdout\": \"lmutil - Copyright (c) 1989-2025 Flexera. All Rights Reserved.\\nFlexible License Manager status on Wed 10/7/2026 18:50\\n\\nLicense server status: 1055@lumerical-lm.ece.technion.ac.il\\n    License file(s) on lumerical-lm.ece.technion.ac.il: /ansyslm/shared_files/licensing/license_files/ansyslmd.lic:\\n\\nlumerical-lm.ece.technion.ac.il: license server UP (MASTER) v11.19.4\\n\\nVendor daemon status (on lumerical-lm.ece.technion.ac.il):\\n\\n  ansyslmd: UP v11.19.4\\nFeature usage info:\\n\\nUsers of lum_fdtd_gui:  (Total of 50 licenses issued;  Total of 1 license in use)\\n\\n  \\n\\\"lum_fdtd_gui\\\" v9999.9999, vendor: ansyslmd, expiry: 19-jan-2027\\n  vendor_string: customer:01141253 tp:at\\n  floating license\\n\\n    user LBIS-10.ef.technion.ac.il LBIS-10.ef.technion.ac.il 3364 (v2025.0416) (lumerical-lm.ece.technion.ac.il/1055 1002), start Wed 9/30 16:17\\n\\n\\n\", \"stderr\": \"\"}, \"qualification\": \"One read-only status/GUI-seat query; pending exit0:0 is not completion; scheduler StartTime is forecast; no dispatch/CAD/Git/server writes.\"}\n",
+  "stderr": "",
+  "argv": [
+    "ssh",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "evyatarrubin@132.68.58.101",
+    "python3 -"
+  ],
+  "snapshot": {
+    "at_UTC": "2026-10-07T15:50:46.907136+00:00",
+    "jobs": {
+      "0": {
+        "argv": [
+          "scontrol",
+          "show",
+          "job",
+          "101434_0"
+        ],
+        "exit_code": 0,
+        "stdout": "JobId=101434 ArrayJobId=101434 ArrayTaskId=0 ArrayTaskThrottle=2 JobName=lum_pipeline_array\n   UserId=evyatarrubin(1686581898) GroupId=domain users(1686400513) MCS_label=N/A\n   Priority=10379 Nice=0 Account=acct-lumerical QOS=qos-preempt\n   JobState=PENDING Reason=Resources Dependency=(null)\n   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0\n   RunTime=00:00:00 TimeLimit=02:00:00 TimeMin=N/A\n   SubmitTime=2026-10-07T18:06:11 EligibleTime=2026-10-07T18:06:13\n   AccrueTime=2026-10-07T18:06:13\n   StartTime=2026-10-09T10:14:02 EndTime=2026-10-09T12:14:02 Deadline=N/A\n   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-07T18:50:43 Scheduler=Backfill:*\n   Partition=part-preempt AllocNode:Sid=igum-login1.staff.technion.ac.il:369038\n   ReqNodeList=(null) ExcNodeList=(null)\n   NodeList=\n   NumNodes=1-1 NumCPUs=8 NumTasks=1 CPUs/Task=8 ReqB:S:C:T=0:0:*:*\n   ReqTRES=cpu=8,mem=256G,node=1,billing=88,gres/gpu=1\n   AllocTRES=(null)\n   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*\n   MinCPUsNode=8 MinMemoryNode=256G MinTmpDiskNode=0\n   Features=(null) DelayBoot=00:00:00\n   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)\n   Command=/home/evyatarrubin/research/bragg_sim_igum/jobs/run_python_array.sh\n   WorkDir=/home/evyatarrubin/research/bragg_sim_igum/jobs\n   StdErr=/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_0.out\n   StdIn=/dev/null\n   StdOut=/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_0.out\n   Power=\n   TresPerNode=gres/gpu:A100:1\n   TresPerTask=cpu:8\n   MailUser=evyatar10.rubin@gmail.com MailType=ARRAY_TASKS,END,FAIL\n   \n\n",
+        "stderr": ""
+      },
+      "1": {
+        "argv": [
+          "scontrol",
+          "show",
+          "job",
+          "101434_1"
+        ],
+        "exit_code": 0,
+        "stdout": "JobId=101434 ArrayJobId=101434 ArrayTaskId=1 ArrayTaskThrottle=2 JobName=lum_pipeline_array\n   UserId=evyatarrubin(1686581898) GroupId=domain users(1686400513) MCS_label=N/A\n   Priority=10379 Nice=0 Account=acct-lumerical QOS=qos-preempt\n   JobState=PENDING Reason=Resources Dependency=(null)\n   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0\n   RunTime=00:00:00 TimeLimit=02:00:00 TimeMin=N/A\n   SubmitTime=2026-10-07T18:06:11 EligibleTime=2026-10-07T18:06:13\n   AccrueTime=2026-10-07T18:06:13\n   StartTime=2026-10-09T10:14:02 EndTime=2026-10-09T12:14:02 Deadline=N/A\n   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-07T18:50:43 Scheduler=Backfill:*\n   Partition=part-preempt AllocNode:Sid=igum-login1.staff.technion.ac.il:369038\n   ReqNodeList=(null) ExcNodeList=(null)\n   NodeList=\n   NumNodes=1-1 NumCPUs=8 NumTasks=1 CPUs/Task=8 ReqB:S:C:T=0:0:*:*\n   ReqTRES=cpu=8,mem=256G,node=1,billing=88,gres/gpu=1\n   AllocTRES=(null)\n   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*\n   MinCPUsNode=8 MinMemoryNode=256G MinTmpDiskNode=0\n   Features=(null) DelayBoot=00:00:00\n   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)\n   Command=/home/evyatarrubin/research/bragg_sim_igum/jobs/run_python_array.sh\n   WorkDir=/home/evyatarrubin/research/bragg_sim_igum/jobs\n   StdErr=/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_1.out\n   StdIn=/dev/null\n   StdOut=/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_1.out\n   Power=\n   TresPerNode=gres/gpu:A100:1\n   TresPerTask=cpu:8\n   MailUser=evyatar10.rubin@gmail.com MailType=ARRAY_TASKS,END,FAIL\n   \n\n",
+        "stderr": ""
+      }
+    },
+    "logs": {
+      "0": {
+        "path": "/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_0.out",
+        "exists": false
+      },
+      "1": {
+        "path": "/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_1.out",
+        "exists": false
+      }
+    },
+    "shared_GUI_seats": {
+      "argv": [
+        "/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/licensingclient/linx64/lmutil",
+        "lmstat",
+        "-c",
+        "1055@132.68.48.51",
+        "-f",
+        "lum_fdtd_gui"
+      ],
+      "exit_code": 0,
+      "stdout": "lmutil - Copyright (c) 1989-2025 Flexera. All Rights Reserved.\nFlexible License Manager status on Wed 10/7/2026 18:50\n\nLicense server status: 1055@lumerical-lm.ece.technion.ac.il\n    License file(s) on lumerical-lm.ece.technion.ac.il: /ansyslm/shared_files/licensing/license_files/ansyslmd.lic:\n\nlumerical-lm.ece.technion.ac.il: license server UP (MASTER) v11.19.4\n\nVendor daemon status (on lumerical-lm.ece.technion.ac.il):\n\n  ansyslmd: UP v11.19.4\nFeature usage info:\n\nUsers of lum_fdtd_gui:  (Total of 50 licenses issued;  Total of 1 license in use)\n\n  \n\"lum_fdtd_gui\" v9999.9999, vendor: ansyslmd, expiry: 19-jan-2027\n  vendor_string: customer:01141253 tp:at\n  floating license\n\n    user LBIS-10.ef.technion.ac.il LBIS-10.ef.technion.ac.il 3364 (v2025.0416) (lumerical-lm.ece.technion.ac.il/1055 1002), start Wed 9/30 16:17\n\n\n",
+      "stderr": ""
+    },
+    "qualification": "One read-only status/GUI-seat query; pending exit0:0 is not completion; scheduler StartTime is forecast; no dispatch/CAD/Git/server writes."
+  }
+}

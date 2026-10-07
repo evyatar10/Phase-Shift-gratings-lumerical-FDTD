@@ -1,0 +1,85 @@
+{
+  "at_UTC": "2026-10-07T15:51:28.112018+00:00",
+  "scope": "ONE_READ_ONLY_BOUNDARY_RESOURCE_STORAGE_AND_IGUM_STATUS_SNAPSHOT",
+  "raw_pins": {
+    "s2_resource_storage_worker_1850_original.json": "b3a1a7f72163c353a59b6a71854c01a8fc784decf7f07e753a58be284067bc19",
+    "s2_igum_101434_GUI_worker_1850_original.json": "576b1ae946bbab2a120a3bcf3958d471eafbcf26483f8e904d73a4adf31d536c"
+  },
+  "access": {
+    "athena": 0,
+    "igum": 0
+  },
+  "local": {
+    "unique_volume_count": 1,
+    "free_bytes": 95444520960,
+    "free_GiB": 88.8896369934082,
+    "quota_and_inodes": "not measured by helper"
+  },
+  "athena": {
+    "queue": "",
+    "quota_used_GiB": 220.32375717163086,
+    "quota_soft_GiB": 300.0,
+    "quota_hard_GiB": 330.0,
+    "quota_soft_headroom_GiB": 79.67624282836914,
+    "filesystem_free_bytes": 8743646461952,
+    "filesystem_free_inodes": 1409708963
+  },
+  "igum": {
+    "queue": "    101434_[0-1%2] part-pree lum_pipe evyatarr PD       0:00      1 (Resources)\n",
+    "jobs": {
+      "0": {
+        "exit_code": 0,
+        "JobState": "PENDING",
+        "Reason": "Resources",
+        "StartTime": "2026-10-09T10:14:02",
+        "EndTime": "2026-10-09T12:14:02",
+        "RunTime": "00:00:00",
+        "Restarts": "0",
+        "NodeList": "",
+        "AllocTRES": "(null)",
+        "ReqTRES": "cpu=8,mem=256G,node=1,billing=88,gres/gpu=1"
+      },
+      "1": {
+        "exit_code": 0,
+        "JobState": "PENDING",
+        "Reason": "Resources",
+        "StartTime": "2026-10-09T10:14:02",
+        "EndTime": "2026-10-09T12:14:02",
+        "RunTime": "00:00:00",
+        "Restarts": "0",
+        "NodeList": "",
+        "AllocTRES": "(null)",
+        "ReqTRES": "cpu=8,mem=256G,node=1,billing=88,gres/gpu=1"
+      }
+    },
+    "existing_logs": {
+      "0": {
+        "path": "/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_0.out",
+        "exists": false
+      },
+      "1": {
+        "path": "/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_1.out",
+        "exists": false
+      }
+    },
+    "research_filesystem_free_bytes": 25940456779776,
+    "research_filesystem_free_inodes": 924825979,
+    "quota": "ordinary quota unavailable; lfs user/group/project commands exit0; all limits shown zero, enforceable headroom unknown"
+  },
+  "licenses": {
+    "solver": {
+      "exit_code": 0,
+      "issued": 50,
+      "in_use": 0,
+      "available_now": 50
+    },
+    "GUI": {
+      "exit_code": 0,
+      "issued": 50,
+      "in_use": 1,
+      "available_now": 49
+    }
+  },
+  "queued_pair_planned_solver_commitment": 14,
+  "qualification": "No release approval, no dispatch/CAD/solve/mutation; snapshots do not reserve license seats. Both tasks pending Resources; StartTimeOct9 forecast not promise. No repeated polling."
+}

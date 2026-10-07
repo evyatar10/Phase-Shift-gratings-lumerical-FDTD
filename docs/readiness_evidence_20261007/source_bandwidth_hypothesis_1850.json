@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-07T18:51:24.009160+03:00",
+  "actual_global_settings": {
+    "set_time_domain": 0,
+    "set_frequency": 0,
+    "optimize_for_short_pulse": 1,
+    "pulselength_s": 1.0303488659126683e-14,
+    "bandwidth_Hz": 42827358276794.06,
+    "wavelength_start_m": 1.559878859628509e-06,
+    "wavelength_stop_m": 1.5618788596285093e-06
+  },
+  "provenance": "s2_temporal200_task00_original.json result.controls.after.source; unchanged persisted records",
+  "primary_source": "https://optics.ansys.com/hc/en-us/articles/360034383094-Changing-the-source-bandwidth-in-FDTD-and-MODE",
+  "finding": "Short-pulse optimization may excite outside the requested wavelength range; a narrow monitor interval does not guarantee narrow time excitation.",
+  "qualification": "Recorded global settings are not a measured injected waveform or proven cause of late-time drift. Active port overrides and actual traces remain to inspect. No source change or diagnostic solve released.",
+  "next": "Include supported source/port-override metadata in existing bounded saved-time inventory; avoid expanding its implementation."
+}

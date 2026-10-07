@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-07T19:15:11.030765+03:00",
+  "IGUM": {
+    "last_attempt": "s2_time_result_inventory_seats_1912.json",
+    "exit_code": 255,
+    "error": "SSH connect port22 timeout",
+    "new_upload": false,
+    "new_job": false
+  },
+  "Athena": {
+    "last_attempt": "s2_athena_access_after_igum_timeout_1913.json",
+    "exit_code": 255,
+    "error": "SSH connect port22 timeout",
+    "new_upload": false,
+    "new_job": false
+  },
+  "cause": "Unknown; VPN/network reconnection may be needed. Read-only nativeVPN/adapter/process query returned no matching entries, not proof of VPN state.",
+  "last_measured_jobs": {
+    "IGUM101434": "bothpendingResources at18:50; status after access loss UNKNOWN",
+    "Athena171516": "FAILED1:0 at19:04/32sec, analysis-only, all71inputs preserved"
+  },
+  "next": "At a later bounded access check reconcile exact jobs/outputs before any dispatch. If recovered, use NEW operator/evidence names: failed1912 seat evidence already exists; do not rerun the existing operator blindly. No remote upload occurred before GUI-check failure.",
+  "prepared_inventory": "TEMP/s2_saved_time_result_inventory_c992ccaddc35 runtime1e2c01427856409ea8e9b3ac45291f6fd350e7d42aaeecc8c3728cbbcb81ad92,4tests+parent+reviewpass",
+  "global_readiness": "NOT_READY; calibrationFAILED;38completed FDTD; length/mesh/gradient gatesopen",
+  "remaining_allowance": "14percent weekly measured19:07; other/model/Claude unknown;noreset/purchase"
+}

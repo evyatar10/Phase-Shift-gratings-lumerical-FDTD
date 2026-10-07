@@ -23,3 +23,6 @@ runners/lumopt2_design/s2_length_fixed150.py -text
 runners/lumopt2_design/s2_length_fixed_domain_build.py -text
 runners/lumopt2_design/s2_length_no_solve_guard.py -text
 runners/lumopt2_design/s2_length_reference_checks.py -text
+
+# Preserve failed readout metadata as exact original evidence.
+docs/readiness_evidence_20261007/s2_saved_times_report_original_1905.json -text
