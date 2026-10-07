@@ -1,0 +1,1170 @@
+{
+  "schema": 1,
+  "status": "DIAGNOSTIC_ONLY_CALIBRATION_FAILED_UNCHANGED",
+  "no_automatic_approval": true,
+  "steps_nm": [
+    2.0,
+    0.5,
+    0.125,
+    0.0625
+  ],
+  "center_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+  "marker_sha256": "50ef62531e338f57b5cbc78d05905a2cd5d805297407a4ba0913cedf3a5404df",
+  "marker_remote": "/work/data/s2_shift30_review_20261007_1142.json",
+  "runner_sha256": "7f0500a8a037961a3d72e3aa5d58ae2cd52ebbab2a8505f5395097adfac5c857",
+  "firstwave_provenance": {
+    "marker_sha256": "6722e1883338c0259b6fd2aa7386a2d12f1c5124708f590c1ce30a7c266f8d02",
+    "center_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+    "runner_sha256": "4f5f9d21cb95f5cfbcb1e0fc91ae960dc0dd57449c973369051c551c07c7bba1",
+    "observed_files": {
+      "s2_fdstep_task00_original.json": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+      "s2_fdstep_task00_ports.npz": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4",
+      "s2_fdstep_task01_original.json": "021ce215c64ccc13020f74af8d775f65ab97f73290e4b06f1f159297f8c7b04e",
+      "s2_fdstep_task01_ports.npz": "9f6d80043881877926d40a17f18e5c0e3863d8c93a6279a2a65277b96c626613",
+      "s2_fdstep_task02_original.json": "9e72cdc72197254594688dc0102d8a4b10155435244b545719ec4fd3fda4e808",
+      "s2_fdstep_task02_ports.npz": "eb140dc60e401b9472e942833437eebb74ac60f6f2641a7cd2a55c94fe1e5fe7",
+      "s2_half_classes_task00_original.json": "823ab4a4dd5d3e412a1b6a806d8ea76f058f5c640701dd5c01c604f89f35e33f",
+      "s2_half_classes_task00_ports.npz": "25395d232792378b5ff098ad050e39ebea59d68a4cf5c8e067d6b386f18acd23",
+      "s2_half_classes_task01_original.json": "3821b3b1c2b6dc6f3adf9337252b2eb7040d55b8125d31f42ef74e7b11fb31b1",
+      "s2_half_classes_task01_ports.npz": "50bcaee3c3538acef0e81497369553e3d8ac0db6743605aa6c2336a32ca21f9b",
+      "s2_half_classes_task02_original.json": "5e096a013ba9d2a5660fd3c46f8e90fa958de9a9999376ebe5b3e2b76acfd37b",
+      "s2_half_classes_task02_ports.npz": "3ee423f1292390318867b92a6c0d0fc911c1cdf529b6924c503e60cbbb3678f6",
+      "s2_half_classes_task03_original.json": "bd0406be1a52ef986173c77c73017dca83d0d67d0c8eb021baefca5f5aafec81",
+      "s2_half_classes_task03_ports.npz": "d1fc60b97fa46a2dab9ad2cc113d11622cffec6466bf2337292bd1fc5492b872"
+    },
+    "old_shift30": {
+      "available": true,
+      "half_step_nm": 2.0,
+      "source_roles": {
+        "available": true,
+        "archive": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_original_port_spectra_preserved.zip",
+        "archive_sha256": "b996142caf4a66d73336ed2845a564626e6fbd9e0e9a695ee89bf498e7522204",
+        "members": {
+          "base_ports.npz": "801520552a17d34afe2ec45f34d949120c3d7a8a302d4f677cf8fd27bd1c2906",
+          "task_09_ports.npz": "8328f93a60f698aab3ba0bdc99aec71b9c2cb639576df9c57f8301d26dfb8a92",
+          "task_10_ports.npz": "a5cefa0026fb2f58b59075848756456e1d7f1941c7051bae6088ce2c69466a95"
+        },
+        "center_export_checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_reference_task00_remote_original.json",
+        "center_export_sha256": "732ca5752ff2b0449a892ebafe7ba6a87a5ee1fce63bd929f8f7343bf50df13f",
+        "center_export_role": "stored_forward_export_not_fsp_creation",
+        "center_export_semantic_sha256": "215be6bec0ec217748830dd6ef7938d6124c2efbb373c0ddceef8530e2ca3d46",
+        "fd_roles": {
+          "9": {
+            "checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_09.json",
+            "sha256": "665f58076abce8635bc14d967e93df4a6d299b140017e2817af5c0020557072e",
+            "semantic_sha256": "834947440dc0ff94cf771fea4ce38a9151eedaa6451599aa5b598ecc70b49b3b",
+            "code": {
+              "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+              "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+              "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+              "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+              "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+              "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+              "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+              "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+            },
+            "role": "recovery_generated_forward_fd_leg"
+          },
+          "10": {
+            "checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_10.json",
+            "sha256": "4b992ac83cfdf3dd6379ad05d14f9d02c0164c8146b857cb02ae7665432035e0",
+            "semantic_sha256": "4e9a1bbe1a151226197a9aad772479d726f4ec3418837b203662155cd0639eba",
+            "code": {
+              "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+              "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+              "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+              "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+              "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+              "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+              "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+              "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+            },
+            "role": "recovery_generated_forward_fd_leg"
+          }
+        }
+      },
+      "qualification": "Center fingerprints an export; FD endpoints have separately pinned recovery creators. Code-map equality and complete original-solve provenance are not claimed."
+    }
+  },
+  "local_frozen_dependency_sha256": {
+    "diagnose_te_s2_fdstep.py": "3bf24e3ea47600f1c08f13803c7ab29bc6cf8b95c08fef63152168b1069ee361",
+    "lumopt2_design.py": "53108bbd368dd699179ab65029628aa4c4b2d8ad687777f88b82f404a0952569",
+    "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+    "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+    "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+    "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+    "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+    "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+    "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8",
+    "s2_shift30_convergence.py": "7f0500a8a037961a3d72e3aa5d58ae2cd52ebbab2a8505f5395097adfac5c857",
+    "config.py": "da07ca3cf48d1cdbe947350678bb8b9699918a513752b207883007c93ac82795",
+    "s2_fdhalf_classes.py": "4f5f9d21cb95f5cfbcb1e0fc91ae960dc0dd57449c973369051c551c07c7bba1"
+  },
+  "new_original_bytes": {
+    "s2_shift30_task00_original.json": "5de37e6a2709ee2214bf64fea1a17421704c9e23f6b442edb7d4d32ec1c4622b",
+    "s2_shift30_task00_ports.npz": "2d67514798ce66b3b6d3470c21cbb84f6520aff4740f93f44a3f6bcc870731e8",
+    "s2_shift30_task01_original.json": "82a537302e7e89262d95a67966c948a2f57880c22853c39309bdb6893b39df8e",
+    "s2_shift30_task01_ports.npz": "d5fb2192eb52b271dcb7cf08726026f8013833c3e95b7d32c35c15cfee1aaf0f",
+    "s2_shift30_task02_original.json": "0711bf7b9cc7776ba9e2617b469d915ac624aca8e1efacf00043b340b4d1b2f2",
+    "s2_shift30_task02_ports.npz": "21f52f913408692c7f12787899e24de759161b76a634c42d65c2176efd1e5d32",
+    "s2_shift30_task03_original.json": "4529bc20329c5f9de15c1564268a88ec5fa16376f205779dc0a7d73154d9f2aa",
+    "s2_shift30_task03_ports.npz": "45a159c37374b2b606e39550b77e2652501eac20124a4708b3734d4f15af1d38"
+  },
+  "grid_equality": "ALL_REQUIRED_NEW_AND_EXISTING_GRIDS_MATCH_EXACTLY",
+  "observables": {
+    "peak3_tout": {
+      "common_center_steps": {
+        "0.5": {
+          "half_step_nm": 0.5,
+          "plus_peak3": 0.9258938664009438,
+          "minus_peak3": 0.9261641942150614,
+          "center_peak3": 0.9257489820745417,
+          "peak_indices_plus_minus": [
+            241,
+            263
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.08250879819443567,
+            0.9792009972490889,
+            -0.06170979544352456
+          ],
+          "odd": -0.00013516390705875514,
+          "even": 0.00028004823346083896,
+          "central_derivative": -0.0002703278141175103,
+          "second_difference": 0.0022403858676867117,
+          "exact_center_peak3_jacobian_projection": 0.00038585713129568643,
+          "moving_peak_minus_projection": -0.0006561849454131967,
+          "spectral_fd_max_abs": 0.4653456899446605,
+          "spectral_fd_rms": 0.14975178393034996
+        },
+        "2": {
+          "half_step_nm": 2.0,
+          "plus_peak3": 0.9254833733305935,
+          "minus_peak3": 0.9261140918423015,
+          "center_peak3": 0.9257489820745417,
+          "peak_indices_plus_minus": [
+            207,
+            297
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.08250879819443567,
+            0.9792009972490889,
+            -0.06170979544352456
+          ],
+          "odd": -0.0003153592558540197,
+          "even": 4.975051190581059e-05,
+          "central_derivative": -0.00015767962792700985,
+          "second_difference": 2.4875255952905295e-05,
+          "exact_center_peak3_jacobian_projection": 0.00022986423172945874,
+          "moving_peak_minus_projection": -0.0003875438596564686,
+          "spectral_fd_max_abs": 0.21391013051843016,
+          "spectral_fd_rms": 0.0818173271612462
+        },
+        "0.125": {
+          "half_step_nm": 0.125,
+          "plus_peak3": 0.9260780172483009,
+          "minus_peak3": 0.9259108704814262,
+          "center_peak3": 0.9257489820745417,
+          "peak_indices_plus_minus": [
+            249,
+            255
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.08250879819443567,
+            0.9792009972490889,
+            -0.06170979544352456
+          ],
+          "odd": 8.357338343734089e-05,
+          "even": 0.00024546179032181037,
+          "central_derivative": 0.0006685870674987271,
+          "second_difference": 0.03141910916119173,
+          "exact_center_peak3_jacobian_projection": 0.0008107730703496986,
+          "moving_peak_minus_projection": -0.0001421860028509715,
+          "spectral_fd_max_abs": 0.5293673173902396,
+          "spectral_fd_rms": 0.1617870974616293
+        },
+        "0.0625": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.9261405990582202,
+          "minus_peak3": 0.9263610110587633,
+          "center_peak3": 0.9257489820745417,
+          "peak_indices_plus_minus": [
+            250,
+            253
+          ],
+          "center_peak_index": 252,
+          "center_peak3_weights": [
+            0.08250879819443567,
+            0.9792009972490889,
+            -0.06170979544352456
+          ],
+          "odd": -0.00011020600027156213,
+          "even": 0.0005018229839500732,
+          "central_derivative": -0.0017632960043449941,
+          "second_difference": 0.25693336778243747,
+          "exact_center_peak3_jacobian_projection": -0.0015797535103823073,
+          "moving_peak_minus_projection": -0.0001835424939626868,
+          "spectral_fd_max_abs": 0.5321600569764087,
+          "spectral_fd_rms": 0.16246475306005514
+        }
+      },
+      "peak_locations": {
+        "0.125": {
+          "plus": {
+            "index": 249,
+            "sampled_lambda_nm": 1560.8822189724094,
+            "vertex_offset_samples": 0.03373168633909736,
+            "fitted_index_vertex_lambda_nm": 1560.8820840450394,
+            "peak3": 0.9260780172483009
+          },
+          "minus": {
+            "index": 255,
+            "sampled_lambda_nm": 1560.8582192282722,
+            "vertex_offset_samples": -0.3198173233713889,
+            "fitted_index_vertex_lambda_nm": 1560.8594984653064,
+            "peak3": 0.9259108704814262
+          },
+          "center": {
+            "index": 252,
+            "sampled_lambda_nm": 1560.8702190080865,
+            "vertex_offset_samples": -0.14421859363796025,
+            "fitted_index_vertex_lambda_nm": 1560.8707958765242,
+            "peak3": 0.9257489820745417
+          }
+        },
+        "0.0625": {
+          "plus": {
+            "index": 250,
+            "sampled_lambda_nm": 1560.8782189638007,
+            "vertex_offset_samples": 0.4461650656038208,
+            "fitted_index_vertex_lambda_nm": 1560.8764343063108,
+            "peak3": 0.9261405990582202
+          },
+          "minus": {
+            "index": 253,
+            "sampled_lambda_nm": 1560.8662190609805,
+            "vertex_offset_samples": 0.2699139225894455,
+            "fitted_index_vertex_lambda_nm": 1560.865139423081,
+            "peak3": 0.9263610110587633
+          },
+          "center": {
+            "index": 252,
+            "sampled_lambda_nm": 1560.8702190080865,
+            "vertex_offset_samples": -0.14421859363796025,
+            "fitted_index_vertex_lambda_nm": 1560.8707958765242,
+            "peak3": 0.9257489820745417
+          }
+        },
+        "0.5": {
+          "plus": {
+            "index": 241,
+            "sampled_lambda_nm": 1560.9142197793444,
+            "vertex_offset_samples": -0.4309093548182172,
+            "fitted_index_vertex_lambda_nm": 1560.91594349747,
+            "peak3": 0.9258938664009438
+          },
+          "minus": {
+            "index": 263,
+            "sampled_lambda_nm": 1560.8262207174428,
+            "vertex_offset_samples": 0.16209967175583426,
+            "fitted_index_vertex_lambda_nm": 1560.8255723624911,
+            "peak3": 0.9261641942150614
+          },
+          "center": {
+            "index": 252,
+            "sampled_lambda_nm": 1560.8702190080865,
+            "vertex_offset_samples": -0.14421859363796025,
+            "fitted_index_vertex_lambda_nm": 1560.8707958765242,
+            "peak3": 0.9257489820745417
+          }
+        },
+        "2": {
+          "plus": {
+            "index": 207,
+            "sampled_lambda_nm": 1561.0502378487085,
+            "vertex_offset_samples": -0.1758139662077437,
+            "fitted_index_vertex_lambda_nm": 1561.0509412596166,
+            "peak3": 0.9254833733305935
+          },
+          "minus": {
+            "index": 297,
+            "sampled_lambda_nm": 1560.6902416818823,
+            "vertex_offset_samples": 0.18089373953284865,
+            "fitted_index_vertex_lambda_nm": 1560.6895182818268,
+            "peak3": 0.9261140918423015
+          },
+          "center": {
+            "index": 252,
+            "sampled_lambda_nm": 1560.8702190080865,
+            "vertex_offset_samples": -0.14421859363796025,
+            "fitted_index_vertex_lambda_nm": 1560.8707958765242,
+            "peak3": 0.9257489820745417
+          }
+        }
+      },
+      "historical_h2_native": {
+        "half_step_nm": 2.0,
+        "plus_peak3": 0.9254833733305935,
+        "minus_peak3": 0.9261140918423015,
+        "center_peak3": 0.925748506956398,
+        "peak_indices_plus_minus": [
+          207,
+          297
+        ],
+        "center_peak_index": 252,
+        "center_peak3_weights": [
+          0.08251513001017524,
+          0.9791981622184937,
+          -0.06171329222866893
+        ],
+        "odd": -0.0003153592558540197,
+        "even": 5.02256300495274e-05,
+        "central_derivative": -0.00015767962792700985,
+        "second_difference": 2.51128150247637e-05,
+        "exact_center_peak3_jacobian_projection": 0.00022990270853836593,
+        "moving_peak_minus_projection": -0.0003875823364653758,
+        "spectral_fd_max_abs": 0.21391013051843016,
+        "spectral_fd_rms": 0.0818173271612462
+      },
+      "successive_observed_differences": [
+        {
+          "steps": [
+            2.0,
+            0.5
+          ],
+          "central_derivative_difference": -0.00011264818619050043,
+          "relative_difference": 0.7144117960669305,
+          "spectral_fd_difference": {
+            "max_abs": 0.3906613636053958,
+            "rms": 0.10845046195344797
+          }
+        },
+        {
+          "steps": [
+            0.5,
+            0.125
+          ],
+          "central_derivative_difference": 0.0009389148816162374,
+          "relative_difference": -3.473245565504759,
+          "spectral_fd_difference": {
+            "max_abs": 0.07960437269701282,
+            "rms": 0.01843010459479885
+          }
+        },
+        {
+          "steps": [
+            0.125,
+            0.0625
+          ],
+          "central_derivative_difference": -0.002431883071843721,
+          "relative_difference": -3.637346861855582,
+          "spectral_fd_difference": {
+            "max_abs": 0.006198417255265376,
+            "rms": 0.0013045008525341757
+          }
+        }
+      ],
+      "scalar_and_jacobian_by_center": {
+        "0.5": {
+          "repeated": {
+            "half_step_nm": 0.5,
+            "plus_peak3": 0.9258938664009438,
+            "minus_peak3": 0.9261641942150614,
+            "center_peak3": 0.9257489820745417,
+            "peak_indices_plus_minus": [
+              241,
+              263
+            ],
+            "center_peak_index": 252,
+            "center_peak3_weights": [
+              0.08250879819443567,
+              0.9792009972490889,
+              -0.06170979544352456
+            ],
+            "odd": -0.00013516390705875514,
+            "even": 0.00028004823346083896,
+            "central_derivative": -0.0002703278141175103,
+            "second_difference": 0.0022403858676867117,
+            "exact_center_peak3_jacobian_projection": 0.00038585713129568643,
+            "moving_peak_minus_projection": -0.0006561849454131967,
+            "spectral_fd_max_abs": 0.4653456899446605,
+            "spectral_fd_rms": 0.14975178393034996
+          },
+          "original": {
+            "half_step_nm": 0.5,
+            "plus_peak3": 0.9258938664009438,
+            "minus_peak3": 0.9261641942150614,
+            "center_peak3": 0.925748506956398,
+            "peak_indices_plus_minus": [
+              241,
+              263
+            ],
+            "center_peak_index": 252,
+            "center_peak3_weights": [
+              0.08251513001017524,
+              0.9791981622184937,
+              -0.06171329222866893
+            ],
+            "odd": -0.00013516390705875514,
+            "even": 0.00028052335160455577,
+            "central_derivative": -0.0002703278141175103,
+            "second_difference": 0.002244186812836446,
+            "exact_center_peak3_jacobian_projection": 0.0003862706018637309,
+            "moving_peak_minus_projection": -0.0006565984159812412,
+            "spectral_fd_max_abs": 0.4653456899446605,
+            "spectral_fd_rms": 0.14975178393034996
+          }
+        },
+        "0.125": {
+          "repeated": {
+            "half_step_nm": 0.125,
+            "plus_peak3": 0.9260780172483009,
+            "minus_peak3": 0.9259108704814262,
+            "center_peak3": 0.9257489820745417,
+            "peak_indices_plus_minus": [
+              249,
+              255
+            ],
+            "center_peak_index": 252,
+            "center_peak3_weights": [
+              0.08250879819443567,
+              0.9792009972490889,
+              -0.06170979544352456
+            ],
+            "odd": 8.357338343734089e-05,
+            "even": 0.00024546179032181037,
+            "central_derivative": 0.0006685870674987271,
+            "second_difference": 0.03141910916119173,
+            "exact_center_peak3_jacobian_projection": 0.0008107730703496986,
+            "moving_peak_minus_projection": -0.0001421860028509715,
+            "spectral_fd_max_abs": 0.5293673173902396,
+            "spectral_fd_rms": 0.1617870974616293
+          },
+          "original": {
+            "half_step_nm": 0.125,
+            "plus_peak3": 0.9260780172483009,
+            "minus_peak3": 0.9259108704814262,
+            "center_peak3": 0.925748506956398,
+            "peak_indices_plus_minus": [
+              249,
+              255
+            ],
+            "center_peak_index": 252,
+            "center_peak3_weights": [
+              0.08251513001017524,
+              0.9791981622184937,
+              -0.06171329222866893
+            ],
+            "odd": 8.357338343734089e-05,
+            "even": 0.0002459369084655272,
+            "central_derivative": 0.0006685870674987271,
+            "second_difference": 0.03147992428358748,
+            "exact_center_peak3_jacobian_projection": 0.0008112891119663821,
+            "moving_peak_minus_projection": -0.000142702044467655,
+            "spectral_fd_max_abs": 0.5293673173902396,
+            "spectral_fd_rms": 0.1617870974616293
+          }
+        },
+        "0.0625": {
+          "repeated": {
+            "half_step_nm": 0.0625,
+            "plus_peak3": 0.9261405990582202,
+            "minus_peak3": 0.9263610110587633,
+            "center_peak3": 0.9257489820745417,
+            "peak_indices_plus_minus": [
+              250,
+              253
+            ],
+            "center_peak_index": 252,
+            "center_peak3_weights": [
+              0.08250879819443567,
+              0.9792009972490889,
+              -0.06170979544352456
+            ],
+            "odd": -0.00011020600027156213,
+            "even": 0.0005018229839500732,
+            "central_derivative": -0.0017632960043449941,
+            "second_difference": 0.25693336778243747,
+            "exact_center_peak3_jacobian_projection": -0.0015797535103823073,
+            "moving_peak_minus_projection": -0.0001835424939626868,
+            "spectral_fd_max_abs": 0.5321600569764087,
+            "spectral_fd_rms": 0.16246475306005514
+          },
+          "original": {
+            "half_step_nm": 0.0625,
+            "plus_peak3": 0.9261405990582202,
+            "minus_peak3": 0.9263610110587633,
+            "center_peak3": 0.925748506956398,
+            "peak_indices_plus_minus": [
+              250,
+              253
+            ],
+            "center_peak_index": 252,
+            "center_peak3_weights": [
+              0.08251513001017524,
+              0.9791981622184937,
+              -0.06171329222866893
+            ],
+            "odd": -0.00011020600027156213,
+            "even": 0.00050229810209379,
+            "central_derivative": -0.0017632960043449941,
+            "second_difference": 0.2571766282720205,
+            "exact_center_peak3_jacobian_projection": -0.0015792307427107415,
+            "moving_peak_minus_projection": -0.00018406526163425264,
+            "spectral_fd_max_abs": 0.5321600569764087,
+            "spectral_fd_rms": 0.16246475306005514
+          }
+        },
+        "2": {
+          "repeated": {
+            "half_step_nm": 2.0,
+            "plus_peak3": 0.9254833733305935,
+            "minus_peak3": 0.9261140918423015,
+            "center_peak3": 0.9257489820745417,
+            "peak_indices_plus_minus": [
+              207,
+              297
+            ],
+            "center_peak_index": 252,
+            "center_peak3_weights": [
+              0.08250879819443567,
+              0.9792009972490889,
+              -0.06170979544352456
+            ],
+            "odd": -0.0003153592558540197,
+            "even": 4.975051190581059e-05,
+            "central_derivative": -0.00015767962792700985,
+            "second_difference": 2.4875255952905295e-05,
+            "exact_center_peak3_jacobian_projection": 0.00022986423172945874,
+            "moving_peak_minus_projection": -0.0003875438596564686,
+            "spectral_fd_max_abs": 0.21391013051843016,
+            "spectral_fd_rms": 0.0818173271612462
+          },
+          "original": {
+            "half_step_nm": 2.0,
+            "plus_peak3": 0.9254833733305935,
+            "minus_peak3": 0.9261140918423015,
+            "center_peak3": 0.925748506956398,
+            "peak_indices_plus_minus": [
+              207,
+              297
+            ],
+            "center_peak_index": 252,
+            "center_peak3_weights": [
+              0.08251513001017524,
+              0.9791981622184937,
+              -0.06171329222866893
+            ],
+            "odd": -0.0003153592558540197,
+            "even": 5.02256300495274e-05,
+            "central_derivative": -0.00015767962792700985,
+            "second_difference": 2.51128150247637e-05,
+            "exact_center_peak3_jacobian_projection": 0.00022990270853836593,
+            "moving_peak_minus_projection": -0.0003875823364653758,
+            "spectral_fd_max_abs": 0.21391013051843016,
+            "spectral_fd_rms": 0.0818173271612462
+          }
+        }
+      },
+      "original_center_peak_location": {
+        "index": 252,
+        "sampled_lambda_nm": 1560.8702190080865,
+        "vertex_offset_samples": -0.14422842223884416,
+        "fitted_index_vertex_lambda_nm": 1560.870795915838,
+        "peak3": 0.925748506956398
+      },
+      "center_provenance": {
+        "repeated_checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+        "original": {
+          "available": true,
+          "half_step_nm": 2.0,
+          "source_roles": {
+            "available": true,
+            "archive": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_original_port_spectra_preserved.zip",
+            "archive_sha256": "b996142caf4a66d73336ed2845a564626e6fbd9e0e9a695ee89bf498e7522204",
+            "members": {
+              "base_ports.npz": "801520552a17d34afe2ec45f34d949120c3d7a8a302d4f677cf8fd27bd1c2906",
+              "task_09_ports.npz": "8328f93a60f698aab3ba0bdc99aec71b9c2cb639576df9c57f8301d26dfb8a92",
+              "task_10_ports.npz": "a5cefa0026fb2f58b59075848756456e1d7f1941c7051bae6088ce2c69466a95"
+            },
+            "center_export_checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_reference_task00_remote_original.json",
+            "center_export_sha256": "732ca5752ff2b0449a892ebafe7ba6a87a5ee1fce63bd929f8f7343bf50df13f",
+            "center_export_role": "stored_forward_export_not_fsp_creation",
+            "center_export_semantic_sha256": "215be6bec0ec217748830dd6ef7938d6124c2efbb373c0ddceef8530e2ca3d46",
+            "fd_roles": {
+              "9": {
+                "checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_09.json",
+                "sha256": "665f58076abce8635bc14d967e93df4a6d299b140017e2817af5c0020557072e",
+                "semantic_sha256": "834947440dc0ff94cf771fea4ce38a9151eedaa6451599aa5b598ecc70b49b3b",
+                "code": {
+                  "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+                  "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+                  "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+                  "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+                  "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+                  "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+                  "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+                  "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+                },
+                "role": "recovery_generated_forward_fd_leg"
+              },
+              "10": {
+                "checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_10.json",
+                "sha256": "4b992ac83cfdf3dd6379ad05d14f9d02c0164c8146b857cb02ae7665432035e0",
+                "semantic_sha256": "4e9a1bbe1a151226197a9aad772479d726f4ec3418837b203662155cd0639eba",
+                "code": {
+                  "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+                  "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+                  "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+                  "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+                  "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+                  "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+                  "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+                  "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+                },
+                "role": "recovery_generated_forward_fd_leg"
+              }
+            }
+          },
+          "qualification": "Center fingerprints an export; FD endpoints have separately pinned recovery creators. Code-map equality and complete original-solve provenance are not claimed."
+        }
+      }
+    },
+    "peak3_modal": {
+      "common_center_steps": {
+        "0.5": {
+          "half_step_nm": 0.5,
+          "plus_peak3": 0.9719106989864588,
+          "minus_peak3": 0.9723113481229988,
+          "center_peak3": 0.9718095820307666,
+          "peak_indices_plus_minus": [
+            239,
+            261
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            0.03000274203915746,
+            0.9967758770306171,
+            -0.026778619069774526
+          ],
+          "odd": -0.0002003245682700161,
+          "even": 0.00030144152396216484,
+          "central_derivative": -0.0004006491365400322,
+          "second_difference": 0.0024115321916973187,
+          "exact_center_peak3_jacobian_projection": 0.005836169136542778,
+          "moving_peak_minus_projection": -0.006236818273082811,
+          "spectral_fd_max_abs": 0.5025981789766799,
+          "spectral_fd_rms": 0.15908094128222375
+        },
+        "2": {
+          "half_step_nm": 2.0,
+          "plus_peak3": 0.971286134143864,
+          "minus_peak3": 0.972436246217795,
+          "center_peak3": 0.9718095820307666,
+          "peak_indices_plus_minus": [
+            205,
+            295
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            0.03000274203915746,
+            0.9967758770306171,
+            -0.026778619069774526
+          ],
+          "odd": -0.0005750560369655044,
+          "even": 5.1608150062887326e-05,
+          "central_derivative": -0.0002875280184827522,
+          "second_difference": 2.5804075031443663e-05,
+          "exact_center_peak3_jacobian_projection": 0.0009311058458897182,
+          "moving_peak_minus_projection": -0.0012186338643724705,
+          "spectral_fd_max_abs": 0.22567153012760063,
+          "spectral_fd_rms": 0.08503564504276294
+        },
+        "0.125": {
+          "half_step_nm": 0.125,
+          "plus_peak3": 0.9721435723074878,
+          "minus_peak3": 0.9720046236401236,
+          "center_peak3": 0.9718095820307666,
+          "peak_indices_plus_minus": [
+            247,
+            253
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            0.03000274203915746,
+            0.9967758770306171,
+            -0.026778619069774526
+          ],
+          "odd": 6.947433368209577e-05,
+          "even": 0.00026451594303911197,
+          "central_derivative": 0.0005557946694567661,
+          "second_difference": 0.03385804070900633,
+          "exact_center_peak3_jacobian_projection": 0.0010860582053601464,
+          "moving_peak_minus_projection": -0.0005302635359033803,
+          "spectral_fd_max_abs": 0.5788803512890959,
+          "spectral_fd_rms": 0.1727646226880375
+        },
+        "0.0625": {
+          "half_step_nm": 0.0625,
+          "plus_peak3": 0.9722146245646804,
+          "minus_peak3": 0.9724687116977816,
+          "center_peak3": 0.9718095820307666,
+          "peak_indices_plus_minus": [
+            249,
+            251
+          ],
+          "center_peak_index": 250,
+          "center_peak3_weights": [
+            0.03000274203915746,
+            0.9967758770306171,
+            -0.026778619069774526
+          ],
+          "odd": -0.00012704356655057758,
+          "even": 0.0005320861004644017,
+          "central_derivative": -0.0020326970648092413,
+          "second_difference": 0.2724280834377737,
+          "exact_center_peak3_jacobian_projection": -0.001486865533514248,
+          "moving_peak_minus_projection": -0.0005458315312949933,
+          "spectral_fd_max_abs": 0.5853463162347419,
+          "spectral_fd_rms": 0.1735859791361903
+        }
+      },
+      "peak_locations": {
+        "0.125": {
+          "plus": {
+            "index": 247,
+            "sampled_lambda_nm": 1560.8902190511315,
+            "vertex_offset_samples": 0.13003504350743716,
+            "fitted_index_vertex_lambda_nm": 1560.8896989033465,
+            "peak3": 0.9721435723074878
+          },
+          "minus": {
+            "index": 253,
+            "sampled_lambda_nm": 1560.8662190609805,
+            "vertex_offset_samples": -0.23247780144929658,
+            "fitted_index_vertex_lambda_nm": 1560.8671489580606,
+            "peak3": 0.9720046236401236
+          },
+          "center": {
+            "index": 250,
+            "sampled_lambda_nm": 1560.8782189638007,
+            "vertex_offset_samples": -0.05678136110893199,
+            "fitted_index_vertex_lambda_nm": 1560.8784460891845,
+            "peak3": 0.9718095820307666
+          }
+        },
+        "0.0625": {
+          "plus": {
+            "index": 249,
+            "sampled_lambda_nm": 1560.8822189724094,
+            "vertex_offset_samples": -0.45831930790831055,
+            "fitted_index_vertex_lambda_nm": 1560.884052260438,
+            "peak3": 0.9722146245646804
+          },
+          "minus": {
+            "index": 251,
+            "sampled_lambda_nm": 1560.8742189756929,
+            "vertex_offset_samples": 0.36734064677440703,
+            "fitted_index_vertex_lambda_nm": 1560.872749622623,
+            "peak3": 0.9724687116977816
+          },
+          "center": {
+            "index": 250,
+            "sampled_lambda_nm": 1560.8782189638007,
+            "vertex_offset_samples": -0.05678136110893199,
+            "fitted_index_vertex_lambda_nm": 1560.8784460891845,
+            "peak3": 0.9718095820307666
+          }
+        },
+        "0.5": {
+          "plus": {
+            "index": 239,
+            "sampled_lambda_nm": 1560.922220186102,
+            "vertex_offset_samples": -0.32911785435738117,
+            "fitted_index_vertex_lambda_nm": 1560.9235367323133,
+            "peak3": 0.9719106989864588
+          },
+          "minus": {
+            "index": 261,
+            "sampled_lambda_nm": 1560.8342202221515,
+            "vertex_offset_samples": 0.24578007264412086,
+            "fitted_index_vertex_lambda_nm": 1560.8332371583083,
+            "peak3": 0.9723113481229988
+          },
+          "center": {
+            "index": 250,
+            "sampled_lambda_nm": 1560.8782189638007,
+            "vertex_offset_samples": -0.05678136110893199,
+            "fitted_index_vertex_lambda_nm": 1560.8784460891845,
+            "peak3": 0.9718095820307666
+          }
+        },
+        "2": {
+          "plus": {
+            "index": 205,
+            "sampled_lambda_nm": 1561.0582396498414,
+            "vertex_offset_samples": -0.04662220290887014,
+            "fitted_index_vertex_lambda_nm": 1561.0584261816177,
+            "peak3": 0.971286134143864
+          },
+          "minus": {
+            "index": 295,
+            "sampled_lambda_nm": 1560.6982397928164,
+            "vertex_offset_samples": 0.22809094231077104,
+            "fitted_index_vertex_lambda_nm": 1560.6973276403448,
+            "peak3": 0.972436246217795
+          },
+          "center": {
+            "index": 250,
+            "sampled_lambda_nm": 1560.8782189638007,
+            "vertex_offset_samples": -0.05678136110893199,
+            "fitted_index_vertex_lambda_nm": 1560.8784460891845,
+            "peak3": 0.9718095820307666
+          }
+        }
+      },
+      "historical_h2_native": {
+        "half_step_nm": 2.0,
+        "plus_peak3": 0.971286134143864,
+        "minus_peak3": 0.972436246217795,
+        "center_peak3": 0.9718102149755974,
+        "peak_indices_plus_minus": [
+          205,
+          295
+        ],
+        "center_peak_index": 250,
+        "center_peak3_weights": [
+          0.029957998184775972,
+          0.9967849973151656,
+          -0.026742995499941587
+        ],
+        "odd": -0.0005750560369655044,
+        "even": 5.097520523211774e-05,
+        "central_derivative": -0.0002875280184827522,
+        "second_difference": 2.548760261605887e-05,
+        "exact_center_peak3_jacobian_projection": 0.0009307872604208566,
+        "moving_peak_minus_projection": -0.0012183152789036087,
+        "spectral_fd_max_abs": 0.22567153012760063,
+        "spectral_fd_rms": 0.08503564504276294
+      },
+      "successive_observed_differences": [
+        {
+          "steps": [
+            2.0,
+            0.5
+          ],
+          "central_derivative_difference": -0.00011312111805727998,
+          "relative_difference": 0.3934264168556697,
+          "spectral_fd_difference": {
+            "max_abs": 0.42818424415397244,
+            "rms": 0.11797130674369259
+          }
+        },
+        {
+          "steps": [
+            0.5,
+            0.125
+          ],
+          "central_derivative_difference": 0.0009564438059967983,
+          "relative_difference": -2.387235410655208,
+          "spectral_fd_difference": {
+            "max_abs": 0.09670202945863526,
+            "rms": 0.020961109822109573
+          }
+        },
+        {
+          "steps": [
+            0.125,
+            0.0625
+          ],
+          "central_derivative_difference": -0.0025884917342660074,
+          "relative_difference": -4.6572806047168465,
+          "spectral_fd_difference": {
+            "max_abs": 0.007758555788931254,
+            "rms": 0.0015614410106292197
+          }
+        }
+      ],
+      "scalar_and_jacobian_by_center": {
+        "0.5": {
+          "repeated": {
+            "half_step_nm": 0.5,
+            "plus_peak3": 0.9719106989864588,
+            "minus_peak3": 0.9723113481229988,
+            "center_peak3": 0.9718095820307666,
+            "peak_indices_plus_minus": [
+              239,
+              261
+            ],
+            "center_peak_index": 250,
+            "center_peak3_weights": [
+              0.03000274203915746,
+              0.9967758770306171,
+              -0.026778619069774526
+            ],
+            "odd": -0.0002003245682700161,
+            "even": 0.00030144152396216484,
+            "central_derivative": -0.0004006491365400322,
+            "second_difference": 0.0024115321916973187,
+            "exact_center_peak3_jacobian_projection": 0.005836169136542778,
+            "moving_peak_minus_projection": -0.006236818273082811,
+            "spectral_fd_max_abs": 0.5025981789766799,
+            "spectral_fd_rms": 0.15908094128222375
+          },
+          "original": {
+            "half_step_nm": 0.5,
+            "plus_peak3": 0.9719106989864588,
+            "minus_peak3": 0.9723113481229988,
+            "center_peak3": 0.9718102149755974,
+            "peak_indices_plus_minus": [
+              239,
+              261
+            ],
+            "center_peak_index": 250,
+            "center_peak3_weights": [
+              0.029957998184775972,
+              0.9967849973151656,
+              -0.026742995499941587
+            ],
+            "odd": -0.0002003245682700161,
+            "even": 0.00030080857913139525,
+            "central_derivative": -0.0004006491365400322,
+            "second_difference": 0.002406468633051162,
+            "exact_center_peak3_jacobian_projection": 0.0058324184668033085,
+            "moving_peak_minus_projection": -0.006233067603343341,
+            "spectral_fd_max_abs": 0.5025981789766799,
+            "spectral_fd_rms": 0.15908094128222375
+          }
+        },
+        "0.125": {
+          "repeated": {
+            "half_step_nm": 0.125,
+            "plus_peak3": 0.9721435723074878,
+            "minus_peak3": 0.9720046236401236,
+            "center_peak3": 0.9718095820307666,
+            "peak_indices_plus_minus": [
+              247,
+              253
+            ],
+            "center_peak_index": 250,
+            "center_peak3_weights": [
+              0.03000274203915746,
+              0.9967758770306171,
+              -0.026778619069774526
+            ],
+            "odd": 6.947433368209577e-05,
+            "even": 0.00026451594303911197,
+            "central_derivative": 0.0005557946694567661,
+            "second_difference": 0.03385804070900633,
+            "exact_center_peak3_jacobian_projection": 0.0010860582053601464,
+            "moving_peak_minus_projection": -0.0005302635359033803,
+            "spectral_fd_max_abs": 0.5788803512890959,
+            "spectral_fd_rms": 0.1727646226880375
+          },
+          "original": {
+            "half_step_nm": 0.125,
+            "plus_peak3": 0.9721435723074878,
+            "minus_peak3": 0.9720046236401236,
+            "center_peak3": 0.9718102149755974,
+            "peak_indices_plus_minus": [
+              247,
+              253
+            ],
+            "center_peak_index": 250,
+            "center_peak3_weights": [
+              0.029957998184775972,
+              0.9967849973151656,
+              -0.026742995499941587
+            ],
+            "odd": 6.947433368209577e-05,
+            "even": 0.0002638829982083424,
+            "central_derivative": 0.0005557946694567661,
+            "second_difference": 0.033777023770667824,
+            "exact_center_peak3_jacobian_projection": 0.001081258912393314,
+            "moving_peak_minus_projection": -0.0005254642429365478,
+            "spectral_fd_max_abs": 0.5788803512890959,
+            "spectral_fd_rms": 0.1727646226880375
+          }
+        },
+        "0.0625": {
+          "repeated": {
+            "half_step_nm": 0.0625,
+            "plus_peak3": 0.9722146245646804,
+            "minus_peak3": 0.9724687116977816,
+            "center_peak3": 0.9718095820307666,
+            "peak_indices_plus_minus": [
+              249,
+              251
+            ],
+            "center_peak_index": 250,
+            "center_peak3_weights": [
+              0.03000274203915746,
+              0.9967758770306171,
+              -0.026778619069774526
+            ],
+            "odd": -0.00012704356655057758,
+            "even": 0.0005320861004644017,
+            "central_derivative": -0.0020326970648092413,
+            "second_difference": 0.2724280834377737,
+            "exact_center_peak3_jacobian_projection": -0.001486865533514248,
+            "moving_peak_minus_projection": -0.0005458315312949933,
+            "spectral_fd_max_abs": 0.5853463162347419,
+            "spectral_fd_rms": 0.1735859791361903
+          },
+          "original": {
+            "half_step_nm": 0.0625,
+            "plus_peak3": 0.9722146245646804,
+            "minus_peak3": 0.9724687116977816,
+            "center_peak3": 0.9718102149755974,
+            "peak_indices_plus_minus": [
+              249,
+              251
+            ],
+            "center_peak_index": 250,
+            "center_peak3_weights": [
+              0.029957998184775972,
+              0.9967849973151656,
+              -0.026742995499941587
+            ],
+            "odd": -0.00012704356655057758,
+            "even": 0.0005314531556336322,
+            "central_derivative": -0.0020326970648092413,
+            "second_difference": 0.27210401568441966,
+            "exact_center_peak3_jacobian_projection": -0.001491757914051432,
+            "moving_peak_minus_projection": -0.0005409391507578093,
+            "spectral_fd_max_abs": 0.5853463162347419,
+            "spectral_fd_rms": 0.1735859791361903
+          }
+        },
+        "2": {
+          "repeated": {
+            "half_step_nm": 2.0,
+            "plus_peak3": 0.971286134143864,
+            "minus_peak3": 0.972436246217795,
+            "center_peak3": 0.9718095820307666,
+            "peak_indices_plus_minus": [
+              205,
+              295
+            ],
+            "center_peak_index": 250,
+            "center_peak3_weights": [
+              0.03000274203915746,
+              0.9967758770306171,
+              -0.026778619069774526
+            ],
+            "odd": -0.0005750560369655044,
+            "even": 5.1608150062887326e-05,
+            "central_derivative": -0.0002875280184827522,
+            "second_difference": 2.5804075031443663e-05,
+            "exact_center_peak3_jacobian_projection": 0.0009311058458897182,
+            "moving_peak_minus_projection": -0.0012186338643724705,
+            "spectral_fd_max_abs": 0.22567153012760063,
+            "spectral_fd_rms": 0.08503564504276294
+          },
+          "original": {
+            "half_step_nm": 2.0,
+            "plus_peak3": 0.971286134143864,
+            "minus_peak3": 0.972436246217795,
+            "center_peak3": 0.9718102149755974,
+            "peak_indices_plus_minus": [
+              205,
+              295
+            ],
+            "center_peak_index": 250,
+            "center_peak3_weights": [
+              0.029957998184775972,
+              0.9967849973151656,
+              -0.026742995499941587
+            ],
+            "odd": -0.0005750560369655044,
+            "even": 5.097520523211774e-05,
+            "central_derivative": -0.0002875280184827522,
+            "second_difference": 2.548760261605887e-05,
+            "exact_center_peak3_jacobian_projection": 0.0009307872604208566,
+            "moving_peak_minus_projection": -0.0012183152789036087,
+            "spectral_fd_max_abs": 0.22567153012760063,
+            "spectral_fd_rms": 0.08503564504276294
+          }
+        }
+      },
+      "original_center_peak_location": {
+        "index": 250,
+        "sampled_lambda_nm": 1560.8782189638007,
+        "vertex_offset_samples": -0.05670099368471756,
+        "fitted_index_vertex_lambda_nm": 1560.878445767715,
+        "peak3": 0.9718102149755974
+      },
+      "center_provenance": {
+        "repeated_checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+        "original": {
+          "available": true,
+          "half_step_nm": 2.0,
+          "source_roles": {
+            "available": true,
+            "archive": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_original_port_spectra_preserved.zip",
+            "archive_sha256": "b996142caf4a66d73336ed2845a564626e6fbd9e0e9a695ee89bf498e7522204",
+            "members": {
+              "base_ports.npz": "801520552a17d34afe2ec45f34d949120c3d7a8a302d4f677cf8fd27bd1c2906",
+              "task_09_ports.npz": "8328f93a60f698aab3ba0bdc99aec71b9c2cb639576df9c57f8301d26dfb8a92",
+              "task_10_ports.npz": "a5cefa0026fb2f58b59075848756456e1d7f1941c7051bae6088ce2c69466a95"
+            },
+            "center_export_checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_reference_task00_remote_original.json",
+            "center_export_sha256": "732ca5752ff2b0449a892ebafe7ba6a87a5ee1fce63bd929f8f7343bf50df13f",
+            "center_export_role": "stored_forward_export_not_fsp_creation",
+            "center_export_semantic_sha256": "215be6bec0ec217748830dd6ef7938d6124c2efbb373c0ddceef8530e2ca3d46",
+            "fd_roles": {
+              "9": {
+                "checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_09.json",
+                "sha256": "665f58076abce8635bc14d967e93df4a6d299b140017e2817af5c0020557072e",
+                "semantic_sha256": "834947440dc0ff94cf771fea4ce38a9151eedaa6451599aa5b598ecc70b49b3b",
+                "code": {
+                  "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+                  "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+                  "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+                  "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+                  "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+                  "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+                  "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+                  "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+                },
+                "role": "recovery_generated_forward_fd_leg"
+              },
+              "10": {
+                "checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_10.json",
+                "sha256": "4b992ac83cfdf3dd6379ad05d14f9d02c0164c8146b857cb02ae7665432035e0",
+                "semantic_sha256": "4e9a1bbe1a151226197a9aad772479d726f4ec3418837b203662155cd0639eba",
+                "code": {
+                  "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+                  "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+                  "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+                  "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+                  "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+                  "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+                  "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+                  "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+                },
+                "role": "recovery_generated_forward_fd_leg"
+              }
+            }
+          },
+          "qualification": "Center fingerprints an export; FD endpoints have separately pinned recovery creators. Code-map equality and complete original-solve provenance are not claimed."
+        }
+      }
+    }
+  },
+  "limitations": [
+    "No new fit, scientific pass or approval marker is produced.",
+    "Step differences do not certify convergence order or a statistical noise bound.",
+    "All common-center projections use the exact repeated nominal center; historical native h2 center is retained separately.",
+    "Fixed-center spectral-Jacobian FD and moving-peak FD may differ at finite steps.",
+    "Offline identity/NPZ/scalar checks do not re-open remote FSP/H5 or certify server solve completion. Parent verifies artifacts.",
+    "Old h2 export and FD creator roles retain their qualified historical provenance."
+  ],
+  "pins_sha256": "cff7165a1cc6e7c4aae9024b6ce3dda8d1c9d62dfc007040bd0deaf6f14c7581",
+  "new_pins_sha256": "1d9b1dbf10ffa14dc11d758af4fe88c5ae2d0e579145b027711f3bb9ee124692",
+  "spectra_file": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_shift30_spectra_1219.json",
+  "spectra_sha256": "2dcc992ad67d037a831d9b88be480aa079feb204cd6189307026f08bf6f52a73"
+}

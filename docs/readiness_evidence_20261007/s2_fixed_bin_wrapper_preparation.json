@@ -1,0 +1,14 @@
+{
+  "re": {
+    "path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_fixed_bin_wrappers__pdnmegf\\run_s2_fixed_bin_re_20261007.sh",
+    "sha256": "12db25862baed6c1ad1f3aaa1be0d8451b9382dbc3a721402c6b09c39ca6144b",
+    "bash_syntax_exit": 0,
+    "status": "PREPARED_NOT_DISPATCHED"
+  },
+  "im": {
+    "path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_fixed_bin_wrappers__pdnmegf\\run_s2_fixed_bin_im_20261007.sh",
+    "sha256": "683111ce7daf743902f6f9fa97e37b15afdccd3539790a82ede11dfd9a5fbb8e",
+    "bash_syntax_exit": 0,
+    "status": "PREPARED_NOT_DISPATCHED"
+  }
+}

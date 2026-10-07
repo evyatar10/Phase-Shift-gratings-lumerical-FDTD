@@ -1,5 +1,45 @@
 # Full-optimization readiness criteria
 
+## Update12:22 Israel - smaller-step ladder complete; peak derivative still unstable
+
+**26 new FDTD solves verified completed.** All171162 tasks COMPLETED exit0,
+remote cold-resume validated4 retained checkpoints/FSP/H5/solver logs/NPZs;
+original bytes fetched and independently pinned. Actual strict analyzer passed
+exit0 with exact grids/source identities/scores. Artifact-pin SHA
+1d9b1dbf10ffa14dc11d758af4fe88c5ae2d0e579145b027711f3bb9ee124692.
+Reports: readiness_evidence_20261007/s2_shift30_measured_1219.json,
+s2_shift30_spectra_1219.json and compact s2_shift30_summary_1222.json.
+
+Tout peak3 central derivative at h2,.5,.125,.0625nm is respectively
+-1.57680e-4,-2.70328e-4,+6.68587e-4,-1.76330e-3 pernm. Modal at the new
+steps is+5.55795e-4 and-2.03270e-3. Tout even terms remain2.45462e-4 and
+5.01823e-4 at the two new steps. This is NOT a reliable peak-gradient plateau;
+smaller steps alone did not resolve calibration. Frozen-center-J projections
+at the new steps are+8.10773e-4 and-1.57975e-3(Tout), also unstable.
+Fixed flank-bin244/260 Tout derivatives change~1.1-1.4% between newsteps,
+while the small central/peak difference changes much more. This is local
+observed behavior, not a global convergence/noise bound or isolated cause.
+Remaining8otherclasslegs unreleased; no tighter/new FDTD array now.
+
+**CPU-only Re fixed-frequency diagnostic171195_0 submitted12:20:50**:
+8CPU128G45min2h_2g/l40s-public, zeroGPU/newFDTD, output
+/work/results/s2_fixed_bin_shift30_re_20261007T1216/fixed_bin_shift30.json.
+Helper SHA b5f1aeef94d9c1d08ea34e0c265e1e0e1b8ec6ec7f3adf0c4ff63bc03fab23c4;
+frozen mechanics0be8299d...d526d and guard40dd4878...99d unchanged.
+Five tests and parent rerun passed; direction-aware source metadata corrected
+and tested. It first reproduces original shift30 peak3 h1, then computes raw
+one-hot244/252/260 using five cached wavelengths and unchanged vendor scaling.
+Inspect actual metadata/control/preservation before serial Im. No Imdispatch yet.
+Source package: s2_fixed_bin_prepared_1220.zip; receipt s2_fixed_bin_re_dispatch_1220.json.
+Preflight12:14 shared7/50 used plusqueuedIGUM7; CPUaddsnoFDTD seats. Athena
+queueempty12:20,quota224G. IGUM101155 stillpendingResources12:14.
+
+Sol s2_gradient_provenance_audit is inspecting nine actual termination logs
+(s2_diagnostic_termination_logs_1222.json) for temporal-convergence hypotheses.
+No claimed causality: frozen-grid discretization and finite-timeDFT remain
+possibilities. Source/gradient calibration, optimizer smoke and N98 width gates
+remain FAILED/BLOCKED. No coefficient or production objective change.
+
 ## Update11:42 Israel - four smaller shift30 solves submitted
 
 Athena array **171162 tasks0-3** submitted11:41:31 for shift30(index149)

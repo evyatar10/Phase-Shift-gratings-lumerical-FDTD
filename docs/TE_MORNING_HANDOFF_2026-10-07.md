@@ -1,5 +1,65 @@
 # TE readiness handoff — 2026-10-07
 
+## Update12:32 Israel - actual termination review and active CPU diagnostic
+
+All nine inspected recent diagnostic logs report early auto-shutoff near
+67.400-68.343ps, final reported statistic9.92611e-8..9.99643e-8,
+real32 A100. The 2000ps maximum duration was not reached. This is evidence of
+termination behavior, not a bound on coherent DFT error or a demonstrated
+cause of the unstable peak derivative. Preserved report/data:
+readiness_evidence_20261007/s2_termination_review_1232.zip.
+
+At12:29 Athena171195_0 was RUNNING8:37, no completed report/error yet;
+quota224G/300G soft. Do not dispatch Im before inspecting the Re result.
+Sol is preparing a TEMP-only fixed-duration diagnostic (center,shift30
++/-0.0625nm,100ps then reviewed150ps); no new forward run or timing change
+has been approved/dispatched. Test supported early-stop control explicitly:
+passing0 through the existing builder falls back to1e-7. The parent will
+review the current fixed-frequency saved-field result before deciding runs.
+A bounded text-only Claude Opus5.5 temporal-test review is pending.
+Latest actual Codex allowance12:23:72% weekly remaining, separate model and
+Claude limits unknown. No reset or purchase. Calibration remains FAILED.
+
+## Update12:22 Israel - smaller-step ladder complete; peak derivative still unstable
+
+**26 new FDTD solves verified completed.** All171162 tasks COMPLETED exit0,
+remote cold-resume validated4 retained checkpoints/FSP/H5/solver logs/NPZs;
+original bytes fetched and independently pinned. Actual strict analyzer passed
+exit0 with exact grids/source identities/scores. Artifact-pin SHA
+1d9b1dbf10ffa14dc11d758af4fe88c5ae2d0e579145b027711f3bb9ee124692.
+Reports: readiness_evidence_20261007/s2_shift30_measured_1219.json,
+s2_shift30_spectra_1219.json and compact s2_shift30_summary_1222.json.
+
+Tout peak3 central derivative at h2,.5,.125,.0625nm is respectively
+-1.57680e-4,-2.70328e-4,+6.68587e-4,-1.76330e-3 pernm. Modal at the new
+steps is+5.55795e-4 and-2.03270e-3. Tout even terms remain2.45462e-4 and
+5.01823e-4 at the two new steps. This is NOT a reliable peak-gradient plateau;
+smaller steps alone did not resolve calibration. Frozen-center-J projections
+at the new steps are+8.10773e-4 and-1.57975e-3(Tout), also unstable.
+Fixed flank-bin244/260 Tout derivatives change~1.1-1.4% between newsteps,
+while the small central/peak difference changes much more. This is local
+observed behavior, not a global convergence/noise bound or isolated cause.
+Remaining8otherclasslegs unreleased; no tighter/new FDTD array now.
+
+**CPU-only Re fixed-frequency diagnostic171195_0 submitted12:20:50**:
+8CPU128G45min2h_2g/l40s-public, zeroGPU/newFDTD, output
+/work/results/s2_fixed_bin_shift30_re_20261007T1216/fixed_bin_shift30.json.
+Helper SHA b5f1aeef94d9c1d08ea34e0c265e1e0e1b8ec6ec7f3adf0c4ff63bc03fab23c4;
+frozen mechanics0be8299d...d526d and guard40dd4878...99d unchanged.
+Five tests and parent rerun passed; direction-aware source metadata corrected
+and tested. It first reproduces original shift30 peak3 h1, then computes raw
+one-hot244/252/260 using five cached wavelengths and unchanged vendor scaling.
+Inspect actual metadata/control/preservation before serial Im. No Imdispatch yet.
+Source package: s2_fixed_bin_prepared_1220.zip; receipt s2_fixed_bin_re_dispatch_1220.json.
+Preflight12:14 shared7/50 used plusqueuedIGUM7; CPUaddsnoFDTD seats. Athena
+queueempty12:20,quota224G. IGUM101155 stillpendingResources12:14.
+
+Sol s2_gradient_provenance_audit is inspecting nine actual termination logs
+(s2_diagnostic_termination_logs_1222.json) for temporal-convergence hypotheses.
+No claimed causality: frozen-grid discretization and finite-timeDFT remain
+possibilities. Source/gradient calibration, optimizer smoke and N98 width gates
+remain FAILED/BLOCKED. No coefficient or production objective change.
+
 ## Update11:58 Israel - fixed-frequency reconstruction preparation
 
 Source trace confirms port excitation has no objective-Jacobian weighting;

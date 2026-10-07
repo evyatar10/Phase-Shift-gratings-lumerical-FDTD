@@ -1,0 +1,85 @@
+{
+  "status": "DIAGNOSTIC_ONLY_CALIBRATION_FAILED_UNCHANGED",
+  "completed_new_FDTD_solves": 26,
+  "new_job": "171162_0..3 COMPLETED and cold-resume/artifact verified",
+  "source_sha": "7f0500a8a037961a3d72e3aa5d58ae2cd52ebbab2a8505f5395097adfac5c857",
+  "actual_pin_sha": "1d9b1dbf10ffa14dc11d758af4fe88c5ae2d0e579145b027711f3bb9ee124692",
+  "observables": {
+    "peak3_tout": {
+      "0.5": {
+        "central_derivative": -0.0002703278141175103,
+        "even": 0.00028004823346083896,
+        "exact_center_peak3_jacobian_projection": 0.00038585713129568643,
+        "peak_indices_plus_minus": [
+          241,
+          263
+        ]
+      },
+      "2": {
+        "central_derivative": -0.00015767962792700985,
+        "even": 4.975051190581059e-05,
+        "exact_center_peak3_jacobian_projection": 0.00022986423172945874,
+        "peak_indices_plus_minus": [
+          207,
+          297
+        ]
+      },
+      "0.125": {
+        "central_derivative": 0.0006685870674987271,
+        "even": 0.00024546179032181037,
+        "exact_center_peak3_jacobian_projection": 0.0008107730703496986,
+        "peak_indices_plus_minus": [
+          249,
+          255
+        ]
+      },
+      "0.0625": {
+        "central_derivative": -0.0017632960043449941,
+        "even": 0.0005018229839500732,
+        "exact_center_peak3_jacobian_projection": -0.0015797535103823073,
+        "peak_indices_plus_minus": [
+          250,
+          253
+        ]
+      }
+    },
+    "peak3_modal": {
+      "0.5": {
+        "central_derivative": -0.0004006491365400322,
+        "even": 0.00030144152396216484,
+        "exact_center_peak3_jacobian_projection": 0.005836169136542778,
+        "peak_indices_plus_minus": [
+          239,
+          261
+        ]
+      },
+      "2": {
+        "central_derivative": -0.0002875280184827522,
+        "even": 5.1608150062887326e-05,
+        "exact_center_peak3_jacobian_projection": 0.0009311058458897182,
+        "peak_indices_plus_minus": [
+          205,
+          295
+        ]
+      },
+      "0.125": {
+        "central_derivative": 0.0005557946694567661,
+        "even": 0.00026451594303911197,
+        "exact_center_peak3_jacobian_projection": 0.0010860582053601464,
+        "peak_indices_plus_minus": [
+          247,
+          253
+        ]
+      },
+      "0.0625": {
+        "central_derivative": -0.0020326970648092413,
+        "even": 0.0005320861004644017,
+        "exact_center_peak3_jacobian_projection": -0.001486865533514248,
+        "peak_indices_plus_minus": [
+          249,
+          251
+        ]
+      }
+    }
+  }
+}

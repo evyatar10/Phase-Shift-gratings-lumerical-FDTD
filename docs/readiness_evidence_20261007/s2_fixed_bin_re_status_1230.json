@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-07T12:29:28.124308+03:00",
+  "queue": {
+    "rc": 0,
+    "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n          171195_0 l40s-publ s2_fixed evyatarr  R       8:37      1 athena-post\n",
+    "err": ""
+  },
+  "account": {
+    "rc": 0,
+    "out": "JobID|State|ExitCode|Elapsed|MaxRSS\n171195_0|RUNNING|0:0|00:08:37|\n171195_0.batch|RUNNING|0:0|00:08:37|\n171195_0.extern|RUNNING|0:0|00:08:37|\n",
+    "err": ""
+  },
+  "quota": {
+    "rc": 0,
+    "out": "Disk quotas for user evyatarrubin (uid 14979): \n     Filesystem   space   quota   limit   grace   files   quota   limit   grace\n hpc-nfs1:/home    224G    300G    330G            115k   4295m   4295m        \n",
+    "err": ""
+  },
+  "report_exists": false,
+  "log": "============================================================\nArray:      171195[0]\nNode:       athena-post\nStarted:    Wed Oct  7 12:20:53 PM IDT 2026\nGPU:        none requested; no-solve CAD probe\nCPUs:       8\nSWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\nUsing CONSTANT Materials (object-defined dielectric): SiN=1.97, SiO2=1.444\n12:21:04 - INFO - Generating optimization project...\n12:21:08 - INFO - FDTD version '8.35.4572' meets the minimum requirement.\n"
+}
