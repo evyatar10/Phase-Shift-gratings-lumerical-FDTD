@@ -7,3 +7,10 @@ docs/readiness_evidence_20261007/firstwave_analysis/actual_existing_pins.json -t
 
 # Preserve the reviewed LF bytes of this new fingerprinted diagnostic runner.
 runners/lumopt2_design/s2_temporal_forward.py text eol=lf
+
+# Keep this reviewed diagnostic source byte-identical to its release fingerprint.
+runners/lumopt2_design/s2_temporal_step150.py -text
+
+# Historical skill references retain their audited original bytes.
+.agents/skills/*/references/claude-original.md -text
+.agents/skills/work-alone/references/campaign_monitor_template.sh -text

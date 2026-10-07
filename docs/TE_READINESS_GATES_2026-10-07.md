@@ -1,5 +1,61 @@
 # Full-optimization readiness criteria
 
+## Current update 15:08 Israel — step-size pair running; mesh/length audit added
+
+Athena array **171276 tasks0/1** submitted **15:05:13 October7** and both
+RUNNING on n307 at15:06, separate A100 PCI devices47:00/B7:00,8CPU/256G each,
+2h limit, throttle2. Exactly shift30(index149)+/-0.125nm at150ps, reusing
+verified150ps center task03. New runner `s2_temporal_step150.py` SHA
+c41f522e8502598c4b8a3d4a4096baf094ede8a1c66763169992fbc82d696c8a.
+Do not change this or its frozen dependencies while jobs/checkpoint readers
+depend on them. No duplicate submission. Expected completion around16:00,
+allowing50-65min per forward; actual150ps triplet elapsed53:10-53:36.
+
+Release marker `/work/data/s2_step150_review_20261007_1507.json` SHA
+8cc8e9da52262b19f4fd51d98c11de1a686c7e61b8c8bf2b364944922677dc0f.
+Output `/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007`.
+Seven offline groups, parent rerun, actual tasklist0/1, both hidden CAD geometry/
+control/persistence checks and independent source review passed. Strict remote
+parent checkpoint/FSP/H5/ports/log/source/vendor checks passed. Initial ad hoc
+preparation omitted Linux config.LUMAPI_PATH and failed before any solve;
+operator helper corrected to the existing wrapper config; runner unchanged.
+Archive `s2_step150_prepared_verified_1506.zip` and dispatch1507 retain evidence.
+
+Prepared strict completion fetch:
+`C:/Users/evyat/AppData/Local/Temp/s2_step150_completion_fetch_f19beab1f86c/fetch_step150.py`,
+SHA ebbe44a0aba524ed22a641b33287a31c5e88d2dc52bc43c7521a72ac0d6702c9.
+Use actual job171276, exact marker/SHA above, existing
+`readiness_evidence_20261007/s2_step150_fetch_env_1509.json`, NEW absolute output.
+Both tasks must complete exit0 before fetch; read-only cold validation blocks
+main/CAD/solve. Strict local same150ps h=.0625/.125 analyzer is being prepared.
+
+IGUM **101155_0 now RUNNING**, started14:49:19, A100-SXM4-80GB ece-efrats3,
+8threads verified. It is the original-duration center qualification, not the
+150ps family. Do not pool its derivatives before parity review. Earlier IGUM
+accounting DB unavailable; latestqueue/log/scontrol valid. At15:03 shared seats
+7/50; new Athena adds14 for21 total, quota228G/300G. These are dated snapshots.
+
+32 new FDTD solves verified completed; current jobs are NOT counted completed.
+All global calibration gates remain FAILED. No coefficient/optimizer/200ps/
+new adjoint release. Offline alternative spline extraction shifts100/150
+peak derivatives4-10%, insufficient to explain own-J discrepancy; synthetic
+translation only illustrates estimator sensitivity, not actual error/noise.
+Parent reproduced exact report and3tests passed; archive
+`s2_peak_extraction_verified_1506.zip`. Objective unchanged.
+
+User additionally requests mesh(~50nm) and N~100 spatial-width convergence and
+shorter-length feasibility. Focused audit recovered raw historical MAT/workbook
+evidence; report pending. Keep currentN98/free60/mesh while checking. Separate
+temporal, mesh, longitudinal length and transverse box tests; legacy uniform
+evidence cannot by itself qualify current nonuniform seed or physical gradients.
+
+All13 project Codex skills now bundle byte-preserved detailed runbooks locally;
+18personal packages/306files verified. Claude originals unchanged; current
+adaptations/rules take precedence. Parent all13 validator/hash checks passed.
+See CLAUDE_SKILL_TRANSFER_2026-10-07.md and selfcontained inventory/validation.
+Latest actual usage14:56 weekly51% remaining; other/model-specific pools unknown.
+Latest committed milestone591db93; current diagnostic/skills checkpoint pending.
+
 ## Update14:46 Israel -150ps completed; next150ps step pair being prepared
 
 Athena171236 tasks3/4/5 COMPLETED exit0. Cold artifact checks passed for exact

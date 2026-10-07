@@ -1,6 +1,6 @@
 # TE readiness handoff — 2026-10-07
 
-## Readiness summary — 7 October, 14:46 Israel
+## Readiness summary — 7 October, 15:10 Israel
 
 **Not ready for a full TE inverse-design campaign.** Software repairs have
 passed offline checks; physical gradient validation has not passed.
@@ -11,9 +11,9 @@ passed offline checks; physical gradient validation has not passed.
 | TE geometry and monitors | Hidden CAD checks passed for both seeds | These checks do not certify mesh/domain convergence |
 | Original wavelength-gradient bug | Mixed Tout/modal normalization corrected and regression tested | Hardware validation of the corrected optimizer |
 | S2 gradient calibration | Failed the finite-difference and held-out checks | Establish numerically reliable forward sensitivities and validate the adjoint |
-| Fixed-duration forwards |100 and150ps triplets complete; peak gradients still change materially | Fixed150ps step-sensitivity pair being prepared; no new dispatch yet |
+| Fixed-duration forwards |100 and150ps triplets complete; peak gradients still change materially | Athena171276 tasks0/1 running since15:05; fixed150ps +/-0.125nm |
 | Original S1 result |16 saved profile widths/sigma and three MACs independently reproduced; final width19.385µm | Final raw field H5 absent; transmission/convergence still not independently remeasured |
-| Servers | Athena operating; IGUM baseline101155 still queued | Qualify IGUM with its existing job before splitting comparisons |
+| Servers | Athena operating; IGUM baseline101155 running since14:49 | Qualify IGUM with its existing job before splitting comparisons |
 
 There are32 verified completed new FDTD solves. CPU-only reconstruction jobs
 are counted separately. No failed coefficients have been installed and no

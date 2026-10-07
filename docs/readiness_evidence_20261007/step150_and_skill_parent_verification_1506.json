@@ -1,0 +1,82 @@
+{
+  "at": "2026-10-07T15:06:12.983523+03:00",
+  "prepared": {
+    "s2_step150_hidden_cad_d8138b40abe4": {
+      "manifest_sha256": "3e01385143b36c88cd9ef1132d1c02147e2aeb3b0dc919d5ff6e202650383467",
+      "all_manifest_hashes_match": true
+    },
+    "s2_temporal_step150_55c15e58102f": {
+      "manifest_sha256": "0fd308d3266aab804f1f48cf5e22141129a5f6645458ccade1f5d8e0cdf72bdb",
+      "all_manifest_hashes_match": true
+    }
+  },
+  "peak_actual_parent_exact": true,
+  "skills": [
+    {
+      "name": "add-study",
+      "original_and_copy_sha256": "e14d5dbe7de4c1f387412f97ddf4887806b0956bb639a67c25e3648061d069af",
+      "validator_exit": 0
+    },
+    {
+      "name": "athena-preflight",
+      "original_and_copy_sha256": "619b0f3ec87b32873d36a1f62f1cdf8c569ced6b344f599ec5979d4fc5c760bf",
+      "validator_exit": 0
+    },
+    {
+      "name": "athena-status",
+      "original_and_copy_sha256": "962c7e0b4c7120191c4df5df4bbf21de71c5e287d990ff664a26f2a76ad87ece",
+      "validator_exit": 0
+    },
+    {
+      "name": "check-result",
+      "original_and_copy_sha256": "03c375297630cdad5cf261024a5de4cfb4d98753f537af034ddf723e3029691f",
+      "validator_exit": 0
+    },
+    {
+      "name": "dispatch-study",
+      "original_and_copy_sha256": "2db43667d9d6cb461b0f77dc837d3655e0b8df7871dd3a570dc07c6da4c037e4",
+      "validator_exit": 0
+    },
+    {
+      "name": "fetch-results",
+      "original_and_copy_sha256": "498a9f41360a88e5b46b5d4b3834ca7f5686271f4693bed44e8b846f335b7ec6",
+      "validator_exit": 0
+    },
+    {
+      "name": "lock-target",
+      "original_and_copy_sha256": "b0d8fdd0f0200ca70b9db8e02225372be9d12792681f2788d218ee0e9b90197f",
+      "validator_exit": 0
+    },
+    {
+      "name": "lumopt2-design",
+      "original_and_copy_sha256": "66a65117aa6216b6bbfbad06d2e2013c6cc0216c5f720fa815c9ccfe5c689d6c",
+      "validator_exit": 0
+    },
+    {
+      "name": "predict-q3db",
+      "original_and_copy_sha256": "d8c06b206843aa86cc5407ba53efbe73924ae0f125c0d792790fa9f751a02d4d",
+      "validator_exit": 0
+    },
+    {
+      "name": "safe-compact",
+      "original_and_copy_sha256": "6f72c64c541f80b46080ff776407e16e0bda2445a7168a6db773438021aaf905",
+      "validator_exit": 0
+    },
+    {
+      "name": "stop-runs",
+      "original_and_copy_sha256": "1b44554cb8a6d22da5ddcef565f909015eb7de764863b2b70128f3c64aa6073a",
+      "validator_exit": 0
+    },
+    {
+      "name": "update-container",
+      "original_and_copy_sha256": "83535a80c542f943ae07934b13697167071e5e873c86d361c763d05cd0f7569f",
+      "validator_exit": 0
+    },
+    {
+      "name": "work-alone",
+      "original_and_copy_sha256": "4aeb426339726e7df07a695ab356b1fcf6e67669f1b6f1556b75d1dc921e8cf1",
+      "validator_exit": 0
+    }
+  ],
+  "no_FDTD_solve": true
+}
