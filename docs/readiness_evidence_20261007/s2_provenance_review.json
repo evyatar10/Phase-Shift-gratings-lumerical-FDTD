@@ -1,0 +1,144 @@
+{
+  "cases": {
+    "re_fwd": {
+      "property_count": 723,
+      "max_abs_property_difference_m": 1.6940658945086007e-21,
+      "largest_property": "R_wide_60_318::x span",
+      "all_available": true,
+      "lambda_max_abs_difference_m": 2.117582368135751e-22
+    },
+    "re_adj": {
+      "property_count": 723,
+      "max_abs_property_difference_m": 1.6940658945086007e-21,
+      "largest_property": "R_wide_60_318::x span",
+      "all_available": true,
+      "lambda_max_abs_difference_m": 2.117582368135751e-22
+    },
+    "im_fwd": {
+      "property_count": 723,
+      "max_abs_property_difference_m": 1.6940658945086007e-21,
+      "largest_property": "R_wide_60_318::x span",
+      "all_available": true,
+      "lambda_max_abs_difference_m": 2.117582368135751e-22
+    },
+    "im_adj": {
+      "property_count": 723,
+      "max_abs_property_difference_m": 1.6940658945086007e-21,
+      "largest_property": "R_wide_60_318::x span",
+      "all_available": true,
+      "lambda_max_abs_difference_m": 2.117582368135751e-22
+    }
+  },
+  "saved_field_coordinate_equality": {
+    "re_fwd_vs_re_adj": {
+      "x": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          1246
+        ],
+        "max_abs_difference": 0.0
+      },
+      "y": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          51
+        ],
+        "max_abs_difference": 0.0
+      },
+      "z": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          17
+        ],
+        "max_abs_difference": 0.0
+      },
+      "lambda": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          501
+        ],
+        "max_abs_difference": 0.0
+      }
+    },
+    "im_fwd_vs_im_adj": {
+      "x": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          1246
+        ],
+        "max_abs_difference": 0.0
+      },
+      "y": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          51
+        ],
+        "max_abs_difference": 0.0
+      },
+      "z": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          17
+        ],
+        "max_abs_difference": 0.0
+      },
+      "lambda": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          501
+        ],
+        "max_abs_difference": 0.0
+      }
+    },
+    "re_fwd_vs_im_fwd": {
+      "x": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          1246
+        ],
+        "max_abs_difference": 0.0
+      },
+      "y": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          51
+        ],
+        "max_abs_difference": 0.0
+      },
+      "z": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          17
+        ],
+        "max_abs_difference": 0.0
+      },
+      "lambda": {
+        "equal": true,
+        "finite": true,
+        "shape": [
+          501
+        ],
+        "max_abs_difference": 0.0
+      }
+    }
+  },
+  "generated_vs_saved_max_xyz_m": [
+    6.776263578034403e-21,
+    4.235164736271502e-22,
+    5.293955920339377e-23
+  ],
+  "assessment": "No meaningful geometry/grid displacement supported: maximum differences are floating-point-scale. Exact equality held across saved forward/adjoint coordinate arrays. Port2 adjoint source position/phase differ and need vendor-source confirmation. This is not a gradient calibration pass.",
+  "original_file_identity_unchanged": true,
+  "critical_evidence_available": true
+}

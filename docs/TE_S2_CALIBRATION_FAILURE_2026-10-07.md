@@ -1,5 +1,40 @@
 # S2 calibration failure and bounded diagnosis
 
+## Measured smaller-step and provenance results, 07:54 Israel
+
+Athena170906_1/2 completed exit0. Exact source/center identities and wavelength
+grids matched; exported spectra reproduced saved peak scores. corr30 h0.5nm
+peak3(Tout) derivative=3.667260923146e-5/nm versus h2nm1.874864880122e-5/nm
+(95.6% increase). Even response is-1.20475e-6 versus+1.80637e-4. Using the
+old center changes that small even response to-7.29632e-7, without changing
+the central derivative. The h0.5 peak3 spectral-Jacobian contraction gives
+3.667761171813e-5/nm, differing by0.01364%; all peak indices are252.
+Modal derivatives also depend on step:4.408675869771e-5/nm versus
+2.144186733535e-5/nm. Two sizes do not establish convergence or its order.
+
+CPU-only no-solve probe170921_0 completed in28seconds with all critical
+evidence available. It compared723 mapped properties in each original
+forward/adjoint layout: maximum discrepancy1.6941e-21m from te_point.
+Saved Re/Im forward/adjoint coordinates match exactly. Generated seed mesh
+and nominal index axes differ from saved coordinates by at most6.7763e-21m,
+which is floating-point scale, not a meaningful displaced grid. Original FSP
+hashes and companion HDF5 stats are unchanged; full HDF5 hashes were not taken.
+Field shapes are inferred from coordinates, not full E/H extraction.
+
+The observed adjoint Port2 shift-49.106nm is intentional: inspected vendor
+port_fom.py adds sign*local resolution and a numerical-propagation phase.
+Backward sign=-1 gives a1.25-step phase formula. Both saved phases are
+23.2815894deg; the numerical wavevector needed to independently reconstruct
+that phase was not exported, so formula agreement is not a fresh phase test.
+These results do not support gross saved geometry/grid mismatch as the cause.
+Next bounded question is step convergence and numerical dEps step dependence;
+full calibration remains failed. See `s2_provenance_review.json` and
+`s2_fdstep_two_sizes_comparison.json` under readiness evidence.
+
+The coordinate API uses symmetry-unfolded getdata option2, checked against
+[official Ansys documentation](https://optics.ansys.com/hc/en-us/articles/360034409834-getdata-Script-command).
+No new field solve or old-project save was used for this provenance check.
+
 ## New center evidence and next diagnostic, 06:43 Israel
 
 The nominal repeat170901_0 completed exit0. Peak3(Tout) differs by+4.75118e-7

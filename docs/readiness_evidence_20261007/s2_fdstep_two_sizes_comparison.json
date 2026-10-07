@@ -1,0 +1,89 @@
+{
+  "checkpoint_sha256": [
+    "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+    "021ce215c64ccc13020f74af8d775f65ab97f73290e4b06f1f159297f8c7b04e",
+    "9e72cdc72197254594688dc0102d8a4b10155435244b545719ec4fd3fda4e808"
+  ],
+  "steps_nm": [
+    0.5,
+    2.0
+  ],
+  "observables": {
+    "peak3_tout": {
+      "h_half": {
+        "odd": 1.8336304615729215e-05,
+        "even": -1.204750627925577e-06,
+        "derivative": 3.667260923145843e-05,
+        "second_difference": -9.638005023404617e-06
+      },
+      "h_two": {
+        "odd": 3.749729760244014e-05,
+        "even": 0.0001806369478605241,
+        "derivative": 1.874864880122007e-05,
+        "second_difference": 9.031847393026204e-05
+      },
+      "h_half_with_old_center": {
+        "odd": 1.8336304615729215e-05,
+        "even": -7.296324842087643e-07,
+        "derivative": 3.667260923145843e-05,
+        "second_difference": -5.837059873670114e-06
+      },
+      "h_two_with_new_center": {
+        "odd": 3.749729760244014e-05,
+        "even": 0.00018016182971680728,
+        "derivative": 1.874864880122007e-05,
+        "second_difference": 9.008091485840364e-05
+      },
+      "derivative_difference": 1.792396043023836e-05,
+      "conditional_richardson": 3.786753992680765e-05,
+      "repeat_peak_delta": 4.751181437168128e-07,
+      "peak_indices_center_plus_minus": [
+        252,
+        252,
+        252
+      ],
+      "fixed_center_sample_fd": 5.8686893649961824e-05,
+      "center_peak3_jacobian_applied_to_spectral_fd": 3.667761171812604e-05,
+      "spectral_fd_max_abs": 0.001570851548164387
+    },
+    "peak3_modal": {
+      "h_half": {
+        "odd": 2.204337934885725e-05,
+        "even": 4.54203843092138e-07,
+        "derivative": 4.40867586977145e-05,
+        "second_difference": 3.633630744737104e-06
+      },
+      "h_two": {
+        "odd": 4.288373467070672e-05,
+        "even": 0.00019126325248763898,
+        "derivative": 2.144186733535336e-05,
+        "second_difference": 9.563162624381949e-05
+      },
+      "h_half_with_old_center": {
+        "odd": 2.204337934885725e-05,
+        "even": -1.787409876774504e-07,
+        "derivative": 4.40867586977145e-05,
+        "second_difference": -1.4299279014196031e-06
+      },
+      "h_two_with_new_center": {
+        "odd": 4.288373467070672e-05,
+        "even": 0.00019189619731840857,
+        "derivative": 2.144186733535336e-05,
+        "second_difference": 9.594809865920428e-05
+      },
+      "derivative_difference": 2.264489136236114e-05,
+      "conditional_richardson": 4.559641812187191e-05,
+      "repeat_peak_delta": -6.329448307695884e-07,
+      "peak_indices_center_plus_minus": [
+        250,
+        250,
+        250
+      ],
+      "fixed_center_sample_fd": 5.410665687355376e-05,
+      "center_peak3_jacobian_applied_to_spectral_fd": 4.4091792754291935e-05,
+      "spectral_fd_max_abs": 0.0017323410644712878
+    }
+  },
+  "verdict": "DIAGNOSTIC_ONLY_OVERALL_CALIBRATION_REMAINS_FAILED",
+  "limitations": "Two steps cannot establish convergence order. Richardson is conditional; one repeat is not a noise bound. Fixed-center finite spectral differences need not equal moving peak derivatives at finite step. No spatial width or full gradient validation here."
+}

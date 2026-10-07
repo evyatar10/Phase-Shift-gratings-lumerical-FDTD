@@ -68,6 +68,26 @@ require frozen production sources; a documentation checkpoint is appropriate
 while hardware validation is pending.
 Local lumapi sessions must use `hide=True`; no local FDTD solve unless asked.
 
+## Parallel clusters and maintained knowledge (October 7 user instruction)
+
+The user authorized remaining needed gradient/diagnostic jobs on Athena and
+IGUM in parallel. Choose independent, scientifically justified work and use
+both when useful; this does not authorize a full optimization campaign or
+bypass failed calibration. Do not move or duplicate an active job just to use
+another server. Before dispatch, inspect both queues and the shared Lumerical
+seat pool; account for queued commitments that can start together, actual GPU
+seat demand, memory and applicable QOS/account limits. A scheduler GPU cap is
+not a license-seat budget. Verify code/runtime/data parity and unique outputs
+before splitting a numerical comparison across clusters.
+
+Continually maintain relevant project rules and installed/project skills at
+validated milestones: add confirmed reusable discoveries, correct stale
+procedures, and keep measurements/job IDs in dated evidence records. Clearly
+separate user requirements, measured behavior and unverified hypotheses.
+Preserve previous material/history; validate updated skills and record changed
+paths. Do not encode a transient failure or advisory model claim as settled
+physics. See the cluster-ops and inverse-design skills for current procedures.
+
 Codex skills installed for this project:
 - `C:/Users/evyat/.codex/skills/pi-shift-inverse-design/SKILL.md`
 - `C:/Users/evyat/.codex/skills/pi-shift-cluster-ops/SKILL.md`

@@ -8,6 +8,136 @@ the project `AGENTS.md` records that instruction.
 
 ## Overnight extension and current continuation
 
+
+## Current state 08:03 Israel — four Athena diagnostics running
+
+This section supersedes the historical status updates below. Athena array
+**170926 tasks0–3** was submitted08:00:07 and all four were RUNNING at08:03,
+tasks0–2 on n309, task3 on n310. Each has one A100,8CPUs,256G,2h under
+12h_4g; startup logs confirm GPU and8threads. Tasks0/1 are corr30 +/-1nm;
+2/3 are +/-0.25nm. Runner `runners/lumopt2_design/s2_corr30_convergence.py`
+SHA12edb06b0f9cac1d7e1ff2bb3c36113a6c364007f8e7fe2c395fb49b1819a7bb.
+Six offline tests and hidden CAD build passed; zero local FDTD solves.
+The reviewed parent marker SHA is
+312bd4e9e281b42eb53c38044627a20e4c37302338df6ab7c67691b1bfdec8c2.
+Only new isolated files were uploaded; fingerprinted dependencies are frozen.
+Output `/work/results/diagnose_te_s2_corr30_convergence/results/lumopt2_te_s2_corr30_stepconvergence_20261007`;
+logs `jobs/logs/lum_array-170926_<task>.out`. Submission and startup receipts
+are in `readiness_evidence_20261007/corr30_convergence_*.json`.
+
+IGUM **101155_0** remains PENDING Resources at07:58: matching A100 baseline
+qualification, not duplicate optimization. Shared pool was0/50 occupied before
+Athena dispatch: four Athena solves commit28 seats plus7 for queued IGUM,
+35/50 total. Athena home227G/300G soft quota. Recheck shared occupancy and both
+queues before any further solve. Do not assume QOS limits reserve seats.
+
+Completed: original failed calibration, nominal repeat170901, half-step
+pair170906, and no-solve provenance170921. Fourteen new FDTD solves completed;
+four Athena plus one IGUM are now additional outstanding solves. Do not count
+scheduler dry runs or stored-field post-processing as new simulations.
+Next: inspect/fetch the four endpoints and compare h2,h1,h0.5,h0.25 central
+responses, even terms, exact peak3 Jacobian and spectra. One probe cannot
+establish global calibration. No coefficients installed; no optimizer allowed.
+A focused Sol worker is preparing a TEMP-only no-solve dEps-step sensitivity
+probe; lead review/guard tests/resource checks required before any dispatch.
+No worker owns production code. Keep this existing heartbeat, avoid duplicate
+jobs, and continue independent preparation during waits.
+
+
+07:54 update to the state below: Athena170921_0 COMPLETED exit0 in28seconds,
+CPU-only/no FDTD. No meaningful saved geometry/grid mismatch was found:
+all723 properties differ from te_point by at most1.7e-21m, saved field axes
+are exactly equal, generated/index axes differ only at floating-point scale.
+The adjoint port offset is intentional in inspected vendor code. Original
+FSP hashes/HDF5 stats unchanged; see failure-report TOP and provenance review.
+Proceed with reviewed bounded step-convergence preparation; do not repeat
+the provenance probe or mistake it for a passed gradient calibration.
+
+## Current state 07:52 Israel — both FD legs complete; two-cluster work authorized
+
+The user explicitly authorized needed remaining gradient/diagnostic jobs on
+both clusters in parallel and continual maintenance of relevant rules/skills.
+AGENTS.md now records this; six updated skills passed their validators.
+Installed-skill snapshots/hashes and a pre-edit backup are recorded in
+`readiness_evidence_20261007/dual_cluster_skill_validation.json`.
+Full optimization is still blocked by failed calibration.
+
+Athena170906_1/2 both COMPLETED exit0,31m52s/31m41s. Checkpoint source/center
+identities, exact grids and saved score reproduction passed the offline
+comparison. All14 new overnight FDTD solves are now complete. corr30 peak3
+derivative: h2nm=1.874864880122e-5/nm, h0.5nm=3.667260923146e-5/nm,
+about95.60% larger. The even term changes from+1.80636948e-4 to-1.20475063e-6.
+At h0.5 the exact center peak3 Jacobian applied to spectral FD gives
+3.66776117e-5/nm (about0.01364% different from moving peak FD); all Tout peak
+indices remain252. This establishes step dependence, not convergence or a
+corrected global calibration. See `s2_fdstep_two_sizes_comparison.json`.
+
+**IGUM101155_0**: baseline reproducibility qualification submitted07:41:30,
+PENDING Resources at07:47; scheduler estimate15:46:55 is not guaranteed.
+Accountacct-lumerical,part-preempt/qos-preempt,explicitgpu:A100:1,256G,8CPUs,
+2h. No additional IGUM legs authorized by the runner's center gate yet.
+Native part-preempt is a mixed A100/RTX PRO6000 pool; request actual GPU type.
+Shared seats were7/50 at07:40 (Athena nowfinished; queued IGUM commits7).
+All nine diagnostic source hashes match Athena.39/40 vendor Python modules
+match local after line-ending normalization; only generated `_version.py` differs.
+Original IGUM sources preserved in
+`/home/evyatarrubin/research/bragg_sim_igum/source_history/before_te_parallel_readiness_20261007T0738.zip`,
+341files,SHA503d9f6594b2dd61fc29d7938f6180ea6f17543111b6543aa65fb304fb0bde6e.
+Updated IGUM via upload-only exit0, then explicit reference override pointing
+to `data/te_s2_reference_20261007_original.json` (original SHA732ca575...13f).
+Source fingerprints are frozen while this queued job consumes them.
+
+**Athena170921_0**: no-solve field/geometry/grid provenance probe submitted
+07:50:58, CPU-only8CPUs/64G,2h_2g,l40s-public,45min. First dry run on4h_0g
+rejected64G before submission; verified that QOS caps memory at16G. The
+2h_2g dry run accepted64G with zero GPUs. Check actual job/log next.
+Probe `/work/scripts/probe_s2_provenance_20261007.py`, SHA
+40dd487831da68080b29813cdbef2e1ce9e6629528dccd3d7c431dfc1229e99d;
+output `/work/results/s2_provenance_probe_20261007T0753/provenance.json`.
+Wrapper `jobs/run_s2_provenance_20261007.sh`, SHA
+27f64ede5baa8fafa6a24e3d59a05ccb14178ca14a4d6a779482f7c37e2c518f.
+Offline guards AND actual hidden local CAD constructor test passed, zero
+local solves. Uses coordinate-only extraction, never saves old FSP, compares
+original FSP hashes/HDF5 stats before/after. Generated artifacts are separate.
+Field array shape is inferred from axes, not measured by transferring E/H.
+
+New focused Sol audit found no six-column geometry Jacobian/unit error or
+filename-map bug. It found a validation gap: vendor contraction checks sizes,
+not coordinate equality. Probe tests that gap, not a proven coordinate defect.
+Worker `/root/s2_gradient_provenance_audit` now owns TEMP-only preparation of
+a four-task corr30 h1/h0.25nm convergence diagnostic, pending provenance review;
+do not duplicate or dispatch it before parent review/tests. No production edits.
+Next: inspect170921; compare its geometry/grid coordinates with proper symmetry
+conventions. Check IGUM101155 only at reasonable cadence. Decide smallest next
+step-convergence set after provenance; never install failed coefficients.
+
+07:32 user steering: coordinate Athena and IGUM in parallel for suitable
+independent authorized work, always checking the SHARED Lumerical seat pool.
+Live read-only checks: Athena12h_4g MaxTRESPU GPU4/CPU512/mem1792G,
+MaxSubmitPU100; this is that QOS's per-user limit, not a verified account-wide
+four-job ceiling. IGUMqos-preempt user entry evyatarrubin shows MaxJobsPU16,
+MaxTRESPU GPU16, MaxSubmitPU40; availability and other association/partition
+limits still apply. qos-lumerical has no populated user limit entry in this
+snapshot; that is not evidence of unlimited capacity. IGUM user queue empty.
+Shared lmstat at07:32:7/50 seats in use, all seven held by our Athena n306
+solve170906_2 (RUNNING18m28s). No new job submitted on either cluster.
+Evidence `readiness_evidence_20261007/dual_cluster_limits_20261007.json`.
+For future parallel diagnostics, count running AND queued commitments across
+both clusters, GPU-specific seat demand and shared users; recheck before
+release, preserve headroom and exclusive outputs. Verify IGUM source/wrapper
+parity first. Current recovery/diagnostic reference paths are Athena-specific;
+do not copy-dispatch them unchanged on IGUM. Calibration remains failed.
+
+07:10 Israel heartbeat: SSH succeeded. Exact array170906_1 remains RUNNING
+on n306 (28m32s);170906_2 is PENDING JobArrayTaskLimit as intended. Neither
+task01 nor task02 checkpoint exists yet. No new wrapper error is visible;
+the GPU-idle header is a launch-time snapshot, not current utilization.
+Snapshot `readiness_evidence_20261007/s2_fdstep_status_0710.json`.
+No duplicate dispatch or source change. Next scheduled check about07:40:
+fetch any completed exact checkpoint/ports, but compute the central derivative
+only after both endpoints pass identity checks. Current evidence checkpoint
+is local commit `da5aa3d`; failed calibration and blocked optimization unchanged.
+
 ## Current state 06:43 Israel — center reviewed, smaller-step legs active
 
 Nominal repeat170901_0 COMPLETED exit0 in31m50s. Same recovered parameter

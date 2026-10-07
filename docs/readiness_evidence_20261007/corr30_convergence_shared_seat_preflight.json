@@ -1,0 +1,6 @@
+{
+  "checked_at": "2026-10-07T07:58:46.079073+03:00",
+  "exit_code": 0,
+  "out": "      101155_[0%1] part-pree lum_pipe evyatarr PD       0:00      1 (Resources)\nlmutil - Copyright (c) 1989-2025 Flexera. All Rights Reserved.\nFlexible License Manager status on Wed 10/7/2026 07:58\n\nLicense server status: 1055@lumerical-lm.ece.technion.ac.il\n    License file(s) on lumerical-lm.ece.technion.ac.il: /ansyslm/shared_files/licensing/license_files/ansyslmd.lic:\n\nlumerical-lm.ece.technion.ac.il: license server UP (MASTER) v11.19.4\n\nVendor daemon status (on lumerical-lm.ece.technion.ac.il):\n\n  ansyslmd: UP v11.19.4\nFeature usage info:\n\nUsers of lum_fdtd_solve:  (Total of 50 licenses issued;  Total of 0 licenses in use)\n\n\n",
+  "err": ""
+}

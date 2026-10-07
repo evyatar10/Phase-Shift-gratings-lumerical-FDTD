@@ -4,6 +4,13 @@ This is the completion contract for the authorized overnight preparation.
 It is not permission to launch a full optimization campaign. A passing offline
 suite or N70 pipeline smoke alone cannot establish N98 physical readiness.
 
+## Current diagnostic status, 08:03 Israel
+
+Failed S2 calibration remains blocking. Four corr30 forward-only convergence
+checks170926_0–3 are RUNNING; IGUM baseline101155_0 is queued. No-solve
+geometry/grid provenance170921 passed its narrow consistency checks, not the
+gradient gate. Do not repeat it or promote one corr30 result to global readiness.
+
 ## Required before a full campaign
 
 1. **Current-objective gradient evidence.** Complete S2's twelve FD legs and
@@ -58,6 +65,16 @@ Domain/PML/mesh convergence and model-derived intrinsic Q remain distinct
 from an optimizer regression test or a fixed-grid improvement.
 
 ## Current limits
+
+07:54 update: corr30h0.5nm pair completed; its measured derivative is95.6%
+larger than the h2nm derivative, so finite-step dependence is material.
+No-solve Athena170921 completed exit0: all723 mapped geometry properties
+agree with te_point to1.7e-21m, saved forward/adjoint field coordinate arrays
+match exactly, generated/index axes differ only at floating-point scale.
+The adjoint port's49.106nm offset is intentional in inspected vendor code.
+This removes support for gross geometry/grid mismatch in the checked data;
+it does not pass the full gradient gate. IGUM101155 baseline qualification
+is queued for resources. Full optimization remains blocked.
 
 06:43 update: center repeat170901_0 COMPLETED and explicitly reviewed.
 Peak3(Tout) repeats within4.751e-7, identical spectral grids; one repeat does

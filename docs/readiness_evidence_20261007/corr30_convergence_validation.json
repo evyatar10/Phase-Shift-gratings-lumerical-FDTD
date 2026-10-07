@@ -1,0 +1,12 @@
+{
+  "checked_at": "2026-10-07T08:04:24.192984+03:00",
+  "files": {
+    "runners/lumopt2_design/s2_corr30_convergence.py": "12edb06b0f9cac1d7e1ff2bb3c36113a6c364007f8e7fe2c395fb49b1819a7bb",
+    "runners/lumopt2_design/gates/gate_s2_corr30_convergence.py": "02ec615c0b069ca22942edce0dfc3cb3775aa892d57e562d3fb7d59a7822c0e5"
+  },
+  "offline_exit_code": 0,
+  "stdout": "CONVERGENCE checkpoint; review required C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_convergence_fixture_5l45fme2\\lumopt2_te_s2_corr30_stepconvergence_20261007\\task_00.json delta_nm 1.0\nCONVERGENCE checkpoint; review required C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_convergence_fixture_v11d5q7k\\lumopt2_te_s2_corr30_stepconvergence_20261007\\task_00.json delta_nm 1.0\nREUSED convergence checkpoint C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_convergence_fixture_v11d5q7k\\lumopt2_te_s2_corr30_stepconvergence_20261007\\task_00.json\nCONVERGENCE checkpoint; review required C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_convergence_fixture_v11d5q7k\\lumopt2_te_s2_corr30_stepconvergence_20261007\\task_01.json delta_nm -1.0\nREUSED convergence checkpoint C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_convergence_fixture_v11d5q7k\\lumopt2_te_s2_corr30_stepconvergence_20261007\\task_01.json\nCONVERGENCE checkpoint; review required C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_convergence_fixture_v11d5q7k\\lumopt2_te_s2_corr30_stepconvergence_20261007\\task_02.json delta_nm 0.25\nREUSED convergence checkpoint C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_convergence_fixture_v11d5q7k\\lumopt2_te_s2_corr30_stepconvergence_20261007\\task_02.json\nCONVERGENCE checkpoint; review required C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_convergence_fixture_v11d5q7k\\lumopt2_te_s2_corr30_stepconvergence_20261007\\task_03.json delta_nm -0.25\nREUSED convergence checkpoint C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_convergence_fixture_v11d5q7k\\lumopt2_te_s2_corr30_stepconvergence_20261007\\task_03.json\nCONVERGENCE checkpoint; review required C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_convergence_fixture_c6u0c9hp\\lumopt2_te_s2_corr30_stepconvergence_20261007\\task_00.json delta_nm 1.0\n",
+  "stderr": "......\n----------------------------------------------------------------------\nRan 6 tests in 0.842s\n\nOK\n",
+  "hidden_cad": "corr30_convergence_hidden_build.json",
+  "local_fdtd_solves": 0
+}

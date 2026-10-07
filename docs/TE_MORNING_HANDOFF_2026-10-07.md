@@ -1,7 +1,16 @@
-# TE readiness handoff — measured state at 06:43 Israel
+# TE readiness handoff — measured state at 08:03 Israel
 
 **Not ready for full inverse-design optimization.** The overnight calibration
 finished, exposed a real accuracy failure, and was not promoted to a pass.
+
+Latest: both smaller-step Athena legs finished. corr30's derivative changes
+by95.6% between h2 and h0.5nm. A28-second CPU-only provenance check found
+no meaningful geometry/grid mismatch in the saved fields, with original files
+unchanged; this was post-processing, not another FDTD solve. All14 new FDTD
+solves completed. A matching IGUM baseline,101155_0, is queued for resources
+to qualify cross-server comparisons. Four additional Athena checks,170926 tasks0–3, are RUNNING with corr30
++/-1nm and +/-0.25nm, one A100/8CPUs/256G each. Shared-seat commitment
+is35/50 including queued IGUM. No failed coefficient has been installed.
 
 - All12 S2 finite-difference legs and both peak-gradient reconstructions
   completed. Peak fit worst error162.11%, held-out worst315.81%; every
@@ -14,8 +23,9 @@ finished, exposed a real accuracy failure, and was not promoted to a pass.
 - Nominal repeat **170901_0 completed** in31m50s. Peak3(Tout) changed by
   only4.751e-7; full spectral grids match. Explicit review supports the next
   diagnostic, but this is not a calibration pass or a statistical noise bound.
-  **Array170906** now evaluates corr30+/-0.5nm serially: task1 running on
-  n306, task2 pending the array throttle. Sources remain unchanged/frozen.
+  Array170906 has now completed both endpoints; the new four-step comparison
+  is pending170926 results. Diagnostic sources remain frozen.
+  Reviewed center evidence/protocol checkpoint: local commit **da5aa3d**.
 - Current code checkpoint: **1b2d75e**; failed-calibration evidence **40118f1**.
   Earlier documentation/evidence commits:
   27bcc6d, d23e6ac,811fa58,770cf17. No push, deletion, cancellation, container

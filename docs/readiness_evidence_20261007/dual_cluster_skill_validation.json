@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-07T07:36:41.680089+03:00",
+  "backup": "C:/Users/evyat/AppData/Local/Temp/te_dual_cluster_skill_update_83s45gpp/before.zip",
+  "skills": [
+    {
+      "path": "C:\\Users\\evyat\\.codex\\skills\\pi-shift-cluster-ops",
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": "",
+      "sha256": "95ffef37e04a5aa31b8207713d219131d983e27fc5f235bb8ea5ff8a27251720"
+    },
+    {
+      "path": "C:\\Users\\evyat\\.codex\\skills\\pi-shift-inverse-design",
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": "",
+      "sha256": "c5a5bdc872306b449a21c78eb43a53ddc0e9f06b270bd8d4c6a83383c555fade"
+    },
+    {
+      "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\athena-preflight",
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": "",
+      "sha256": "c7adfd7af780ca7d2a6746934ba9e6deebf16fc2231e49673414376c0f79d114"
+    },
+    {
+      "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\dispatch-study",
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": "",
+      "sha256": "4e59690926094e1313970f0ca3e9dca4d66bc1d55ae71ee2b9fbd551fcdaff6e"
+    },
+    {
+      "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\lumopt2-design",
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": "",
+      "sha256": "e0f70ac2cef1b9a5964829c3ae2acffd9ee83bdf8a09fb57850b4f5479c0d977"
+    },
+    {
+      "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\work-alone",
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": "",
+      "sha256": "e137a2abf6afae7290bf1cc0275f1dbed16ff675b4955e0fcbe382947de972e5"
+    }
+  ],
+  "scope": "Parallel authorized diagnostics with shared seat budget; failed calibration boundaries; maintained measured knowledge; no source or server change",
+  "validated_at": "2026-10-07T07:52:40.458211+03:00",
+  "installed_skill_snapshot": "docs\\readiness_evidence_20261007\\installed_skills_snapshot_20261007_0752.zip",
+  "snapshot_sha256": "7e7ae662238d3431ccf759d9222d798b08796f735c81b6a862ec14ebecd56567"
+}
