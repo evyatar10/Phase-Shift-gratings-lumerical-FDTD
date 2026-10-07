@@ -8,6 +8,35 @@ the project `AGENTS.md` records that instruction.
 
 ## Overnight extension and current continuation
 
+03:40 Israel heartbeat: the watcher snapshot `20261007T002253Z` confirms
+task170750_9 completed exit0 and170750_10 running on n306; nine of twelve
+FD legs complete. Watcher42384 is alive with empty stderr, and no extra SSH
+connection was needed. Task09 scalar checks pass (finite and inside scan):
+peak3(T_out)=0.9254833733305935, modal_peak3=0.971286134143864,
+lambda=1561.0582396498414nm. Tasks11/12, peak reconstructions and fit remain
+pending. Prepared N98 packet/doc are being preserved in a focused local Git
+checkpoint; this remains offline preparation, not hardware validation.
+
+03:10 Israel heartbeat: bounded read-only SSH succeeded; task170750_9 is
+still RUNNING on n306 (launched02:40), eight of twelve FD legs complete.
+No failure or new immutable checkpoint appeared; tasks10-12 and final
+reconstruction/fit remain pending as expected. Watcher42384 is alive with
+empty stderr. Account-wide weekly allowance is 9% remaining, ordinary usage
+allowed; conserve it for final-fit review, integration and hardware evidence.
+No new dispatch, source change or repeated audit was warranted at this check.
+
+N98 preparation completed after the 02:40 check: read
+`TE_N98_PILOT_PREPARATION_2026-10-07.md`. Six focused offline tests passed;
+the exact original S2 seed/bounds and pilot options are preserved in its
+JSON/archive. It is a blocked preparation helper, not a launchable study or
+hardware pass. The worker has released ownership. Calibrated perturbed
+`te_point` differs from the original seed; directional qualification at the
+actual starting geometry remains necessary. For measured width comparisons,
+use the total v3 moving-width prediction, not `dw_pred` alone. Archive SHA256
+`b35cf728d62f462a5da29327d48c10a0b06c3131830c4e30073fb7e13fe5f979` was
+independently checked. The 02:40 status checkpoint is committed as d23e6ac;
+no server/source changes accompanied this preparation.
+
 02:40 Israel heartbeat: task170750_8 completed exit0 and task170750_9 is
 running on n306; eight of twelve FD legs complete. The new task08 scalar
 checkpoint is saved, with peak3(T_out)=0.9258425299757719,

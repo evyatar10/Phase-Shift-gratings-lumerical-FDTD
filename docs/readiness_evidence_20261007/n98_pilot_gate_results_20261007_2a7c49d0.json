@@ -1,0 +1,25 @@
+{
+  "date_utc": "2026-10-06T23:44:14.109523+00:00",
+  "status": "PREPARATION_ONLY",
+  "command": [
+    "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+    "-X",
+    "utf8",
+    "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+    "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_n98_pilot_preparation_20261007_2a7c49d0\\n98_pilot_tests.py"
+  ],
+  "exit_code": 0,
+  "test_count": 6,
+  "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_n98_pilot_preparation_20261007_2a7c49d0\\n98_pilot_tests.log",
+  "bootstrap_sha256": "f5d35c47416f6dccbaa5a05a831191a2a4d1413e0c3394316af474788d20ef74",
+  "files": {
+    "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_n98_pilot_preparation_20261007_2a7c49d0\\n98_pilot_packet.py": "faa2d328061f9278c1c4e76fa7465053a6fe2f1297028ee078ba8e097baa495e",
+    "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_n98_pilot_preparation_20261007_2a7c49d0\\n98_pilot_tests.py": "61209cbecd79dc3ba523fcb90cc76e594bae1ffc46a1851b2626d37821aea67d",
+    "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\n98_pilot_spec_20261007_2a7c49d0.json": "37541dd30f0177b4d842a15ed00480c4d9f9cc6629d1592f0f894a36e2fd3d9a"
+  },
+  "candidate_engine_sha256": "d11f34db9777dd1d9deba6ab19372238c046e8d705a5c9c8c4281702e88b9559",
+  "max_restarts": 0,
+  "CAD": false,
+  "FDTD": false,
+  "server_actions": false
+}
