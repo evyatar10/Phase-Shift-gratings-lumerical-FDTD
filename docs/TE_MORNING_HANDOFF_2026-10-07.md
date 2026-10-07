@@ -1,5 +1,46 @@
 # TE readiness handoff — 2026-10-07
 
+## Update12:53 Israel - measured reload roundoff explains strict-guard fragility
+
+Metadata-only171210_0 COMPLETED exit0 in47s, originals unchanged. Raw
+s2_aux_repeat_original.json SHA5b1d25ec720134e870cde30ad981cffdff48d110a7e435822f23f63407a627fa.
+Same-forward repeat is exact. Invalidating/reloading the same file changes457
+of501 complex mode amplitudes by at most9.2363e-16 relative (real6ULP,imag8ULP);
+all501 frequencies/sourcepowers remain exact. Newselected amplitudes versus
+V1initial differ at most7.4764e-16relative, again exactfrequency/power. V1 did
+not retain its offending snapshot, so this diagnoses guard fragility without
+claiming its exact historical mismatch was recovered. Review1253 retains data.
+
+A NEW full-helper version is being prepared with all501 snapshots: preserve
+exact source/frequency/sourcepower checks and allow only32float64eps relative
+in complexamplitudes (noabsolute floor), return vendoraux unchanged, retain
+all rawdifferences and existing peak3 numerical-control tolerance. Actual
+captured data and injected materialdrift will be tested. No Re rerun or Im
+submitted yet. This arithmetic issue doesnot resolve physical calibration.
+
+## Update12:50 Israel - metadata-only diagnostic171210 submitted
+
+A separate no-field/no-DEps/no-build/no-solve probe was submitted to Athena as
+171210_0 at12:49:58,8CPU128G15min,2h_2g/l40s-public. It rereads all501 vendor
+normalization values at initial/same/reload/adjoint-to-forward states, plus
+identical-frequency and roundtrip-frequency sourcepower queries. All originals
+remain read-only. Five offline tests and parent rerun passed. Frozen probe SHA
+98d9a1fe3e1dc2cce5906ee6168d803024f2fc46ebc5195f600317d950bf49ba;
+output /work/results/s2_aux_repeat_re_20261007T1247/aux_repeat.json.
+Sources/wrapper are saved in s2_aux_repeat_sources_1250.zip; exact dispatch
+receipt s2_aux_repeat_dispatch_1250.json. Read its completed report before
+changing the normalization guard. No Im job or new FDTD launched.
+
+Preflight12:38:bothSSH reachable,Athena empty,IGUM101155 pendingResources,
+shared0/50 solve seats used plus7queuedIGUM. Athena12:49 quota224G/300Gsoft,
+queueempty; this CPU diagnostic adds0FDTDseats. Latest usage12:39:70percent
+weekly remaining, other pools unknown. Git f11b006 preserves prior guardfailure.
+
+Temporal runner still being validated in TEMP. Save/reload differed only in
+one of723 geometry properties by8.47e-22m; timing/dt/source/grid/ports/refinement
+were exact. A bounded geometry-serialization tolerance and regression checks
+are being added, retaining rawdifferences. No temporal FDTD submission yet.
+
 ## Update12:35 Israel - CPU guard failure preserved; Im remains blocked
 
 Athena171195_0 ended FAILED exit2 at12:29:49, elapsed8:59,MaxRSS~19.0GiB.

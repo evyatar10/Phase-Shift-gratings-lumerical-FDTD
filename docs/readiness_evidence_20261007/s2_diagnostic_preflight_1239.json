@@ -1,0 +1,12 @@
+{
+  "athena": {
+    "rc": 0,
+    "out": "{\"at\": \"2026-10-07T12:38:26.801171+03:00\", \"queue\": {\"rc\": 0, \"out\": \"             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\\n\", \"err\": \"\"}, \"quota\": {\"rc\": 0, \"out\": \"Disk quotas for user evyatarrubin (uid 14979): \\n     Filesystem   space   quota   limit   grace   files   quota   limit   grace\\n hpc-nfs1:/home    224G    300G    330G            115k   4295m   4295m        \\n\", \"err\": \"\"}, \"qos\": {\"rc\": 0, \"out\": \"12h_4g|cpu=512,gres/gpu=4,mem=1792G||100\\n2h_2g|cpu=64,gres/gpu=2,mem=240G||100\\n\", \"err\": \"\"}}\n",
+    "err": "...\r\n"
+  },
+  "igum": {
+    "rc": 0,
+    "out": "{\"at\": \"2026-10-07T12:38:35.326736+03:00\", \"queue\": {\"rc\": 0, \"out\": \"             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\\n      101155_[0%1] part-pree lum_pipe evyatarr PD       0:00      1 (Resources)\\n\", \"err\": \"\"}, \"seats\": {\"rc\": 0, \"out\": \"lmutil - Copyright (c) 1989-2025 Flexera. All Rights Reserved.\\nFlexible License Manager status on Wed 10/7/2026 12:38\\n\\nLicense server status: 1055@lumerical-lm.ece.technion.ac.il\\n    License file(s) on lumerical-lm.ece.technion.ac.il: /ansyslm/shared_files/licensing/license_files/ansyslmd.lic:\\n\\nlumerical-lm.ece.technion.ac.il: license server UP (MASTER) v11.19.4\\n\\nVendor daemon status (on lumerical-lm.ece.technion.ac.il):\\n\\n  ansyslmd: UP v11.19.4\\nFeature usage info:\\n\\nUsers of lum_fdtd_solve:  (Total of 50 licenses issued;  Total of 0 licenses in use)\\n\\n\\n\", \"err\": \"\"}}\n",
+    "err": ""
+  }
+}

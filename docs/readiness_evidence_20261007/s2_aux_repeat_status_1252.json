@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-07T12:51:08.622709+03:00",
+  "queue": {
+    "rc": 0,
+    "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n",
+    "err": ""
+  },
+  "account": {
+    "rc": 0,
+    "out": "JobID|State|ExitCode|Elapsed|MaxRSS\n171210_0|COMPLETED|0:0|00:00:47|\n171210_0.batch|COMPLETED|0:0|00:00:47|9466100K\n171210_0.extern|COMPLETED|0:0|00:00:47|0\n",
+    "err": ""
+  },
+  "report_exists": true,
+  "log": "============================================================\nArray:      171210[0]\nNode:       athena-post\nStarted:    Wed Oct  7 12:50:02 PM IDT 2026\nGPU:        none requested; no-solve CAD probe\nCPUs:       8\nSWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\n12:50:10 - INFO - FDTD version '8.35.4572' meets the minimum requirement.\n/work/results/s2_aux_repeat_re_20261007T1247/aux_repeat.json\n[wrapper] python exit code: 0\nINFO:    Terminating fuse-overlayfs after timeout\nINFO:    Timeouts can be caused by a running background process\n============================================================\nFinished:  Wed Oct  7 12:50:44 PM IDT 2026\nExit code: 0\n============================================================\n",
+  "report_sha": "5b1d25ec720134e870cde30ad981cffdff48d110a7e435822f23f63407a627fa"
+}
