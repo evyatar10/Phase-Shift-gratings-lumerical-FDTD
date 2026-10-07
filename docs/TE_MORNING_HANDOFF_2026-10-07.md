@@ -1,5 +1,33 @@
 # TE readiness handoff — 2026-10-07
 
+## Readiness summary — 7 October, 13:50 Israel
+
+**Not ready for a full TE inverse-design campaign.** Software repairs have
+passed offline checks; physical gradient validation has not passed.
+
+| Area | Measured state | What remains |
+|---|---|---|
+| Restart and optimizer safeguards | Integrated code passed all13 offline suites | Small hardware smoke after gradient calibration passes |
+| TE geometry and monitors | Hidden CAD checks passed for both seeds | These checks do not certify mesh/domain convergence |
+| Original wavelength-gradient bug | Mixed Tout/modal normalization corrected and regression tested | Hardware validation of the corrected optimizer |
+| S2 gradient calibration | Failed the finite-difference and held-out checks | Establish numerically reliable forward sensitivities and validate the adjoint |
+| Fixed-duration forwards | Three100 ps solves completed; substantial change from earlier stopping times | Three150 ps solves running as171236 tasks3–5 |
+| Original S1 result | Stored modal transmission95.28%, spatial width19.385µm | Preliminary result; not independently certified as converged |
+| Servers | Athena operating; IGUM baseline101155 still queued | Qualify IGUM with its existing job before splitting comparisons |
+
+There are29 verified completed new FDTD solves. CPU-only reconstruction jobs
+are counted separately. No failed coefficients have been installed and no
+full optimization campaign has been launched. The active150 ps runs preserve
+the same geometry and numerical settings except the reviewed duration change.
+
+The independent spectral comparison and figure are saved in
+`readiness_evidence_20261007/s2_temporal100_width_normalization_report.md`
+and `s2_temporal100_spectra_comparison.png`. They show timing sensitivity
+in both observables; the modal change is not solely input normalization.
+
+Exact artifacts, source identities and continuation commands follow below.
+The canonical current job state is at the top of `TE_CONTINUATION_2026-10-07.md`.
+
 ## Update13:41 Israel - 100ps completed and materially changed spectra;150ps171236 released
 
 All171216 tasks0..2 COMPLETED exit0 in35:45-35:51. Exact100ps/status1,

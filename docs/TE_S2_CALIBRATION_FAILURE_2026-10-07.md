@@ -1,5 +1,27 @@
 # S2 calibration failure and bounded diagnosis
 
+## Current state at 13:47 Israel — temporal validation continues
+
+The global S2 calibration remains **failed**. Neither coefficients nor an
+optimizer campaign have been released. The current continuation is recorded
+at the top of `TE_CONTINUATION_2026-10-07.md`; older sections below are history.
+
+All three 100 ps tasks in Athena array171216 completed and passed artifact,
+control, exact-grid and full-duration checks. The completed FDTD count is29.
+The change from the earlier approximately68 ps family materially changed both
+modal and outgoing transmission and their finite-difference peak gradients.
+See `readiness_evidence_20261007/s2_temporal100_review_1339.json` and summary1341.
+This establishes temporal sensitivity, not infinite-time convergence or a
+repair of the original calibration. Original adjoint fields remain tied to
+their original stopping conditions.
+
+After explicit review, the same center/shift30±0.0625 nm triplet at150 ps was
+released as **171236 tasks3–5** at13:40. It is running, not complete. Frozen
+runner555f and separate150 ps marker6cc6d9fd...527f51 remain unchanged.
+Both old-field CPU quadrature reconstructions171220/171225 completed; their
+successful arithmetic controls do not pass the physical calibration gate.
+Latest evidence commit is `0ded829`. No full optimization is authorized.
+
 ## Update13:05 Israel - staged temporal forwards and corrected CPU reconstruction active
 
 Athena **171216 tasks0,1,2** submitted13:01:23 for exactcenter/shift30+/-0.0625nm

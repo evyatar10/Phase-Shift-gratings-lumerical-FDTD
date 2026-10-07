@@ -1,0 +1,73 @@
+{
+  "at": "2026-10-07T13:52:33.296369+03:00",
+  "status": "SAMPLED_MODAL_BALANCE_DIAGNOSTIC_NOT_CONVERGENCE",
+  "rows": {
+    "old_center": {
+      "file": "s2_fdstep_task00_ports.npz",
+      "sha256": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4",
+      "peak_index": 250,
+      "lambda_nm": 1560.8782189638007,
+      "T": 0.9718052657698802,
+      "R": 0.002271916152260876,
+      "residual": 0.02592281807785888,
+      "grid_min_residual": 0.009572095951096593,
+      "grid_max_residual": 0.026521709780718182
+    },
+    "old_plus": {
+      "file": "s2_shift30_task02_ports.npz",
+      "sha256": "21f52f913408692c7f12787899e24de759161b76a634c42d65c2176efd1e5d32",
+      "peak_index": 249,
+      "lambda_nm": 1560.8822189724094,
+      "T": 0.9719298453802923,
+      "R": 0.0023466559520896927,
+      "residual": 0.025723498667618052,
+      "grid_min_residual": 0.009906762825511395,
+      "grid_max_residual": 0.02611676143599824
+    },
+    "old_minus": {
+      "file": "s2_shift30_task03_ports.npz",
+      "sha256": "45a159c37374b2b606e39550b77e2652501eac20124a4708b3734d4f15af1d38",
+      "peak_index": 251,
+      "lambda_nm": 1560.8742189756929,
+      "T": 0.9722868690558638,
+      "R": 0.0026481227879458806,
+      "residual": 0.025065008156190307,
+      "grid_min_residual": 0.010056963840514521,
+      "grid_max_residual": 0.025864735317322828
+    },
+    "100_center": {
+      "file": "s2_temporal100_task00_ports.npz",
+      "sha256": "bffaa0eeaef4eb5b67aa76e5265e28b18e6a4962b1d8278838375b957f25d9b6",
+      "peak_index": 250,
+      "lambda_nm": 1560.8782189638007,
+      "T": 0.9797502332524477,
+      "R": 0.0019394651888966538,
+      "residual": 0.018310301558655647,
+      "grid_min_residual": 0.016490576866188655,
+      "grid_max_residual": 0.020006180132547735
+    },
+    "100_plus": {
+      "file": "s2_temporal100_task01_ports.npz",
+      "sha256": "3b6c27df21311ea0ded74979be9884f672bb355fea68b3f3fce6dd754416c522",
+      "peak_index": 249,
+      "lambda_nm": 1560.8822189724094,
+      "T": 0.9795923451447371,
+      "R": 0.0019925781847572196,
+      "residual": 0.01841507667050564,
+      "grid_min_residual": 0.016508349726103377,
+      "grid_max_residual": 0.020009657623214383
+    },
+    "100_minus": {
+      "file": "s2_temporal100_task02_ports.npz",
+      "sha256": "86c4c722fdc366c980294e7f220ce038a4ed435dd4595c2fd2dbb8e15c812c38",
+      "peak_index": 252,
+      "lambda_nm": 1560.8702190080865,
+      "T": 0.9794106423361683,
+      "R": 0.0021613434476668194,
+      "residual": 0.018428014216164922,
+      "grid_min_residual": 0.016486070014635035,
+      "grid_max_residual": 0.02000180885156211
+    }
+  },
+  "qualification": "1-|S21|^2-|S11|^2 is a residual for the recorded modes. It is not an independently measured radiation/absorption loss or proof of energy/mesh/time convergence. Peak selection is sampled modal maximum, not peak3 interpolation."
+}

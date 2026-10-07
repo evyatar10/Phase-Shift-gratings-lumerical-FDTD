@@ -1,5 +1,38 @@
 # S2 calibration and restart correction continuation
 
+## Update 13:55 Israel — independent spectral analysis completed; 150 ps still running
+
+The saved 100 ps comparison was independently reproduced. Five focused
+arithmetic tests passed; the parent reran the actual analysis and obtained
+byte-identical numerical output. All source/input hashes and the plotted
+figure were checked. The report and figure are in readiness_evidence_20261007:
+`s2_temporal100_width_normalization_report.md` and
+`s2_temporal100_spectra_comparison.png`; full reproducible packet1356 retained.
+
+Measured nominal spectral FWHM changed from0.209867 to0.209421 nm for Tout,
+and from0.202344 to0.201610 nm for modal transmission. These are spectral
+linewidths, not the spatial-width design constraint. At fixed bin252,
+modal transmission increased0.00811158: the exact endpoint ratio decomposition
+has outgoing numerator term+0.00786251 and incoming-normalization term+0.000249071.
+Both observables and the numerator changed; normalization alone does not explain
+that comparison. This is algebra on measured endpoints, not causal attribution.
+Raw sourcepower is absent from these NPZs and was not inferred from port P.
+
+A separate sampled modal balance check gives nominal1-|S21|²-|S11|² of
+0.0259228 earlier versus0.0183103 at100 ps. This residual is not an independently
+measured radiation/absorption loss and does not certify energy or convergence.
+The packet uses R for Tout/modal ratio; the separate balance report uses R for
+reflection. Keep those meanings separate. All failed calibration gates remain.
+
+At13:53 all171236 tasks3–5 were RUNNING, approximately33.07 ps/150 ps,
+with no completed checkpoints and approximately40 minutes of solver time
+remaining. Actual startup logs verify eight threads and separate physical
+GPUs, including two different PCI bus IDs for jobs sharing n311. The cluster
+skill now explains job-local GPU0 numbering; it passed skill validation.
+No new jobs or production-source changes were made during this follow-up.
+Next dependent scientific step remains the exact150 ps completion/fetch/analysis
+workflow below. Completed new FDTD count29; latest committed evidence0ded829.
+
 ## Update13:41 Israel - 100ps completed and materially changed spectra;150ps171236 released
 
 All171216 tasks0..2 COMPLETED exit0 in35:45-35:51. Exact100ps/status1,

@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-07T13:53:25.971324+03:00",
+  "account_rc": 0,
+  "account": "171236_3|RUNNING|0:0|00:13:10\n171236_3.batch|RUNNING|0:0|00:13:10\n171236_3.extern|RUNNING|0:0|00:13:10\n171236_4|RUNNING|0:0|00:13:09\n171236_4.batch|RUNNING|0:0|00:13:09\n171236_4.extern|RUNNING|0:0|00:13:09\n171236_5|RUNNING|0:0|00:13:09\n171236_5.batch|RUNNING|0:0|00:13:09\n171236_5.extern|RUNNING|0:0|00:13:09\n",
+  "checkpoints": [],
+  "logs": {
+    "task_03_yc61w355/s2_shift30_temporal_20261007_files/fwd_default_p0.log": "-11 secs. Max time remaining: 41 mins, 15 secs. Auto Shutoff: 2.6753e-05\n20.0406% complete. Elapsed simulation time: 3.00609e-11 secs. Max time remaining: 40 mins, 44 secs. Auto Shutoff: 2.82623e-05\n21.0423% complete. Elapsed simulation time: 3.15634e-11 secs. Max time remaining: 40 mins, 14 secs. Auto Shutoff: 1.67326e-05\n22.044% complete. Elapsed simulation time: 3.30659e-11 secs. Max time remaining: 39 mins, 43 secs. Auto Shutoff: 1.25973e-05\n",
+    "task_04_k6m8pmaa/s2_shift30_temporal_20261007_files/fwd_default_p0.log": "4e-11 secs. Max time remaining: 41 mins, 5 secs. Auto Shutoff: 2.26662e-05\n20.0406% complete. Elapsed simulation time: 3.00609e-11 secs. Max time remaining: 40 mins, 34 secs. Auto Shutoff: 2.77368e-05\n21.0423% complete. Elapsed simulation time: 3.15634e-11 secs. Max time remaining: 40 mins, 4 secs. Auto Shutoff: 1.90799e-05\n22.044% complete. Elapsed simulation time: 3.30659e-11 secs. Max time remaining: 39 mins, 33 secs. Auto Shutoff: 1.0264e-05\n",
+    "task_05_1jsw9c64/s2_shift30_temporal_20261007_files/fwd_default_p0.log": "e-11 secs. Max time remaining: 41 mins, 7 secs. Auto Shutoff: 3.03272e-05\n20.0406% complete. Elapsed simulation time: 3.00609e-11 secs. Max time remaining: 40 mins, 37 secs. Auto Shutoff: 2.78451e-05\n21.0423% complete. Elapsed simulation time: 3.15634e-11 secs. Max time remaining: 40 mins, 6 secs. Auto Shutoff: 1.39732e-05\n22.044% complete. Elapsed simulation time: 3.30659e-11 secs. Max time remaining: 39 mins, 36 secs. Auto Shutoff: 1.46259e-05\n"
+  }
+}

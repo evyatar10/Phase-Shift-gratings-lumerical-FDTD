@@ -1,0 +1,9 @@
+{
+  "tests_exit": 0,
+  "actual_rerun_exit": 0,
+  "arithmetic_output_byte_identical": true,
+  "all_manifest_and_input_hashes_verified": true,
+  "figure_visually_reviewed": true,
+  "qualification": "R in this packet means Tout/modal ratio; it is NOT reflection. Separate s2_temporal_modal_balance_1353.json uses R for abs(S11)^2. No new physics gate passed.",
+  "source_sha256": "e9d4f7286229838048a65debc34102175908985d5255b4f7f127ba95be5301b6"
+}
