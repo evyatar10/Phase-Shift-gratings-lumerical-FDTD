@@ -4,3 +4,6 @@ docs/readiness_evidence_20261007/corr30_convergence_parent_review.json -text
 docs/readiness_evidence_20261007/four_step_analysis/existing_evidence_pins.json -text
 docs/readiness_evidence_20261007/four_step_analysis/existing_evidence_pins_role_bound.json -text
 docs/readiness_evidence_20261007/firstwave_analysis/actual_existing_pins.json -text
+
+# Preserve the reviewed LF bytes of this new fingerprinted diagnostic runner.
+runners/lumopt2_design/s2_temporal_forward.py text eol=lf

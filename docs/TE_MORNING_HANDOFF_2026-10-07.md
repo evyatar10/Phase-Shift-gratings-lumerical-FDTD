@@ -1,5 +1,32 @@
 # TE readiness handoff — 2026-10-07
 
+## Update13:16 Israel - fixed-bin Re completed; complementary Im171225 submitted
+
+CPU171220_0 COMPLETED exit0 in8:21, MaxRSS~19.0GiB. Reviewed raw
+s2_fixed_bin_v3_re_original.json SHAb6a4a79816fe9a6d0de2115cc9eb03bb13a475489a32c101841f43b0ce8bc0e7.
+Originalpeak3control0.20875441140949635 matches0.20875441140949622,
+relative6.65e-16. RawRe onehots244/252/260 are0.6090911592595116,
+0.19957248271069614,-0.2666784851338039. Allfinite, source/originalidentities
+preserved; all501frequency/power exact, amplitude driftmax6.5653e-16relative.
+This passes arithmetic reconstruction only; globalcalibration staysFAILED.
+
+After review, CPU-only **171225_0 Im** submitted13:15:14,8CPU128G45min,
+2h_2g/l40s-public, same frozenV3helper, output
+/work/results/s2_fixed_bin_v3_im_20261007T1305/fixed_bin_shift30.json.
+Receipt s2_fixed_bin_v3_im_dispatch_1316.json; inspectcompleted control,
+metadata/preservation and3rawonehots before comparingbothquadratures toFD.
+No newFDTD added. Fresh13:14shared21/50 used byAthena plusIGUMqueued7;
+CPUadds0. IGUM101155stillpendingResources;Athenaquota224G/300Gsoft.
+
+Temporal171216tasks0..2 allRUNNING13:13; allthreeactualsolverlogs reached
+33.1385ps/100ps, no prematuretermination then. Finalstatus/checkpoints still
+pending; do notcountcompletion.150ps remainsblocked. CompletedFDTDcount26.
+Parent completion-fetch helper C:/Users/evyat/AppData/Local/Temp/s2_temporal_fetch_3d1py9r7/fetch_completed.py
+requiresall3completedexit0+existingCP before read_checkpoint/verify_result;
+nevercalls main(), all embedded scripts ASTchecked offline; notyetexecuted.
+Sol strictpostprocessor preparationcontinues. LatestGit e13f475 records new
+runner/testeddispatch and pendinghardware. Usage13:07weekly66percentremaining.
+
 ## Update13:05 Israel - staged temporal forwards and corrected CPU reconstruction active
 
 Athena **171216 tasks0,1,2** submitted13:01:23 for exactcenter/shift30+/-0.0625nm

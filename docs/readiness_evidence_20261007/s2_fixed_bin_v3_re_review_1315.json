@@ -1,0 +1,92 @@
+{
+  "raw_sha256": "b6a4a79816fe9a6d0de2115cc9eb03bb13a475489a32c101841f43b0ce8bc0e7",
+  "job": "171220_0",
+  "status": "COMPLETED_EXIT0_REVIEWED_FOR_SERIAL_IM_ONLY",
+  "control": {
+    "reference": 0.20875441140949622,
+    "measured": 0.20875441140949635,
+    "difference": 1.3877787807814457e-16,
+    "relative_difference": 6.647901576839759e-16,
+    "arithmetic_rtol": 1e-12,
+    "arithmetic_atol": 1e-14,
+    "status": "NUMERICAL_REPRODUCTION_ONLY_NOT_SCIENTIFIC_GRADIENT_PASS",
+    "component_contractions_xyz": [
+      -0.03474275719266381,
+      0.24282902613908566,
+      0.0006681424630745137
+    ]
+  },
+  "onehot_raw": [
+    {
+      "bin": 244,
+      "wavelength_m": 1.5609022193229782e-06,
+      "objective_jacobian": "ONE_HOT_ON_PORTRESULTS_ABS_TOUT_SLOT",
+      "raw_contraction": 0.6090911592595116,
+      "component_contractions_xyz": [
+        -0.10132046020502179,
+        0.7084602582661507,
+        0.0019513611983827967
+      ],
+      "gradient_field_sha256": "9260ce39533b40b6f870f4b20a20d2c6e74b1ac8443a37e2741e5b4c2480c7a6",
+      "operator_status": "RAW_VENDOR_QUADRATURE_NOT_CERTIFIED_TOUT_OR_MODAL_DERIVATIVE"
+    },
+    {
+      "bin": 252,
+      "wavelength_m": 1.5608702190080867e-06,
+      "objective_jacobian": "ONE_HOT_ON_PORTRESULTS_ABS_TOUT_SLOT",
+      "raw_contraction": 0.19957248271069614,
+      "component_contractions_xyz": [
+        -0.03321825895755661,
+        0.23215201989070178,
+        0.0006387217775509874
+      ],
+      "gradient_field_sha256": "babcc912ebe88a945ba0b57aa4fb10f45c3d3c14fb485bb5c16e6728f80f62aa",
+      "operator_status": "RAW_VENDOR_QUADRATURE_NOT_CERTIFIED_TOUT_OR_MODAL_DERIVATIVE"
+    },
+    {
+      "bin": 260,
+      "wavelength_m": 1.5608382200052553e-06,
+      "objective_jacobian": "ONE_HOT_ON_PORTRESULTS_ABS_TOUT_SLOT",
+      "raw_contraction": -0.2666784851338039,
+      "component_contractions_xyz": [
+        0.04408368034141374,
+        -0.30990741472589506,
+        -0.0008547507493225767
+      ],
+      "gradient_field_sha256": "cdf2f22fd18da051e330f552b67bd4492968f1b03ca7c78987316814596ffe62",
+      "operator_status": "RAW_VENDOR_QUADRATURE_NOT_CERTIFIED_TOUT_OR_MODAL_DERIVATIVE"
+    }
+  ],
+  "aux_reuse": [
+    {
+      "stage": "onehot_244",
+      "accepted": true,
+      "max_relative": {
+        "frequency_hz": 0.0,
+        "sourcepower": 0.0,
+        "direction_selected_a_or_b": 6.565267933779682e-16
+      }
+    },
+    {
+      "stage": "onehot_252",
+      "accepted": true,
+      "max_relative": {
+        "frequency_hz": 0.0,
+        "sourcepower": 0.0,
+        "direction_selected_a_or_b": 6.565267933779682e-16
+      }
+    },
+    {
+      "stage": "onehot_260",
+      "accepted": true,
+      "max_relative": {
+        "frequency_hz": 0.0,
+        "sourcepower": 0.0,
+        "direction_selected_a_or_b": 6.565267933779682e-16
+      }
+    }
+  ],
+  "preservation": true,
+  "global_calibration": "FAILED_UNCHANGED",
+  "decision": "Proceed prepared serial Im same frozen helper; rawRe is not a physical-calibration pass."
+}
