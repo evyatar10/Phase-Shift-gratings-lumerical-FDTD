@@ -1,5 +1,21 @@
 # Pi-shift Bragg grating project
 
+## Main-goal checkpoint (user instruction, October 7)
+
+At meaningful milestones, changes of direction, and before another expensive
+investigation, briefly reassess: what is the user's main outcome, what actually
+blocks it now, and can the next action remove that blocker or change a necessary
+decision? Keep the answer short in the continuation record. Do not repeat this
+ritual on every tool call. Defer interesting side questions that do not advance
+the outcome; do not silently expand the acceptance criteria or let one optional
+seed's problem block a usable independent route. If work has drifted, say so and
+return to the shortest evidence-supported path within the authorized scope.
+
+Current outcome: a working TE inverse-design campaign that increases transmission
+while maintaining spatial FWHM. Assess S1 readiness separately from S2's failed
+calibration. N80 is accepted; further length certification is off the critical
+path. A full campaign still requires the existing release/authorization gates.
+
 ## Proportionate validation — latest user direction, October 7
 
 Treat N80 as an acceptable practical choice for the current TE work: with

@@ -1,0 +1,13 @@
+{
+  "model": "claude-opus-5-5",
+  "response_sha256": "4a72431e3c42073236a286f125a4ad258c5efcecd06b18a911d0ba812b154c62",
+  "adopted": "Historical S1 directional evidence supports a bounded current-code S1 smoke independently of S2; preserve old artifacts and retain N98/free60 for this historical restart test. Not a full campaign release.",
+  "rejected_or_corrected": [
+    "Forced kill/restart is not authorized; use a clean bounded stop and cold restart.",
+    "Stored vector has296 slots,181 physical active variables, not181 total vector entries. N80 with n_free60 does not itself change vector length.",
+    "QP projected optimizer is not an L-BFGS resume; inspect actual optstate fields.",
+    "Ratio optimism does not by itself prove gradients are error-free.",
+    "No unmeasured 1e-3 repeatability tolerance adopted; use existing evidence and predeclare relevant criteria.",
+    "Historical held-out discrepancy remains qualified; a reviewer cannot unilaterally waive gates."
+  ]
+}

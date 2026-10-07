@@ -1,5 +1,15 @@
 # Full-optimization readiness criteria
 
+## Main-goal checkpoint and S1 directional evidence — latest heartbeat
+
+Main outcome: working TE transmission optimization with maintained spatial FWHM. Critical next route is a bounded current-code S1 restart test, independently of S2; length/Q3dB side investigations are deferred. User requested periodic goal alignment; added to AGENTS.md and work-alone skill, validated skill format. Latest account query3%weekly remaining; pause only at<=2% as requested, not3%. No new jobs in this heartbeat. No full campaign release.
+
+Recomputed six chronological N98 S1 peak3 gain ratios from saved JSONL: toy1.012327/0.887844/0.897119, campaign0.982931/0.951232/0.842508. Input hashes and exact pairs in s1_directional_readiness_2240.json. Campaign's copied toy prefix was disambiguated by timestamp and matching FOM, not reused eval IDs. These are measured historical direction tests, not current-code hardware or all-parameter gradient validation. Separate N70 smoke excluded. This is stronger relevant S1 evidence than the old softmax fit alone; do not repeat S2's full calibration as a prerequisite for S1 smoke.
+
+Text-only exact Claude Opus5.5 reviewed the focused evidence and supports one bounded S1 smoke. Save its advice only with corrections in s1_readiness_review_2240.json: NO forced kill (not authorized),296 stored slots/181 active variables, actual v3 QP state not genericL-BFGS, no invented repeatability tolerance, ratios do not prove error-free gradients. Review archive s1_readiness_consult_2240.zip. N80 acceptance does not require changing a frozen historical N98 restart case.
+
+Next concrete preparation: an isolated S1-specific runner using measured S1 constants and current SPEC_V3 at N98/free60, pinned chosen historical parameter vector, exclusive new output/label, bounded max_feval and iterations with no automatic recenter loop; normal clean stop then cold verification, never kill/cancel. Reuse existing persistence/budget tests and S2 smoke audit structure without importing S2 calibration, N70 or its failed gate. Verify exact start-vector and FOM/profile identity and code pins offline before fresh server preflight/authorized small dispatch. This runner is NOT prepared or submitted yet; current source code unchanged. Account reserve limits starting a long preparation stage; preserve this next action rather than claim ready.
+
 ## Clarification: S1 versus S2, mesher, and corrected budget boundary
 
 Latest user explicitly sets pause at2% remaining or below, NOT3%. Actual account query this turn showed4% weekly remaining; other/model pools unknown. AGENTS.md and existing ACTIVE heartbeat updated to <=2%. Older3% checkpoints are superseded.

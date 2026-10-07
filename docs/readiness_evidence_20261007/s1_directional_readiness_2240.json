@@ -1,0 +1,84 @@
+{
+  "inputs_sha256": {
+    "results_from_athena\\validate_te\\lumopt2_te_s1_v3_toy_evals.jsonl": "44ad9695b1b399cb5099357bf0fda95dd45ba3a24d160547432849d4baae1c28",
+    "results_from_athena\\validate_te\\lumopt2_te_s1_v3_toy_proj.jsonl": "a9ae7620848285fe6686e42e235340069b85f08846a508f656d6d64e03b33139",
+    "results_from_athena\\campaign_te_s1\\lumopt2_te_s1_v3_evals.jsonl": "367d943b744bd61feb57195a8c8d706cec66274050b706dc43a7e44b5b7ebb3f",
+    "results_from_athena\\campaign_te_s1\\lumopt2_te_s1_v3_proj.jsonl": "dd3c6982ad75aee0f556e79cee6944176e9ab7bcd3ed625345ac8cff1bfb13d6"
+  },
+  "comparisons": [
+    {
+      "lane": "lumopt2_te_s1_v3_toy",
+      "iteration": 0,
+      "from_time": 1791214155.1320193,
+      "to_time": 1791222796.5068882,
+      "measured_peak3_fom_gain": 0.007025439156756352,
+      "predicted_gain": 0.006939888030172838,
+      "ratio": 1.0123274505599456,
+      "width_start_um": 19.119801343547707,
+      "width_end_um": 19.197580896859208,
+      "qualification": "Historical directional prediction versus subsequent forward value; not a new per-component adjoint or current-code hardware pass"
+    },
+    {
+      "lane": "lumopt2_te_s1_v3_toy",
+      "iteration": 1,
+      "from_time": 1791222796.5068882,
+      "to_time": 1791231843.0801506,
+      "measured_peak3_fom_gain": 0.010222736261929377,
+      "predicted_gain": 0.011514109931793455,
+      "ratio": 0.8878442469705575,
+      "width_start_um": 19.197580896859208,
+      "width_end_um": 19.314665731319387,
+      "qualification": "Historical directional prediction versus subsequent forward value; not a new per-component adjoint or current-code hardware pass"
+    },
+    {
+      "lane": "lumopt2_te_s1_v3_toy",
+      "iteration": 2,
+      "from_time": 1791231843.0801506,
+      "to_time": 1791241067.652454,
+      "measured_peak3_fom_gain": 0.012562343312285784,
+      "predicted_gain": 0.014002987869633412,
+      "ratio": 0.897118774167349,
+      "width_start_um": 19.314665731319387,
+      "width_end_um": 19.410602967117633,
+      "qualification": "Historical directional prediction versus subsequent forward value; not a new per-component adjoint or current-code hardware pass"
+    },
+    {
+      "lane": "lumopt2_te_s1_v3",
+      "iteration": 0,
+      "from_time": 1791276122.9325275,
+      "to_time": 1791284592.1238256,
+      "measured_peak3_fom_gain": 0.005267241316934124,
+      "predicted_gain": 0.005358710709070553,
+      "ratio": 0.9829307090637303,
+      "width_start_um": 19.410526608744398,
+      "width_end_um": 19.398864809463042,
+      "qualification": "Historical directional prediction versus subsequent forward value; not a new per-component adjoint or current-code hardware pass"
+    },
+    {
+      "lane": "lumopt2_te_s1_v3",
+      "iteration": 1,
+      "from_time": 1791284592.1238256,
+      "to_time": 1791293296.3495862,
+      "measured_peak3_fom_gain": 0.006245727901881604,
+      "predicted_gain": 0.0065659351786093645,
+      "ratio": 0.9512320380848507,
+      "width_start_um": 19.398864809463042,
+      "width_end_um": 19.391716718423915,
+      "qualification": "Historical directional prediction versus subsequent forward value; not a new per-component adjoint or current-code hardware pass"
+    },
+    {
+      "lane": "lumopt2_te_s1_v3",
+      "iteration": 2,
+      "from_time": 1791293296.3495862,
+      "to_time": 1791301856.8761804,
+      "measured_peak3_fom_gain": 0.0074368130139029764,
+      "predicted_gain": 0.008826992197476612,
+      "ratio": 0.842508166714926,
+      "width_start_um": 19.391716718423915,
+      "width_end_um": 19.38500618568187,
+      "qualification": "Historical directional prediction versus subsequent forward value; not a new per-component adjoint or current-code hardware pass"
+    }
+  ],
+  "no_new_solves": true,
+  "qualification": "N98 S1 toy and campaign; do not mix with N70 plumbing smoke. Campaign copied toy prefix disambiguated by timestamp and matching FOM, not reused eval index alone."
+}

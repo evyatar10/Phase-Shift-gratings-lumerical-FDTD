@@ -5,6 +5,13 @@ description: Autonomous-session mode — the user is away for hours and wants th
 
 # work-alone
 
+At milestones or a change of direction, use the main-goal checkpoint in
+AGENTS.md: identify the requested outcome, its actual current blocker, and
+the next action's decision value. Defer unrelated investigations and return
+to the shortest supported route if work drifts. Do not inflate the gate list
+or make independent viable routes wait for an optional branch's failure.
+This is a brief decision check, not another recurring audit or verbose report.
+
 Read [project context](../project-context.md). State the authorized stages,
 quantitative decision gates and material choices that would need the user.
 Continue routine reversible work and already-authorized launches without
