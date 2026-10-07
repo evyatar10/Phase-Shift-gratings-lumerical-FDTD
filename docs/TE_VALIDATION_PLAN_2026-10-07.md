@@ -90,8 +90,12 @@ is limited evidence, not a general convergence certificate.
 The historical validation evidence map is now prepared. Independent100 ps
 spectral-width and normalization arithmetic has passed its own tests and a
 parent reproduction. Rules/skills now require this runtime-aware planning.
-A focused S1 replay assessment is checking whether existing raw files can
-answer the original-results question before requesting another solve.
+A read-only server inventory recovered the original S1 spatial profiles and
+calibration logs. Their hashes were verified and printed calibration fits
+independently reproduced. Recomputed spatial widths/sigma for all16 profiles and all three campaign
+MACs match their logs exactly; final width19.38500618568187um. The current
+raw campaign forward is incomplete and lacks its H5, so final transmission
+remains a stored scalar pending a separately planned physical remeasurement.
 
 An idle GPU alone is not a reason to dispatch. Parallelize only independent,
 useful experiments with verified cross-cluster numerical parity, unique
@@ -99,3 +103,42 @@ outputs and a combined shared-seat budget. Prepare readers, provenance and
 conditional inputs during the current jobs. Keep active runner/source hashes
 unchanged, preserve all failed evidence, and never cancel or clean up to make
 room without explicit authorization.
+
+
+## Preparing a cheaper matched-field diagnostic
+
+Source inspection supports one new nominal field forward plus one port2
+adjoint as the minimum matched-duration pair; raw quadratures can then be
+reconstructed from the same fields if the normalization/identity controls
+pass. Separate Re and Im FDTD solves are not intrinsically necessary.
+This is still a one-direction diagnostic, not global calibration.
+
+The current100/150 ps runs deliberately have optimization_dft disabled.
+They cannot supply the missing nominal E fields. A monitor-local subset of
+frequencies may reduce DFT storage and extraction cost while retaining501
+source/port samples. The three fixed bins alone do not cover the peak3
+Jacobian; the previously selected union has five bins, which must be
+recomputed from the actual new center or rejected if support changes.
+
+A bounded hidden-CAD feasibility check is preparing this path during the
+current solves. It will not solve FDTD or release another job. A custom
+extractor would need exact recorded frequencies and supported Jacobian bins;
+the vendor nearest-frequency lookup must not silently fill omitted bins.
+Runtime savings cannot be predicted as501/5 because propagation remains.
+See readiness_evidence_20261007/s2_matched_duration_fields_plan.md for the
+source-level prerequisites, one-pair reuse limits and cost drivers.
+
+
+Hidden-CAD preparation outcome: the exact custom five-frequency vector
+persisted through save/reload while source/global/port501 settings stayed
+unchanged. Four solve-call probes were blocked and four guard tests passed,
+including parent rerun. Actual result count/grid remain untested. The first
+attempt selected a pre-existing fake test scene and failed to load; the
+preserved second attempt used the actual CAD scene and passed. All attempts
+and source/input identities are in s2_selective_dft_cad_reviewed_1426.zip.
+The inverse-design skill now records this qualified recorder guidance.
+
+At14:18 IGUM101155 was still PENDING(Resources), and the shared solver pool
+reported21/50 seats used by the three Athena jobs. IGUMsacct failed with a
+connection-refused accounting-database error; queue visibility still works.
+No dispatch or server reconfiguration followed that error.

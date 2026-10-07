@@ -1,5 +1,41 @@
 # Historical Claude validation claims versus independent Codex evidence
 
+## New evidence recovered from Athena, October 7 around14:15
+
+The initial local inventory below has been supplemented by a read-only remote
+recovery. Original calibration logs168581_4,168582_5,168641_6,168642_7 and
+170201_16/17 survive. The four campaign spatial-profile NPZs also survive,
+along with S1 anchor/toy profiles and their evaluation JSONLs. All24 small
+profile/row artifacts and six logs were downloaded with remote/local SHA256
+checks; archive `readiness_evidence_20261007/claude_original_logs_profiles_recovered_1418.zip`.
+No new FDTD solve was needed. The historical table's "unavailable locally"
+profile statements describe the initial inventory and are superseded here;
+full-precision calibration field vectors and final raw port spectrum have
+not thereby been recovered.
+
+A new independent least-squares calculation from the PRINTED, ROUNDED log
+arrays reproduces S1 port C=(0.9453350274,0.1170116406), with shift30 held-out
+error-16.4676%. S1 field C=(0.9667201979,0.0365600829), fitted component errors
+[-0.1962,-0.00285,+0.01391]% and leave-one-out errors below0.3% on these three
+directions. S2 field C=(0.9836231758,-0.0880129696), weak shift1 residual+23.8353%.
+The script and full residuals are in the archive. A synthetic exact-fit and
+held-out test passed. This validates the saved fit arithmetic to printed
+precision; it is not a new field solve or current-objective qualification.
+Two-point held-out field fits may be ill-conditioned and are not independent
+parameter-family evidence. No constants were installed or changed.
+
+The newly recovered profile data contain x_um, I and lam_pk_nm, without a
+parameter vector. The label/eval/wavelength matching and production spatial FWHM/MAC
+recomputation have now passed: all16 saved profiles reproduce logged FWHM
+and sigma exactly; all three campaign MACs reproduce exactly. Final spatial
+FWHM is19.38500618568187um. Four focused tests passed and the parent actual
+rerun produced identical numerical output. See
+readiness_evidence_20261007/s1_profiles_recomputation_report.md. NPZs lack fullE
+and parameters; this is original processed-profile arithmetic, not a new
+physics solve. Fresh14:24 inspection found the final campaign H5 absent and
+the remaining forward log incomplete; that FSP is not verified final-spectrum
+evidence. No costly replay was dispatched.
+
 Read-only inventory, 2026-10-07. No new numerical audit, tests, server access, simulation or source changes performed. This table distinguishes a historical measurement claim, independently reproduced arithmetic, implementation tests and unresolved physical qualification. No blanket "all validated" conclusion is supported.
 
 All relative paths below are rooted at C:/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes. E = docs/readiness_evidence_20261007/. M = C:/Users/evyat/.claude/projects/c--Users-evyat-Lumerical-phase-shift-grating-FTDT-codes/memory/project_te_inverse_design_lane.md. M is historical memory, not a fresh job-state authority.

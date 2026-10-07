@@ -1,5 +1,27 @@
 # S2 calibration and restart correction continuation
 
+## Update 14:30 Israel — original S1 evidence recovered; next-stage CAD prepared
+
+Original Claude calibration logs and16 spatial profiles were recovered from
+Athena with byte hashes; no FDTD solves. Printed-array fits independently
+reproduce the historical calibration limitations. All16 FWHM/sigma and three
+campaign MAC values reproduce exactly; parent rerun and four tests passed.
+Final S1 width19.38500618568187um is corroborated from its processed profile,
+not independently from fullE. Final raw campaign H5 is absent and its remaining
+forward log incomplete; do not use that FSP as final accepted-spectrum proof.
+See TE_VALIDATION_EVIDENCE_MAP_2026-10-07.md and the reviewed recovery archives.
+
+A hidden-CAD five-frequency recorder preparation passed property persistence,
+source/global/port501 unchanged, plus four guard tests. No field solve/result-grid
+validation happened. This may reduce future matched-field costs after temporal
+review; the conditional plan and installed inverse-design skill retain limits.
+
+At14:24 Athena171236 tasks3-5 RUNNING, about82-83%/150ps with8.5-9minutes engine
+remaining. Exact completion/fetch/analysis is still next; count remains29.
+At14:18 shared seats21/50; IGUM101155 PENDING(Resources), but IGUMsacct database
+refused connection. Queue and license queries succeeded. No new jobs, optimizer,
+coefficients or production source changes. Full readiness remains NO.
+
 ## Update 14:13 Israel — evidence map and runtime-aware plan
 
 The user's requirement to independently qualify physical gradients and plan

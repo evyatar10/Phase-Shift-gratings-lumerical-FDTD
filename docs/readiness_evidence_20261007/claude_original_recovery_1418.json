@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-07T14:17:17.474166+03:00",
+  "archive": "docs\\readiness_evidence_20261007\\claude_original_logs_profiles_recovered_1418.zip",
+  "sha256": "931dc618cbaa22cc8187be2ed5557eb20c08a72b2f42fcd85eb464f3b75afb04",
+  "small_artifact_count": 24,
+  "calibration_logs": 6,
+  "temp_root": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_original_remote_inventory_q8_9_zk0",
+  "all_remote_local_sha_checks": "passed",
+  "new_FDTD_solves": 0,
+  "note": "Profiles recovered from existing server files. NPZ carries x,I,wavelength but no parameter vector. Calibration logs print rounded arrays, not full precision."
+}

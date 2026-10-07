@@ -1,0 +1,18 @@
+{
+  "queue": {
+    "rc": 0,
+    "stdout": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n      101155_[0%1] part-pree lum_pipe evyatarr PD       0:00      1 (Resources)\n",
+    "stderr": ""
+  },
+  "account": {
+    "rc": 1,
+    "stdout": "",
+    "stderr": "sacct: error: slurm_persist_conn_open_without_init: failed to open persistent connection to host:localhost:6819: Connection refused\nsacct: error: Sending PersistInit msg: Connection refused\nsacct: error: Problem talking to the database: Connection refused\n"
+  },
+  "seats": {
+    "rc": 0,
+    "stdout": "lmutil - Copyright (c) 1989-2025 Flexera. All Rights Reserved.\nFlexible License Manager status on Wed 10/7/2026 14:18\n\nLicense server status: 1055@lumerical-lm.ece.technion.ac.il\n    License file(s) on lumerical-lm.ece.technion.ac.il: /ansyslm/shared_files/licensing/license_files/ansyslmd.lic:\n\nlumerical-lm.ece.technion.ac.il: license server UP (MASTER) v11.19.4\n\nVendor daemon status (on lumerical-lm.ece.technion.ac.il):\n\n  ansyslmd: UP v11.19.4\nFeature usage info:\n\nUsers of lum_fdtd_solve:  (Total of 50 licenses issued;  Total of 21 licenses in use)\n\n  \n\"lum_fdtd_solve\" v9999.9999, vendor: ansyslmd, expiry: 19-jan-2027\n  vendor_string: customer:01141253 tp:at\n  floating license\n\n    evyatarrubin n310.zeus.technion.ac.il evyatarrubin 2638660 (v2026.0708) (lumerical-lm.ece.technion.ac.il/1055 1414), start Wed 10/7 13:41, 7 licenses\n    evyatarrubin n311.zeus.technion.ac.il evyatarrubin 1518807 (v2026.0708) (lumerical-lm.ece.technion.ac.il/1055 1778), start Wed 10/7 13:41, 7 licenses\n    evyatarrubin n311.zeus.technion.ac.il evyatarrubin 1518833 (v2026.0708) (lumerical-lm.ece.technion.ac.il/1055 1551), start Wed 10/7 13:41, 7 licenses\n\n\n",
+    "stderr": ""
+  },
+  "at": "2026-10-07T14:18:44.277532+03:00"
+}
