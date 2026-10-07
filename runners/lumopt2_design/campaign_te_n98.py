@@ -44,6 +44,15 @@ LANES = [
          two_kl_floor=None,            # 2κL 5.11 > 3.5
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM),
+    # task 2 (user-approved 2026-10-08): S1 with the shifts weighted like the
+    # corrugations in the QP metric (legacy D starved shifts ~545x; 57/60 sat at
+    # 0). Offline on the stored 170253 it3 gradient: predicted dFOM/step
+    # +0.0091 -> +0.0169 (EXPECTED, 1.85x), same width/lambda rows. Replaces task 0.
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98_shiftw", start=TE_S1_N98_EVAL3,
+         scan=1561.04, two_kl_floor=3.0,
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM,
+         metric={"shift": 175.0}),
 ]
 N_TASKS = len(LANES)
 
@@ -56,7 +65,8 @@ def lane_spec(task_idx):
         max_feval=MAX_FEVAL,
         fwhm0_um=ln["fwhm0"], wgp_target_um=ln["fwhm0"],
         wg_anchor={"softw": ln["softw0"], "fwhm": ln["fwhm0"]},
-        adj_fix_re=ln["port"][0], adj_fix_im=ln["port"][1])
+        adj_fix_re=ln["port"][0], adj_fix_im=ln["port"][1],
+        wgp_d_halfrange_nm=ln.get("metric"))
     spec.adj_fix_field_re, spec.adj_fix_field_im = ln["field"]
     assert spec.n_periods_side == 98
     return spec

@@ -516,6 +516,11 @@ class CampaignSpec:
     # measured modal peak3 may not fall below the best accepted feasible row.
     # No modal slack is inferred from the carrier's noise allowance.
     wgp_modal_guard: bool = False
+    # ★wgp_d_halfrange_nm (claude-te 2026-10-08, user-approved): override the QP
+    # metric D = (bound half-range)² per class, e.g. {"shift": 175.0} weights the
+    # shifts like corr 100..450 (the default starved shifts ~545× on TE S1).
+    # None = legacy metric (every existing spec unchanged).
+    wgp_d_halfrange_nm: dict = None
     best_metric: str = "fom"     # "fom" or measured "modal_peak3"
     # ★wgp_noise_freeze / wgp_noise_stop (2026-10-04, noise-aware trust cap —
     # Cao/Berahas/Scheinberg arXiv 2205.03667; Sun & Nocedal 2023): a filter
@@ -2851,6 +2856,13 @@ def run_projected(spec, project, cb, out_dir, p0):
     b = np.asarray(param_bounds(spec), dtype=float)
     lo, hi = b[:, 0], b[:, 1]
     D = ((hi - lo) / 2.0) ** 2
+    for cls_, h_ in (getattr(spec, "wgp_d_halfrange_nm", None) or {}).items():
+        sl_ = {"corr": L.SL_CORR, "avg": L.SL_AVG, "shift": L.SL_SHIFT}[cls_]
+        live_ = (hi[sl_] - lo[sl_]) > 0.01           # frozen params keep their sliver D
+        D[sl_] = np.where(live_, float(h_) ** 2, D[sl_])
+    if getattr(spec, "wgp_d_halfrange_nm", None):
+        print(f"[proj] metric override {spec.wgp_d_halfrange_nm} -> D shift/corr "
+              f"{np.median(D[L.SL_SHIFT]):.4g}/{np.median(D[L.SL_CORR]):.4g}", flush=True)
     W_tgt, marg = float(spec.wgp_target_um), float(spec.wgp_margin_um)
     # One measured contract controls proposal, acceptance and result selection.
     hard_width = wc.hard_band(spec, RHO_DN, RHO_UP)
