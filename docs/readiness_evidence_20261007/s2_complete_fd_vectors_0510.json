@@ -1,0 +1,88 @@
+{
+  "status": "ALL_FD_COMPLETE_PEAK_RECONSTRUCTION_PENDING",
+  "labels": [
+    "corr_1",
+    "corr_30",
+    "avg_1",
+    "shift_1",
+    "shift_30",
+    "wcav"
+  ],
+  "units": "derivative per nm of geometry parameter; lam_nm derivative is nm/nm",
+  "vectors": {
+    "fom": [
+      0.00010373696205839833,
+      1.1908633989310413e-05,
+      -7.35895589849822e-05,
+      -7.142571780027751e-06,
+      -0.00014624185572631454,
+      -8.910423356942032e-05
+    ],
+    "peak3_tout": [
+      0.00013655356412689557,
+      1.874864880122007e-05,
+      -0.00011174518605347461,
+      -9.78284248115413e-06,
+      -0.00015767962792700985,
+      -0.00014148531327409786
+    ],
+    "peak3_modal": [
+      0.00014876836100838342,
+      2.144186733535336e-05,
+      -0.0001243340470546972,
+      -1.083334869791952e-05,
+      -0.0002875280184827522,
+      -0.00014955116321066497
+    ],
+    "lam_nm": [
+      0.0,
+      0.0,
+      0.003999998358267476,
+      0.0,
+      0.08999996425626478,
+      0.001999999179133738
+    ]
+  },
+  "legacy_softmax_diagnostic": {
+    "coefficients": [
+      0.9957337273185461,
+      0.12158317748582868
+    ],
+    "relative_residual": [
+      0.09485740578126822,
+      1.1091361556789914,
+      -0.0166550729810853,
+      0.10403719064151115,
+      0.0021040858860589197,
+      -0.23129554624346946
+    ],
+    "held_out_relative": [
+      0.227107666425504,
+      1.140445816181045,
+      -0.02057132975894904,
+      0.10431314945350519,
+      1.0199127008978013,
+      -0.28885407176484573
+    ],
+    "condition_number": 8736.663527324847,
+    "all_fit_within_10pct": false,
+    "all_held_out_within_10pct": false
+  },
+  "source_sha256": {
+    "task_01.json": "1b90e02672963718cf0f3baa42be49d77b9007a89321010df3ebf0c0fd6cce5d",
+    "task_02.json": "3c695d247e22f32f9c7708e444536f4f2e9b7200906db555ad405fc96fd126ce",
+    "task_03.json": "df11243aad993906053b851db888d550ff5c48976afc0f80c0f286812c53138c",
+    "task_04.json": "2bafdb29dfb181afcf173598a8b42c5f9bd282ed70bcbfd27d0974c5c9bd0790",
+    "task_05.json": "ff71dbea1c821445508b36de88068c8dde2ba6d9009b6220e758cb5588ff3e72",
+    "task_06.json": "27328792ad4a4f5d3f6c2a1a0fafd7177eccb1de67bcbe0afb0bd07e0077b58d",
+    "task_07.json": "d6fe70b5e0a5f7d9fe2c5b23971129cd27c42ea021328acc94719c29abba2c8b",
+    "task_08.json": "d1d5a7d97c9642e40b2587c6113ba4d3a33ecdebb97a3f996d6faabd1562604e",
+    "task_09.json": "665f58076abce8635bc14d967e93df4a6d299b140017e2817af5c0020557072e",
+    "task_10.json": "4b992ac83cfdf3dd6379ad05d14f9d02c0164c8146b857cb02ae7665432035e0",
+    "task_11.json": "d92a29bf519311b874be2302cad98dd7020fc18b36db9d672a11ce17cf71ac0b",
+    "task_12.json": "39ed04407f1e33bce4c4f3704f0b5b000cecbabcfdd86e96f8b6c8b2e786a5a3",
+    "task_13.json": "503c12b394e0058dee52a72262c61235a9ac308c35ddb2391b1b0027ae102416",
+    "task_14.json": "b72029e308cc297dbed1bbf7d22725a27e7ab8239982a014b824eb5b02915745"
+  },
+  "warning": "Legacy softmax fit is diagnostic only; do not install it for peak3. Peak3 quadratures and final reviewed gate still required."
+}

@@ -8,6 +8,43 @@ the project `AGENTS.md` records that instruction.
 
 ## Overnight extension and current continuation
 
+05:11 Israel milestone: all twelve FD legs completed exit0. Fresh bounded
+read-only SSH confirms170752_0 (peak real quadrature) completed exit0,
+170752_1 running on n306, and170754_2 dependency-pending. The real vector is
+saved locally as `watch/recover_te_s2_peak/task_00.json`. Sources must remain
+frozen through both remaining tasks. Watcher is alive, no access failure.
+
+Independent local assembly saved the twelve FD checkpoint hashes and full
+six-component derivatives for softmax, peak3(T_out), modal peak3 and sampled
+resonance in `readiness_evidence_20261007/s2_complete_fd_vectors_0510.json`.
+All twelve scalar outputs are finite and resonances inside the scan. The
+legacy softmax least-squares diagnostic FAILS: corr30 residual+110.914%,
+wcav-23.130%, shift1+10.404%; held-out errors also fail (corr30+114.045%,
+shift30+101.991%). Matrix condition8736.66. These coefficients must not be
+installed. This is not yet the CURRENT peak-objective fit verdict; wait for
+its imaginary quadrature and independent fit review. Same-sign measured
+modal/carrier FD derivatives here do not establish proportional objectives.
+Account-wide weekly allowance at05:10 is8% remaining; ordinary usage allowed.
+
+04:40 Israel heartbeat: watcher snapshot `20261007T012300Z` confirms
+task170750_11 completed exit0 and170750_12 running on n306; eleven of twelve
+FD legs complete. Peak reconstructions170752_0/1 and fit170754_2 are still
+dependency-pending. Task11 scalar checks pass (finite, resonance in scan):
+peak3(T_out)=0.9258512918524058, modal_peak3=0.9719206671388542,
+lambda=1560.8822189724094nm. Watcher42384 is alive, stderr empty; no extra
+SSH or source change. The fit runner saves its immutable result before
+raising on a failed scientific gate: inspect its checkpoint even if the fit
+job is FAILED, rather than interpreting that as missing evidence or rerunning.
+
+04:10 Israel heartbeat: watcher snapshot `20261007T005256Z` confirms
+task170750_10 completed exit0 and170750_11 running on n306; ten of twelve
+FD legs complete. Task12 and the reconstruction/fit jobs are pending. The
+new task10 checkpoint has finite scalar measurements and resonance inside
+its configured scan. Watcher42384 is alive with empty stderr. No additional
+SSH, dispatch, source edit or integration was needed. The completed N98
+preparation and its six-test evidence are preserved in local commit811fa58;
+final calibration, integrated gates and hardware validation remain pending.
+
 03:40 Israel heartbeat: the watcher snapshot `20261007T002253Z` confirms
 task170750_9 completed exit0 and170750_10 running on n306; nine of twelve
 FD legs complete. Watcher42384 is alive with empty stderr, and no extra SSH
