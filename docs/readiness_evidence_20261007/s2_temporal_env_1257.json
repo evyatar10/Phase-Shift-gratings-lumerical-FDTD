@@ -1,0 +1,10 @@
+{
+  "S2_TIME_REPO": "/work/project",
+  "S2_SHIFT_CENTER_CHECKPOINT": "/work/results/diagnose_te_s2_fdstep/results/lumopt2_te_s2_fdstep_diagnostic_20261007/task_00.json",
+  "S2_TIME_PRIOR_ROOT": "/work/results/diagnose_te_s2_shift30_convergence/results/s2_shift30_convergence_20261007",
+  "S2_TIME_PRIOR_MARKER": "/work/data/s2_shift30_review_20261007_1142.json",
+  "S2_TIME_OUTPUT_ROOT": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007",
+  "S2_TIME_FIRST_MARKER": "/work/data/s2_temporal100_review_20261007_1257.json",
+  "S2_TIME_LATER_MARKER": "/work/data/s2_temporal150_review_20261007_1257.json",
+  "KEEP_H5": "1"
+}

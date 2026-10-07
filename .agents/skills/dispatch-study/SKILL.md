@@ -40,3 +40,8 @@ altering dependencies or resubmitting only genuinely failed/missing work.
 Arm proportionate monitoring, inspect an early new-code log, and carry through
 result review/next authorized stages. No cancellation or cleanup is implied.
 Historical recipes: [Claude source](../../../.claude/skills/dispatch-study/SKILL.md).
+
+Before dispatching a new module, exercise the real driver call convention in an
+offline guard/reuse test. The current Athena driver calls main(task_idx=idx);
+a runner that only accepts main(task) is incompatible despite passing positional
+unit tests. Check the live IGUM driver too when that cluster is targeted.

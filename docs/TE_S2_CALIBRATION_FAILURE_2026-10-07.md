@@ -1,5 +1,38 @@
 # S2 calibration failure and bounded diagnosis
 
+## Update13:05 Israel - staged temporal forwards and corrected CPU reconstruction active
+
+Athena **171216 tasks0,1,2** submitted13:01:23 for exactcenter/shift30+/-0.0625nm
+at common100ps. Each requestsA100,8CPU256G,2h,12h_4g;maximum3concurrent.
+Allthree RUNNING13:02 on n307/n309/n312; GPU and8-thread setup readbacks passed.
+Runner SHA555f3d13b42c494171e7658cc4263c588ce418e5d937da1497d690824b41d44a;
+marker /work/data/s2_temporal100_review_20261007_1257.json SHA
+951c2025bf3255830a3b13e03a333b18bfb0ba59c86ee4e1c2b150ac078e2206.
+Output /work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007.
+Twelveoffline groups passed including actual main(task_idx=...) dispatch; earlier
+keyword-interface mismatch was fixed before submission, remote6e7 source preserved.
+Finalcontrols unchanged from tested hiddenCADsave/reload; actual100ps termination,
+status1, exactgrids and retainedartifacts still need hardwareverification.
+150ps tasks3..5 remain blocked by separate reviewed100ps-result marker.
+No new simulation is counted completed until its full evidence is checked.
+
+CPU-only corrected **171220_0 Re** submitted13:03:47,8CPU128G45min2h_2g,
+output /work/results/s2_fixed_bin_v3_re_20261007T1305/fixed_bin_shift30.json.
+Probe0c9a078618862ff032fc41158575e3e66fc1d3c65bd5f14c7044ccd3bfcf7b34,
+aux d73ad934bb2e58c0ff4fea27d1904d9b357c1fd974fe09db5798d480f4f1ed45.
+Tenfocused tests andparentrerun passed. Full501 metadata snapshots retained;
+exactsource/frequency/power,32eps-relativecomplexamplitude arithmeticreuseonly.
+Originalpeak3control unchanged. Inspect newRe result andpreservation beforeIm.
+PreparedIm wrapper paths in s2_fixed_bin_v3_wrapper_preparation.json; notuploaded.
+Allv1failedfiles and metadata-only171210 evidence remain preserved.
+
+Fresh12:57 shared0/50used,IGUM101155 pendingResources; newAthena21+queuedIGUM7
+bounded28/50.13:03Athenaquota224G/300Gsoft. CPUadds0FDTDseats. Sharedseat
+snapshot is not a reservation; recheckbeforefuturedispatch. Lastusage12:39weekly
+70percentremaining, separatepoolsunknown. LatestGit5e86684; thisnewstagependingcommit.
+Sol provenanceworker prepares strict temporalresultpostprocessing during the wait.
+Globalcalibration remains FAILED; nooptimizer/coefficient/productionobjectivechange.
+
 ## Update12:22 Israel - smaller-step ladder complete; peak derivative still unstable
 
 **26 new FDTD solves verified completed.** All171162 tasks COMPLETED exit0,
