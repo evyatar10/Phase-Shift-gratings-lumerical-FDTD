@@ -14,3 +14,6 @@ runners/lumopt2_design/s2_temporal_step150.py -text
 # Historical skill references retain their audited original bytes.
 .agents/skills/*/references/claude-original.md -text
 .agents/skills/work-alone/references/campaign_monitor_template.sh -text
+
+# Preserve reviewed fixed200ps diagnostic source fingerprint.
+runners/lumopt2_design/s2_temporal200_forward.py -text

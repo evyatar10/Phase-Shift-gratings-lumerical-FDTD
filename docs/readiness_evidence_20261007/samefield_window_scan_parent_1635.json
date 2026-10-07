@@ -1,0 +1,8 @@
+{
+  "status": "PARENT_EXACT_NUMERICAL_JSON_AND_ALL_MAT_PAYLOAD_PASS",
+  "packet": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_samefield_window_scan_9c50bb8e289c",
+  "parent": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_samefield_parent_f1zfwidk",
+  "source_sha256": "d5c1447fb383d48bb143466d4679bc914e4912b540b201d5b1ea6d81461d17ae",
+  "physical_shorter_device": false,
+  "user_decision": "N80 first physical comparison; defer N70 and retain N98 production reference"
+}

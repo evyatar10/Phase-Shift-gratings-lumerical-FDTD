@@ -1,5 +1,77 @@
 # S2 calibration and restart correction continuation
 
+## Current state 16:33 Israel — fixed200ps triplet queued; N80 first length comparison
+
+Athena **171390 tasks0/1/2** submitted16:26:12, all PENDING Priority at16:33.
+Requested three A100s,8CPU/256G each,2h,12h_4g; shared planned demand21 seats.
+Scheduler estimate19:46 is provisional, not a promised start. No new result yet:
+**35 new FDTD solves verified complete**, three queued. No duplicate dispatch.
+Runner SHAfa6a6528e34cb9c004604ec490543c3b0579d76224c936568c2e11e4f9996053;
+marker `/work/data/s2_temporal200_review_20261007_1619.json` SHA
+4fe3c0e7fc37cced733ac7cf7b2ee3de3536213ee938e23a1095dffc307cd44f.
+Output `/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007`.
+Exact source, all five150ps ancestors and vendor/artifact checks passed before
+release; ten offline tests, parent keyword/driver checks, all three hiddenCAD
+build/reload checks and independent review passed. Archive1635 preserves the
+packet/dispatch. Existing100/150/200 source fingerprints stay frozen.
+Fetch/analyzer workers prepare strict read-only completion handling during wait;
+inspect actual200ps termination, spectra and same-duration derivatives before
+any further scientific release. Global calibration remainsFAILED; no optimizer,
+coefficient installation or full campaign.
+
+User now prefers **N80 as first shorter physical comparison**, deferringN70;
+N98/free60 remains production/reference. SAME N98field crop scan60..98 was
+parent-reproduced exactly (JSON numerics/all MAT payload). This is measurement
+window sensitivity, not shorter-device physics. N80 changes width about-.77%,
+N70 about-1.70%; every window retains half-height crossings. Physical artifacts,
+tails, resonance/transmission and width still need a controlled comparison.
+MAT and plot are in `results_from_athena/te_readiness_20261007/spatial_profiles_1558`;
+archive `samefield_window_scan_verified_1635.zip`. Prepare a fixed-domain N80
+comparison before any compact-domain performance claim. No length solve released.
+Storage audit16:34: local C free92.90GiB; Athena soft-quota headroom82.03GiB;
+IGUM filesystem free24181GiB but userquota still unknown. Archive1634 preserves
+commands/limits; no cleanup. Routine read-only skill check is being validated.
+Strict200completionfetch prepared: TEMP/s2_temporal200_completion_fetch_hm79omfm,
+SHA0c6cb29becdcbdf20c37f71cf300f8d3181baeb997e6bb0e96f48596ca558975;
+eight tests plus parent passed, actualfetch waits for all3completed checkpoints.
+Archive `s2_temporal200_fetch_prepared_1648.zip`. Analyzer and N80 hiddenCAD-only
+preparation ongoing. Actual usage16:36:34%weekly remaining; other/model/Claude
+pools unknown. Keep existing heartbeat and no duplicated work.
+
+## Current state 16:03 Israel — both step diagnostics complete; no new solve released
+
+Athena171276 tasks0/1 COMPLETED exit0; exact150ps/status1/coldartifactchecks
+and strict local five-test analyzer passed actualdata. **35 new FDTD solves
+verified complete.** CPU171300 completed separately, addszero FDTD. No active
+job from these chains; inspectqueue before any newdispatch. Verified text-only
+Opus5.5 review completed; lead corrections preserved in archive1606. Lead chose
+PREPARATION of NEW fixed200ps center/shift30+/-0.0625 triplet to measure remaining
+temporal sensitivity. objective_code_audit owns isolated TEMPcandidate, tests
+and hiddenCAD checks; no dispatch/release yet. claude_results_audit owns focused
+new measured-spectra flank/shifted-center controls; do not duplicate workers.
+No arbitrary10percent threshold or finite-time adjoint exactness claim adopted.
+GlobalcalibrationFAILED, nooptimizer/coefficients.
+
+Same150center h.0625->.125nm movingpeakFD Tout-.000153814689->-.000189894501;
+modal-.000163699124->-.000251598959 pernm. Fixed-center peak3J applied to finite
+spectralFD Tout-.000448383082->-.001060216049; modal+.000333596157->+.001313199053.
+These projections are NOT measured adjoint gradients or exact spectralderivatives.
+Step sensitivity persists; spline observer does not remove it. No temporal,
+noise-floor or global-gradient pass. Completionarchive
+`readiness_evidence_20261007/s2_step150_completed_verified_1603.zip`; report1601,
+summary1603. Fetchmanifest SHAae8e68196197c74c6dafaa456220d6742593a40f923b0cb806444b4179fc5b1f.
+
+Spatial comparison seven tests, actualreader and parent exactJSON/MATpayload
+reproduction passed. New MATLAB product and reviewed plot under
+`results_from_athena/te_readiness_20261007/spatial_profiles_1558/`.
+Reader SHA4cb6276f2d8bb2efa20e76ce2643a34014f391758bd7ff375603d87e81b9ec35;
+archive `s2_spatial_comparison_verified_1558.zip`. SAME150psN98field croppedtoN80
+changesToutW19.6437171->19.4921961um(-.7713%);modal19.6401267->19.4926729(-.7508%).
+Halfheightpoints~+/-9.75um remaininsidecrop; measuredfloor effect, notphysicalN80.
+ClaudehistoricalN80too-shortclaimlocatedinTMcorr325ladder; same noteTE80workhorse.
+CurrentTE98/free60/bandsunchanged; noN80physicsor meshconvergencepass.
+Latestcommit6d44e6e; actualusage16:01 39%weekly remaining, otherpoolsunknown.
+
 ## Saved spatial profiles measured 15:48 Israel
 
 CPU171300_0 COMPLETED exit0 in77s, MaxRSS6888188KiB, **zero new FDTD solves**.

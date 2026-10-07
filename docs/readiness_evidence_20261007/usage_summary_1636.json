@@ -1,0 +1,11 @@
+{
+  "at_Israel": "2026-10-07T16:36:01+03:00",
+  "limit_id": "codex",
+  "window_minutes": 10080,
+  "used_percent": 66,
+  "remaining_percent": 34,
+  "resets_at": 1791949207,
+  "other_model_Claude_limits": "unknown",
+  "reset_redeemed": false,
+  "capacity_purchased": false
+}

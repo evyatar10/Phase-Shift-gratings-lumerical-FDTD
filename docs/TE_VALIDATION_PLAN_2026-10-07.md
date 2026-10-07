@@ -1,5 +1,34 @@
 # TE physical validation and runtime plan
 
+Current16:33:35 FDTD complete; NEW fixed200ps Athena171390 tasks0/1/2
+queued Priority after reviewed release16:26:12. Calibration remainsFAILED.
+See TOP `TE_CONTINUATION_2026-10-07.md` for exact hashes/outputs and next steps.
+N80 is first physical length candidate; N70 deferred; no length solve released.
+
+## Update after completed 150 ps step-size comparison
+
+**35 new FDTD solves are verified complete. Full optimization is not ready:**
+global S2 gradient calibration remains failed. Athena171276 and CPU171300
+are complete; the latter performed no FDTD solves. See the TOP of
+[TE_CONTINUATION_2026-10-07.md](TE_CONTINUATION_2026-10-07.md) for exact jobs,
+source/artifact hashes and the latest active preparation.
+
+The h.0625/.125nm comparison still shows step-sensitive peak transmission
+derivatives. The lead selected a new fixed200ps center/shift30+/-0.0625nm
+triplet for preparation, to measure remaining temporal sensitivity; it has
+not yet been released or submitted. No automatic further rung, adjoint,
+mesh or N80 solve is approved by completion alone.
+
+Existing100/150ps raw fields yielded spatial FWHM changes below.00085um;
+this does not validate transmission gradients or mesh accuracy. The sameN98
+field cropped toN80 changes its floor-relative FWHM by~.15um without clipping
+halfheight crossings. PhysicalN80 remains unmeasured. A verified MAT product
+and comparisonplot are under `results_from_athena/te_readiness_20261007/spatial_profiles_1558/`;
+seven reader tests and parent exactJSON/MATpayload reproduction passed.
+Currentplan keepsN98/free60/currentwidthbands, and uses bothclusters when
+independent tasks justify it with current sharedseat/queue checks. Historical
+Claude N80-too-short evidence belongs to a different TMcorr325family.
+
 ## IGUM completion verified 15:24 Israel
 
 IGUM101155_0 finished15:20:01, COMPLETED exit0 confirmed by exact scontrol

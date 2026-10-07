@@ -1,0 +1,43 @@
+{
+  "output": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\te_readiness_20261007\\spatial_profiles_1558\\te_s2_fixed150_step_spectra.mat",
+  "sha256": "5f35781fd1d3fc80138c89040d4d9ffeceef24e4a21804a86232b0e3ad6912f6",
+  "original_arrays_exact_roundtrip": 120,
+  "metadata_exact": true,
+  "sources": {
+    "center150": {
+      "checkpoint_sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+      "ports_sha256": "a9a4b2e87379c645786ac8fc179852ad3bdec2a040c7fe2c8c1ae21342a5d90d",
+      "task": 3,
+      "delta_nm": 0.0,
+      "duration_ps": 150.0
+    },
+    "plus00625": {
+      "checkpoint_sha256": "31ec8f2f72bfb1a5aa991240cec45c5fb515d18e82fc37d7cfac89703e75efe4",
+      "ports_sha256": "a92bb781482ec2cd01e688fb3dc25f7e86f33a16e3fc7289f629ba4267caac90",
+      "task": 4,
+      "delta_nm": 0.0625,
+      "duration_ps": 150.0
+    },
+    "minus00625": {
+      "checkpoint_sha256": "a0e9d73a0f8f0162c9f7a843ca24eb4c4c29e444b1fca2b692ffd5002feb571d",
+      "ports_sha256": "54694438904b08eaf9bdc7ef2c8a0a1b7c56183a39bdc3e1bcf6fa8309e4c688",
+      "task": 5,
+      "delta_nm": -0.0625,
+      "duration_ps": 150.0
+    },
+    "plus0125": {
+      "checkpoint_sha256": "8d49988494fd09323821029a9e88adc96b06dec9e586da032278cb2e8c7dd5e6",
+      "ports_sha256": "4a3b52f5906eba2d8a8b7231df0caf5e2b1694f065d360fb8c55bdb40ad492f8",
+      "task": 0,
+      "delta_nm": 0.125,
+      "duration_ps": 150.0
+    },
+    "minus0125": {
+      "checkpoint_sha256": "5d88d683852591d48d0a06b62ba763d3483c035be42d4f2467dbde591e5f692f",
+      "ports_sha256": "fcc4e8d2d2b2d0921fab0b2f4d2ae16667cd504ac1b869d29ee3bf813ca7ff48",
+      "task": 1,
+      "delta_nm": -0.125,
+      "duration_ps": 150.0
+    }
+  }
+}

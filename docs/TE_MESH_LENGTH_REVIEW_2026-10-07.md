@@ -1,5 +1,15 @@
 # TE mesh, length and spatial-width review
 
+October7,16:35 update: the user prefers N80 as the first shorter physical
+comparison and defers N70. Keep N98 as the production/reference device until
+measurements support a change. Neither intuition about artifacts nor the
+old TM ladder establishes a TE minimum. A same-field window scan N60..98
+has been parent-reproduced exactly and exported to MAT; it is not a physical
+length sweep (`samefield_window_scan_verified_1635.zip`). N80's analysis-window
+effect is about-0.77% in Tout FWHM; N70 about-1.70%. All half-height crossings
+remain inside these windows. Width-floor sensitivity must be separated from
+shorter-mirror physics, tail changes, spectral artifacts and domain effects.
+
 Updated October 7, 15:20 Israel. Production remains TE, N98 per side, 60 free
 inner periods per side, no surrounding posts, with the existing seed width
 bands. **Current mesh/length convergence is not yet established.**
@@ -116,4 +126,8 @@ SAME field cropped toN80 givesTout FWHM19.4921961178 vs19.6437170638um;
 modal19.4926729083 vs19.6401266506um. Half-height crossings remain near+/-9.75um,
 well within+/-39.2848um; changed envelope floor shifts the metric. This does
 not simulate physicalN80, prove noise or establish its suitability. Parent
-comparison reproduction and MAT publication are pending the reader packet.
+comparison reproduction and MAT publication passed: seven tests, exact numerical
+JSON and all MAT payloads independently reproduced. User product is
+`results_from_athena/te_readiness_20261007/spatial_profiles_1558/te_s2_spatial_duration_and_crop.mat`,
+with an accompanying reviewed plot. Verified reader archive1558 preserves code,
+input pins and measured report. No rawE export or physicalN80 solve was needed.

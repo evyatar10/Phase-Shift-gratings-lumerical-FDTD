@@ -1,0 +1,42 @@
+{
+  "verified_completed_FDTD": 35,
+  "job": "171276",
+  "status": "Both tasks COMPLETED exit0; full150ps/status1 andcoldvalidationverified",
+  "fetch_manifest_sha256": "ae8e68196197c74c6dafaa456220d6742593a40f923b0cb806444b4179fc5b1f",
+  "checkpoint_pins": {
+    "0": "8d49988494fd09323821029a9e88adc96b06dec9e586da032278cb2e8c7dd5e6",
+    "1": "5d88d683852591d48d0a06b62ba763d3483c035be42d4f2467dbde591e5f692f"
+  },
+  "report_sha256": "4b763bc8594f63fa1b4866467e0b5d593368d18ce5e6607fea1b28499a62a27b",
+  "observables": {
+    "peak3_tout": {
+      "h0.0625": {
+        "central_derivative": -0.00015381468884001492,
+        "exact_center_peak3_jacobian_projection": -0.0004483830822971384,
+        "signed_odd_numerator": -1.9226836105001865e-05,
+        "signed_even_numerator": 3.93719450531016e-06
+      },
+      "h0.125": {
+        "central_derivative": -0.00018989450120576734,
+        "exact_center_peak3_jacobian_projection": -0.0010602160488354978,
+        "signed_odd_numerator": -4.7473625301441835e-05,
+        "signed_even_numerator": 3.6273295225264235e-06
+      }
+    },
+    "peak3_modal": {
+      "h0.0625": {
+        "central_derivative": -0.0001636991240543395,
+        "exact_center_peak3_jacobian_projection": 0.0003335961568220569,
+        "signed_odd_numerator": -2.046239050679244e-05,
+        "signed_even_numerator": 2.762922185151062e-05
+      },
+      "h0.125": {
+        "central_derivative": -0.0002515989587577039,
+        "exact_center_peak3_jacobian_projection": 0.0013131990525349223,
+        "signed_odd_numerator": -6.289973968942597e-05,
+        "signed_even_numerator": 7.168476607644081e-06
+      }
+    }
+  },
+  "verdict": "Step sensitivity remains; do not claim calibration or temporal convergence. Fixed-center J projections are J applied to finite spectral FD, not adjoints/exact derivatives. No further solve released yet."
+}

@@ -186,3 +186,19 @@ pi-shift-inverse-design convergence-and-length reference for this workflow.
 Use Athena and IGUM concurrently when tasks are independent and resources fit.
 Prefer measured turnaround for sequential optimization and available slots for
 sweeps; check actual hardware and shared Lumerical seats across both clusters.
+
+## Storage and first shorter-device candidate (user, October 7)
+
+During sustained work, periodically check storage on the local computer and
+both servers. Delegate routine read-only collection to a focused Sol worker
+when useful. Fold cheap filesystem free-space/inode and user-quota checks into
+existing monitoring; check before large output, download or dispatch as well.
+Filesystem free space does not establish user quota. Budget outstanding jobs
+and expected artifacts before adding work. Report unavailable quota/access and
+low headroom; do not delete, cancel, move results or clean up automatically.
+Use the cluster-ops skill for the maintained storage-check procedure.
+
+The latest length preference is N80 as the first shorter physical comparison;
+defer N70. N98/free60 and the existing production width bands remain unchanged.
+Assess profile/tails, transmission/resonance, metric-window effects and domain
+artifacts alongside FWHM. A cropped N98 field is not a shorter-device solve.
