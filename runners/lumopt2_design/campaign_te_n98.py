@@ -1,0 +1,72 @@
+"""TE inverse design at N = 98 periods/side — both seeds, v3 engine, one array.
+
+Study dir: runners/lumopt2_design/ | Created 2026-10-08 | Job(s): see memory
+project_te_inverse_design_lane.md
+Purpose: raise peak T at fixed spatial envelope FWHM (each seed's own ±2 % band)
+at the program's constant length N = 98/side, 60 free/side (user 2026-10-08:
+"everything constant at 98, not 80"). The N80 detour (archived runner
+runners/archive/te_n80_20261007/) MEASURED that N80 cuts S1's width 4.4 %.
+
+  task 0 = S1 (uniform corr-250), from the N98 campaign best (170253 eval 3:
+           t_pk 0.95276 @ 19.385 µm) — same numerics as campaign_te_s1.
+  task 1 = S2 (Itai's Nt60 overshoot), from its seed — numerics of campaign_te_s2.
+
+Calibration: S1 port/field C measured at exactly this length/numerics. S2 field
+C is its own fit; S2 port C = (1, 0), uncalibrated by decision — its N98 FD fit
+used ±2 nm legs that moved a 0.20 nm line ~0.18 nm (non-local), and the v3 QP is
+scale-free in gT. Acceptance is on MEASURED T and W; the live calibration gate is
+the per-iterate gain ratio (measured ΔFOM / dT_pred in <label>_proj.jsonl).
+
+Dispatch (Athena):
+  SBATCH_MEM=256G LUMOPT2_QOS=4d_1g LUMOPT2_TIME=96:00:00 \
+      bash athena/deploy_athena.sh --lumopt2-design=runners.lumopt2_design.campaign_te_n98
+"""
+import dataclasses
+import os
+
+import config
+from runners.lumopt2_design import lumopt2_design as eng
+from runners.lumopt2_design import campaign_te_s1 as s1
+from runners.lumopt2_design import campaign_te_s2 as s2
+from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3
+
+MAX_FEVAL = 8        # persistent forward budget per lane; raise + redeploy to extend
+
+LANES = [
+    # windows/recenter/λ-trust/2κL floor are the seed specs' own N98 values
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98", start=TE_S1_N98_EVAL3,
+         scan=1561.04,                 # the start design's MEASURED λ_pk
+         two_kl_floor=3.0,             # 2κL 3.325 at start (spec 3.3 left no room)
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM),
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98", start=s2.SEED,
+         scan=s2.SCAN_CENTER_NM,
+         two_kl_floor=None,            # 2κL 5.11 > 3.5
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM),
+]
+N_TASKS = len(LANES)
+
+
+def lane_spec(task_idx):
+    ln = LANES[task_idx]
+    spec = dataclasses.replace(
+        ln["base"], label=ln["label"], seed_override=tuple(ln["start"]),
+        scan_center_nm=ln["scan"], two_kl_floor=ln["two_kl_floor"],
+        max_feval=MAX_FEVAL,
+        fwhm0_um=ln["fwhm0"], wgp_target_um=ln["fwhm0"],
+        wg_anchor={"softw": ln["softw0"], "fwhm": ln["fwhm0"]},
+        adj_fix_re=ln["port"][0], adj_fix_im=ln["port"][1])
+    spec.adj_fix_field_re, spec.adj_fix_field_im = ln["field"]
+    assert spec.n_periods_side == 98
+    return spec
+
+
+SPEC = lane_spec(0)      # deploy's build_sweep_list requires a top-level SPEC
+
+
+def main(task_idx=0):
+    spec = lane_spec(task_idx)
+    out_dir = os.path.join(config.RESULTS_DIR, spec.label)
+    best = eng.run_campaign(spec, out_dir)
+    print(f"[te-n98 {spec.label}] done: best_fom {best['fom']:.5f}")

@@ -9,13 +9,12 @@ GPT/Codex agent and the user. This file is the entry point for both lanes.
    (branch `codex-te`). Your Athena base is `~/bragg_sim_codex` and your IGUM base
    is `~/research/bragg_sim_igum_codex`; both are already set in your
    `athena.conf`, `igum.conf` and job scripts. Never edit, deploy to or cancel
-   anything in Claude's lane (§2), including its job 171897.
-2. **Your previous pause is lifted. Length rule (user, 2026-10-08): N is only a
-   faster SURROGATE for the final device, so the width must carry over, which
-   needs 2κL ≳ 3.5.** Use **S2 at N = 80** (2κL 4.1; width −0.9 % vs N98) and
-   **S1 at N = 98** (2κL 3.33). MEASURED in job 171897_0: at N80, S1's width
-   dropped 4.4 % (19.385 → 18.528 µm), so N80 is too short for S1's weak
-   corr-250 mirrors. 60 free periods/side in both. Goal: raise peak T at
+   anything in Claude's lane (§2), including its job 172063.
+2. **Your previous pause is lifted. LENGTH IS CONSTANT: N = 98 periods/side
+   for BOTH seeds, 60 free/side (user decision 2026-10-08, final).** Do not
+   use N80 or any other length. A short N80 test (Claude job 171897, cancelled)
+   MEASURED that N80 cuts S1's mode width by 4.4 % (19.385 → 18.528 µm) and
+   S2's by 0.9 %, which is why the user fixed N at 98. Goal: raise peak T at
    spatial envelope FWHM ≈ 20 µm.
 3. **Your main mistakes on 2026-10-07 (§6b), to avoid repeating:**
    - The S2 finite-difference test used ±2 nm legs that moved a 0.20 nm-wide
@@ -31,7 +30,7 @@ GPT/Codex agent and the user. This file is the entry point for both lanes.
    adopt the reverts.
 5. **What you got right and Claude kept** (§6a): the λ-normalization fix, the
    persistence/resume hardening, the persistent forward budget, the measured
-   width contract, the seat rule and the N98→N80 pair measurement.
+   width contract and the seat rule.
 6. **Follow the main-goal checkpoint** (§3.5) at every milestone. When
    acceptance is on measured T and W, a gradient error costs rejected steps,
    not wrong results. The per-iterate gain ratio (measured ΔFOM / predicted)
@@ -60,7 +59,7 @@ deploys overwrite each other. The two lanes share history up to commit
 | IGUM server base | `/home/evyatarrubin/research/bragg_sim_igum` | `/home/evyatarrubin/research/bragg_sim_igum_codex` |
 | Entry docs | `CLAUDE.md`, this file | `AGENTS.md`, this file |
 | Skills | `.claude/skills/` | `.agents/skills/`, `~/.codex/skills/pi-shift-*` (repo/server paths repointed to the Codex lane; originals kept as `*.pre_split_20261007.bak`) |
-| Campaign labels | `lumopt2_te_s1_n80`, `lumopt2_te_s2_n80` | use a `_codex` suffix, e.g. `lumopt2_te_s2_n80_codex` |
+| Campaign labels | `lumopt2_te_s1_n98`, `lumopt2_te_s2_n98` | use a `_codex` suffix, e.g. `lumopt2_te_s2_n98_codex` |
 
 The Codex worktree received copies of its untracked evidence
 (`docs/readiness_evidence_20261006/`, `docs/readiness_evidence_20261007/`) and
@@ -100,37 +99,34 @@ The originals were not moved or deleted.
 |---|---|---|
 | Goal (user) | raise peak transmission T of the TE pi-shift Bragg grating while holding the spatial envelope FWHM near 20 µm | requirement |
 | Device | TE, h 350 nm, n 1.97/1.444, bare (no posts), box 6.8 × 6.81 µm, PVA mesh, dx 50 nm (S2 49.106 nm) | spec |
-| Length | N is a SURROGATE (user 2026-10-08), so it must satisfy 2κL ≳ 3.5: **S2 N = 80**, **S1 N = 98**; 60 free/apodized per side | spec |
-| N80 effect on S1 | width 19.385 → 18.528 µm (−4.4 %), Q_L 1550 → 757 | MEASURED (171897_0) |
+| Length | **N = 98 periods/side, CONSTANT for both seeds** (user 2026-10-08), 60 free/apodized per side | spec |
+| Why not N80 | N80 cut S1's width 4.4 % (19.385 → 18.528 µm, Q_L 1550 → 757) and S2's 0.9 % | MEASURED (171897, IGUM 101434) |
 | Variables | 296-slot vector, 181 active: 60 corr, 60 avg width, 60 shift, cavity width | code |
 | S1 seed | uniform, corr 250 / pitch 500 / W800 | spec |
 | S2 seed | Itai's Nt60 overshoot apodization, pitch 491.06, bulk 494.2/1000, cavity 951.4 | spec |
 | Width bands | S1 19.121 µm ±2 %; S2 19.636 µm ±2 % (each seed's own N98 anchor) | spec |
 | S1 best so far | t_pk 0.95276, W 19.385 µm, λ 1561.044 nm, at **N98** (Athena 170253, eval 3) | MEASURED |
 | S2 seed at N98 | T 0.9731, W 19.636 µm, Q_L 7694 | MEASURED (168530_11) |
-| S2 at N98 → N80 | linewidth 0.207 → 0.575 nm, modal peak T +0.0044, λ +0.012 nm | MEASURED (IGUM 101434; at the gradient test point, not the seed) |
 | Engine | lumopt2 adjoint + v3 bounded QP step (`v3_step.py`), peak3 objective, separate port and width adjoints, accept/reject on measured T and W | code |
-| S1 cost per iterate | ~2.4 GPU-h at N98; N80 EXPECTED ~15–20 % less | MEASURED / EXPECTED |
+| S1 cost per iterate | ~2.4 GPU-h at N98 on an A100 | MEASURED (170253) |
 
 ## 5. Lane status at the split
 
 **Claude lane:**
-- Runs (4d_1g, 96 h, 256 G):
-  - **171897_1**: S2 at N80, starting from the seed (H200). Iterate 0 MEASURED t_pk 0.9801, W 19.46 µm, Q_L 2773.
-  - **172053_2**: S1 at **N98** (label `lumopt2_te_s1_n98r`), starting from the N98 best 0.9528 (rtx6k node).
-  - 171897_0 (S1 at N80) was CANCELLED 2026-10-08 after it showed the −4.4 % width loss. Its 2 evals are kept as the record.
-- Speed: one S1 iterate took 2.4 h at N98 on an A100 and 0.63 h at N80 on an H200. About half of that gain is the GPU, not the length (EXPECTED split).
-- Each task stops after 8 forward evaluations (persistent budget); it is extended later by raising `MAX_FEVAL` and redeploying, which resumes from the accepted best.
-- Runner: `runners/lumopt2_design/campaign_te_n80.py`.
+- Athena job **172063** (4d_1g, 96 h, 256 G), started 2026-10-08 ~00:45:
+  - task 0: S1 at N98 (label `lumopt2_te_s1_n98`), starting from the N98 best 0.9528;
+  - task 1: S2 at N98 (label `lumopt2_te_s2_n98`), starting from the seed.
+- Each task stops cleanly after 8 forward evaluations; it is extended later by raising `MAX_FEVAL` and redeploying, which resumes from the accepted best.
+- Runner: `runners/lumopt2_design/campaign_te_n98.py`. The N80 runner and its jobs (171897, 172053) are retired; the runner is archived in `runners/archive/te_n80_20261007/`.
 - Calibration: S1 reuses its N98 C factors. S2 uses its own field C and port C = (1, 0), uncalibrated.
 - Live gate: the per-iterate gain ratio, measured ΔFOM / `dT_pred` in `<label>_proj.jsonl` (S1 history at N98: 0.84–1.01).
 
-**Codex lane:** stopped at its handoff (`docs/TE_NEW_CHAT_HANDOFF_2026-10-07.md`), whose next step was a bounded S1 restart smoke at N98. That step is superseded for the Claude lane by job 171897. Codex is free to choose its own route, at N80 per the user. Suggested routes that would be informative *because they differ*:
+**Codex lane:** stopped at its handoff (`docs/TE_NEW_CHAT_HANDOFF_2026-10-07.md`), whose next step was a bounded S1 restart smoke at N98. That step is superseded for the Claude lane by job 172063. Codex is free to choose its own route, at N98. Suggested routes that would be informative *because they differ*:
 - the augmented-Lagrangian formulation (THEORY.md §10);
 - the S2 lane with its own calibration philosophy;
 - a different step metric (shift weighting).
 
-Codex should not run a second copy of the same N80 v3 lanes.
+Codex should not run a second copy of the same N98 v3 lanes.
 
 ## 6. Review of Codex's 2026-10-06/07 work (by Claude)
 
@@ -144,7 +140,7 @@ Codex should not run a second copy of the same N80 v3 lanes.
 | Q3dB predictor audit fixes (197d343) | Real small fixes to the prediction tool. Kept; not on the optimizer's path. |
 | Mesh / monitor / source-phase audits | Codex itself found no defect. |
 | Seat rule: each solve takes ceil(SMs/16) seats | Correct; matches our 2026-10-04 measurement. |
-| N98 → N80 IGUM length pair | Good measurement; used to size S2's N80 window. |
+| N98 → N80 IGUM length pair | Good measurement (S2 width −0.9 %); the user then fixed N = 98. |
 
 ### 6b. Mistakes
 
@@ -177,11 +173,11 @@ Kept from Codex in the Claude lane:
 - persistence and the forward budget;
 - the measured-width contract;
 - the requirement that only accepted evals ratchet `fom_best`;
-- the GPU-thread readback check, which passed on 171897.
+- the GPU-thread readback check, which passed on hardware (171897).
 
 ## 7. Comparison protocol (how the user compares the lanes)
 
-- Same device, seeds, N80, and each seed's own ±2 % width band.
+- Same device, seeds, **N = 98**, and each seed's own ±2 % width band.
 - Report per lane, per seed, for every iterate:
 
   | iterate | eval | t_pk (modal) | FOM | W (µm) | λ (nm) | accepted | dT_pred | gain ratio | GPU-h cumulative |
@@ -204,10 +200,10 @@ Neither lane edits the other's branch.
 | Date | Lane | Commit | What | Adopted by other lane? |
 |---|---|---|---|---|
 | 2026-10-07 | both | 9a8d440 | shared baseline at the split | — |
-| 2026-10-07 | claude | 0a27c0e | engine reverts of §6c + N80 runner | — |
-| 2026-10-08 | claude | (this branch) | per-seed length: S2 N80, S1 N98 (`campaign_te_n80.py` task 2) | — |
+| 2026-10-07 | claude | 0a27c0e | engine reverts of §6c | — |
+| 2026-10-08 | claude | (this branch) | N = 98 constant for both seeds; `campaign_te_n98.py`, job 172063 | — |
 
 ## 10. Open items for the user
 
 - Shift weighting in the step metric: shifts are currently held back ~545× relative to corrugations. Pending your yes/no.
-- (Resolved 2026-10-08) S1 at N80 lost 4.4 % width, so S1 is back at N98.
+- (Resolved 2026-10-08) Length: N = 98 for everything.

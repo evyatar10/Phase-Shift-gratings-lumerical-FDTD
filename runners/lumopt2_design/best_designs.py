@@ -375,7 +375,7 @@ MEASURED["BEST_D1_T9676"] = dict(t_pk=0.967620, lam_pk_nm=1566.4440,
 # MEASURED: t_pk 0.95276 | lambda 1561.044 nm | fwhm_env 19.3850 um
 # | Q_loaded 1550 | Q_i 64831. TE, N=98/side, 60 free, bare, pitch 500,
 # PVA, dx 50 nm. 296-entry layout(60): 60 corr | 60 avg | 60 shift | 114 inert comb
-# | d_comb | cavity_w (nm). Start point of campaign_te_n80 task 0 (N=80/side).
+# | d_comb | cavity_w (nm). Start point of campaign_te_n98 task 0.
 # Source of truth: results_from_athena/campaign_te_s1/lumopt2_te_s1_v3_evals.jsonl (last row).
 TE_S1_N98_EVAL3 = np.array([
     153.071748, 180.088996, 221.949125, 247.110583, 257.027934, 259.655680,

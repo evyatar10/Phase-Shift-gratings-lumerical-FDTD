@@ -5,7 +5,8 @@ Codex: do NOT work here. Your lane is
 `C:/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes_codex` (branch
 `codex-te`, server bases `~/bragg_sim_codex` and `~/research/bragg_sim_igum_codex`).
 Read `docs/TWO_LANE_SETUP_2026-10-07.md` there. Everything below is the
-historical Codex text as of the split.
+historical Codex text as of the split. ★LENGTH: N = 98/side CONSTANT for
+both seeds (user 2026-10-08) — every N80 statement below is superseded.
 
 New-chat entry point: read `docs/TE_NEW_CHAT_HANDOFF_2026-10-07.md` first.
 Autonomous work and the existing heartbeat are PAUSED at the user-requested

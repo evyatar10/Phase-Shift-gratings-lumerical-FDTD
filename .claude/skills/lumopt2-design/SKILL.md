@@ -27,7 +27,7 @@ rebuild the whole workflow without re-deriving it.
 ## ★Main-goal checkpoint (user rule 2026-10-07, CLAUDE.md §9)
 
 At every iterate verdict / gate result / before any new diagnostic: one line each —
-GOAL (TE: raise peak T at spatial envelope FWHM ≈ 20 µm, N80/side, 60 free/side),
+GOAL (TE: raise peak T at spatial envelope FWHM ≈ 20 µm, N=98/side CONSTANT, 60 free/side),
 BLOCKER (what actually stops the next accepted iterate), NEXT ACTION removes it?
 v3 accepts on MEASURED T and W, so a miscalibrated gradient only costs rejected
 steps: track the per-iterate gain ratio (measured ΔT / predicted ΔT) as the live
@@ -37,9 +37,10 @@ diagnostic on one seed block the other seed's working lane.
 
 ## Where everything lives
 
-**2026-10-07 TE N80 lane (LIVE):** `campaign_te_n80.py` — task 0 S1 from
-`best_designs.TE_S1_N98_EVAL3`, task 1 S2 seed, N=80/side, 60 free; Athena
-171897. S2 port C = (1,0) uncalibrated by decision (see the runner docstring);
+**2026-10-08 TE N98 lanes (LIVE):** `campaign_te_n98.py` — task 0 S1 from
+`best_designs.TE_S1_N98_EVAL3`, task 1 S2 seed, N=98/side (CONSTANT — user
+2026-10-08; the N80 detour cut S1's width 4.4 %, runner archived in
+`runners/archive/te_n80_20261007/`), 60 free; Athena 172063. S2 port C = (1,0) uncalibrated by decision (see the runner docstring);
 watch the per-iterate gain ratio in `<label>_proj.jsonl`. Extend a lane by
 raising `MAX_FEVAL` and redeploying (cold resume from the accepted best; budget
 exhaustion ends the job as FAILED with logs intact — that is the normal stop).

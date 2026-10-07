@@ -837,7 +837,8 @@ recorded `1-T-R` residual is not automatically pure cavity radiation.
 ### 13a. claude-te lane decisions (2026-10-07)
 
 Branch `claude-te` only (Codex's `codex-te` keeps its own §13 text).
-- Length: N = 80/side, 60 free/side (user). Runner `campaign_te_n80.py`.
+- Length: N = 98/side CONSTANT, 60 free/side (user 2026-10-08). Runner `campaign_te_n98.py`.
+  A brief N80 test (171897) MEASURED S1 width −4.4 % (19.385→18.528 µm) and S2 −0.9 %; N80 is not used.
 - Calibration: S1 reuses its N98 port/field C (they absorb LOCAL tooth-wall
   errors at the unchanged free teeth). S2 runs with port C = (1, 0) and its own
   field C. The S2 N98 FD "failure" used ±2 nm legs that moved a 0.20 nm line by

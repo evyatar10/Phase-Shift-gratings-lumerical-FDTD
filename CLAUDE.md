@@ -24,8 +24,8 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
 > on branch `codex-te` with its own server bases (`~/bragg_sim_codex`,
 > `~/research/bragg_sim_igum_codex`). Never edit, deploy or cancel the other
 > lane's files/jobs; learning crosses lanes only by deliberate merge. Read
-> `docs/TWO_LANE_SETUP_2026-10-07.md` first. Live TE work: `campaign_te_n80.py`
-> (Athena 171897). Current TE method: `runners/lumopt2_design/THEORY.md` §13.
+> `docs/TWO_LANE_SETUP_2026-10-07.md` first. Live TE work: `campaign_te_n98.py`
+> (Athena 172063; LENGTH IS CONSTANT N=98/side for both seeds, user 2026-10-08). Current TE method: `runners/lumopt2_design/THEORY.md` §13.
 > The August handoffs below are historical TM state.
 > **`runners/lumopt2_design/HANDOFF.md`** is the live, self-contained state of the
 > lumopt2 inverse-design programme (2026-08-18). Read it before touching that
