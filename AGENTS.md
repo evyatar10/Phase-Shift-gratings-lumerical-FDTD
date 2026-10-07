@@ -68,6 +68,15 @@ require frozen production sources; a documentation checkpoint is appropriate
 while hardware validation is pending.
 Local lumapi sessions must use `hide=True`; no local FDTD solve unless asked.
 
+Convergence extension (October 7): independently assess the approximately
+50 nm mesh and N98-per-side spatial-width saturation, including whether a
+shorter device is suitable. Keep current production settings until measured
+comparisons justify a change. Separate temporal, mesh, transverse domain/PML
+and physical-length sensitivity; unchanged width does not mean unchanged
+transmission. Reuse surviving solved field-profile data first. Follow the
+inverse-design skill's convergence-and-length reference and preserve the
+original per-seed width bands while reporting strict no-widening separately.
+
 ## Parallel clusters and maintained knowledge (October 7 user instruction)
 
 The user authorized remaining needed gradient/diagnostic jobs on Athena and

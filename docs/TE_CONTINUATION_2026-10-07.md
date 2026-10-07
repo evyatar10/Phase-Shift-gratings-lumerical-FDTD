@@ -1,5 +1,47 @@
 # S2 calibration and restart correction continuation
 
+## IGUM completion verified 15:24 Israel
+
+IGUM101155_0 finished15:20:01, COMPLETED exit0 confirmed by exact scontrol
+array-task record, batch new-checkpoint/Finished/exit0 and successful solver
+log. sacct still fails with database connection refused; that failure is
+preserved, not interpreted as job state. **33 new FDTD solves verified complete.**
+Athena171276 tasks0/1 remain running; latest15:20 engine42.08ps/150ps, about
+36.5min engine remaining. No new checkpoint yet and no duplicate submission.
+
+IGUM nominal checkpoint SHA fb42ab353a23af6991b9dcb261cb8d09c7c21267d06de63ecbebb546abd2449a;
+ports SHA73e054409150ca72f6f19c6ab9ba004d1715d047fbe87f92541d04fd8cca3c06.
+Original bundle SHA b675834acf8b7e303593ae5c62e727127c3cf70d05f26b0aae61733d828e0ba5.
+Reader seven tests+parent and actual comparison passed. Preserved archive
+`readiness_evidence_20261007/igum_qualification_verified_1524.zip` contains
+original small artifacts, source/vendor hashes, full logs and comparison.
+
+Against original-duration Athena center: exact501 grids/spec/296parameters/
+frozen source hashes; compared installed API hashes equal. Both1010338steps,
+67.39992ps auto-stop. IGUM-Athena peakTout=-1.2994393e-6, modal=+4.8933029e-8;
+max absolute spectral difference1.3415369e-6 Tout/1.2235514e-6 modal. Same peak
+bins/wavelengths. This supports nominal forward agreement across A10080/40GB,
+not a repeatability bound or global gradient pass. Legacy CP lacks measured
+saved CAD geometry, mesh coordinates and timing controls; these remain unknown.
+Do not combine small FD legs across clusters as interchangeable measurements.
+Global calibration/optimizer gate unchanged FAILED. Current100/150 profile
+extraction and fixed-domain N80 preparation remain independent pending work.
+
+## Mesh/length audit 15:20 Israel
+
+See [TE_MESH_LENGTH_REVIEW_2026-10-07.md](TE_MESH_LENGTH_REVIEW_2026-10-07.md).
+Parent reproduced all18 saved-envelope widths and the measured inventory
+exactly; current S2 axes are49.106x50x49.3626nm. Historical mesh/box/length
+evidence has useful but limited scope; neither50nm convergence nor a minimum
+N is established for current S2. Preserve N98/free60/current bands. Existing
+100/150 field_profile extraction is being prepared before new baseline solves.
+N80 fixed-domain mapping preparation is separate and not released for solving.
+The new convergence-and-length skill reference records these rules. Verified
+text-only Claude Opus5.5 review was corrected against monitor-grid and objective
+definitions; see reviewed archive1520. Focused commits66924a3 and1fbedb0 preserve
+the running step pair and self-contained skills. Actual15:11 usage48%weekly
+remaining; model-specific/Claude quotas unknown. No reset/purchase.
+
 ## Current update 15:08 Israel — step-size pair running; mesh/length audit added
 
 Athena array **171276 tasks0/1** submitted **15:05:13 October7** and both

@@ -1,0 +1,256 @@
+{
+  "status": "COMPARISON_ONLY_CALIBRATION_FAILED_UNCHANGED",
+  "artifact_pins": {
+    "checkpoint": {
+      "path": "/home/evyatarrubin/research/bragg_sim_igum/results/diagnose_te_s2_fdstep/results/lumopt2_te_s2_fdstep_diagnostic_20261007/task_00.json",
+      "bytes": 22205,
+      "sha256": "fb42ab353a23af6991b9dcb261cb8d09c7c21267d06de63ecbebb546abd2449a",
+      "mtime_ns": 1791375601000000000
+    },
+    "ports": {
+      "path": "/home/evyatarrubin/research/bragg_sim_igum/results/diagnose_te_s2_fdstep/results/lumopt2_te_s2_fdstep_diagnostic_20261007/task_00_x6om30mp/ports.npz",
+      "bytes": 134142,
+      "sha256": "73e054409150ca72f6f19c6ab9ba004d1715d047fbe87f92541d04fd8cca3c06",
+      "mtime_ns": 1791375598000000000
+    },
+    "solver_log": {
+      "path": "/home/evyatarrubin/research/bragg_sim_igum/results/diagnose_te_s2_fdstep/results/lumopt2_te_s2_fdstep_diagnostic_20261007/task_00_x6om30mp/lumopt2_te_s2_fdstep_diagnostic_20261007_files/fwd_default_p0.log",
+      "bytes": 9171,
+      "sha256": "334b40c40bcc63b2aab1cda157f6b1f95a5b10e0b76219cb4a71be4eec0c9fa0",
+      "mtime_ns": 1791375571000000000
+    },
+    "batch_log": {
+      "path": "/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101155_0.out",
+      "bytes": 3453,
+      "sha256": "eacd78948d046a754449301036fc43dd1c010e45910eeff0ad0d7672948ee182",
+      "mtime_ns": 1791375601000000000
+    },
+    "tasklist": {
+      "path": "/home/evyatarrubin/research/bragg_sim_igum/data/sweep_list_diagnose_te_s2_fdstep_qualification.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "mtime_ns": 1791348049000000000
+    }
+  },
+  "completion_evidence": "scontrol_exact_array_task_accounting_unavailable_or_unconfirmed",
+  "source_hashes_match": true,
+  "spec_and_296_parameters_match": true,
+  "exact501_port_grids_match": true,
+  "mesh_point_counts": {
+    "igum": {
+      "x": 2676,
+      "y": 69,
+      "z": 70
+    },
+    "athena": {
+      "x": 2676,
+      "y": 69,
+      "z": 70
+    }
+  },
+  "actual_saved_CAD_geometry_properties": "UNAVAILABLE: checkpoint parameters are inputs, not a saved CAD property measurement",
+  "actual_mesh_coordinates": "UNAVAILABLE: mesh counts alone do not establish coordinate parity",
+  "actual_timing_controls": "UNAVAILABLE: this runner did not record saved timing properties",
+  "termination": {
+    "igum": {
+      "iterations": 1010338,
+      "simulation_time_s": 6.739992e-11,
+      "last_reported_auto_shutoff": 9.94445e-08,
+      "reason": "autoshutoff",
+      "GPU": [
+        "NVIDIA A100-SXM4-80GB (UUID: 87a5fbea-5d40-e27b-5695-f71f394b9038)"
+      ],
+      "datatype": [
+        "real32"
+      ],
+      "GPU_run_seconds": [
+        1230.666033
+      ]
+    },
+    "athena": {
+      "iterations": 1010338,
+      "simulation_time_s": 6.739992e-11,
+      "last_reported_auto_shutoff": 9.94436e-08,
+      "reason": "autoshutoff",
+      "GPU": [
+        "NVIDIA A100-SXM4-40GB (UUID: 37632856-eba3-c721-ff30-124895b4a8a5)"
+      ],
+      "datatype": [
+        "real32"
+      ],
+      "GPU_run_seconds": [
+        1367.685406
+      ]
+    },
+    "athena_original_log_pin": {
+      "source": "/work/results/diagnose_te_s2_fdstep/results/lumopt2_te_s2_fdstep_diagnostic_20261007/task_00_woqij_ut/lumopt2_te_s2_fdstep_diagnostic_20261007_files/fwd_default.fsp",
+      "log": "/home/evyatarrubin/bragg_sim_athena/results/diagnose_te_s2_fdstep/results/lumopt2_te_s2_fdstep_diagnostic_20261007/task_00_woqij_ut/lumopt2_te_s2_fdstep_diagnostic_20261007_files/fwd_default_p0.log",
+      "sha256": "4fce0475d5900e9d0d8ba9e0889861cf5c7dbb263c4ff623131325726cdc761b",
+      "bytes": 9337
+    }
+  },
+  "scalar_differences": {
+    "fom": {
+      "new": 0.7274683930466576,
+      "athena": 0.7274685155280382,
+      "signed_delta": -1.2248138059334224e-07,
+      "relative_delta": -1.683665725442953e-07
+    },
+    "peak3_tout": {
+      "new": 0.9257476826352051,
+      "athena": 0.9257489820745417,
+      "signed_delta": -1.2994393365772794e-06,
+      "relative_delta": -1.4036627225506882e-06
+    },
+    "peak3_modal": {
+      "new": 0.9718096309637951,
+      "athena": 0.9718095820307666,
+      "signed_delta": 4.893302851805004e-08,
+      "relative_delta": 5.035248614836241e-08
+    },
+    "lam_nm": {
+      "new": 1560.8782189638007,
+      "athena": 1560.8782189638007,
+      "signed_delta": 0.0,
+      "relative_delta": 0.0
+    },
+    "modal_t": {
+      "new": 0.971805317398703,
+      "athena": 0.9718052657698802,
+      "signed_delta": 5.162882277254255e-08,
+      "relative_delta": 5.31267164225966e-08
+    },
+    "tout_at_modal_peak": {
+      "new": 0.9217022745626839,
+      "athena": 0.9217029104505213,
+      "signed_delta": -6.358878373857735e-07,
+      "relative_delta": -6.899054241620615e-07
+    },
+    "ratio": {
+      "new": 0.9484433333106951,
+      "athena": 0.9484440380350615,
+      "signed_delta": -7.04724366418219e-07,
+      "relative_delta": -7.430321011645889e-07
+    },
+    "width_nm": {
+      "new": 0.2023443613170457,
+      "athena": 0.20234437266867644,
+      "signed_delta": -1.135163074650336e-08,
+      "relative_delta": -5.6100550743216344e-08
+    },
+    "p1_T_in": {
+      "new": 0.9437320147745665,
+      "athena": 0.94373249747353,
+      "signed_delta": -4.826989635775547e-07,
+      "relative_delta": -5.114785862199193e-07
+    },
+    "p1_T_out": {
+      "new": -0.0021441187083836603,
+      "athena": -0.002144081104423609,
+      "signed_delta": -3.7603960051282165e-08,
+      "relative_delta": 1.7538497015667324e-05
+    },
+    "p1_T_total": {
+      "new": 0.9432349873161746,
+      "athena": 0.9432355180031436,
+      "signed_delta": -5.306869690357985e-07,
+      "relative_delta": -5.62624030697315e-07
+    }
+  },
+  "termination_differences": {
+    "iterations": {
+      "new": 1010338.0,
+      "athena": 1010338.0,
+      "signed_delta": 0.0,
+      "relative_delta": 0.0
+    },
+    "simulation_time_s": {
+      "new": 6.739992e-11,
+      "athena": 6.739992e-11,
+      "signed_delta": 0.0,
+      "relative_delta": 0.0
+    },
+    "last_reported_auto_shutoff": {
+      "new": 9.94445e-08,
+      "athena": 9.94436e-08,
+      "signed_delta": 8.999999999957266e-13,
+      "relative_delta": 9.050356181752537e-06
+    }
+  },
+  "limitations": [
+    "Current installed source hashes do not prove unchanged install throughout the earlier solve.",
+    "Stored spec/params and mesh counts are available; saved CAD properties/mesh coordinates/timing settings are not independently queried.",
+    "Different A100 memory variants do not imply bitwise spectral parity; no automatic qualification or calibration pass.",
+    "One cross-cluster forward comparison establishes no gradient calibration or hardware error/noise bound.",
+    "Requested default timing family may terminate at different times; report termination differences without attributing spectral differences."
+  ],
+  "parent_pinned_bundle_sha256": "b675834acf8b7e303593ae5c62e727127c3cf70d05f26b0aae61733d828e0ba5",
+  "spectral_differences": {
+    "Tout": {
+      "max_abs_difference": 1.3415369094493812e-06,
+      "RMS_difference": 1.7330185811989769e-07,
+      "peak_indices": {
+        "igum": 252,
+        "athena": 252
+      },
+      "peak_sample_lambda_nm": {
+        "igum": 1560.8702190080865,
+        "athena": 1560.8702190080865
+      },
+      "fixed_bins": {
+        "244": {
+          "new": 0.8570754841070445,
+          "athena": 0.857075413510629,
+          "signed_delta": 7.059641549123086e-08,
+          "relative_delta": 8.236896587905138e-08
+        },
+        "252": {
+          "new": 0.9257234990439195,
+          "athena": 0.9257248405808289,
+          "signed_delta": -1.3415369094493812e-06,
+          "relative_delta": -1.449174582598063e-06
+        },
+        "260": {
+          "new": 0.8522947108670467,
+          "athena": 0.8522946816813318,
+          "signed_delta": 2.918571484489263e-08,
+          "relative_delta": 3.4243689972718855e-08
+        }
+      }
+    },
+    "modal": {
+      "max_abs_difference": 1.223551434392789e-06,
+      "RMS_difference": 2.1599251702494413e-07,
+      "peak_indices": {
+        "igum": 250,
+        "athena": 250
+      },
+      "peak_sample_lambda_nm": {
+        "igum": 1560.8782189638007,
+        "athena": 1560.8782189638007
+      },
+      "fixed_bins": {
+        "244": {
+          "new": 0.925473648935875,
+          "athena": 0.9254745361498892,
+          "signed_delta": -8.872140141447105e-07,
+          "relative_delta": -9.586584822048718e-07
+        },
+        "252": {
+          "new": 0.9661417767193711,
+          "athena": 0.9661428861964478,
+          "signed_delta": -1.1094770767661188e-06,
+          "relative_delta": -1.1483571349719864e-06
+        },
+        "260": {
+          "new": 0.8512837798789769,
+          "athena": 0.8512832847971166,
+          "signed_delta": 4.950818602855733e-07,
+          "relative_delta": 5.815712220915562e-07
+        }
+      }
+    }
+  },
+  "installed_API_all_compared_equal": true,
+  "lead_verdict": "Successful cross-cluster nominal forward agreement at this old-duration point. Suitable evidence for independent bounded studies; not global gradient calibration or permission to mix tiny derivative legs across clusters without matched controls."
+}

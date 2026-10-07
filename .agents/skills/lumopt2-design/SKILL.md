@@ -48,3 +48,9 @@ Consult its relevant section as historical evidence, checking current API/code
 and newer TE contracts before applying a recipe. It is not a live job queue.
 
 The bundled runbook is historical evidence. Current user instructions, AGENTS.md, this Codex entrypoint and live code take precedence. Interpret repository paths from the repository root; historical memory references remain external and are not bundled.
+
+For the user's mesh and physical-length convergence checks, read the installed
+inverse-design skill's `references/convergence-and-length.md`. Nominal 50 nm
+and N98 are retained working choices, not proof of convergence; distinguish
+mesh, duration, domain and physical mirror length, and recover saved profiles
+before scheduling another baseline solve.
