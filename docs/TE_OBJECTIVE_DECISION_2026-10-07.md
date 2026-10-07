@@ -8,6 +8,35 @@ It does not modify running calibration or authorize a full optimization run.
 
 ## Recommended physical problem
 
+### Width authority: sigma is a rejected proxy
+
+Rechecked after the user's October 7 clarification: constant second-moment
+sigma does not imply constant spatial FWHM. THEORY.md section 4a records
+the historical sigma constraint missing substantial FWHM growth; its fitted
+linear surrogate compounded the error. Do not revive either as the TE width
+constraint, acceptance criterion, length-convergence criterion or success metric.
+
+Read-only imports of both current TE `SPEC_V3` objects confirmed
+`sigma_wall=False`, `width_grad=True`, `wg_project=True`, and measured FWHM
+anchors (S1 19.121 um, S2 19.636 um). Neither entry point passes `sigma0_um`.
+The engine reads `fwhm_env_um` into W for the projected/QP decisions and
+filters eligible final/restart designs using the measured width band.
+The differentiable soft-level-set width supplies a gradient direction;
+it is not sigma and does not replace measured envelope FWHM. Its physical
+gradient still requires the outstanding validation gates.
+
+The saved 100/150/200 ps spatial report contains sigma only as a supplemental
+profile diagnostic. Its reported Tout-anchored FWHMs are respectively
+19.6441074142, 19.6437170638 and 19.6442773610 um; the separate sigma values
+are 12.4373100359, 12.4372615345 and 12.4373150458 um. The reported near-19.64
+um widths are envelope half-height crossing distances, not sigma conversions.
+Future summaries must label sigma diagnostic-only and never use its stability
+to certify FWHM stability. Original evidence and frozen sources are preserved.
+The engine's opening docstring describes the historical TM/sigma formulation;
+use the live TE branches and THEORY section 13 for the current method.
+
+### Physical objective
+
 Let p denote the retained TE N98/free60/bare geometry. Track the same defect
 resonance branch, rather than taking the largest peak anywhere in the scan.
 Let lambda*(p) be that branch's measured resonance and W(p) its production
