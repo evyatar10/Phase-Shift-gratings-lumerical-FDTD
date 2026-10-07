@@ -138,3 +138,30 @@ changes also need hidden CAD verification; optimizer changes need a small
 authorized hardware smoke before a long campaign. Preserve temp artifacts
 when useful and keep scratch probes outside the repo. Report limits plainly:
 an offline or build-only pass does not establish new FDTD physics.
+
+## Plan expensive simulations before dispatch (October 7 user instruction)
+
+The user requires physical gradient validation, including critical review of
+Claude's original checks and independent reproduction where needed. Maintain
+an evidence map distinguishing historical claims, reproduced arithmetic,
+matched forward/adjoint tests, failed gates and unavailable raw artifacts.
+A prior PASS label applies only to its tested objective, geometry, numerical
+settings and held-out scope; it is not transferable calibration.
+
+Before each expensive stage, write a short decision plan: the hypothesis and
+observable, reusable evidence, dependencies, proposed independent run groups,
+measured runtime range, queue/setup/post-processing overhead, resource/seat
+budget and the action each possible result would justify. Identify the
+critical path and prepare its readers, tests and next-stage inputs during
+current solves. Prefer experiments that separate competing explanations;
+do not accumulate runs with no decision attached. Estimate from comparable
+completed jobs, revise from actual logs, and report ranges rather than promise
+finish times. Include adjoint/twin forwards and CPU post-processing in cost.
+
+Batch independent jobs across verified Athena/IGUM environments within the
+shared license budget. Dependent physical decisions still require result
+review; do not prequeue them merely to fill GPUs. Do useful independent work
+during waits without repeating completed audits. When only external results
+remain, maintain the already-authorized continuation and precise next actions.
+Preserve files and active source identities; planning never bypasses a failed
+gradient gate or authorizes the full optimization campaign.

@@ -1,5 +1,24 @@
 # S2 calibration and restart correction continuation
 
+## Update 14:13 Israel — evidence map and runtime-aware plan
+
+The user's requirement to independently qualify physical gradients and plan
+expensive simulations ahead is now in AGENTS.md, work-alone, cluster-ops and
+inverse-design skills. All three changed skills passed validation; before/after
+snapshots are preserved. No production solver source changed.
+
+Read TE_VALIDATION_EVIDENCE_MAP_2026-10-07.md for original Claude claims versus
+independent checks and gaps, and TE_VALIDATION_PLAN_2026-10-07.md for the
+conditional experiment sequence, measured runtime/resource estimates and
+prepared post-processing. Historical S1 held-out port error -16.5% and S2 field
+shift1 residual +23.8% remain explicit limitations; neither is a blanket pass.
+
+At14:10 Athena171236 tasks3-5 remained RUNNING at81-83 ps/150 ps, about23 minutes
+engine time remaining. Estimated outputs14:33-14:40, not guaranteed. Count29
+completed FDTD solves remains unchanged. Exact150ps strict fetch and analysis
+are still next. Usage14:10 reports58% weekly allowance remaining; model-specific
+and Claude allowance are unknown. Full readiness remains NO.
+
 ## Update 13:55 Israel — independent spectral analysis completed; 150 ps still running
 
 The saved 100 ps comparison was independently reproduced. Five focused

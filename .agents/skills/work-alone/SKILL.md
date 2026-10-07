@@ -46,3 +46,13 @@ installed ask-claude helper only within its verified text-only boundaries.
 The retained `campaign_monitor_template.sh` is a historical template, not an
 executable default; inspect/update its paths and failure semantics before use.
 [Original history](../../../.claude/skills/work-alone/SKILL.md).
+
+## Plan around expensive simulations
+
+Follow AGENTS.md's runtime-aware decision planning requirement. Before a long
+stage, identify what each result can decide, dependencies, comparable measured
+runtime and uncertainty, scarce resources and useful work during the wait.
+Prepare downstream extraction and validation before the current run ends.
+Read the installed cluster-ops skill's `references/runtime-planning.md` for
+the concrete planning fields. Store volatile estimates and job identities in
+the dated project plan, not as permanent runtime promises in this skill.
