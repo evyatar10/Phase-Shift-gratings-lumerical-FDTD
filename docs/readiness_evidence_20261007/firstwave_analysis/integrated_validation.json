@@ -1,0 +1,8 @@
+{
+  "tests_exit": 0,
+  "out": "",
+  "err": "......\n----------------------------------------------------------------------\nRan 6 tests in 1.662s\n\nOK\n",
+  "main_sha256": "3b18b5b0663ae2350cc4e3f1fc2c787b6a5d7b4fedaacfe38ba84b92febf384c",
+  "pins_sha256": "cff7165a1cc6e7c4aae9024b6ce3dda8d1c9d62dfc007040bd0deaf6f14c7581",
+  "status": "OFFLINE_PREPARATION_PASS_NO_ACTUAL_FIRSTWAVE_RESULTS"
+}

@@ -1,5 +1,81 @@
 # TE readiness handoff — 2026-10-07
 
+## Final local checkpoint 09:14 Israel - waiting for restored VPN
+
+Both bounded SSH rechecks still timed out at09:11:47. No new remote state
+is known. The existing30minute heartbeat was set PAUSED per AGENTS.md's
+stop-on-genuine-blocker instruction; server jobs were not cancelled. Re-enable
+this same heartbeat after VPN access returns, then reconcile existing jobs
+before any dispatch. Do not create another schedule or claim unattended work
+is still active while it is paused.
+
+The local firstwave analyzer is integrated at
+`readiness_evidence_20261007/firstwave_analysis/`; all six tests pass, with
+no new FDTD evidence or measured report. Main SHA
+3b18b5b0663ae2350cc4e3f1fc2c787b6a5d7b4fedaacfe38ba84b92febf384c;
+repository-path pins SHA
+cff7165a1cc6e7c4aae9024b6ce3dda8d1c9d62dfc007040bd0deaf6f14c7581.
+README specifies exact original-byte checkpoint/NPZ fetch names and command.
+It compares corr30 repeats and optional preserved shift30h2 data, verifies
+frozen identity/grids/all saved scores, and never publishes scientific approval.
+Remote success logs and retained FSP/H5 still require actual server inspection.
+All Sol preparation workers finished; no pending worker or exclusive file owner.
+The separate firstwave review contract preserves the unchanged10% global gates.
+
+
+## Current access checkpoint 09:03 Israel - cluster visibility lost
+
+IGUM SSH timed out at09:01:08 and Athena at09:01:39 (bounded10second
+connections). Local Wi-Fi is up; the TAP-Windows VPN adapter is disconnected
+and no132.68 IPv4 route was returned. This is consistent with lost VPN access,
+not evidence of job failure. No cancellation, duplicate dispatch or VPN change.
+Last verified: Athena170962_0-3 RUNNING08:57; IGUM101155_0 PENDING08:54.
+Four new Athena forwards and one IGUM baseline remain uninspected;18 completed
+new FDTD solves is still the measured count. Calibration remains FAILED.
+
+Focused local Git checkpoint1d4cf6f preserves measured four-step analysis,
+Re/Im corr30 checks, firstwave runner/markers/receipts, and skill snapshots.
+A new no-solve five-class h1 harness is locally reviewed/prepared, NOT uploaded
+or dispatched: `readiness_evidence_20261007/s2_other_classes_reviewed_0901.zip`.
+Runner SHA0be8299d6607388f373876bf16b5f15e3d894220efcd770b9cccedd6f46d526d;
+unchanged no-solve guard40dd487831da68080b29813cdbef2e1ce9e6629528dccd3d7c431dfc1229e99d.
+Nine offline tests pass (run from repo root with PYTHONPATH pointing to repo),
+and hidden local wcav mesher check passes without FDTD. Source targets only
+indices0,60,120,149,295 at1nm and excludes already measured corr30. Serial
+Re/Im128G,8CPUs,45min are a conservative prepared request, not a measured
+runtime or scheduler acceptance. Re wrapper/preparation identity is recorded
+in `s2_other_classes_preparation.json`; output is
+`/work/results/s2_other_classes_h1_re_20261007T0901/other_classes_h1.json`.
+
+After access returns: first reconcile exact170962/101155 queue/accounting and
+immutable checkpoints (do not redispatch them), fetch/inspect firstwave ports,
+then decide remaining4-11 class legs through a separate reviewed marker.
+Before any new job, refresh resource/quota/shared seats including queued jobs.
+For the new no-solve harness, verify frozen source hashes against firstwave
+marker; upload only new exclusive helper/wrapper files, preserve old originals,
+validate original checkpoint bindings, and dispatch Re once. Inspect its report
+before serial Im. Full calibration, optimizer smoke and N98 hardware gates
+remain open. No full optimization campaign is authorized.
+
+
+## What the completed simulations are for
+
+The completed finite differences measure how transmission changes when a
+geometry parameter moves. The Re/Im adjoint reconstructions predict those
+same changes cheaply from saved fields. They must agree across parameter
+classes before an optimizer can safely use them. The original S2 comparison
+failed both its fit and held-out checks, so running optimization now could
+move geometry using an inaccurate direction.
+
+The extra corr30 solves show that the original2nm step gives a substantially
+different derivative from smaller steps. They do not yet prove the smallest
+step is correct. The new170962 repeat pair tests whether the0.5nm derivative
+repeats; its shift30 pair tests whether another important parameter has the
+same problem. The CPU-only checks independently verify reconstruction from
+stored fields; they do not add to the FDTD simulation count. IGUM's baseline
+qualifies whether results from the two server environments can be compared.
+None of these diagnostic solves is an optimization iteration.
+
 ## Latest measured checkpoint
 
 **Not ready for full optimization. S2 calibration remains FAILED.** All four

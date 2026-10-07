@@ -1,5 +1,7 @@
 # Full-optimization readiness criteria
 
+**09:03 access blocker:** both clusters timed out; local VPN adapter is disconnected. Last verified170962 running08:57, IGUM101155pending08:54. New five-class no-solve helper is locally tested but NOT uploaded/dispatched. See current continuation for exact resume steps. Failed scientific gates unchanged.
+
 This is the completion contract for the authorized overnight preparation.
 It is not permission to launch a full optimization campaign. A passing offline
 suite or N70 pipeline smoke alone cannot establish N98 physical readiness.

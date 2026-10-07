@@ -1,0 +1,32 @@
+{
+  "status": "REVIEW_PLAN_NO_AUTOMATIC_RELEASE",
+  "firstwave_job": "170962",
+  "task_map": {
+    "0": "corr30 +0.5 repeat",
+    "1": "corr30 -0.5 repeat",
+    "2": "shift30 +0.5",
+    "3": "shift30 -0.5"
+  },
+  "checks": [
+    "Exact checkpoint/runner/dependency/parent-marker identities and unmodified center",
+    "Successful solver logs and retained FSP/H5/NPZ with exact port SHA",
+    "Exact wavelength grids, finite physical port arrays and scalar reproduction",
+    "corr30 repeat endpoints and central derivatives versus170906, both Tout peak3 and modal peak3",
+    "Odd/even response and center-Jacobian projection, with both old and repeated centers labelled",
+    "shift30 small-step versus available old2nm evidence, keeping historical source-role qualification"
+  ],
+  "decision": "A clean, interpretable firstwave can justify bounded remaining-class measurements but does not pass calibration. Unexplained repeat discrepancies or evidence mismatches require diagnosis before automatic expansion. Judge measured effect sizes against original slope scales; do not invent a statistical noise bound from one repeat.",
+  "later_tasks": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "later_release": "Requires separately published immutable lead marker containing exact firstwave checkpoint hashes and substantive reviewed verdict; never mutate firstmarker.",
+  "calibration_acceptance": "Existing six-class per-class and held-out10% gates unchanged. No failed coefficient installed, no optimizer smoke or full campaign before their own gates.",
+  "existing_first_marker_sha256": "6722e1883338c0259b6fd2aa7386a2d12f1c5124708f590c1ce30a7c266f8d02"
+}

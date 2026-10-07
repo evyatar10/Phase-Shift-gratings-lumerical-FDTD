@@ -1,0 +1,12 @@
+{
+  "observed_at": "2026-10-07T09:03:18.396984",
+  "igum_ssh": "09:01:08 timeout port22",
+  "athena_ssh": "09:01:39 timeout port22",
+  "adapter_observation": {
+    "Wi-Fi": "Up",
+    "Local Area Connection TAP-Windows Adapter V9": "Disconnected"
+  },
+  "technion_route_132_68": "No matching IPv4 routes returned",
+  "interpretation": "Consistent with VPN loss; not evidence any remote job stopped",
+  "mutations": "None; no reconnect/configuration/cancel/resubmit"
+}

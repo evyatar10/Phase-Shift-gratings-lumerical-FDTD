@@ -1,0 +1,6 @@
+{
+  "checked_at": "2026-10-07T09:01:39.057093",
+  "exit_code": 255,
+  "out": "",
+  "err": "ssh: connect to host 132.68.1.206 port 22: Connection timed out\r\n"
+}

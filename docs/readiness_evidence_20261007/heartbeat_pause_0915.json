@@ -1,0 +1,10 @@
+{
+  "automation_id": "s2-overnight-inverse-design-readiness",
+  "status": "PAUSED",
+  "tool_confirmed": true,
+  "reason": "BothclustersSSHtimeout09:01and09:11;localVPNadapterdisconnected;usefulindependentlocalpreparationcompleted",
+  "job_cancellations": false,
+  "measured_firstwave_results_available": false,
+  "resume": "RestoreVPN,re-enableexistingheartbeat,reconcile170962and101155beforeanynewdispatch",
+  "recorded_at": "2026-10-07T09:14:29+03:00"
+}

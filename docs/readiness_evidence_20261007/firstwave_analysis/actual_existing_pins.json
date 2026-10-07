@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "existing_files": {
+    "s2_fdstep_task00_original.json": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+    "s2_fdstep_task00_ports.npz": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4",
+    "s2_fdstep_task01_original.json": "021ce215c64ccc13020f74af8d775f65ab97f73290e4b06f1f159297f8c7b04e",
+    "s2_fdstep_task01_ports.npz": "9f6d80043881877926d40a17f18e5c0e3863d8c93a6279a2a65277b96c626613",
+    "s2_fdstep_task02_original.json": "9e72cdc72197254594688dc0102d8a4b10155435244b545719ec4fd3fda4e808",
+    "s2_fdstep_task02_ports.npz": "eb140dc60e401b9472e942833437eebb74ac60f6f2641a7cd2a55c94fe1e5fe7"
+  },
+  "marker_sha256": "6722e1883338c0259b6fd2aa7386a2d12f1c5124708f590c1ce30a7c266f8d02",
+  "center_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+  "old_shift30": {
+    "available": true,
+    "archive": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_original_port_spectra_preserved.zip",
+    "archive_sha256": "b996142caf4a66d73336ed2845a564626e6fbd9e0e9a695ee89bf498e7522204",
+    "members": {
+      "base_ports.npz": "801520552a17d34afe2ec45f34d949120c3d7a8a302d4f677cf8fd27bd1c2906",
+      "task_09_ports.npz": "8328f93a60f698aab3ba0bdc99aec71b9c2cb639576df9c57f8301d26dfb8a92",
+      "task_10_ports.npz": "a5cefa0026fb2f58b59075848756456e1d7f1941c7051bae6088ce2c69466a95"
+    },
+    "center_export_checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_reference_task00_remote_original.json",
+    "center_export_sha256": "732ca5752ff2b0449a892ebafe7ba6a87a5ee1fce63bd929f8f7343bf50df13f",
+    "center_export_role": "stored_forward_export_not_fsp_creation",
+    "center_export_semantic_sha256": "215be6bec0ec217748830dd6ef7938d6124c2efbb373c0ddceef8530e2ca3d46",
+    "fd_roles": {
+      "9": {
+        "checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_09.json",
+        "sha256": "665f58076abce8635bc14d967e93df4a6d299b140017e2817af5c0020557072e",
+        "semantic_sha256": "834947440dc0ff94cf771fea4ce38a9151eedaa6451599aa5b598ecc70b49b3b",
+        "code": {
+          "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+          "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+          "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+          "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+          "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+          "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+          "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+          "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+        },
+        "role": "recovery_generated_forward_fd_leg"
+      },
+      "10": {
+        "checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_10.json",
+        "sha256": "4b992ac83cfdf3dd6379ad05d14f9d02c0164c8146b857cb02ae7665432035e0",
+        "semantic_sha256": "4e9a1bbe1a151226197a9aad772479d726f4ec3418837b203662155cd0639eba",
+        "code": {
+          "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+          "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+          "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+          "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+          "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+          "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+          "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+          "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+        },
+        "role": "recovery_generated_forward_fd_leg"
+      }
+    }
+  }
+}
