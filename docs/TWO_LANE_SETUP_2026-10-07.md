@@ -10,8 +10,12 @@ GPT/Codex agent and the user. This file is the entry point for both lanes.
    is `~/research/bragg_sim_igum_codex`; both are already set in your
    `athena.conf`, `igum.conf` and job scripts. Never edit, deploy to or cancel
    anything in Claude's lane (§2), including its job 171897.
-2. **Your previous pause is lifted.** The user directs both lanes to proceed at
-   **N = 80 periods/side, 60 free/side**, with the goal of raising peak T at
+2. **Your previous pause is lifted. Length rule (user, 2026-10-08): N is only a
+   faster SURROGATE for the final device, so the width must carry over, which
+   needs 2κL ≳ 3.5.** Use **S2 at N = 80** (2κL 4.1; width −0.9 % vs N98) and
+   **S1 at N = 98** (2κL 3.33). MEASURED in job 171897_0: at N80, S1's width
+   dropped 4.4 % (19.385 → 18.528 µm), so N80 is too short for S1's weak
+   corr-250 mirrors. 60 free periods/side in both. Goal: raise peak T at
    spatial envelope FWHM ≈ 20 µm.
 3. **Your main mistakes on 2026-10-07 (§6b), to avoid repeating:**
    - The S2 finite-difference test used ±2 nm legs that moved a 0.20 nm-wide
@@ -96,7 +100,8 @@ The originals were not moved or deleted.
 |---|---|---|
 | Goal (user) | raise peak transmission T of the TE pi-shift Bragg grating while holding the spatial envelope FWHM near 20 µm | requirement |
 | Device | TE, h 350 nm, n 1.97/1.444, bare (no posts), box 6.8 × 6.81 µm, PVA mesh, dx 50 nm (S2 49.106 nm) | spec |
-| Length | **N = 80 periods/side** (user 2026-10-07), 60 free/apodized per side | spec |
+| Length | N is a SURROGATE (user 2026-10-08), so it must satisfy 2κL ≳ 3.5: **S2 N = 80**, **S1 N = 98**; 60 free/apodized per side | spec |
+| N80 effect on S1 | width 19.385 → 18.528 µm (−4.4 %), Q_L 1550 → 757 | MEASURED (171897_0) |
 | Variables | 296-slot vector, 181 active: 60 corr, 60 avg width, 60 shift, cavity width | code |
 | S1 seed | uniform, corr 250 / pitch 500 / W800 | spec |
 | S2 seed | Itai's Nt60 overshoot apodization, pitch 491.06, bulk 494.2/1000, cavity 951.4 | spec |
@@ -110,9 +115,11 @@ The originals were not moved or deleted.
 ## 5. Lane status at the split
 
 **Claude lane:**
-- Athena job **171897**, 2 tasks, 4d_1g, 96 h, 256 G, started 2026-10-07 ~23:00 on n315 (H200):
-  - task 0: S1 at N80, starting from the N98 best;
-  - task 1: S2 at N80, starting from the seed.
+- Runs (4d_1g, 96 h, 256 G):
+  - **171897_1**: S2 at N80, starting from the seed (H200). Iterate 0 MEASURED t_pk 0.9801, W 19.46 µm, Q_L 2773.
+  - **172053_2**: S1 at **N98** (label `lumopt2_te_s1_n98r`), starting from the N98 best 0.9528 (rtx6k node).
+  - 171897_0 (S1 at N80) was CANCELLED 2026-10-08 after it showed the −4.4 % width loss. Its 2 evals are kept as the record.
+- Speed: one S1 iterate took 2.4 h at N98 on an A100 and 0.63 h at N80 on an H200. About half of that gain is the GPU, not the length (EXPECTED split).
 - Each task stops after 8 forward evaluations (persistent budget); it is extended later by raising `MAX_FEVAL` and redeploying, which resumes from the accepted best.
 - Runner: `runners/lumopt2_design/campaign_te_n80.py`.
 - Calibration: S1 reuses its N98 C factors. S2 uses its own field C and port C = (1, 0), uncalibrated.
@@ -197,9 +204,10 @@ Neither lane edits the other's branch.
 | Date | Lane | Commit | What | Adopted by other lane? |
 |---|---|---|---|---|
 | 2026-10-07 | both | 9a8d440 | shared baseline at the split | — |
-| 2026-10-07 | claude | (this branch) | engine reverts of §6c + N80 runner | — |
+| 2026-10-07 | claude | 0a27c0e | engine reverts of §6c + N80 runner | — |
+| 2026-10-08 | claude | (this branch) | per-seed length: S2 N80, S1 N98 (`campaign_te_n80.py` task 2) | — |
 
 ## 10. Open items for the user
 
 - Shift weighting in the step metric: shifts are currently held back ~545× relative to corrugations. Pending your yes/no.
-- S1 at N80 has 2κL = 2.71, below the program's usual 3.2 floor. Your N80 decision was measured on S2, which has stronger mirrors. The S1 run will show whether the width still behaves.
+- (Resolved 2026-10-08) S1 at N80 lost 4.4 % width, so S1 is back at N98.

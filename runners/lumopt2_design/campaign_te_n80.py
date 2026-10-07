@@ -42,7 +42,7 @@ from runners.lumopt2_design import campaign_te_s1 as s1
 from runners.lumopt2_design import campaign_te_s2 as s2
 from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3 as S1_BEST_N98
 
-N_SIDE = 80
+N_SIDE = 80          # default; a lane may override with "n_side"
 MAX_FEVAL = 8        # persistent forward budget per lane; raise + redeploy to extend
 
 LANES = [
@@ -63,6 +63,15 @@ LANES = [
          two_kl_floor=None,          # 2κL ≈ 4.1 > 3.5 default rule
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM),
+    # task 2 (2026-10-08, user: N80 is only a faster SURROGATE): S1 back at N98.
+    # MEASURED 171897_0: N98→N80 narrowed S1 4.4 % (19.385→18.528 µm; S2 only
+    # −0.9 %). Surrogate rule 2κL ≳ 3.5 ⇒ S1 needs N≈102; N98 (3.33) is the
+    # validated length of its calibration and best design, so S1 runs there.
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98r", start=S1_BEST_N98, n_side=98,
+         scan=1561.04, width=10.0, recenter=2.0, dlam=0.25,
+         two_kl_floor=3.0,           # 2κL 3.325 at start; N is a spec choice here
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM),
 ]
 N_TASKS = len(LANES)
 
@@ -70,7 +79,7 @@ N_TASKS = len(LANES)
 def lane_spec(task_idx):
     ln = LANES[task_idx]
     spec = dataclasses.replace(
-        ln["base"], label=ln["label"], n_periods_side=N_SIDE,
+        ln["base"], label=ln["label"], n_periods_side=ln.get("n_side", N_SIDE),
         seed_override=tuple(ln["start"]),
         scan_center_nm=ln["scan"], scan_width_nm=ln["width"],
         recenter_nm=ln["recenter"], wgp_v3_dlam_nm=ln["dlam"],
