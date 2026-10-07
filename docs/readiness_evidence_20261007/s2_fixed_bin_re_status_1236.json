@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-07T12:34:35.747396+03:00",
+  "queue": {
+    "rc": 0,
+    "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n",
+    "err": ""
+  },
+  "account": {
+    "rc": 0,
+    "out": "JobID|State|ExitCode|Elapsed|MaxRSS\n171195_0|FAILED|2:0|00:08:59|\n171195_0.batch|FAILED|2:0|00:08:59|19972028K\n171195_0.extern|COMPLETED|0:0|00:08:59|0\n",
+    "err": ""
+  },
+  "live_stats": {
+    "rc": 0,
+    "out": "JobID|AveCPU|MaxRSS|AveDiskRead|AveDiskWrite\n",
+    "err": "sstat: error: StepId=171195.batch not found running.\n"
+  },
+  "report_exists": true,
+  "log": "============================================================\nArray:      171195[0]\nNode:       athena-post\nStarted:    Wed Oct  7 12:20:53 PM IDT 2026\nGPU:        none requested; no-solve CAD probe\nCPUs:       8\nSWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\nUsing CONSTANT Materials (object-defined dielectric): SiN=1.97, SiO2=1.444\n12:21:04 - INFO - Generating optimization project...\n12:21:08 - INFO - FDTD version '8.35.4572' meets the minimum requirement.\n/work/results/s2_fixed_bin_shift30_re_20261007T1216/fixed_bin_shift30.json\n[wrapper] python exit code: 2\nINFO:    Terminating fuse-overlayfs after timeout\nINFO:    Timeouts can be caused by a running background process\n============================================================\nFinished:  Wed Oct  7 12:29:49 PM IDT 2026\nExit code: 2\n============================================================\n",
+  "report_sha": "d6ab05927276d43ceea194b23f1cccbd389abd586b3ee0dccae2fe71efb6b454"
+}

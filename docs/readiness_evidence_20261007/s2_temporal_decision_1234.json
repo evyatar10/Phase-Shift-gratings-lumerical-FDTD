@@ -1,0 +1,28 @@
+{
+  "status": "PREPARATION_ONLY_NO_DISPATCH",
+  "basis": "26 completed FDTD solves, shift30 peak and frozen-center Jacobian FD unstable; nine actual early-shutoff logs reviewed.",
+  "next_order": [
+    "Inspect171195 Re original-control reproduction, metadata and preservation. If complete without errors, run serial Im from same frozen source. Neither raw quadrature individually is a calibrated gradient.",
+    "Review prepared TEMP-only temporal runner and hidden CAD evidence. Do not alter original sources.",
+    "If the prepared timing-only intervention is verified, a100ps center/+/-0.0625nm triplet can measure temporal sensitivity;150ps stays gated by inspection of100ps actual outputs. No optimizer release."
+  ],
+  "predeclared_reporting": [
+    "Report numerical values continuously without labeling an arbitrary tolerance a readiness pass.",
+    "For each duration report same-duration center, all3 spectra, complex S, abs(S)^2, abs(Tout), moving peak3 and selected indices, fixed bins244/252/260, central odd derivative and even terms.",
+    "Report both original-frozen and same-duration-center Jacobian projections explicitly; do not interchange their definitions.",
+    "Report endpoint and center differences between durations, and physical termination time/reason/timestep. Compare only exact grids and pinned geometry; restore nominal between builds.",
+    "A same-h100/150 comparison measures temporal sensitivity over those windows; it neither certifies asymptotic convergence nor eliminates h/grid/precision dependence.",
+    "If further h-convergence is needed, design it after this evidence. Do not automatically launch every possible duration,step,precision and mesh test."
+  ],
+  "not_adopted": [
+    "Noise or resolution floor inferred from one repeated center.",
+    "Universal2percent flank threshold, near-zero derivative threshold, or fitted pass tolerance.",
+    "Claim that same-duration agreement proves unequal-window cause.",
+    "Claim that old saved adjoints qualify a different forward numerical family."
+  ],
+  "remaining_scientific_gates": [
+    "Global multi-parameter gradient calibration remains FAILED.",
+    "Objective/normalization must be consistent with the claimed observable.",
+    "Width gradients, N98 hardware validation and optimizer smoke remain pending after calibration."
+  ]
+}

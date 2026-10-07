@@ -1,5 +1,28 @@
 # TE readiness handoff — 2026-10-07
 
+## Update12:35 Israel - CPU guard failure preserved; Im remains blocked
+
+Athena171195_0 ended FAILED exit2 at12:29:49, elapsed8:59,MaxRSS~19.0GiB.
+The original shift30 peak3 control reproduced0.20875441140950296 versus
+0.20875441140949622 (relative3.23e-14); original files and production code
+identities remained unchanged. The first one-hot attempt stopped with
+`RuntimeError: Vendor normalization changed across objective Jacobians`.
+No fixed-bin contraction completed and Im must NOT be dispatched yet.
+Raw report s2_fixed_bin_re_original.json SHA
+ d6ab05927276d43ceea194b23f1cccbd389abd586b3ee0dccae2fe71efb6b454.
+Sol objective_code_audit owns isolated diagnosis/instrumentation; do not relax
+exact normalization guard without measuring the offending metadata change.
+Existing deployed helper/output stay frozen. No new FDTD solves.
+
+Temporal runner remains TEMP-only preparation. Hidden CAD accepts explicit
+FDTD `use early shutoff=0` with100/150ps while other settings stay unchanged;
+actual termination has not been tested. Claude's verified Opus5.5 review is
+saved with rejected causal/noise/tolerance claims in claude_temporal_review_1234.json.
+No arbitrary proposed tolerance became a readiness gate. The maintained
+inverse-design skill now covers actual termination checks and the builder's
+falsey-zero pitfall; skill validation passed. Git checkpoint db329fa preserved
+26solve evidence before this new CPU failure. Calibration remains FAILED.
+
 ## Update12:32 Israel - actual termination review and active CPU diagnostic
 
 All nine inspected recent diagnostic logs report early auto-shutoff near
