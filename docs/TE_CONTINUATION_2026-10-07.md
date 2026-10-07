@@ -1,5 +1,50 @@
 # S2 calibration and restart correction continuation
 
+## Update14:46 Israel -150ps completed; next150ps step pair being prepared
+
+Athena171236 tasks3/4/5 COMPLETED exit0. Cold artifact checks passed for exact
+150ps/status1/2248530iterations, frozen runner555f and all FSP/H5/NPZ/log SHA.
+Completed new FDTD count32. Original files are in
+readiness_evidence_20261007/s2_temporal150_fetch_1434; pinmap SHA
+4fbe923b0fb770b19670946773edc5f892b0efedd07d821a3fee2a750793670b.
+Reviewed archive s2_temporal150_verified_1445.zip preserves originals and reader.
+
+The initial strict local reader rejected a2ULP Port_1 phase difference between
+100/150 before-control snapshots for center/minus (plus exact); no other
+nongeometry control differed. An isolated reader accepts ONLY that measured
+<=2ULP phase difference, retains raw values, keeps other checks unchanged and
+does not localize its cause. Seven new plus seven inherited test groups and
+parent actual rerun passed. New reader TEMP s2_temporal_phase_fix_6cf50c5e45e2,
+SHA bbe3a22f90a418c8cadc3fc0c7b95f8843b4d83127d611bb0f4481bb7fdee3dd.
+Frozen runner/original reader unchanged. Full report s2_temporal150_review_1442.json,
+full spectra s2_temporal150_spectra_1442.json, compact summary1445.
+
+Tout peak3 center100→150 .933286528→.933570417; modal .979764300→.979971606.
+At h=.0625nm Tout movingpeak FD -.000208331→-.000153815 /nm; modal
+-.000316571→-.000163699 /nm. Same-duration fixed-J projections at150 are
+-.000448383 Tout and+.000333596 modal; plus/minus peaks move across bins.
+Temporal/finite-step/selector sensitivity remains, not convergence or an
+adjoint calibration pass. All global failed gates remain; no coefficient or
+optimizer release. Old fields still belong to old termination settings.
+
+Lead chooses next bounded150ps shift30±.125nm pair, reusing exact150 center,
+to separate step sensitivity at fixed duration. NEW isolated runner/tests are
+being prepared by objective_code_audit in TEMP; no upload/dispatch yet.
+It must bind center CP SHA a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663,
+all150 checkpoints, frozen dependencies and substantive review marker, followed
+by hidden CAD, independent review and fresh seats/queue/quota. Expected50-65min
+per forward once started,2GPUs. No200ps or new adjoint run released.
+
+Verified text-only Claude Opus5.5 reviewed next-stage planning; its assertion
+that the existing150runner could change h without newcode was corrected.
+Large even terms or two disagreeing h values do not establish discreteness,
+a noise floor or automatic preference for larger h. Separate offline peak
+extraction sensitivity analysis is underway; do not silently change the FOM.
+Current conditional plan TE_VALIDATION_PLAN_2026-10-07.md. Lastusage14:33 reports
+55%weekly remaining; other/model-specific pools unknown. Latestcommit ba9db76
+preceded this completion. User requested sustained physical validation and
+runtime-aware planning; keep source/results safe and continue routine steps.
+
 ## Update 14:30 Israel — original S1 evidence recovered; next-stage CAD prepared
 
 Original Claude calibration logs and16 spatial profiles were recovered from

@@ -1,6 +1,6 @@
 # TE readiness handoff — 2026-10-07
 
-## Readiness summary — 7 October, 13:50 Israel
+## Readiness summary — 7 October, 14:46 Israel
 
 **Not ready for a full TE inverse-design campaign.** Software repairs have
 passed offline checks; physical gradient validation has not passed.
@@ -11,14 +11,15 @@ passed offline checks; physical gradient validation has not passed.
 | TE geometry and monitors | Hidden CAD checks passed for both seeds | These checks do not certify mesh/domain convergence |
 | Original wavelength-gradient bug | Mixed Tout/modal normalization corrected and regression tested | Hardware validation of the corrected optimizer |
 | S2 gradient calibration | Failed the finite-difference and held-out checks | Establish numerically reliable forward sensitivities and validate the adjoint |
-| Fixed-duration forwards | Three100 ps solves completed; substantial change from earlier stopping times | Three150 ps solves running as171236 tasks3–5 |
-| Original S1 result | Stored modal transmission95.28%, spatial width19.385µm | Preliminary result; not independently certified as converged |
+| Fixed-duration forwards |100 and150ps triplets complete; peak gradients still change materially | Fixed150ps step-sensitivity pair being prepared; no new dispatch yet |
+| Original S1 result |16 saved profile widths/sigma and three MACs independently reproduced; final width19.385µm | Final raw field H5 absent; transmission/convergence still not independently remeasured |
 | Servers | Athena operating; IGUM baseline101155 still queued | Qualify IGUM with its existing job before splitting comparisons |
 
-There are29 verified completed new FDTD solves. CPU-only reconstruction jobs
+There are32 verified completed new FDTD solves. CPU-only reconstruction jobs
 are counted separately. No failed coefficients have been installed and no
-full optimization campaign has been launched. The active150 ps runs preserve
-the same geometry and numerical settings except the reviewed duration change.
+full optimization campaign has been launched. The completed150 ps runs preserve
+the geometry and numerical settings except the reviewed duration change;
+a recorded2ULP phase-control difference is retained and narrowly checked.
 
 The independent spectral comparison and figure are saved in
 `readiness_evidence_20261007/s2_temporal100_width_normalization_report.md`

@@ -1,5 +1,23 @@
 # TE physical validation and runtime plan
 
+## Decision after verified150 ps,14:46 Israel
+
+All150ps tasks completed and cold verification/strict corrected reader passed.
+Count32. The detailed comparison is s2_temporal150_review_1442.json. Peak
+transmission changed modestly but derivative changes100→150 remain material;
+no convergence/global calibration pass. Next prepare and qualify exactly two
+150ps forwards at shift30±0.125nm, reusing the existing150ps center. Compare
+both step sizes with movingpeak and own-center-Jacobian/fixed-bin analyses.
+This tests finite-step behavior at fixed duration; it does not automatically
+select a trustworthy derivative or make150ps adequate. Runtime budget50-65min
+per job,2A100/14shared seats after fresh preflight. No dispatch yet.
+
+In parallel, the five-frequency CAD preparation is complete, while a bounded
+offline peak-estimator sensitivity analysis examines the existing spectra.
+A200ps family and field-enabled control remain conditional future choices.
+Original temporal sources remain frozen, even though jobs have completed.
+The following sections preserve the advance plan and earlier estimates.
+
 Updated October 7, 14:11 Israel. Full inverse-design readiness remains **NO**.
 See [the evidence map](TE_VALIDATION_EVIDENCE_MAP_2026-10-07.md) for what the
 original Claude checks establish, what was independently reproduced, and

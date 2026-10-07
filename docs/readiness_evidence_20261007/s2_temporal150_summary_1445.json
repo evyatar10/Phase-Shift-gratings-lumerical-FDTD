@@ -1,0 +1,188 @@
+{
+  "at": "2026-10-07T14:44:43.363136+03:00",
+  "job": "171236_3..5",
+  "state": "COMPLETED exit0, exact150ps status1, artifact coldchecks passed",
+  "new_FDTD_completed_total": 32,
+  "pinmap_sha256": "4fbe923b0fb770b19670946773edc5f892b0efedd07d821a3fee2a750793670b",
+  "analyzer_sha256": "bbe3a22f90a418c8cadc3fc0c7b95f8843b4d83127d611bb0f4481bb7fdee3dd",
+  "analyzer_fix": "Recorded cross-run Port_1 phase roundoff2,0,2ULP retained; exact narrow comparator. Seven new+seven inherited tests and parentactual passed. Causeunlocalized, notphysicstolerance.",
+  "metrics": {
+    "peak3_tout": {
+      "100": {
+        "half_step_nm": 0.0625,
+        "plus_peak3": 0.9332799826428907,
+        "minus_peak3": 0.9333060240371198,
+        "center_peak3": 0.9332865280044799,
+        "peak_indices_plus_minus": [
+          250,
+          253
+        ],
+        "center_peak_index": 252,
+        "center_peak3_weights": [
+          0.0853026229418486,
+          0.9779356131866448,
+          -0.06323823612849339
+        ],
+        "odd": -1.3020697114562996e-05,
+        "even": 6.475335525446546e-06,
+        "central_derivative": -0.00020833115383300793,
+        "second_difference": 0.0033153717890286316,
+        "exact_center_peak3_jacobian_projection": 6.452871395494497e-05,
+        "moving_peak_minus_projection": -0.0002728598677879529,
+        "spectral_fd_max_abs": 0.5266578825157993,
+        "spectral_fd_rms": 0.16308694293811168,
+        "original_center_jacobian_projection": -0.0001906109716312025,
+        "original_center_peak_index": 252,
+        "original_center_peak3_weights": [
+          0.08250879819443567,
+          0.9792009972490889,
+          -0.06170979544352456
+        ],
+        "same_duration_center_jacobian_projection": 6.452871395494497e-05,
+        "original_center_jacobian_provenance": {
+          "role": "Exact_repeated_nominal_67.39992ps_reference_not_original_stored_adjoint_field_center",
+          "checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+          "ports_sha256": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4"
+        },
+        "fixed_bins": {
+          "244": 0.40309981826871155,
+          "252": -0.008696443001320553,
+          "260": -0.413836594280764
+        },
+        "center_role": "same_duration_100"
+      },
+      "150": {
+        "half_step_nm": 0.0625,
+        "plus_peak3": 0.9335627724801671,
+        "minus_peak3": 0.9335819993162721,
+        "center_peak3": 0.9335704173009669,
+        "peak_indices_plus_minus": [
+          250,
+          253
+        ],
+        "center_peak_index": 252,
+        "center_peak3_weights": [
+          0.06345704599879229,
+          0.9870192040514117,
+          -0.05047625005020404
+        ],
+        "odd": -9.613418052500933e-06,
+        "even": 1.96859725265508e-06,
+        "central_derivative": -0.00015381468884001492,
+        "second_difference": 0.001007921793359401,
+        "exact_center_peak3_jacobian_projection": -0.0004483830822971384,
+        "moving_peak_minus_projection": 0.0002945683934571235,
+        "spectral_fd_max_abs": 0.5237536089948769,
+        "spectral_fd_rms": 0.16309034389247953,
+        "original_center_jacobian_projection": 0.0013546628357797158,
+        "original_center_peak_index": 252,
+        "original_center_peak3_weights": [
+          0.08250879819443567,
+          0.9792009972490889,
+          -0.06170979544352456
+        ],
+        "same_duration_center_jacobian_projection": -0.0004483830822971384,
+        "original_center_jacobian_provenance": {
+          "role": "Exact_repeated_nominal_67.39992ps_reference_not_original_stored_adjoint_field_center",
+          "checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+          "ports_sha256": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4"
+        },
+        "fixed_bins": {
+          "244": 0.40495800520495173,
+          "252": -0.007236326908024893,
+          "260": -0.4160978881629376
+        },
+        "center_role": "same_duration_150"
+      }
+    },
+    "peak3_modal": {
+      "100": {
+        "half_step_nm": 0.0625,
+        "plus_peak3": 0.979742933539772,
+        "minus_peak3": 0.9797825048551728,
+        "center_peak3": 0.9797643000266578,
+        "peak_indices_plus_minus": [
+          249,
+          252
+        ],
+        "center_peak_index": 250,
+        "center_peak3_weights": [
+          -0.04329707565866152,
+          0.9908290442727394,
+          0.05246803138592207
+        ],
+        "odd": -1.9785657700388537e-05,
+        "even": -1.580829185332533e-06,
+        "central_derivative": -0.0003165705232062166,
+        "second_difference": -0.0008093845428902569,
+        "exact_center_peak3_jacobian_projection": -0.00016082580976194312,
+        "moving_peak_minus_projection": -0.00015574471344427347,
+        "spectral_fd_max_abs": 0.5731990025220135,
+        "spectral_fd_rms": 0.1742867423049027,
+        "original_center_jacobian_projection": 0.010292781838645921,
+        "original_center_peak_index": 250,
+        "original_center_peak3_weights": [
+          0.03000274203915746,
+          0.9967758770306171,
+          -0.026778619069774526
+        ],
+        "same_duration_center_jacobian_projection": -0.00016082580976194312,
+        "original_center_jacobian_provenance": {
+          "role": "Exact_repeated_nominal_67.39992ps_reference_not_original_stored_adjoint_field_center",
+          "checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+          "ports_sha256": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4"
+        },
+        "fixed_bins": {
+          "244": 0.37613898846788807,
+          "252": -0.12786212014577014,
+          "260": -0.5138697624310238
+        },
+        "center_role": "same_duration_100"
+      },
+      "150": {
+        "half_step_nm": 0.0625,
+        "plus_peak3": 0.979975189082036,
+        "minus_peak3": 0.9799956514725428,
+        "center_peak3": 0.9799716056663635,
+        "peak_indices_plus_minus": [
+          249,
+          252
+        ],
+        "center_peak_index": 250,
+        "center_peak3_weights": [
+          -0.044293527344450426,
+          0.9903493542033017,
+          0.05394417314114871
+        ],
+        "odd": -1.023119525339622e-05,
+        "even": 1.381461092575531e-05,
+        "central_derivative": -0.0001636991240543395,
+        "second_difference": 0.007073080793986719,
+        "exact_center_peak3_jacobian_projection": 0.0003335961568220569,
+        "moving_peak_minus_projection": -0.0004972952808763964,
+        "spectral_fd_max_abs": 0.5708343250934869,
+        "spectral_fd_rms": 0.1742924579337817,
+        "original_center_jacobian_projection": 0.010895965688514897,
+        "original_center_peak_index": 250,
+        "original_center_peak3_weights": [
+          0.03000274203915746,
+          0.9967758770306171,
+          -0.026778619069774526
+        ],
+        "same_duration_center_jacobian_projection": 0.0003335961568220569,
+        "original_center_jacobian_provenance": {
+          "role": "Exact_repeated_nominal_67.39992ps_reference_not_original_stored_adjoint_field_center",
+          "checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+          "ports_sha256": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4"
+        },
+        "fixed_bins": {
+          "244": 0.3785031160595471,
+          "252": -0.12670438699476172,
+          "260": -0.5159330470764258
+        },
+        "center_role": "same_duration_150"
+      }
+    }
+  },
+  "next": "Prepare/tests/CAD/review150ps shift30 plusminus0.125 pair. No dispatch yet, no200release, nooptimizer."
+}
