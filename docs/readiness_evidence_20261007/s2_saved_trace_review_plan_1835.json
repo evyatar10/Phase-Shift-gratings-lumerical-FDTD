@@ -1,0 +1,25 @@
+{
+  "at": "2026-10-07T18:34:26.982632+03:00",
+  "scope": "Read-only CPU analysis of already completed N98 fixed100/150/200ps center files only",
+  "status": "PREPARATION_NOT_DISPATCHED",
+  "hypothesis": "Saved point traces may distinguish local finite-window tail content from inconsistency among nominally matched run prefixes; neither outcome establishes the port gradient cause.",
+  "inputs": "Use independently pinned original completed center checkpoints, FSP/H5/ports and frozen native/vendor code from verified temporal ancestry. No solver or optimizer entry point.",
+  "stages": [
+    "Inventory enabled time_input/time_cavity/time_output data, t/coordinate axes, actual component names/shapes and monitor sampling/interpolation settings. Preserve unavailable fields as unavailable.",
+    "Enforce output/memory bounds before retrieving component arrays. Preserve absolute native times and units; do not resample silently.",
+    "For compatible grids compare shared prefixes, reporting absolute and normalized local field differences with denominators; separate numerical/settings variation from stochastic explanations.",
+    "Only after sampling/normalization review, analyze local late-time envelopes or raw point Fourier tails; do not equate them with flux/modal transmission or derivatives per nm."
+  ],
+  "stop_conditions": [
+    "Missing/unusable/aliased or inconsistently sampled data: report limitation and review rather than invent trace information.",
+    "Changed input hashes or wrong ancestry: fail closed, preserving new attempt.",
+    "No automatic new FDTD duration ladder, adjoint pair or FOM replacement."
+  ],
+  "decision_after": [
+    "If useful local tail data exist, assess whether a specific additional experiment can discriminate a stated cause. Do not assume quiet points rule out global effects.",
+    "A current-duration repeat can measure one repeat difference, not a universal noise floor.",
+    "Adjoint validation still requires the actual objective and reliable finite differences, with temporal endpoint, mesh, step-size and normalization limitations stated."
+  ],
+  "resource_budget": "One scheduled CPU-only allocation if packet tests/review pass; verify shared GUI seats, queues and storage first. Runtime estimate must use actual extraction size; no guaranteed one-minute duration.",
+  "production": "N98/free60 remains; N80 physical pair101434 queued unchanged; global calibration FAILED."
+}

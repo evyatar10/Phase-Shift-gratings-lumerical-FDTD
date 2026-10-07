@@ -1,0 +1,17 @@
+{
+  "at_UTC": "2026-10-07T15:25:11.020305+00:00",
+  "argv": [
+    "ssh",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "evyatarrubin@132.68.58.101",
+    "python3 -"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "  File \"<stdin>\", line 17\n    after=path.stat();logs[str(task)]=dict(path=str(path),exists=True,bytes=before.st_size,mtime_ns=before.st_mtime_ns,sha256=digest.hexdigest(),tail='\n                                                                                                                                                      ^\nSyntaxError: unterminated string literal (detected at line 17)\n"
+}

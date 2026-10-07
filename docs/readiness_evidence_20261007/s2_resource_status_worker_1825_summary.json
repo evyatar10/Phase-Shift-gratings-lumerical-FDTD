@@ -1,0 +1,99 @@
+{
+  "at_UTC": "2026-10-07T15:27:22.536164+00:00",
+  "scope": "ONE_FRESH_COMBINED_STORAGE_QUEUE_SEATS_AND_EXACT_IGUM_101434_STATUS",
+  "original_files": {
+    "s2_resource_storage_worker_1825_original.json": "eb31394e92d2cf432625992a81a96b12d537c022b67665fdd881b20d228815ab",
+    "s2_igum_101434_worker_1825_corrected_original.json": "114dd8c863fed2c8b3f06c9e8d363a4c7d4a467456c8041dc54144340e951a3f",
+    "s2_igum_101434_worker_1825_original.json": "5ddbbb8695dcee17a0126453a6647f6d8515c67f51ed63e6901b79fa0dd6981b"
+  },
+  "collection_status": {
+    "combined_helper_exit_code": 0,
+    "athena_SSH_exit_code": 0,
+    "igum_SSH_exit_code": 0,
+    "exact_status_SSH_exit_code": 0,
+    "first_exact_status_attempt": "Remote Python syntax error before any status/log command; original evidence preserved; corrected once"
+  },
+  "local": {
+    "unique_volume_count": 1,
+    "free_bytes": 96758775808,
+    "free_GiB": 90.11363220214844,
+    "quota": "unknown_not_queried_by_helper",
+    "inode_headroom": "unknown_not_queried_by_helper"
+  },
+  "athena": {
+    "user_used_bytes": 236570832896,
+    "user_soft_bytes": 322122547200,
+    "user_hard_bytes": 354334801920,
+    "soft_headroom_bytes": 85551714304,
+    "soft_headroom_GiB": 79.67624282836914,
+    "file_usage": 115005,
+    "file_soft_limit": 4294967295,
+    "file_hard_limit": 4294967295,
+    "filesystem_free_bytes": 8758540959744,
+    "filesystem_free_inodes": 1409722504,
+    "user_queue_empty": true
+  },
+  "igum": {
+    "research_filesystem_free_bytes": 25941854490624,
+    "research_filesystem_free_inodes": 924828054,
+    "user_quota_kbytes": 411457156,
+    "user_files": 17633,
+    "group_quota_kbytes": 389346800,
+    "group_files": 15934,
+    "project_id": 9000001,
+    "project_quota_kbytes": 21614999816,
+    "project_files": 5815422,
+    "finite_user_group_project_byte_and_inode_limits": "No positive limit shown in successful lfs rows; remaining enforceable allowance unknown, not unlimited",
+    "ordinary_quota_command": "unavailable; lfs user/group/project checks succeeded",
+    "jobs": {
+      "0": {
+        "JobState": "PENDING",
+        "Reason": "Resources",
+        "StartTime": "2026-10-09T10:14:02",
+        "EndTime": "2026-10-09T12:14:02",
+        "RunTime": "00:00:00",
+        "TimeLimit": "02:00:00",
+        "Restarts": "0",
+        "ExitCode": "0:0",
+        "NodeList": "",
+        "ReqTRES": "cpu=8,mem=256G,node=1,billing=88,gres/gpu=1",
+        "AllocTRES": "(null)",
+        "TresPerNode": "gres/gpu:A100:1"
+      },
+      "1": {
+        "JobState": "PENDING",
+        "Reason": "Resources",
+        "StartTime": "2026-10-09T10:14:02",
+        "EndTime": "2026-10-09T12:14:02",
+        "RunTime": "00:00:00",
+        "TimeLimit": "02:00:00",
+        "Restarts": "0",
+        "ExitCode": "0:0",
+        "NodeList": "",
+        "ReqTRES": "cpu=8,mem=256G,node=1,billing=88,gres/gpu=1",
+        "AllocTRES": "(null)",
+        "TresPerNode": "gres/gpu:A100:1"
+      }
+    },
+    "existing_logs": {
+      "0": {
+        "path": "/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_0.out",
+        "exists": false
+      },
+      "1": {
+        "path": "/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101434_1.out",
+        "exists": false
+      }
+    },
+    "assigned_GPU": "none; both pending Resources",
+    "current_A100_slot_capacity": "unknown_not_inventoried"
+  },
+  "shared_solver_seats": {
+    "issued": 50,
+    "in_use": 0,
+    "free_at_snapshot": 50,
+    "queued_IGUM_pair_planned_commitment": 14,
+    "qualification": "Live count does not reserve seats for a later queued start"
+  },
+  "qualification": "No dispatch, CAD, FDTD, cancellation, cleanup or Git changes. Forecast Oct9 10:14:02 is not actual start or promise. Pending ExitCode0:0 is not completion. No repeated status polling."
+}

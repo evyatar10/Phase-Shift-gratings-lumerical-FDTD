@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-07T18:31:36.127254+03:00",
+  "sources": [
+    {
+      "url": "https://optics.ansys.com/hc/en-us/articles/360034902353-Field-time-monitor-Simulation-object",
+      "finding": "Time-monitor sampling rate and time downsampling are configurable; actual recorded sample times and settings are required before Fourier interpretation."
+    },
+    {
+      "url": "https://optics.ansys.com/hc/en-us/articles/360034902473-Understanding-time-apodization-in-frequency-domain-monitors",
+      "finding": "Apodization changes the time window and generally invalidates source normalization; it is not an automatic remedy for quantitative transmission."
+    }
+  ],
+  "application": "Read-only saved-trace diagnostic only; no changes to source/window/monitors or objective. Raw point fields are not port power or modal transmission."
+}

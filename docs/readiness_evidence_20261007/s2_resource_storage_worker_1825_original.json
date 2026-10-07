@@ -1,0 +1,220 @@
+{
+  "schema": 1,
+  "at_UTC": "2026-10-07T15:24:29.103264+00:00",
+  "scope": "READ_ONLY_STORAGE_QUEUE_SEATS",
+  "local": [
+    {
+      "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes",
+      "total_bytes": 1023272808448,
+      "used_bytes": 926514032640,
+      "free_bytes": 96758775808,
+      "qualification": "Filesystem free space; not user quota"
+    },
+    {
+      "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena",
+      "total_bytes": 1023272808448,
+      "used_bytes": 926514032640,
+      "free_bytes": 96758775808,
+      "qualification": "Filesystem free space; not user quota"
+    },
+    {
+      "path": "C:\\Users\\evyat\\AppData\\Local\\Temp",
+      "total_bytes": 1023272808448,
+      "used_bytes": 926514032640,
+      "free_bytes": 96758775808,
+      "qualification": "Filesystem free space; not user quota"
+    }
+  ],
+  "clusters": {
+    "athena": {
+      "exit_code": 0,
+      "stdout": "{\"at_UTC\": \"2026-10-07T15:24:15.648208+00:00\", \"paths\": [\"/home/evyatarrubin/bragg_sim_athena\", \"/home/evyatarrubin/bragg_sim_athena/results\", \"/home/evyatarrubin\"], \"real_paths\": [\"/home/evyatarrubin/bragg_sim_athena\", \"/home/evyatarrubin/bragg_sim_athena/results\", \"/home/evyatarrubin\"], \"checks\": {\"quota\": {\"argv\": [\"quota\", \"-v\"], \"exit_code\": 0, \"stdout\": \"Disk quotas for user evyatarrubin (uid 14979): \\n     Filesystem  blocks   quota   limit   grace   files   quota   limit   grace\\n hpc-nfs1:/home 231026204  314572800 346030080          115005  4294967295 4294967295        \\n\", \"stderr\": \"\"}, \"df_bytes\": {\"argv\": [\"df\", \"-B1\", \"-P\", \"/home/evyatarrubin/bragg_sim_athena\", \"/home/evyatarrubin/bragg_sim_athena/results\", \"/home/evyatarrubin\"], \"exit_code\": 0, \"stdout\": \"Filesystem           1-blocks           Used     Available Capacity Mounted on\\nhpc-nfs1:/home 54975581388800 46217040429056 8758540959744      85% /home\\nhpc-nfs1:/home 54975581388800 46217040429056 8758540959744      85% /home\\nhpc-nfs1:/home 54975581388800 46217040429056 8758540959744      85% /home\\n\", \"stderr\": \"\"}, \"df_inodes\": {\"argv\": [\"df\", \"-iP\", \"/home/evyatarrubin/bragg_sim_athena\", \"/home/evyatarrubin/bragg_sim_athena/results\", \"/home/evyatarrubin\"], \"exit_code\": 0, \"stdout\": \"Filesystem         Inodes     IUsed      IFree IUse% Mounted on\\nhpc-nfs1:/home 1593835519 184113015 1409722504   12% /home\\nhpc-nfs1:/home 1593835519 184113015 1409722504   12% /home\\nhpc-nfs1:/home 1593835519 184113015 1409722504   12% /home\\n\", \"stderr\": \"\"}, \"queue\": {\"argv\": [\"squeue\", \"-u\", \"evyatarrubin\", \"--noheader\"], \"exit_code\": 0, \"stdout\": \"\", \"stderr\": \"\"}}}\n",
+      "stderr": "...\r\n",
+      "snapshot": {
+        "at_UTC": "2026-10-07T15:24:15.648208+00:00",
+        "paths": [
+          "/home/evyatarrubin/bragg_sim_athena",
+          "/home/evyatarrubin/bragg_sim_athena/results",
+          "/home/evyatarrubin"
+        ],
+        "real_paths": [
+          "/home/evyatarrubin/bragg_sim_athena",
+          "/home/evyatarrubin/bragg_sim_athena/results",
+          "/home/evyatarrubin"
+        ],
+        "checks": {
+          "quota": {
+            "argv": [
+              "quota",
+              "-v"
+            ],
+            "exit_code": 0,
+            "stdout": "Disk quotas for user evyatarrubin (uid 14979): \n     Filesystem  blocks   quota   limit   grace   files   quota   limit   grace\n hpc-nfs1:/home 231026204  314572800 346030080          115005  4294967295 4294967295        \n",
+            "stderr": ""
+          },
+          "df_bytes": {
+            "argv": [
+              "df",
+              "-B1",
+              "-P",
+              "/home/evyatarrubin/bragg_sim_athena",
+              "/home/evyatarrubin/bragg_sim_athena/results",
+              "/home/evyatarrubin"
+            ],
+            "exit_code": 0,
+            "stdout": "Filesystem           1-blocks           Used     Available Capacity Mounted on\nhpc-nfs1:/home 54975581388800 46217040429056 8758540959744      85% /home\nhpc-nfs1:/home 54975581388800 46217040429056 8758540959744      85% /home\nhpc-nfs1:/home 54975581388800 46217040429056 8758540959744      85% /home\n",
+            "stderr": ""
+          },
+          "df_inodes": {
+            "argv": [
+              "df",
+              "-iP",
+              "/home/evyatarrubin/bragg_sim_athena",
+              "/home/evyatarrubin/bragg_sim_athena/results",
+              "/home/evyatarrubin"
+            ],
+            "exit_code": 0,
+            "stdout": "Filesystem         Inodes     IUsed      IFree IUse% Mounted on\nhpc-nfs1:/home 1593835519 184113015 1409722504   12% /home\nhpc-nfs1:/home 1593835519 184113015 1409722504   12% /home\nhpc-nfs1:/home 1593835519 184113015 1409722504   12% /home\n",
+            "stderr": ""
+          },
+          "queue": {
+            "argv": [
+              "squeue",
+              "-u",
+              "evyatarrubin",
+              "--noheader"
+            ],
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        }
+      }
+    },
+    "igum": {
+      "exit_code": 0,
+      "stdout": "{\"at_UTC\": \"2026-10-07T15:24:29.109908+00:00\", \"paths\": [\"/home/evyatarrubin/research/bragg_sim_igum\", \"/home/evyatarrubin/research/bragg_sim_igum/results\", \"/home/evyatarrubin\"], \"real_paths\": [\"/research/amir.r/evyatarrubin/bragg_sim_igum\", \"/research/amir.r/evyatarrubin/bragg_sim_igum/results\", \"/home/evyatarrubin\"], \"checks\": {\"quota\": {\"argv\": [\"quota\", \"-v\"], \"exit_code\": null, \"error\": \"FileNotFoundError: [Errno 2] No such file or directory: 'quota'\"}, \"df_bytes\": {\"argv\": [\"df\", \"-B1\", \"-P\", \"/home/evyatarrubin/research/bragg_sim_igum\", \"/home/evyatarrubin/research/bragg_sim_igum/results\", \"/home/evyatarrubin\"], \"exit_code\": 0, \"stdout\": \"Filesystem                                               1-blocks            Used      Available Capacity Mounted on\\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/research 135548107034624 108234141179904 25941854490624      81% /research\\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/research 135548107034624 108234141179904 25941854490624      81% /research\\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/home     135548107034624 108234176249856 25941851189248      81% /home\\n\", \"stderr\": \"\"}, \"df_inodes\": {\"argv\": [\"df\", \"-iP\", \"/home/evyatarrubin/research/bragg_sim_igum\", \"/home/evyatarrubin/research/bragg_sim_igum/results\", \"/home/evyatarrubin\"], \"exit_code\": 0, \"stdout\": \"Filesystem                                            Inodes     IUsed     IFree IUse% Mounted on\\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/research 1061366497 136538443 924828054   13% /research\\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/research 1061366497 136538443 924828054   13% /research\\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/home     1061366356 136538430 924827926   13% /home\\n\", \"stderr\": \"\"}, \"queue\": {\"argv\": [\"squeue\", \"-u\", \"evyatarrubin\", \"--noheader\"], \"exit_code\": 0, \"stdout\": \"    101434_[0-1%2] part-pree lum_pipe evyatarr PD       0:00      1 (Resources)\\n\", \"stderr\": \"\"}, \"lustre_user_quota\": {\"argv\": [\"/usr/bin/lfs\", \"quota\", \"-u\", \"1686581898\", \"/research/amir.r/evyatarrubin/bragg_sim_igum\"], \"exit_code\": 0, \"stdout\": \"Disk quotas for usr 1686581898 (uid 1686581898):\\n      Filesystem  kbytes   bquota  blimit  bgrace   files   iquota  ilimit  igrace\\n/research/amir.r/evyatarrubin/bragg_sim_igum 411457156        0       0       -   17633        0       0       -\\n\", \"stderr\": \"\"}, \"lustre_result_group_quota\": {\"argv\": [\"/usr/bin/lfs\", \"quota\", \"-g\", \"449857252\", \"/research/amir.r/evyatarrubin/bragg_sim_igum/results\"], \"exit_code\": 0, \"stdout\": \"Disk quotas for grp 449857252 (gid 449857252):\\n      Filesystem  kbytes   bquota  blimit  bgrace   files   iquota  ilimit  igrace\\n/research/amir.r/evyatarrubin/bragg_sim_igum/results 389346800        0       0       -   15934        0       0       -\\n\", \"stderr\": \"\"}, \"lustre_result_project\": {\"argv\": [\"/usr/bin/lfs\", \"project\", \"-d\", \"/research/amir.r/evyatarrubin/bragg_sim_igum/results\"], \"exit_code\": 0, \"stdout\": \"9000001 P /research/amir.r/evyatarrubin/bragg_sim_igum/results\\n\", \"stderr\": \"\"}, \"lustre_result_project_quota\": {\"argv\": [\"/usr/bin/lfs\", \"quota\", \"-p\", \"9000001\", \"/research/amir.r/evyatarrubin/bragg_sim_igum/results\"], \"exit_code\": 0, \"stdout\": \"Disk quotas for prj 9000001 (pid 9000001):\\n      Filesystem  kbytes   bquota  blimit  bgrace   files   iquota  ilimit  igrace\\n/research/amir.r/evyatarrubin/bragg_sim_igum/results 21614999816        0       0       - 5815422        0       0       -\\n\", \"stderr\": \"\"}, \"shared_seats\": {\"argv\": [\"/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/licensingclient/linx64/lmutil\", \"lmstat\", \"-c\", \"1055@132.68.48.51\", \"-f\", \"lum_fdtd_solve\"], \"exit_code\": 0, \"stdout\": \"lmutil - Copyright (c) 1989-2025 Flexera. All Rights Reserved.\\nFlexible License Manager status on Wed 10/7/2026 18:24\\n\\nLicense server status: 1055@lumerical-lm.ece.technion.ac.il\\n    License file(s) on lumerical-lm.ece.technion.ac.il: /ansyslm/shared_files/licensing/license_files/ansyslmd.lic:\\n\\nlumerical-lm.ece.technion.ac.il: license server UP (MASTER) v11.19.4\\n\\nVendor daemon status (on lumerical-lm.ece.technion.ac.il):\\n\\n  ansyslmd: UP v11.19.4\\nFeature usage info:\\n\\nUsers of lum_fdtd_solve:  (Total of 50 licenses issued;  Total of 0 licenses in use)\\n\\n\\n\", \"stderr\": \"\"}}}\n",
+      "stderr": "",
+      "snapshot": {
+        "at_UTC": "2026-10-07T15:24:29.109908+00:00",
+        "paths": [
+          "/home/evyatarrubin/research/bragg_sim_igum",
+          "/home/evyatarrubin/research/bragg_sim_igum/results",
+          "/home/evyatarrubin"
+        ],
+        "real_paths": [
+          "/research/amir.r/evyatarrubin/bragg_sim_igum",
+          "/research/amir.r/evyatarrubin/bragg_sim_igum/results",
+          "/home/evyatarrubin"
+        ],
+        "checks": {
+          "quota": {
+            "argv": [
+              "quota",
+              "-v"
+            ],
+            "exit_code": null,
+            "error": "FileNotFoundError: [Errno 2] No such file or directory: 'quota'"
+          },
+          "df_bytes": {
+            "argv": [
+              "df",
+              "-B1",
+              "-P",
+              "/home/evyatarrubin/research/bragg_sim_igum",
+              "/home/evyatarrubin/research/bragg_sim_igum/results",
+              "/home/evyatarrubin"
+            ],
+            "exit_code": 0,
+            "stdout": "Filesystem                                               1-blocks            Used      Available Capacity Mounted on\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/research 135548107034624 108234141179904 25941854490624      81% /research\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/research 135548107034624 108234141179904 25941854490624      81% /research\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/home     135548107034624 108234176249856 25941851189248      81% /home\n",
+            "stderr": ""
+          },
+          "df_inodes": {
+            "argv": [
+              "df",
+              "-iP",
+              "/home/evyatarrubin/research/bragg_sim_igum",
+              "/home/evyatarrubin/research/bragg_sim_igum/results",
+              "/home/evyatarrubin"
+            ],
+            "exit_code": 0,
+            "stdout": "Filesystem                                            Inodes     IUsed     IFree IUse% Mounted on\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/research 1061366497 136538443 924828054   13% /research\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/research 1061366497 136538443 924828054   13% /research\n10.10.51.31@tcp:10.10.51.32@tcp:/igumddn/home     1061366356 136538430 924827926   13% /home\n",
+            "stderr": ""
+          },
+          "queue": {
+            "argv": [
+              "squeue",
+              "-u",
+              "evyatarrubin",
+              "--noheader"
+            ],
+            "exit_code": 0,
+            "stdout": "    101434_[0-1%2] part-pree lum_pipe evyatarr PD       0:00      1 (Resources)\n",
+            "stderr": ""
+          },
+          "lustre_user_quota": {
+            "argv": [
+              "/usr/bin/lfs",
+              "quota",
+              "-u",
+              "1686581898",
+              "/research/amir.r/evyatarrubin/bragg_sim_igum"
+            ],
+            "exit_code": 0,
+            "stdout": "Disk quotas for usr 1686581898 (uid 1686581898):\n      Filesystem  kbytes   bquota  blimit  bgrace   files   iquota  ilimit  igrace\n/research/amir.r/evyatarrubin/bragg_sim_igum 411457156        0       0       -   17633        0       0       -\n",
+            "stderr": ""
+          },
+          "lustre_result_group_quota": {
+            "argv": [
+              "/usr/bin/lfs",
+              "quota",
+              "-g",
+              "449857252",
+              "/research/amir.r/evyatarrubin/bragg_sim_igum/results"
+            ],
+            "exit_code": 0,
+            "stdout": "Disk quotas for grp 449857252 (gid 449857252):\n      Filesystem  kbytes   bquota  blimit  bgrace   files   iquota  ilimit  igrace\n/research/amir.r/evyatarrubin/bragg_sim_igum/results 389346800        0       0       -   15934        0       0       -\n",
+            "stderr": ""
+          },
+          "lustre_result_project": {
+            "argv": [
+              "/usr/bin/lfs",
+              "project",
+              "-d",
+              "/research/amir.r/evyatarrubin/bragg_sim_igum/results"
+            ],
+            "exit_code": 0,
+            "stdout": "9000001 P /research/amir.r/evyatarrubin/bragg_sim_igum/results\n",
+            "stderr": ""
+          },
+          "lustre_result_project_quota": {
+            "argv": [
+              "/usr/bin/lfs",
+              "quota",
+              "-p",
+              "9000001",
+              "/research/amir.r/evyatarrubin/bragg_sim_igum/results"
+            ],
+            "exit_code": 0,
+            "stdout": "Disk quotas for prj 9000001 (pid 9000001):\n      Filesystem  kbytes   bquota  blimit  bgrace   files   iquota  ilimit  igrace\n/research/amir.r/evyatarrubin/bragg_sim_igum/results 21614999816        0       0       - 5815422        0       0       -\n",
+            "stderr": ""
+          },
+          "shared_seats": {
+            "argv": [
+              "/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/licensingclient/linx64/lmutil",
+              "lmstat",
+              "-c",
+              "1055@132.68.48.51",
+              "-f",
+              "lum_fdtd_solve"
+            ],
+            "exit_code": 0,
+            "stdout": "lmutil - Copyright (c) 1989-2025 Flexera. All Rights Reserved.\nFlexible License Manager status on Wed 10/7/2026 18:24\n\nLicense server status: 1055@lumerical-lm.ece.technion.ac.il\n    License file(s) on lumerical-lm.ece.technion.ac.il: /ansyslm/shared_files/licensing/license_files/ansyslmd.lic:\n\nlumerical-lm.ece.technion.ac.il: license server UP (MASTER) v11.19.4\n\nVendor daemon status (on lumerical-lm.ece.technion.ac.il):\n\n  ansyslmd: UP v11.19.4\nFeature usage info:\n\nUsers of lum_fdtd_solve:  (Total of 50 licenses issued;  Total of 0 licenses in use)\n\n\n",
+            "stderr": ""
+          }
+        }
+      }
+    }
+  },
+  "qualification": "Collection is not a capacity approval. Inspect every exit code and quota output. Missing quota is unknown. No recursive scans, cleanup, job mutation or result movement."
+}

@@ -1,5 +1,36 @@
 # Full-optimization readiness criteria
 
+## Follow-up 18:29 Israel — saved-data diagnosis and queue/storage checkpoint
+
+Focused local commit **ef5a909** preserves the reviewed length runtime and
+actual 200 ps evidence. Root reran all three new saved-spectrum diagnostic
+tests and actual-data analysis: exit 0, actual MAT roundtrip bitwise. Center
+peak bins/windows did not change from 150 to 200 ps. Cancellation factors on
+the actual peak3 Jacobian support are about 26-41; fitted quartic11 height FD
+also remains duration-sensitive. This supports further diagnosis, not a new
+objective or gradient pass. Worker is freezing its report under
+TEMP/s2_temporal200_diagnosis_8rk_b406; root output parent_actual_1830.
+
+Fresh resource snapshot18:24-18:26: Athena user queue empty, shared solver
+seats0/50; queued IGUM pair commits14 seats. Both101434 tasks remain PENDING
+Resources, no allocation/logs. Live forecast October9 10:14:02, uncertain;
+do not use earlier test-only October7 estimate as a promised start. Preserve
+jobs; no cancellation or duplicate dispatch is authorized. Local90.11GiBfree,
+Athena79.68GiBsoft-quota headroom, IGUM25.94TBfilesystemfree but enforceable
+quota headroom unknown (successful Lustre user/group/project checks report
+zero positive limits; ordinary quota unavailable). BothSSH reachable.
+Evidence: s2_resource_status_worker_1825_summary.json and referenced originals.
+
+New bounded Claude Opus5.5 consultation succeeded and model metadata matched.
+Lead correction record claude_next_experiment_review_1832.json rejects
+unit-mismatched point-field/FD comparisons and unsupported causal conclusions.
+Adopted next preparation only: guarded CPU extraction of stored100/150/200
+center time traces, with sample/coordinate/component metadata and original
+artifact preservation. No new FDTD, adjoint, duration rung or FOM change.
+Point observations cannot establish global decay or calibration. Sol owns a
+NEW TEMP preparation; root owns any later CPU release after tests/review.
+The other worker is finishing strict native IGUM101434 completionfetch.
+
 ## Current state 18:20 Israel — 200 ps measured; N98/N80 physical pair queued
 
 **Global calibration remains FAILED; no optimizer or failed coefficients released.**

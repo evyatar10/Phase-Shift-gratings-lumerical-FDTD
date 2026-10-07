@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-07T18:39:06.943699+03:00",
+  "archive": "s2_temporal200_observer_diagnosis_reviewed_1839.zip",
+  "sha256": "23b554a7409efa8b55c5426c79f5d911a49d13e25ce4d5fba7e6742daabdb610",
+  "manifest_sha256": "ff382d4dad588be4049ec59ebc64a4afea1b1f13a71ad31ef414809ea9ebddbe",
+  "parent_tests": "3 passed exit0",
+  "parent_actual": "exit0; report exactly reproduces worker; actualMAT bitwise",
+  "scientific_verdict": "No gradient/time/global convergence pass; support cancellation and wider observer sensitivity measured.",
+  "next": "Prepare guarded stored time-trace CPU inventory; no new FDTD release. Ranked possible future experiments in REPORT.md are conditional, not authorized by this review."
+}

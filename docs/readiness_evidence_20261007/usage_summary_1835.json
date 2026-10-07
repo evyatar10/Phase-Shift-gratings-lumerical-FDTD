@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-07T18:34:40+03:00",
+  "bucket": "codex",
+  "window_minutes": 10080,
+  "used_percent": 82,
+  "remaining_percent": 18,
+  "resets_at_unix": 1791949207,
+  "other_model_or_claude_pools": "unknown",
+  "reset_redeemed": false,
+  "capacity_purchased": false
+}

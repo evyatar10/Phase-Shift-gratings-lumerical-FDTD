@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-07T18:28:41.500148+03:00",
+  "model": "claude-opus-5-5",
+  "response_sha256": "6c1cbdd6602e0c52db328eb9a729fd0ec9cc55c7f292ac4f6fe1d71a696003f8",
+  "adopted": [
+    "Prepare no-solve CPU readout of stored center100/150/200 point traces: availability, coordinates, sample times/components, prefix agreement and local tail diagnostic. Review actual metadata before spectral interpretation."
+  ],
+  "rejected_or_qualified": [
+    "Point field ratios, dimensionless transmitted power changes and derivatives per nm are different units; do not compare as error bounds without a derived mapping.",
+    "Real optical traces require Nyquist consideration of carrier plus relevant bandwidth, not bandwidth alone.",
+    "Different prefixes do not alone prove stochastic nondeterminism; numerical execution or duration-dependent settings require checking. Agreement establishes consistency only at sampled points.",
+    "Quiet point monitors cannot exclude global/port temporal truncation effects.",
+    "Point traces do not establish exact port DFT convention or flux/modal normalization.",
+    "No automatic declaration that stationary adjoint is categorically wrong; finite-time endpoint terms may matter and require convergence/derivation.",
+    "Reject final contradictory claim that an adjoint becomes plausibly correct when mismatch is larger than FD spreads.",
+    "Do not adopt suggested fixed150 adjoint release or arbitrary two-solve cap as a scientific gate.",
+    "Original one-repeat scale is not a noise bound at200ps.",
+    "One-minute extraction is an estimate dependent on saved data size, not guaranteed."
+  ],
+  "release": "Preparation only; no new FDTD or optimizer released"
+}
