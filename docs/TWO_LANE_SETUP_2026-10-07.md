@@ -39,6 +39,14 @@ GPT/Codex agent and the user. This file is the entry point for both lanes.
 7. **Pick a route that DIFFERS from Claude's lane** (§5), so that the
    comparison teaches something. Report using the §7 table, and log any change
    worth sharing in §9.
+8. **Your role is NOT only review (user, 2026-10-08).** Design, implement and
+   run YOUR OWN inverse-design algorithm in your lane, at the same device,
+   seeds, N = 98 and width bands, and compete with Claude's v3 runs on best
+   accepted t_pk inside the band per GPU-hour. Candidates: the augmented
+   Lagrangian of THEORY.md §10, a different step metric, or your own idea.
+   Reviewing Claude's code is a side duty, not the main task.
+9. **Your ChatGPT usage limit ran out on 2026-10-08 00:46 and resets
+   2026-10-14 06:40.** Start from this file when it resets.
 
 ## 1. The decision
 
