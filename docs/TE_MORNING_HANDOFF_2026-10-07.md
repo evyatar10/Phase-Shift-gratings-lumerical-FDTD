@@ -1,4 +1,48 @@
-# TE readiness handoff — measured state at 08:03 Israel
+# TE readiness handoff — 2026-10-07
+
+## Latest measured checkpoint
+
+**Not ready for full optimization. S2 calibration remains FAILED.** All four
+corr30 convergence tasks170926 completed; eighteen NEW FDTD solves completed
+overnight. Re170950_0 and Im170956_0 completed their stored-field CPU probes
+with no FDTD solve. IGUM101155_0 was still PENDING Resources in the provided
+08:54 snapshot; the next operator must refresh that queue state.
+
+The role-aware four-step analyzer passed six offline tests and the actual
+evidence analysis. corr30 peak3(Tout) derivatives at h2,1,.5,.25nm are
+1.8748649e-5,3.6950366e-5,3.6672609e-5,3.4911852e-5 pernm. No error order or
+noise bound is established. Historical h2 export and endpoint fingerprints
+have different roles; they are preserved rather than forced equal.
+
+Re/Im no-solve reconstructions reproduce their original h1 values within
+4.108e-14/5.248e-16 relative. Raw quadratures vary less than0.1% across mesher
+dEps steps1,.5,.25nm. The old FAILED-fit combination remains about4.9142e-5/nm,
+within0.00171% of h1; it is unvalidated and uninstalled. These checks narrow
+the diagnosis but do not pass the six-class/held-out calibration gate.
+Both server probes measured the PVA accuracy integer5 in all inspected contexts;
+this is an actual readback, and the numerical family was not changed.
+
+Next prepared stage: first four forward-only tasks repeat corr30 and measure
+shift30 at+/-0.5nm under a new output label. Six offline groups and hidden
+CAD shift30 task2 passed; no local FDTD solve. Athena170962 array0–3%4 was
+submitted08:55:24 (A100,8CPUs,256G,2h,12h_4g). At08:57 all four tasks were
+RUNNING, task0 on n307 and tasks1–3 on n309; logs confirm8threads/GPU.
+No result is claimed yet; startup evidence is `s2_half_classes_startup_0857.json`.
+At08:54 shared occupancy was0/50; queued commitments total35/50 including
+IGUM. Eighteen completed solves are unchanged, with four new Athena forwards
+and the IGUM baseline outstanding. Remaining eight class legs require actual first-wave review,
+verified checkpoint hashes and a different immutable approval marker. Cavity
+uses live index295, not inert comb180. No optimization or gradient fit is
+authorized by this preparation.
+
+Read the TOP of `TE_CONTINUATION_2026-10-07.md` for the next dispatch receipt,
+output root and identities. Main evidence is
+`readiness_evidence_20261007/s2_corr30_four_steps_summary.json` and
+`readiness_evidence_20261007/s2_deps_both_review.json`. Preserve frozen sources,
+the exact reviewed nominal checkpoint, original fields/results and existing
+seed-specific width bands.
+
+## Historical handoff at 08:03 Israel
 
 **Not ready for full inverse-design optimization.** The overnight calibration
 finished, exposed a real accuracy failure, and was not promoted to a pass.

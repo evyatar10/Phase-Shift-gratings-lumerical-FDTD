@@ -18,7 +18,10 @@ class Fixture:
         self.point=point.tolist()
         self.spec={'label':'nominal','n_wl_points':31,'polarization':'TE','n_periods_side':98,'n_free':60}
         self.code={'lumopt2_design.py':calc.sha(b'new'),'diagnose_te_s2_fdstep.py':calc.sha(b'diag')}
-        old_code={'lumopt2_design.py':calc.sha(b'old')}
+        old_code={'lumopt2_design.py':calc.sha(b'old-fd'),
+                  'recover_te_s2.py':calc.sha(b'fd-runner')}
+        export_code={'lumopt2_design.py':calc.sha(b'old-export'),
+                     'recover_te_s2.py':calc.sha(b'exporter')}
         self.marker_path='/work/data/review.json';self.center_path='/work/nominal/task_00.json'
         self.out='/work/convergence'
         self.center=dict(identity=dict(task=0,index=29,sign=0,perturbation_nm=.5,
@@ -62,7 +65,7 @@ class Fixture:
         with zipfile.ZipFile(self.archive,'w') as z:
             for name,x in (('base_ports.npz',0.),('task_03_ports.npz',2.),('task_04_ports.npz',-2.)):
                 raw=self.npz(self.arrays(x));z.writestr(name,raw);members[name]=calc.sha(raw)
-        old_center=dict(identity=dict(task=0,point=self.point,spec=dict(self.spec,label='recovery'),code=old_code),
+        old_center=dict(identity=dict(task=0,point=self.point,spec=dict(self.spec,label='recovery'),code=export_code),
             result=self.scores(self.arrays(0)))
         old=[old_center]
         for task,sign in ((3,1),(4,-1)):
@@ -75,7 +78,12 @@ class Fixture:
         self.pins=dict(schema=1,existing_files=existing,center_sha256=self.center_sha,
             center_code=self.code,old_archive_sha256=calc.sha(self.archive.read_bytes()),old_members=members,
             old_checkpoint_rows=old,review_marker_sha256=marker_sha,
-            center_remote_checkpoint=self.center_path,review_remote_path=self.marker_path)
+            center_remote_checkpoint=self.center_path,review_remote_path=self.marker_path,
+            old_source_bindings=dict(
+                center_export=dict(role='stored_forward_export_no_solve',
+                    code=export_code,semantic_sha256=calc.semantic_sha(old_center)),
+                fd_endpoints={str(row['identity']['task']):dict(role='new_forward_fd_leg',
+                    code=old_code,semantic_sha256=calc.semantic_sha(row)) for row in old[1:]}))
 
     @staticmethod
     def arrays(p,repeat=0.):
@@ -150,6 +158,10 @@ class FourStepChecks(unittest.TestCase):
                     f.analyze()
         f=Fixture();p=f.root/'corr30_convergence_parent_review.json';p.write_bytes(p.read_bytes()+b' ')
         with self.assertRaisesRegex(calc.EvidenceError,'hash mismatch'):
+            f.analyze()
+        f=Fixture()
+        f.pins['old_checkpoint_rows'][1]['identity']['code']['lumopt2_design.py']=calc.sha(b'unexpected-old-fd')
+        with self.assertRaisesRegex(calc.EvidenceError,'FD source/content binding'):
             f.analyze()
 
     def test_modified_npz_archive_and_full_grid_fail(self):

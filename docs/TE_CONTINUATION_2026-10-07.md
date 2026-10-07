@@ -8,6 +8,113 @@ the project `AGENTS.md` records that instruction.
 
 ## Overnight extension and current continuation
 
+## Latest measured checkpoint — both quadratures complete; first-wave 170962 running
+
+**S2 calibration remains FAILED; full optimization and optimizer smoke remain
+blocked.** Athena170926 tasks0–3 completed all four corr30 forward checks.
+Eighteen NEW FDTD solves completed overnight. Stored-field CPU jobs170950_0
+(Re) and170956_0 (Im) also completed, but performed no FDTD solves and are not
+included in that count. IGUM101155_0 was still PENDING Resources in the latest
+08:54 queue snapshot; do not treat this as a fresh live queue check.
+
+The published role-aware four-step analysis reproduces scalar/spectral scores
+and retains the historical h2 source qualifications: its center export hash
+fingerprints extraction, not original FSP creation; the h2 endpoints have
+separately pinned recovery-generated identities. Six analyzer tests and the
+actual evidence analysis passed. corr30 peak3(Tout) central derivatives are:
+
+| FD half-step nm | Derivative per nm |
+|---:|---:|
+| 2 | 1.874864880122e-5 |
+| 1 | 3.695036628504e-5 |
+| 0.5 | 3.667260923146e-5 |
+| 0.25 | 3.491185204285e-5 |
+
+All endpoint Tout peak indices are252. These measurements do not establish
+an error order or a noise bound. Both nominal centers and spectral-Jacobian
+projections remain in `readiness_evidence_20261007/s2_corr30_four_steps_summary.json`
+and its full report; no Richardson estimate is promoted to a gradient gate.
+
+Both no-solve probes reproduce their original h1 raw contractions: relative
+differences4.108e-14 (Re) and5.248e-16 (Im). Raw quadratures vary less than0.1%
+over dEps steps1,.5,.25nm. The old FAILED-fit weighted combination stays near
+4.9142e-5/nm, within0.00171% of its h1 value, and remains uninstalled. This is
+an unvalidated cancellation diagnostic, not a calibrated gradient. Original
+FSP hashes/HDF5 stats are preserved. The Jacobian uses each ORIGINAL saved
+forward, distinct from the repeated center used for new FD comparisons.
+Evidence: `readiness_evidence_20261007/s2_deps_both_review.json`.
+Both raw server reports measure PVA `meshing refinement`5 in generated,
+original saved forward/adjoint and nominal-index contexts; no setting changed.
+This replaces the earlier unmeasured-integer qualification, not the failed gate.
+
+The lead's next bounded diagnosis is a new h0.5nm class check. First-wave
+tasks0/1 REPEAT corr30 +/-0.5nm and2/3 measure shift30 +/-0.5nm. Existing
+corr30 half-step data remain intact. Later tasks4–11 cover corr1,avg1,shift1
+and cavity width ONLY after explicit first-wave review and a separate immutable
+marker recording all four checkpoint SHAs plus the lead verdict. The live
+index map is[0,29,60,120,149,295]; cavity is295, while180 is inert comb.
+The new label is `lumopt2_te_s2_fdhalf_classcheck_20261007`, output root
+`/work/results/diagnose_te_s2_fdhalf_classes/results/lumopt2_te_s2_fdhalf_classcheck_20261007`.
+
+Runner preparation passed six offline test groups and actual hidden local CAD
+task2: shift30+0.5nm,723 exact geometry properties and identical locked grids
+after disabling optimization_dft. No local FDTD solve ran. Runner SHA
+`4f5f9d21cb95f5cfbcb1e0fc91ae960dc0dd57449c973369051c551c07c7bba1`.
+**Athena170962 array0–3%4 submitted08:55:24 Israel**, A100,8CPUs,256G host
+memory,2h limit,12h_4g. At08:57 all four SLURM tasks were RUNNING: task0 on
+n307 and tasks1–3 on n309; startup logs confirm8threads and GPU resource
+readback. No first-wave result is claimed yet. Receipt
+`readiness_evidence_20261007/s2_half_classes_first_dispatch.json`; verified
+startup `readiness_evidence_20261007/s2_half_classes_startup_0857.json`.
+First-wave immutable marker SHA
+`6722e1883338c0259b6fd2aa7386a2d12f1c5124708f590c1ce30a7c266f8d02`.
+Remote no-CAD identity validation passed. Only the new runner/marker/manifest
+were written exclusively; existing production and IGUM sources were untouched.
+At08:54 preflight: quota230G/300G soft/330G hard, shared seats0/50 occupied;
+queued IGUM commits7 and this new array commits28, total35/50. These are
+commitments, not measured running occupancy. Eighteen solves remain completed;
+four new Athena forwards plus the queued IGUM baseline are outstanding.
+
+Next monitor170962 at a reasonable cadence, then fetch exact first-wave
+checkpoints and spectra after completion, inspect corr30 repeat consistency
+and shift30 response, and
+decide whether the separate later-stage marker is justified. Later tasks are
+not approved merely because their source or offline tests exist. Preserve
+frozen production and IGUM sources, current center SHA
+`cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06`,
+and all original result history.
+
+
+## Current update 08:33 Israel — four forward checks complete, Re validated
+
+Athena170926 tasks0–3 all COMPLETED exit0 in31:04–32:24. Raw checkpoints and
+ports fetched with preserved bytes into readiness evidence. Eighteen NEW
+FDTD solves have now completed during the overnight work; IGUM baseline101155
+remains queued (not counted). No full optimizer run occurred.
+
+Re CPU probe170950 completed exit0 in5:18, MaxRSS19736488K. Original h1 raw
+contraction reproduced to4.108e-14 relative; exact report SHA
+73ae6c36fc75ac0c1a9ca470aff3c6627cb49c94f230b9b839810b5ade505440.
+Original FSP hashes/HDF5 stats preserved. Re raw component varies less than
+0.1% across dEps steps1,.5,.25. Generated and nominal server refinement5.
+This validates Re extraction, not the combined/global calibration.
+
+After explicit Re review, Im-only CPU probe **170956_0** submitted08:32:47,
+same guarded script/128G/8CPUs/45min/noGPU. Output
+`/work/results/s2_corr30_deps_im_20261007T0833/deps_sensitivity.json`.
+Fresh shared pool08:32 was0/50 (finished forwards released seats), IGUM queued
+A100 commits7. Check170956 actual startup/result next, then compare original
+Im h1 and both quadratures' step sensitivity. No failed coefficients installed.
+
+Four-step analyzer stopped before publication on a historical h2 source-map
+comparison. Sol objective_code_audit is diagnosing that exact provenance
+comparison in TEMP only; do not bypass it or duplicate the worker. New endpoint
+identity/spectra checks passed up to that stage. Preliminary saved-scalar Tout
+central derivatives h1=3.6950366285e-5, h.5=3.6672609231e-5,
+h.25=3.4911852043e-5 per nm. These are not a completed global calibration or
+proven convergence. Full validated analysis and Im interpretation remain open.
+Latest local checkpoint **a3059fb** preserves prepared tools/tests/dispatch;
+previous **f4fb0ee** preserves parallel rules/skills and convergence runner.
 
 ## Current update 08:21 Israel — no-solve derivative check dispatched
 

@@ -1,5 +1,66 @@
 # S2 calibration failure and bounded diagnosis
 
+## Latest four-step and both-quadrature evidence
+
+**Calibration remains FAILED; no coefficient is installed.** Athena170926
+tasks0–3 completed the h1 andh0.25nm corr30 forward pairs. The role-aware
+analyzer passed six tests and actual evidence validation, preserving old/new
+centers, spectral grids, peak scores and distinct historical source roles.
+The h2 center hash identifies a read-only export, not original FSP creation;
+its endpoints have separately pinned recovery-generated identities.
+
+| corr30 FD half-step nm | peak3(Tout) central derivative per nm | Even term, repeated center |
+|---:|---:|---:|
+| 2 | 1.874864880122e-5 | +1.801618297168e-4 |
+| 1 | 3.695036628504e-5 | +7.365857889552e-5 |
+| 0.5 | 3.667260923146e-5 | -1.204750627926e-6 |
+| 0.25 | 3.491185204285e-5 | -1.212745799783e-6 |
+
+All Tout endpoint peak indices are252. Full spectra, exact center-Jacobian
+projections and both-center even terms are retained in
+`readiness_evidence_20261007/s2_corr30_four_steps_summary.json` and the full
+measured report. The published verdict is diagnostic only. Halving differences
+do not establish convergence order, solver-noise bounds or a diagnosed mesh
+defect. h0.5 is the lead's next bounded comparison step, not a proven exact
+infinitesimal derivative or a rescue of the global fit.
+
+No-solve stored-field jobs170950_0 (Re) and170956_0 (Im) completed in roughly
+five minutes each. Their h1 raw corr30 contractions match the original peak
+reconstructions to4.108e-14 and5.248e-16 relative, respectively. Raw Re/Im
+vary by less than0.1% over dEps steps1,.5,.25nm. The old FAILED-fit weighted
+combination is4.9142174e-5,4.9143013e-5,4.9141353e-5 pernm: within0.00171%
+of h1 and still different from the measured FD derivatives. These coefficients
+are used ONLY to expose cancellation sensitivity; they remain uninstalled.
+No coefficient was fitted by either probe. Both originals are preserved.
+Evidence: `readiness_evidence_20261007/s2_deps_both_review.json`.
+Raw Re/Im reports both read PVA `meshing refinement`5 in generated, original
+saved forward/adjoint and nominal-index contexts. It was measured, not inferred
+from the documented default, and no refinement setting changed.
+
+The no-solve Jacobian is evaluated at each ORIGINAL saved forward; FD even
+terms use the later repeated nominal center. This distinction is intentional.
+The probes validate extraction/subset fidelity and narrow dEps-step sensitivity,
+not every class, held-out prediction, spatial-width accuracy or optimizer
+readiness. Original FSP hashes and HDF5 stats were preserved; HDF5 content was
+not rehashed. Eighteen NEW overnight FDTD solves are complete; these two CPU
+probes add zero solves. IGUM101155_0 remained queued in the08:45 snapshot.
+
+Next staged forward-only check is prepared under
+`lumopt2_te_s2_fdhalf_classcheck_20261007`: first corr30 repeat and shift30
+pairs at+/-0.5nm, then only after explicit first-wave review the corr1,avg1,
+shift1 and cavity pairs. Separate immutable stage markers preserve first-wave
+checkpoint SHAs and a lead verdict. Live cavity index is295, not180. Six
+offline groups and an actual hidden CAD shift30 build passed; no local FDTD
+solve ran. Athena170962 array0–3%4 was submitted08:55:24 for only the first
+wave (A100,8CPUs,256G,2h,12h_4g). At08:57 all four tasks were RUNNING,
+with8thread/GPU startup readback; no result is claimed. This adds four
+outstanding forwards, not completed simulations. Remote no-CAD identity checks
+passed, and existing sources remained untouched. Receipt:
+`readiness_evidence_20261007/s2_half_classes_first_dispatch.json`.
+Startup: `readiness_evidence_20261007/s2_half_classes_startup_0857.json`.
+The original failed10%
+class/held-out gate, optimizer smoke and full-campaign restrictions are unchanged.
+
 ## Measured smaller-step and provenance results, 07:54 Israel
 
 Athena170906_1/2 completed exit0. Exact source/center identities and wavelength

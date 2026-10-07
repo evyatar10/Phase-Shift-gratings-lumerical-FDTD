@@ -1,0 +1,1013 @@
+{
+  "steps_nm": [
+    2.0,
+    1.0,
+    0.5,
+    0.25
+  ],
+  "provenance": {
+    "s2_fdstep_task00_original.json": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+    "s2_fdstep_task00_ports.npz": "4c3c526b51973a2c8889608c69958b6d60e4dc27ddcf638c9932598629a035e4",
+    "s2_fdstep_task01_original.json": "021ce215c64ccc13020f74af8d775f65ab97f73290e4b06f1f159297f8c7b04e",
+    "s2_fdstep_task01_ports.npz": "9f6d80043881877926d40a17f18e5c0e3863d8c93a6279a2a65277b96c626613",
+    "s2_fdstep_task02_original.json": "9e72cdc72197254594688dc0102d8a4b10155435244b545719ec4fd3fda4e808",
+    "s2_fdstep_task02_ports.npz": "eb140dc60e401b9472e942833437eebb74ac60f6f2641a7cd2a55c94fe1e5fe7",
+    "s2_corr30_convergence_task00_original.json": "4275fee6812eb428f964fa136a8f1249bfd66ab9fe2436ac3cdbe86e99de4f02",
+    "s2_corr30_convergence_task00_ports.npz": "673efbfe2ad6b4952866759e9b0a882b821676c0139cfae1c1b5995e5264fc5f",
+    "s2_corr30_convergence_task01_original.json": "552d36af53475e4c587189b8e06d07b1a9e14f583b50baf5e114dae91c7dd455",
+    "s2_corr30_convergence_task01_ports.npz": "e884326eccaa91013d47df3377b0b874796d9605dd6829e62ac3aabf6b968585",
+    "s2_corr30_convergence_task02_original.json": "8000767f2ed85ef1aac5f5914e937416e07adaec3760b5ce65dc06e82fee7f2a",
+    "s2_corr30_convergence_task02_ports.npz": "591d2362f55fa52b2f8e66dbc0757145de59a0e0bb42222ee1fb08e6f0645d3b",
+    "s2_corr30_convergence_task03_original.json": "243b4ae64f96006dc09158e5033ff122d5d6177acf00856f31e23cdc64eb4461",
+    "s2_corr30_convergence_task03_ports.npz": "60b4c700cd4bd16a03bf353562594e4018681f9a29a84f4a4897da762d09e77e",
+    "old_archive": "b996142caf4a66d73336ed2845a564626e6fbd9e0e9a695ee89bf498e7522204",
+    "review_marker": "312bd4e9e281b42eb53c38044627a20e4c37302338df6ab7c67691b1bfdec8c2",
+    "old_source_roles": {
+      "center_export": {
+        "role": "stored_forward_export_no_solve",
+        "code": {
+          "recover_te_s2.py": "cab3a0b83f7c92535e1c032bc1d98ad284926fbf1e117fbf85e9983fdcbe20ff",
+          "lumopt2_design.py": "426f42a9cefa80e85498234b1aff7501795c3acdff623c6a940ac06dc2f79669",
+          "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+          "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+          "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5"
+        },
+        "semantic_sha256": "aadb2776940003a3a3a31e1745bb68fa5fe99222cfa9f458e10c1228c80aeb5c",
+        "original_checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_reference_task00_remote_original.json",
+        "original_checkpoint_sha256": "732ca5752ff2b0449a892ebafe7ba6a87a5ee1fce63bd929f8f7343bf50df13f",
+        "recorded_job": "170745_0",
+        "qualification": "Fingerprint of export code, not original FSP creation"
+      },
+      "fd_endpoints": {
+        "3": {
+          "role": "new_forward_fd_leg",
+          "code": {
+            "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+            "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+            "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+            "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+            "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+            "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+            "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+            "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+          },
+          "semantic_sha256": "77fc78400769ef0d9a843279b4e41ea6a75b17d3f004031b8959b1a8bae69729",
+          "observed_checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_03.json",
+          "observed_checkpoint_sha256": "df11243aad993906053b851db888d550ff5c48976afc0f80c0f286812c53138c",
+          "recorded_job": "170750_3",
+          "qualification": "Later recovery-generated FD solve; watcher serialization bytes separately recorded"
+        },
+        "4": {
+          "role": "new_forward_fd_leg",
+          "code": {
+            "recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+            "lumopt2_design.py": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+            "validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+            "campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+            "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+            "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+            "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+            "v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8"
+          },
+          "semantic_sha256": "620211c8e3bd192f9d86f7d689a6efc84c9782f629262dbf2e8d38bc288e8a3e",
+          "observed_checkpoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\recover_te_s2_20261006\\watch\\recover_te_s2\\task_04.json",
+          "observed_checkpoint_sha256": "2bafdb29dfb181afcf173598a8b42c5f9bd282ed70bcbfd27d0974c5c9bd0790",
+          "recorded_job": "170750_4",
+          "qualification": "Later recovery-generated FD solve; watcher serialization bytes separately recorded"
+        }
+      }
+    },
+    "pins_json_sha256": "6760aef49c7e2a3d4440401f88e4258b320a1e72164385b9cf403b1d5595058f"
+  },
+  "observables": {
+    "peak3_tout": {
+      "center_values": {
+        "new": 0.9257489820745417,
+        "old": 0.925748506956398,
+        "repeat_delta": 4.751181437168128e-07
+      },
+      "steps": {
+        "2.0": {
+          "native_center": "old",
+          "scalar_with_new_center": {
+            "odd": 3.749729760244014e-05,
+            "even": 0.00018016182971680728,
+            "central_derivative": 1.874864880122007e-05,
+            "second_difference": 9.008091485840364e-05
+          },
+          "scalar_with_old_center": {
+            "odd": 3.749729760244014e-05,
+            "even": 0.0001806369478605241,
+            "central_derivative": 1.874864880122007e-05,
+            "second_difference": 9.031847393026204e-05
+          },
+          "peak_indices_plus_minus": [
+            252,
+            252
+          ],
+          "center_projections": {
+            "new": {
+              "center_index": 252,
+              "weights": [
+                0.08250879819443567,
+                0.9792009972490889,
+                -0.06170979544352456
+              ],
+              "center_sample_fd": 4.055823609208642e-05,
+              "exact_center_peak3_Jacobian_projection": 1.8561834738949844e-05,
+              "moving_peak_minus_projection": 1.8681406227022472e-07
+            },
+            "old": {
+              "center_index": 252,
+              "weights": [
+                0.08251513001017524,
+                0.9791981622184937,
+                -0.06171329222866893
+              ],
+              "center_sample_fd": 4.055823609208642e-05,
+              "exact_center_peak3_Jacobian_projection": 1.8560335166942897e-05,
+              "moving_peak_minus_projection": 1.883136342771717e-07
+            }
+          },
+          "full_spectral": {
+            "plus_minus": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "central_derivative": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "odd": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_new_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_old_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "fd_max_abs": 0.0015559956817451925
+          }
+        },
+        "1.0": {
+          "native_center": "new",
+          "scalar_with_new_center": {
+            "odd": 3.6950366285037894e-05,
+            "even": 7.365857889551908e-05,
+            "central_derivative": 3.6950366285037894e-05,
+            "second_difference": 0.00014731715779103816
+          },
+          "scalar_with_old_center": {
+            "odd": 3.6950366285037894e-05,
+            "even": 7.413369703923589e-05,
+            "central_derivative": 3.6950366285037894e-05,
+            "second_difference": 0.00014826739407847178
+          },
+          "peak_indices_plus_minus": [
+            252,
+            252
+          ],
+          "center_projections": {
+            "new": {
+              "center_index": 252,
+              "weights": [
+                0.08250879819443567,
+                0.9792009972490889,
+                -0.06170979544352456
+              ],
+              "center_sample_fd": 5.8764879566852724e-05,
+              "exact_center_peak3_Jacobian_projection": 3.6888371264448495e-05,
+              "moving_peak_minus_projection": 6.199502058939913e-08
+            },
+            "old": {
+              "center_index": 252,
+              "weights": [
+                0.08251513001017524,
+                0.9791981622184937,
+                -0.06171329222866893
+              ],
+              "center_sample_fd": 5.8764879566852724e-05,
+              "exact_center_peak3_Jacobian_projection": 3.6886880485035195e-05,
+              "moving_peak_minus_projection": 6.348580000269913e-08
+            }
+          },
+          "full_spectral": {
+            "plus_minus": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "central_derivative": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "odd": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_new_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_old_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "fd_max_abs": 0.001571512874439629
+          }
+        },
+        "0.5": {
+          "native_center": "new",
+          "scalar_with_new_center": {
+            "odd": 1.8336304615729215e-05,
+            "even": -1.204750627925577e-06,
+            "central_derivative": 3.667260923145843e-05,
+            "second_difference": -9.638005023404617e-06
+          },
+          "scalar_with_old_center": {
+            "odd": 1.8336304615729215e-05,
+            "even": -7.296324842087643e-07,
+            "central_derivative": 3.667260923145843e-05,
+            "second_difference": -5.837059873670114e-06
+          },
+          "peak_indices_plus_minus": [
+            252,
+            252
+          ],
+          "center_projections": {
+            "new": {
+              "center_index": 252,
+              "weights": [
+                0.08250879819443567,
+                0.9792009972490889,
+                -0.06170979544352456
+              ],
+              "center_sample_fd": 5.8686893649961824e-05,
+              "exact_center_peak3_Jacobian_projection": 3.667761171812604e-05,
+              "moving_peak_minus_projection": -5.0024866676075166e-09
+            },
+            "old": {
+              "center_index": 252,
+              "weights": [
+                0.08251513001017524,
+                0.9791981622184937,
+                -0.06171329222866893
+              ],
+              "center_sample_fd": 5.8686893649961824e-05,
+              "exact_center_peak3_Jacobian_projection": 3.6676111888531086e-05,
+              "moving_peak_minus_projection": -3.502657072655788e-09
+            }
+          },
+          "full_spectral": {
+            "plus_minus": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "central_derivative": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "odd": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_new_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_old_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "fd_max_abs": 0.001570851548164387
+          }
+        },
+        "0.25": {
+          "native_center": "new",
+          "scalar_with_new_center": {
+            "odd": 8.72796301071288e-06,
+            "even": -1.2127457997834767e-06,
+            "central_derivative": 3.491185204285152e-05,
+            "second_difference": -3.8807865593071256e-05
+          },
+          "scalar_with_old_center": {
+            "odd": 8.72796301071288e-06,
+            "even": -7.376276560666639e-07,
+            "central_derivative": 3.491185204285152e-05,
+            "second_difference": -2.3604084994133245e-05
+          },
+          "peak_indices_plus_minus": [
+            252,
+            252
+          ],
+          "center_projections": {
+            "new": {
+              "center_index": 252,
+              "weights": [
+                0.08250879819443567,
+                0.9792009972490889,
+                -0.06170979544352456
+              ],
+              "center_sample_fd": 5.6854578983189796e-05,
+              "exact_center_peak3_Jacobian_projection": 3.4938706480108054e-05,
+              "moving_peak_minus_projection": -2.6854437256532723e-08
+            },
+            "old": {
+              "center_index": 252,
+              "weights": [
+                0.08251513001017524,
+                0.9791981622184937,
+                -0.06171329222866893
+              ],
+              "center_sample_fd": 5.6854578983189796e-05,
+              "exact_center_peak3_Jacobian_projection": 3.493721380343597e-05,
+              "moving_peak_minus_projection": -2.536176058444764e-08
+            }
+          },
+          "full_spectral": {
+            "plus_minus": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "central_derivative": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "odd": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_new_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_old_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "fd_max_abs": 0.0015739299320598477
+          }
+        }
+      },
+      "derivative_halving": {
+        "halving_differences": [
+          -1.8201717483817825e-05,
+          2.777570535794638e-07,
+          1.7607571886069096e-06
+        ],
+        "observed_ratios": [
+          {
+            "steps_nm": [
+              2.0,
+              1.0,
+              0.5
+            ],
+            "signed_ratio": -65.53107202590078,
+            "absolute_ratio": 65.53107202590078,
+            "conditional_implied_order": 6.034107227924743
+          },
+          {
+            "steps_nm": [
+              1.0,
+              0.5,
+              0.25
+            ],
+            "signed_ratio": 0.15774864096918548,
+            "absolute_ratio": 0.15774864096918548,
+            "conditional_implied_order": -2.664300518684053
+          }
+        ],
+        "conditional_Richardson_assuming_O_h2": [
+          {
+            "h_large": 2.0,
+            "h_small": 1.0,
+            "value": 4.30176054463105e-05
+          },
+          {
+            "h_large": 1.0,
+            "h_small": 0.5,
+            "value": 3.658002354693194e-05
+          },
+          {
+            "h_large": 0.5,
+            "h_small": 0.25,
+            "value": 3.432493297998255e-05
+          }
+        ],
+        "caveat": "Ratios are observations, not established convergence order. Richardson assumes an asymptotic h^2 error expansion; cancellation, center mismatch and unresolved solver error can invalidate it."
+      },
+      "curvature_halving_with_new_center": {
+        "halving_differences": [
+          -5.723624293263452e-05,
+          0.00015695516281444277,
+          2.916986056966664e-05
+        ],
+        "observed_ratios": [
+          {
+            "steps_nm": [
+              2.0,
+              1.0,
+              0.5
+            ],
+            "signed_ratio": -0.3646662008837579,
+            "absolute_ratio": 0.3646662008837579,
+            "conditional_implied_order": -1.455351605323196
+          },
+          {
+            "steps_nm": [
+              1.0,
+              0.5,
+              0.25
+            ],
+            "signed_ratio": 5.380730649691841,
+            "absolute_ratio": 5.380730649691841,
+            "conditional_implied_order": 2.4278020897178365
+          }
+        ],
+        "conditional_Richardson_assuming_O_h2": [
+          {
+            "h_large": 2.0,
+            "h_small": 1.0,
+            "value": 0.00016639590543524965
+          },
+          {
+            "h_large": 1.0,
+            "h_small": 0.5,
+            "value": -6.195639262821888e-05
+          },
+          {
+            "h_large": 0.5,
+            "h_small": 0.25,
+            "value": -4.85311524496268e-05
+          }
+        ],
+        "caveat": "Ratios are observations, not established convergence order. Richardson assumes an asymptotic h^2 error expansion; cancellation, center mismatch and unresolved solver error can invalidate it."
+      },
+      "curvature_halving_with_old_center": {
+        "halving_differences": [
+          -5.794892014820974e-05,
+          0.0001541044539521419,
+          1.776702512046313e-05
+        ],
+        "observed_ratios": [
+          {
+            "steps_nm": [
+              2.0,
+              1.0,
+              0.5
+            ],
+            "signed_ratio": -0.3760366339976529,
+            "absolute_ratio": 0.3760366339976529,
+            "conditional_implied_order": -1.411054876834937
+          },
+          {
+            "steps_nm": [
+              1.0,
+              0.5,
+              0.25
+            ],
+            "signed_ratio": 8.673621661887134,
+            "absolute_ratio": 8.673621661887134,
+            "conditional_implied_order": 3.116634515091338
+          }
+        ],
+        "conditional_Richardson_assuming_O_h2": [
+          {
+            "h_large": 2.0,
+            "h_small": 1.0,
+            "value": 0.00016758370079454168
+          },
+          {
+            "h_large": 1.0,
+            "h_small": 0.5,
+            "value": -5.7205211191050744e-05
+          },
+          {
+            "h_large": 0.5,
+            "h_small": 0.25,
+            "value": -2.952642670095429e-05
+          }
+        ],
+        "caveat": "Ratios are observations, not established convergence order. Richardson assumes an asymptotic h^2 error expansion; cancellation, center mismatch and unresolved solver error can invalidate it."
+      },
+      "full_spectral_derivative_halving": [
+        {
+          "h_large": 2.0,
+          "h_small": 1.0,
+          "difference": {
+            "preserved_in_full_report": true,
+            "element_count": 501
+          },
+          "max_abs": 1.9413349630764687e-05,
+          "l2_norm": 0.00011512075817254079
+        },
+        {
+          "h_large": 1.0,
+          "h_small": 0.5,
+          "difference": {
+            "preserved_in_full_report": true,
+            "element_count": 501
+          },
+          "max_abs": 2.9488782997133534e-06,
+          "l2_norm": 1.0535137097866063e-05
+        },
+        {
+          "h_large": 0.5,
+          "h_small": 0.25,
+          "difference": {
+            "preserved_in_full_report": true,
+            "element_count": 501
+          },
+          "max_abs": 3.892848111863856e-06,
+          "l2_norm": 1.5401136517481392e-05
+        }
+      ],
+      "full_spectral_center_difference": {
+        "preserved_in_full_report": true,
+        "element_count": 501
+      }
+    },
+    "peak3_modal": {
+      "center_values": {
+        "new": 0.9718095820307666,
+        "old": 0.9718102149755974,
+        "repeat_delta": -6.329448307695884e-07
+      },
+      "steps": {
+        "2.0": {
+          "native_center": "old",
+          "scalar_with_new_center": {
+            "odd": 4.288373467070672e-05,
+            "even": 0.00019189619731840857,
+            "central_derivative": 2.144186733535336e-05,
+            "second_difference": 9.594809865920428e-05
+          },
+          "scalar_with_old_center": {
+            "odd": 4.288373467070672e-05,
+            "even": 0.00019126325248763898,
+            "central_derivative": 2.144186733535336e-05,
+            "second_difference": 9.563162624381949e-05
+          },
+          "peak_indices_plus_minus": [
+            250,
+            250
+          ],
+          "center_projections": {
+            "new": {
+              "center_index": 250,
+              "weights": [
+                0.03000274203915746,
+                0.9967758770306171,
+                -0.026778619069774526
+              ],
+              "center_sample_fd": 3.062913145454593e-05,
+              "exact_center_peak3_Jacobian_projection": 2.0607953492467078e-05,
+              "moving_peak_minus_projection": 8.339138428862817e-07
+            },
+            "old": {
+              "center_index": 250,
+              "weights": [
+                0.029957998184775972,
+                0.9967849973151656,
+                -0.026742995499941587
+              ],
+              "center_sample_fd": 3.062913145454593e-05,
+              "exact_center_peak3_Jacobian_projection": 2.062213468277613e-05,
+              "moving_peak_minus_projection": 8.197326525772312e-07
+            }
+          },
+          "full_spectral": {
+            "plus_minus": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "central_derivative": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "odd": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_new_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_old_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "fd_max_abs": 0.0017154352832124686
+          }
+        },
+        "1.0": {
+          "native_center": "new",
+          "scalar_with_new_center": {
+            "odd": 4.147485825434227e-05,
+            "even": 7.796459237363607e-05,
+            "central_derivative": 4.147485825434227e-05,
+            "second_difference": 0.00015592918474727213
+          },
+          "scalar_with_old_center": {
+            "odd": 4.147485825434227e-05,
+            "even": 7.733164754286648e-05,
+            "central_derivative": 4.147485825434227e-05,
+            "second_difference": 0.00015466329508573295
+          },
+          "peak_indices_plus_minus": [
+            250,
+            250
+          ],
+          "center_projections": {
+            "new": {
+              "center_index": 250,
+              "weights": [
+                0.03000274203915746,
+                0.9967758770306171,
+                -0.026778619069774526
+              ],
+              "center_sample_fd": 5.127397607701534e-05,
+              "exact_center_peak3_Jacobian_projection": 4.122514378053158e-05,
+              "moving_peak_minus_projection": 2.4971447381069164e-07
+            },
+            "old": {
+              "center_index": 250,
+              "weights": [
+                0.029957998184775972,
+                0.9967849973151656,
+                -0.026742995499941587
+              ],
+              "center_sample_fd": 5.127397607701534e-05,
+              "exact_center_peak3_Jacobian_projection": 4.1239368205635994e-05,
+              "moving_peak_minus_projection": 2.3549004870627896e-07
+            }
+          },
+          "full_spectral": {
+            "plus_minus": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "central_derivative": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "odd": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_new_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_old_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "fd_max_abs": 0.001732822701517145
+          }
+        },
+        "0.5": {
+          "native_center": "new",
+          "scalar_with_new_center": {
+            "odd": 2.204337934885725e-05,
+            "even": 4.54203843092138e-07,
+            "central_derivative": 4.40867586977145e-05,
+            "second_difference": 3.633630744737104e-06
+          },
+          "scalar_with_old_center": {
+            "odd": 2.204337934885725e-05,
+            "even": -1.787409876774504e-07,
+            "central_derivative": 4.40867586977145e-05,
+            "second_difference": -1.4299279014196031e-06
+          },
+          "peak_indices_plus_minus": [
+            250,
+            250
+          ],
+          "center_projections": {
+            "new": {
+              "center_index": 250,
+              "weights": [
+                0.03000274203915746,
+                0.9967758770306171,
+                -0.026778619069774526
+              ],
+              "center_sample_fd": 5.410665687355376e-05,
+              "exact_center_peak3_Jacobian_projection": 4.4091792754291935e-05,
+              "moving_peak_minus_projection": -5.034056577434042e-09
+            },
+            "old": {
+              "center_index": 250,
+              "weights": [
+                0.029957998184775972,
+                0.9967849973151656,
+                -0.026742995499941587
+              ],
+              "center_sample_fd": 5.410665687355376e-05,
+              "exact_center_peak3_Jacobian_projection": 4.4105989060219974e-05,
+              "moving_peak_minus_projection": -1.9230362505473248e-08
+            }
+          },
+          "full_spectral": {
+            "plus_minus": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "central_derivative": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "odd": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_new_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_old_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "fd_max_abs": 0.0017323410644712878
+          }
+        },
+        "0.25": {
+          "native_center": "new",
+          "scalar_with_new_center": {
+            "odd": 1.1558554465662674e-05,
+            "even": 4.743812924701274e-07,
+            "central_derivative": 4.6234217862650695e-05,
+            "second_difference": 1.5180201359044077e-05
+          },
+          "scalar_with_old_center": {
+            "odd": 1.1558554465662674e-05,
+            "even": -1.5856353829946102e-07,
+            "central_derivative": 4.6234217862650695e-05,
+            "second_difference": -5.0740332255827525e-06
+          },
+          "peak_indices_plus_minus": [
+            250,
+            250
+          ],
+          "center_projections": {
+            "new": {
+              "center_index": 250,
+              "weights": [
+                0.03000274203915746,
+                0.9967758770306171,
+                -0.026778619069774526
+              ],
+              "center_sample_fd": 5.6489336754728114e-05,
+              "exact_center_peak3_Jacobian_projection": 4.627267971639538e-05,
+              "moving_peak_minus_projection": -3.846185374468356e-08
+            },
+            "old": {
+              "center_index": 250,
+              "weights": [
+                0.029957998184775972,
+                0.9967849973151656,
+                -0.026742995499941587
+              ],
+              "center_sample_fd": 5.6489336754728114e-05,
+              "exact_center_peak3_Jacobian_projection": 4.628717338962302e-05,
+              "moving_peak_minus_projection": -5.295552697232351e-08
+            }
+          },
+          "full_spectral": {
+            "plus_minus": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "central_derivative": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "odd": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_new_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "even_with_old_center": {
+              "preserved_in_full_report": true,
+              "element_count": 501
+            },
+            "fd_max_abs": 0.0017325989562346766
+          }
+        }
+      },
+      "derivative_halving": {
+        "halving_differences": [
+          -2.0032990918988913e-05,
+          -2.611900443372228e-06,
+          -2.147459164936194e-06
+        ],
+        "observed_ratios": [
+          {
+            "steps_nm": [
+              2.0,
+              1.0,
+              0.5
+            ],
+            "signed_ratio": 7.669890699633364,
+            "absolute_ratio": 7.669890699633364,
+            "conditional_implied_order": 2.939206018638186
+          },
+          {
+            "steps_nm": [
+              1.0,
+              0.5,
+              0.25
+            ],
+            "signed_ratio": 1.2162747893042398,
+            "absolute_ratio": 1.2162747893042398,
+            "conditional_implied_order": 0.2824692093573331
+          }
+        ],
+        "conditional_Richardson_assuming_O_h2": [
+          {
+            "h_large": 2.0,
+            "h_small": 1.0,
+            "value": 4.815252189400524e-05
+          },
+          {
+            "h_large": 1.0,
+            "h_small": 0.5,
+            "value": 4.4957392178838575e-05
+          },
+          {
+            "h_large": 0.5,
+            "h_small": 0.25,
+            "value": 4.695003758429609e-05
+          }
+        ],
+        "caveat": "Ratios are observations, not established convergence order. Richardson assumes an asymptotic h^2 error expansion; cancellation, center mismatch and unresolved solver error can invalidate it."
+      },
+      "curvature_halving_with_new_center": {
+        "halving_differences": [
+          -5.998108608806785e-05,
+          0.00015229555400253503,
+          -1.1546570614306972e-05
+        ],
+        "observed_ratios": [
+          {
+            "steps_nm": [
+              2.0,
+              1.0,
+              0.5
+            ],
+            "signed_ratio": -0.3938465996654731,
+            "absolute_ratio": 0.3938465996654731,
+            "conditional_implied_order": -1.3442942748391682
+          },
+          {
+            "steps_nm": [
+              1.0,
+              0.5,
+              0.25
+            ],
+            "signed_ratio": -13.189678484608292,
+            "absolute_ratio": 13.189678484608292,
+            "conditional_implied_order": 3.721337492356684
+          }
+        ],
+        "conditional_Richardson_assuming_O_h2": [
+          {
+            "h_large": 2.0,
+            "h_small": 1.0,
+            "value": 0.0001759228801099614
+          },
+          {
+            "h_large": 1.0,
+            "h_small": 0.5,
+            "value": -4.713155392277457e-05
+          },
+          {
+            "h_large": 0.5,
+            "h_small": 0.25,
+            "value": 1.9029058230479734e-05
+          }
+        ],
+        "caveat": "Ratios are observations, not established convergence order. Richardson assumes an asymptotic h^2 error expansion; cancellation, center mismatch and unresolved solver error can invalidate it."
+      },
+      "curvature_halving_with_old_center": {
+        "halving_differences": [
+          -5.9031668841913465e-05,
+          0.00015609322298715256,
+          3.6441053241631494e-06
+        ],
+        "observed_ratios": [
+          {
+            "steps_nm": [
+              2.0,
+              1.0,
+              0.5
+            ],
+            "signed_ratio": -0.3781821382903481,
+            "absolute_ratio": 0.3781821382903481,
+            "conditional_implied_order": -1.402846869115467
+          },
+          {
+            "steps_nm": [
+              1.0,
+              0.5,
+              0.25
+            ],
+            "signed_ratio": 42.8344433274575,
+            "absolute_ratio": 42.8344433274575,
+            "conditional_implied_order": 5.420699434362279
+          }
+        ],
+        "conditional_Richardson_assuming_O_h2": [
+          {
+            "h_large": 2.0,
+            "h_small": 1.0,
+            "value": 0.00017434051803303743
+          },
+          {
+            "h_large": 1.0,
+            "h_small": 0.5,
+            "value": -5.3461002230470456e-05
+          },
+          {
+            "h_large": 0.5,
+            "h_small": 0.25,
+            "value": -6.288735000303802e-06
+          }
+        ],
+        "caveat": "Ratios are observations, not established convergence order. Richardson assumes an asymptotic h^2 error expansion; cancellation, center mismatch and unresolved solver error can invalidate it."
+      },
+      "full_spectral_derivative_halving": [
+        {
+          "h_large": 2.0,
+          "h_small": 1.0,
+          "difference": {
+            "preserved_in_full_report": true,
+            "element_count": 501
+          },
+          "max_abs": 2.0644844622469405e-05,
+          "l2_norm": 0.00011946831945633319
+        },
+        {
+          "h_large": 1.0,
+          "h_small": 0.5,
+          "difference": {
+            "preserved_in_full_report": true,
+            "element_count": 501
+          },
+          "max_abs": 4.384113146682633e-06,
+          "l2_norm": 1.4622438912359607e-05
+        },
+        {
+          "h_large": 0.5,
+          "h_small": 0.25,
+          "difference": {
+            "preserved_in_full_report": true,
+            "element_count": 501
+          },
+          "max_abs": 8.84661436317824e-06,
+          "l2_norm": 2.2949826434444343e-05
+        }
+      ],
+      "full_spectral_center_difference": {
+        "preserved_in_full_report": true,
+        "element_count": 501
+      }
+    }
+  },
+  "grids": {
+    "p1_lambda": {
+      "preserved_in_full_report": true,
+      "element_count": 501
+    },
+    "p1_f": {
+      "preserved_in_full_report": true,
+      "element_count": 501
+    },
+    "p2_lambda": {
+      "preserved_in_full_report": true,
+      "element_count": 501
+    },
+    "p2_f": {
+      "preserved_in_full_report": true,
+      "element_count": 501
+    }
+  },
+  "verdict": "DIAGNOSTIC_ONLY_OVERALL_CALIBRATION_REMAINS_FAILED",
+  "limitations": [
+    "No noise bounds inferred from a single repeat or halving differences.",
+    "No global calibration, new C coefficient, spatial-width validation or optimization claim.",
+    "Saved Tout/modal peak3 reproduction tolerance 1e-12 is an arithmetic check, not a scientific tolerance.",
+    "Old/new center values may differ despite identical nominal parameters; even/curvature terms depend on the chosen center.",
+    "Fixed-center peak3 Jacobian projection and moving-peak FD need not agree at finite h.",
+    "The h2 nominal code map fingerprints a read-only export, not creation of its surviving FSP. h2 endpoint generation has separately pinned later recovery/engine identities; full parameter/spec/grid/score agreement is checked, but code equality or complete original-solve provenance is not claimed."
+  ],
+  "full_report_file": "s2_corr30_four_steps_measured.json",
+  "full_report_sha256": "1137b0c905e82912818fa3172d06d1229867a64b4a2d8edc74deaa38b0b327bf"
+}

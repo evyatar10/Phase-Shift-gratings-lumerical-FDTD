@@ -1,0 +1,5 @@
+{
+  "exit_code": 0,
+  "out": "{\"exit_code\": 0, \"out\": \"{\\\"path\\\": \\\"/work/data/s2_half_classes_first_review_20261007.json\\\", \\\"sha256\\\": \\\"6722e1883338c0259b6fd2aa7386a2d12f1c5124708f590c1ce30a7c266f8d02\\\", \\\"stage\\\": \\\"first\\\", \\\"provenance_report\\\": \\\"/work/results/s2_provenance_probe_20261007T0753/provenance.json\\\", \\\"provenance_report_sha256\\\": \\\"a742c0d0921620a04d7e186a9baf7a1959d9752a40c7729815825265fe8c5c47\\\", \\\"allowed_tasks\\\": [0, 1, 2, 3]}\\n\", \"err\": \"\", \"manifest_lines\": [\"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", \"9\", \"10\", \"11\"]}\n",
+  "err": "...\r\n"
+}

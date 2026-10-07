@@ -1,0 +1,40 @@
+{
+  "checked_at": "2026-10-07T08:32:47.927283+03:00",
+  "args": [
+    "sbatch",
+    "--parsable",
+    "--array=0%1",
+    "--cpus-per-task=8",
+    "--mem=128G",
+    "--time=00:45:00",
+    "--qos=2h_2g",
+    "--partition=l40s-public",
+    "--mail-type=NONE",
+    "--chdir=/home/evyatarrubin/bragg_sim_athena/jobs",
+    "--export=ALL,ATHENA_LICENSE=1055@132.68.48.51,ATHENA_INTERCONNECT=2325@132.68.48.51,REQUIRE_GPU=0,KEEP_H5=1,NTFY_TOPIC=",
+    "jobs/run_s2_deps_im_20261007.sh"
+  ],
+  "re_reviewed_sha256": "73ae6c36fc75ac0c1a9ca470aff3c6627cb49c94f230b9b839810b5ade505440",
+  "wrapper_sha256": "ef14d5419e1bb24394c1beaba197022c30348472d43b63b1e1a1d06e5940d154",
+  "test_only": {
+    "exit_code": 0,
+    "out": "",
+    "err": "sbatch: Job 170955 to start at 2026-10-07T08:32:47 using 8 processors on nodes athena-post in partition l40s-public\n"
+  },
+  "requested_gpus": 0,
+  "no_fdtd_solve": true,
+  "exit_code": 0,
+  "out": "170956\n",
+  "err": "sbatch: lua: Submitted: 170956.4294967294 component: 0 using: sbatch\n",
+  "accounting": "170926_0      COMPLETED   00:31:04      0:0 \n170926_0.ba+  COMPLETED   00:31:04      0:0 \n170926_0.ex+  COMPLETED   00:31:04      0:0 \n170926_1      COMPLETED   00:32:22      0:0 \n170926_1.ba+  COMPLETED   00:32:22      0:0 \n170926_1.ex+  COMPLETED   00:32:22      0:0 \n170926_2      COMPLETED   00:32:24      0:0 \n170926_2.ba+  COMPLETED   00:32:24      0:0 \n170926_2.ex+  COMPLETED   00:32:24      0:0 \n170926_3      COMPLETED   00:31:59      0:0 \n170926_3.ba+  COMPLETED   00:31:59      0:0 \n170926_3.ex+  COMPLETED   00:31:59      0:0 \n170950_0      COMPLETED   00:05:18      0:0 \n170950_0.ba+  COMPLETED   00:05:18      0:0 \n170950_0.ex+  COMPLETED   00:05:18      0:0 \n",
+  "fetched_files": [
+    "s2_corr30_convergence_task00_original.json",
+    "s2_corr30_convergence_task00_ports.npz",
+    "s2_corr30_convergence_task01_original.json",
+    "s2_corr30_convergence_task01_ports.npz",
+    "s2_corr30_convergence_task02_original.json",
+    "s2_corr30_convergence_task02_ports.npz",
+    "s2_corr30_convergence_task03_original.json",
+    "s2_corr30_convergence_task03_ports.npz"
+  ]
+}

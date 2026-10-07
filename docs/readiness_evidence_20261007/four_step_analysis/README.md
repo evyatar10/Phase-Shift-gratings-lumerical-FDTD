@@ -1,3 +1,10 @@
+Current correction: use `existing_evidence_pins_role_bound.json` with the
+current helper. The original manifest is retained unchanged as evidence of
+the earlier failed comparison. Read HISTORICAL_IDENTITY_DIFF.md for the
+exporter-versus-forward-source correction and the measured four-step result.
+Current actual report: ../s2_corr30_four_steps_measured.json. Both original
+and new source roles remain qualified; no calibration pass is claimed.
+
 # Four-step comparison helper — offline preparation
 
 No repository, server, CAD, solver or calibration changes. Six focused synthetic

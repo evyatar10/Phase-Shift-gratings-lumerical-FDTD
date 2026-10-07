@@ -1,0 +1,22 @@
+{
+  "is_error": false,
+  "subtype": "success",
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 2702,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 2006,
+      "webSearchRequests": 0,
+      "costUSD": 0.07009599999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1353,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "result": "# Bounded decision tree for corr30 FD, Im reconstruction, and the four-step checks\n\n**Recommendation:** after the Im run and the four-step checks pass, spend hardware on the **remaining five probes as FD pairs at h=0.5**. Add **one center-repeat forward** as a cheap noise control. Defer higher PVA refinement.\n\n## What the data supports so far\n\n**Facts**\n- The corr30 FD derivative at h=2 is about half the h=1, 0.5 and 0.25 values (1.87e-5 vs about 3.6e-5).\n- The h=2 curvature term (E_T = 1.8e-4) is about 10 times the derivative.\n- The failed fit used h=2 FD data, so at least one of its six inputs is suspect.\n- Re dEps is stable to about 0.08% across h=1, 0.5 and 0.25.\n\n**Assumptions to avoid**\n- E_T collapses about 60 times from h=1 to h=0.5, not the 4 times expected for a smooth h\u00b2 trend. That could mean a nonsmooth feature between h=0.5 and h=1, a model artifact, or noise. One repeat cannot tell these apart.\n- The h=0.25 derivative is 4.8% below h=0.5. The 4.75e-7 shift between old and new centers, divided by 2h, gives about 1e-6/nm. That is the same order as this gap, which is consistent with a floor from noise or export differences. It is not proof of one.\n- An even-term pattern at non-h=2 steps does not establish noise or mesh effects.\n\n## Decision tree\n\n**1. Four-step identity bookkeeping fails**\n- Stop. The new FD values are not comparable to the original export.\n- Fix provenance before running any more solves.\n\n**2. Im reconstruction disagrees across h, or with the original Im (4.958e-3) beyond Re-level agreement**\n- The problem is in the Im or adjoint-port path, for example the 1-cell offset phase, which was read rather than independently predicted.\n- Run a focused phase check there, not more FD.\n- Note that with the failed coefficients, the Re and Im terms cancel to about 4.9e-5, so small Im errors are amplified.\n\n**3. Im is stable and the four-step checks pass**\n- Run the five remaining probes at h=0.5: 10 forwards, about 3 rounds of 4 A100s, roughly 1.6 hours. Reuse the new center.\n- Add one center repeat (1 forward) to get a minimal reproducibility estimate.\n- Then refit using the **unchanged 10% per-class and held-out gate**.\n\n**3a. Gate passes**\n- This only establishes that h=2 contamination plausibly caused the failure.\n- Condition number of about 8.5e3 means the coefficients are still fragile. Report their sensitivity.\n- Proceed only to the S2 smoke/toy test, as the note specifies.\n\n**3b. Gate fails, with shift30 or corr1 residuals dominating**\n- Run h=1 on those one or two probes to check h-convergence.\n- If they are non-convergent, run higher PVA refinement on that isolated family only.\n\n**3c. Gate fails across all classes**\n- The two-quadrature model is likely inadequate.\n- Stop fitting. Rethink the functional form rather than add data.\n\n## Why not the alternatives first\n\n| Option | Why not now |\n|---|---|\n| **h=1 for all five probes** | h=1 still shows a large E_T for corr30, so it is likely biased. |\n| **Repeats beyond one center** | Needed for a statistical bound, but they don't unblock the gate. Add them only if 3b shows step-size sensitivity at about the 1e-6 level. |\n| **Higher PVA refinement** | Expensive and changes the discretization family. It is only justified by evidence of non-convergence on a specific probe. |\n\n**Seat budget:** you have 7 shared seats with IGUM queued. Ten forwards plus one repeat fits within 4 concurrent jobs. Don't preempt the committed baseline.",
+  "lead_review": "Advisory only. Reject E-versus-D magnitude comparison without nm factor; large even response alone does not bias central D. A differing Im step is not automatically a port-phase defect. Center-repeat delta is not a statistical noise floor. Remaining class FD at smaller step is reasonable conditional on provenance and Re/Im fidelity; direct repeated endpoint pair is more targeted than assuming center variability applies to derivative noise."
+}

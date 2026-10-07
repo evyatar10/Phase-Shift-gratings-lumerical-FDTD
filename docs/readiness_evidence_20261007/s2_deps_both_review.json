@@ -1,0 +1,37 @@
+{
+  "rows": [
+    {
+      "step_nm": 1.0,
+      "re": -0.000559494985252897,
+      "im": 0.004958267085077855,
+      "unvalidated_old_fit_combination": 4.914217434138612e-05,
+      "cancellation_ratio": 24.9181587941222
+    },
+    {
+      "step_nm": 0.5,
+      "re": -0.000559220234137017,
+      "im": 0.004956026647602132,
+      "unvalidated_old_fit_combination": 4.9143013048678756e-05,
+      "cancellation_ratio": 24.906005304858365
+    },
+    {
+      "step_nm": 0.25,
+      "re": -0.0005596621732933079,
+      "im": 0.00495962798769905,
+      "unvalidated_old_fit_combination": 4.914135318651253e-05,
+      "cancellation_ratio": 24.92570580085613
+    }
+  ],
+  "re_h1_relative": 4.108184463226988e-14,
+  "im_h1_relative": 5.247973070664776e-16,
+  "both_originals_preserved": true,
+  "both_execution_errors": [
+    null,
+    null
+  ],
+  "raw_hashes": {
+    "re": "73ae6c36fc75ac0c1a9ca470aff3c6627cb49c94f230b9b839810b5ade505440",
+    "im": "09ac77a96d5a103c1051763aedab61157de38df5d2354e0b081f88939dc7100a"
+  },
+  "note": "Old failed-fit coefficients used ONLY to expose cancellation sensitivity; never installed, never promoted to calibrated gradient. Re/Im raw h1 reproduce old references. Global calibration FAILED."
+}

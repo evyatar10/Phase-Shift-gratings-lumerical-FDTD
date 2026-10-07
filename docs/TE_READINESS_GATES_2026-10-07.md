@@ -4,7 +4,40 @@ This is the completion contract for the authorized overnight preparation.
 It is not permission to launch a full optimization campaign. A passing offline
 suite or N70 pipeline smoke alone cannot establish N98 physical readiness.
 
-## Current diagnostic status, 08:03 Israel
+## Latest diagnostic status — calibration still blocking
+
+Athena170926_0–3 completed; all18 NEW overnight FDTD solves are complete.
+The role-aware corr30 four-step analysis passed six tests and actual evidence
+checks, with h2,1,.5,.25nm derivatives1.8748649e-5,3.6950366e-5,3.6672609e-5,
+3.4911852e-5 pernm. This is step-dependent evidence, not an established error
+order or noise bound.
+
+Stored-field Re170950_0 and Im170956_0 completed without FDTD solves. Their
+h1 contractions match original reconstructions near roundoff; smaller dEps
+steps change raw quadratures by less than0.1%. The old failed-fit combination
+is stable but unvalidated/uninstalled. Narrow provenance/extraction/mesher
+checks do not satisfy the unchanged10% per-class and held-out gradient gate.
+See `readiness_evidence_20261007/s2_corr30_four_steps_summary.json` and
+`s2_deps_both_review.json`.
+The server probes measured PVA `meshing refinement`5 in all inspected contexts.
+No mesh-refinement setting was changed to obtain these results.
+
+A staged h0.5nm class runner is prepared and passed six offline groups plus
+hidden CAD task2 with zero local FDTD solves. First-wave0–3 repeats corr30 and
+measures shift30. Athena170962 array0–3%4 was submitted08:55:24 with
+A100/8CPUs/256G/2h/12h_4g. At08:57 all four tasks were RUNNING with
+8thread/GPU startup readback; no results are claimed yet. Remote no-CAD
+identity validation passed. Eighteen completed solves remain unchanged;
+these four new forwards and queued IGUM are outstanding, not completed.
+Remaining4–11 require a separate lead-reviewed marker with authentic first-
+wave checkpoint SHAs and verdict. Preparation is not approval for later legs
+or for optimization. IGUM101155_0 remained queued at08:54; refresh resource
+and shared-seat checks before later release. At08:54 shared occupancy was0/50,
+with35/50 seats committed including IGUM and the new array; quota230G/300G
+soft/330G hard. The hardware optimizer smoke and N98
+physical-readiness criteria below remain blocked by failed calibration.
+
+## Historical diagnostic status, 08:03 Israel
 
 Failed S2 calibration remains blocking. Four corr30 forward-only convergence
 checks170926_0–3 are RUNNING; IGUM baseline101155_0 is queued. No-solve

@@ -1,0 +1,19 @@
+{
+  "runner_sha": "4f5f9d21cb95f5cfbcb1e0fc91ae960dc0dd57449c973369051c551c07c7bba1",
+  "marker_sha": "6722e1883338c0259b6fd2aa7386a2d12f1c5124708f590c1ce30a7c266f8d02",
+  "files": {
+    "runners/lumopt2_design/diagnose_te_s2_fdstep.py": "3bf24e3ea47600f1c08f13803c7ab29bc6cf8b95c08fef63152168b1069ee361",
+    "runners/lumopt2_design/lumopt2_design.py": "53108bbd368dd699179ab65029628aa4c4b2d8ad687777f88b82f404a0952569",
+    "runners/lumopt2_design/recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+    "runners/lumopt2_design/validate_te.py": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+    "runners/lumopt2_design/campaign_te_s2.py": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+    "bragg_device.py": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+    "simulation_config.py": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+    "sim_helpers.py": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+    "runners/lumopt2_design/v3_step.py": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8",
+    "runners/lumopt2_design/s2_fdhalf_classes.py": "4f5f9d21cb95f5cfbcb1e0fc91ae960dc0dd57449c973369051c551c07c7bba1",
+    "config.py": "da07ca3cf48d1cdbe947350678bb8b9699918a513752b207883007c93ac82795"
+  },
+  "offline_tests": "6 pass exit0",
+  "hidden_cad": "shift30 task2 PASS,723 properties exact,unchanged locked mesh; no solve"
+}

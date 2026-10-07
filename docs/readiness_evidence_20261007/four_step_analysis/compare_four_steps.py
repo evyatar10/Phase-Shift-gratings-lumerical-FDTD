@@ -35,6 +35,10 @@ def sha(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
+def semantic_sha(row):
+    return sha(json.dumps(row,sort_keys=True,separators=(',',':'),allow_nan=False).encode('utf8'))
+
+
 def load_json(path,expected=None):
     raw=Path(path).read_bytes()
     require(expected is None or sha(raw)==expected,'Raw checkpoint/marker hash mismatch: '+str(path))
@@ -193,6 +197,12 @@ def validated_inputs(evidence,archive,pins):
     for row,a in zip(pins['old_checkpoint_rows'],old):
         reproduce(row,a)
     old_center,old_plus,old_minus=pins['old_checkpoint_rows']
+    bindings=pins.get('old_source_bindings',{})
+    exporter=bindings.get('center_export',{})
+    require(exporter.get('role')=='stored_forward_export_no_solve'
+            and old_center['identity']['code']==exporter.get('code')
+            and semantic_sha(old_center)==exporter.get('semantic_sha256'),
+            'Old center exporter source/content binding mismatch')
     match_point(old_center['identity']['point'],ident['point'],'Old/new nominal parameter mismatch')
     for row,task,sign in ((old_plus,3,1),(old_minus,4,-1)):
         old_i,old_r=row['identity'],row['result']
@@ -201,10 +211,15 @@ def validated_inputs(evidence,archive,pins):
         match_point(old_i['point'],ident['point'],'Old two-nm base point mismatch')
         p=np.asarray(ident['point'],float).copy();p[29]+=sign*2.
         match_point(old_r['params'],p,'Old two-nm endpoint mismatch')
-        require(old_i['code']==old_center['identity']['code'],'Old two-nm source family mismatch')
+        endpoint=bindings.get('fd_endpoints',{}).get(str(task),{})
+        require(endpoint.get('role')=='new_forward_fd_leg'
+                and old_i['code']==endpoint.get('code')
+                and semantic_sha(row)==endpoint.get('semantic_sha256'),
+                'Old two-nm FD source/content binding mismatch')
         common=set(old_i['spec']) & set(ident['spec'])-{'label'}
         require(all(old_i['spec'][k]==ident['spec'][k] for k in common),'Old numerical-family mismatch')
     provenance['old_archive']=sha(archive_raw);provenance['review_marker']=marker_sha
+    provenance['old_source_roles']=bindings
     return arrays,new_arrays,old,provenance
 
 
@@ -237,6 +252,7 @@ def analyze(evidence,archive,pins):
             'Saved Tout/modal peak3 reproduction tolerance 1e-12 is an arithmetic check, not a scientific tolerance.',
             'Old/new center values may differ despite identical nominal parameters; even/curvature terms depend on the chosen center.',
             'Fixed-center peak3 Jacobian projection and moving-peak FD need not agree at finite h.'])
+    output['limitations'].append('The h2 nominal code map fingerprints a read-only export, not creation of its surviving FSP. h2 endpoint generation has separately pinned later recovery/engine identities; full parameter/spec/grid/score agreement is checked, but code equality or complete original-solve provenance is not claimed.')
     for metric,transform in METRICS.items():
         f0new,f0old=transform(a[0]),transform(old[0])
         cnew,cold=peak3(f0new),peak3(f0old)
