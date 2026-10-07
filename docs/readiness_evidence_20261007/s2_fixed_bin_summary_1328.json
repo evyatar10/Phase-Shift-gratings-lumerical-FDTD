@@ -1,0 +1,75 @@
+{
+  "status": "DIAGNOSTIC_FITS_ONLY_GLOBAL_CALIBRATION_FAILED",
+  "inputs": {
+    "re": "b6a4a79816fe9a6d0de2115cc9eb03bb13a475489a32c101841f43b0ce8bc0e7",
+    "im": "1470c5695e08b7d939d2c4fbfa63bbbe0d6a0cdd2ea7cd36a48544ff397a9d7c",
+    "spectra": "2dcc992ad67d037a831d9b88be480aa079feb204cd6189307026f08bf6f52a73"
+  },
+  "condition": 4.320398895142239,
+  "summary": {
+    "peak3_tout": {
+      "0.125": {
+        "relative_l2_residual": 0.001630066418565448,
+        "heldout_center_error": -0.0011215764331416484,
+        "ls_coefficients": [
+          0.8428903737168493,
+          0.10274179849864837
+        ]
+      },
+      "0.0625": {
+        "relative_l2_residual": 0.0011322415922084873,
+        "heldout_center_error": 0.0007888310252915035,
+        "ls_coefficients": [
+          0.8533353803709359,
+          0.10475574245146493
+        ]
+      }
+    },
+    "peak3_modal": {
+      "0.125": {
+        "relative_l2_residual": 0.04491075044197916,
+        "heldout_center_error": 0.0349121614285306,
+        "ls_coefficients": [
+          0.9136783880388397,
+          0.16493447218288265
+        ]
+      },
+      "0.0625": {
+        "relative_l2_residual": 0.04892517095077434,
+        "heldout_center_error": 0.03854686756722982,
+        "ls_coefficients": [
+          0.9250394328870911,
+          0.16768697421594694
+        ]
+      }
+    }
+  },
+  "im_control": {
+    "reference": -1.708469272168592,
+    "measured": -1.7084692721685926,
+    "difference": -6.661338147750939e-16,
+    "relative_difference": 3.8990096317597674e-16,
+    "arithmetic_rtol": 1e-12,
+    "arithmetic_atol": 1e-14,
+    "status": "NUMERICAL_REPRODUCTION_ONLY_NOT_SCIENTIFIC_GRADIENT_PASS",
+    "component_contractions_xyz": [
+      0.2833910292333479,
+      -1.9863859063921454,
+      -0.005474395009795144
+    ]
+  },
+  "limitations": [
+    "One parameter and three spectral bins, two fitted coefficients. No independent parameter validation.",
+    "Current FD is from geometry-dependent auto-stop durations; temporal convergence unresolved.",
+    "Coefficients are diagnostic least squares only, not an installed calibration.",
+    "Peakheight derivatives cannot be certified by flank agreement.",
+    "Tout and modal S21 squared are distinct; both reported without conversion."
+  ],
+  "usage": {
+    "at_Israel": "2026-10-07 13:25",
+    "weekly_used_percent": 36,
+    "weekly_remaining_percent": 64,
+    "separate_model_and_Claude_limits": "unknown",
+    "reset_redeemed": false
+  }
+}

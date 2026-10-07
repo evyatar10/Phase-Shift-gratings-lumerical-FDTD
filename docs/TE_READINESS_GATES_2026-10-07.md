@@ -1,5 +1,29 @@
 # Full-optimization readiness criteria
 
+## Update13:27 Israel - both raw quadratures reproduced; fixed-bin comparison remains diagnostic
+
+CPU171225_0 Im COMPLETED exit0 in8:24. Raw original SHA
+1470c5695e08b7d939d2c4fbfa63bbbe0d6a0cdd2ea7cd36a48544ff397a9d7c.
+Originalpeak3 -1.7084692721685926 matches reference -1.708469272168592
+(relative3.90e-16); all originals/dependencies preserved. Three raw Im bins
+244/252/260: -1.4055662051364066,-1.7095314148810021,-1.4984896535677845.
+With reviewed Re, three-bin/two-coefficient matrix condition4.3204. Diagnostic
+LS relative residuals h=.125/.0625: Tout0.1630%/0.1132%, modal4.4911%/4.8925%.
+However heldout center errors Tout -0.00112158/+0.000788831 pernm and modal
++0.0349122/+0.0385469 pernm remain; large flanks dominate norm. One parameter,
+three bins, variable auto-stop times: no global calibration or peakgradient pass.
+No coefficients installed. Exact comparison/LOO evidence in
+s2_fixed_bin_comparison_1328.json and compact s2_fixed_bin_summary_1328.json.
+
+At13:23 temporal171216 allthree RUNNING, actual62-63ps/100ps. CompletedFDTD26.
+100ps retrieval pending;150ps blocked until explicit100ps review. Parent reran
+all7 strict offline reader tests exit0; packet s2_temporal_reader_reviewed_1323.zip.
+Latest actual usage13:25 weekly64%remaining; model-specific/Claude limitsunknown.
+Personalinverse-design skill updated/validated with measured arithmetic-only
+reload guard and one-parameter fixed-bin limitations. Focused Claude Opus5.5 review completed; accepted one-residual-degree-of-freedom
+warning, rejected tautological cross-step "FD-limited" criterion and150ps center-only
+interpretation. Review claude_fixed_bin_review_1327.json. Latest Gitdf279ba before this checkpoint.
+
 ## Update13:05 Israel - staged temporal forwards and corrected CPU reconstruction active
 
 Athena **171216 tasks0,1,2** submitted13:01:23 for exactcenter/shift30+/-0.0625nm
