@@ -577,12 +577,14 @@ class FakeLog:
         e, lab = self.script[it], self.spec.label
         stale = bool(e.get("stale"))            # ineligible spectrum: no λ stencil
         self.spec._wg_dTp, self.spec._wg_lam_idx = (None, None) if stale else (-1.0, (0, 1))
-        Wm = float(e["W"](p) if callable(e["W"]) else e["W"])
+        Wm = (float(e["W"](p) if callable(e["W"]) else e["W"])
+              if e.get("W") is not None else None)
         lm = e.get("lam", LAM0)
         lm = float(lm(p) if callable(lm) else lm)
         row = {"eval": int(it), "fom": float(fom), "params": [float(v) for v in p],
                "fwhm_env_um": Wm, "lam_pk_nm": lm,
-               "softw_um": Wm - 0.4, "softw_adj_um": e.get("sw_adj", Wm - 0.3)}
+               "softw_um": (Wm - 0.4 if Wm is not None else None),
+               "softw_adj_um": e.get("sw_adj", Wm - 0.3 if Wm is not None else None)}
         for k_src, k_row in (("cw", "cw_um_per_nm"), ("curved", "cw_curved"), ("twin", "twin_lam_nm")):
             if e.get(k_src) is not None:
                 row[k_row] = e[k_src]
@@ -609,7 +611,8 @@ def drive(script, gT, fn=None, post=None, **kw):
                                           FakeLog(spec, td, script), td, P0)
             except Exception as e:                  # noqa: BLE001 - returned to the caller
                 exc = e
-        rd = lambda n: [json.loads(l) for l in open(os.path.join(td, n))]
+        rd = lambda n: ([json.loads(l) for l in open(os.path.join(td, n))]
+                        if os.path.exists(os.path.join(td,n)) else [])
         res = {"out": buf.getvalue(), "ev": rd(f"{spec.label}_evals.jsonl"), "exc": exc,
                "pr": rd(f"{spec.label}_proj.jsonl"), "ost": eng._load_opt_state(td, spec.label),
                "post": post(spec, td) if post else None}
@@ -870,22 +873,85 @@ check("  tooth: without the marg/2 tolerance the same trial is a width reject",
       "v3_width_reject" in r21t["pr"][1] and r21t["pr"][1]["phase"].endswith("-retry"),
       r21t["pr"][1]["phase"])
 
-# -- V9 DEGRADED WIDTH ROW: cw missing / curved / no gλ ⇒ λ bound halved, loud
-cases9 = {"ok": dict(cw=0.3), "missing": dict(), "curved": dict(cw=0.3, curved=True),
-          "no_glam": dict(cw=0.3, stale=True)}
+# -- V9 DEGRADED WIDTH ROW: missing/curved cW retain a halved lambda row;
+# missing gLambda fails before proposal rather than silently omitting the row.
+cases9 = {"ok": dict(cw=0.3), "missing": dict(), "curved": dict(cw=0.3, curved=True)}
 res9 = {}
 for st_, extra in cases9.items():
     r9 = drive([dict(fom=F0, W=W0, **extra)], gT10, max_iter=1)
     q9 = r9["pr"][0]
-    lam_row = q9["v3_pred_rows"][1] if len(q9["v3_pred_rows"]) > 1 else None
-    res9[st_] = (q9.get("v3_cw_state"), "DEGRADED WIDTH ROW" in r9["out"], lam_row)
-ok9 = all(res9[k][0] == k and res9[k][1] for k in ("missing", "curved", "no_glam"))
-check("V9 degraded states logged + '★v3 DEGRADED WIDTH ROW' printed (missing/curved/no_glam)",
-      ok9 and res9["no_glam"][2] is None, str({k: v[:2] for k, v in res9.items()}))
-check("V9 degraded λ-row prediction <= ½·dlam; ok state uses the FULL bound (and no warning)",
+    res9[st_] = (q9.get("v3_cw_state"), "DEGRADED WIDTH ROW" in r9["out"],
+                 q9["v3_pred_rows"][1])
+check("V9 missing/curved cW logged with degraded lambda-row warning",
+      all(res9[k][0] == k and res9[k][1] for k in ("missing", "curved")), str(res9))
+check("V9 degraded lambda row <= half allowance; valid cW uses full allowance",
       all(abs(res9[k][2]) <= DLAM / 2 + 1e-7 for k in ("missing", "curved"))
       and res9["ok"][0] == "ok" and not res9["ok"][1] and abs(res9["ok"][2]) > DLAM / 2 + 1e-3,
-      str({k: (round(v[2], 6) if v[2] is not None else None) for k, v in res9.items()}))
+      str(res9))
+
+# -- V22 MISSING WIDTH: bounded recovery, no duplicate forward, no false convergence.
+s22 = [dict(fom=F0, W=W0)] + [dict(fom=F0, W=None)] * 7
+r22 = drive(s22, gT10, max_iter=8)
+p22 = [np.asarray(e["params"]) for e in r22["ev"]]
+check("V22 persistent missing width: 3 failures stop explicitly, accepted state retained",
+      isinstance(r22["exc"], RuntimeError) and "UNRESOLVED WIDTH MEASUREMENT" in str(r22["exc"])
+      and len(p22) == 4 and r22["pr"][-1]["phase"] == "unresolved-width"
+      and r22["pr"][-1]["missing_width_count"] == 3 and r22["ost"]["n_acc"] == 1
+      and "CONVERGED" not in r22["out"] and all(np.max(np.abs(a-b)) >= 1e-9 for a,b in zip(p22,p22[1:])),
+      f"evals {len(p22)} exception {r22['exc']}")
+r22f = drive(s22, gT10, max_iter=8, wgp_step_max_nm=2.0)
+check("V22 cap floor: identical next geometry is stopped before a repeated forward",
+      isinstance(r22f["exc"], RuntimeError) and len(r22f["ev"]) == 2
+      and "repeat an attempted geometry" in str(r22f["exc"])
+      and r22f["ost"]["cap_nm"] == 2.0 and "CONVERGED" not in r22f["out"], str(r22f['exc']))
+r22ok = drive([dict(fom=F0,W=W0),dict(fom=F0,W=None),dict(fom=F0+.001,W=W0)],gT10,max_iter=3)
+check("V22 one transient missing width retries a distinct point and recovers",
+      r22ok["exc"] is None and len(r22ok["ev"]) == 3
+      and r22ok["pr"][1]["phase"] == "no-width-retry" and r22ok["ost"]["n_acc"] == 2
+      and np.max(np.abs(np.array(r22ok['ev'][1]['params'])-np.array(r22ok['ev'][2]['params']))) > 1e-9,
+      str(r22ok["exc"]))
+
+# -- V23 ESSENTIAL LAMBDA ROW: first or later stale stencil cannot propose/grow.
+for later in (False, True):
+    s23 = ([dict(fom=F0,W=W0)] if later else []) + [dict(fom=F0+.01,W=W0,stale=True)]
+    r23 = drive(s23,gT10,max_iter=len(s23))
+    check(f"V23 missing gLambda later={later}: unresolved before acceptance/radius/proposal",
+          isinstance(r23["exc"], RuntimeError) and "UNRESOLVED WAVELENGTH GRADIENT" in str(r23["exc"])
+          and r23["pr"][-1]["phase"] == "unresolved-gradient"
+          and "v3_pred_rows" not in r23["pr"][-1] and "v3_radius" not in r23["pr"][-1]
+          and r23["ost"]["cap_nm"] == CAPV and r23["ost"]["n_acc"] == int(later)
+          and "CONVERGED" not in r23["out"], str(r23["exc"]))
+with grads(gHi=np.full(NP_, np.nan)):
+    r23nan = drive([dict(fom=F0,W=W0)],gT10,max_iter=1)
+check("V23 nonfinite gLambda fails explicitly with preserved finite state and diagnostic indices",
+      isinstance(r23nan["exc"], RuntimeError)
+      and "UNRESOLVED WAVELENGTH GRADIENT" in str(r23nan["exc"])
+      and len(r23nan["pr"][0].get("nonfinite_glambda_indices", [])) == NP_
+      and r23nan["ost"]["n_acc"] == 0 and r23nan["ost"]["cap_nm"] == CAPV, str(r23nan["exc"]))
+
+# -- V24 shared hard width: even sub-tolerance violations cannot buy transmission.
+strict24 = (eng.RHO_DN*W0, W0)
+for excess24 in (0.03, 1e-7):
+    script24 = [dict(fom=F0,W=W0),dict(fom=F0+.01,W=W0+excess24)]
+    # Deliberately place the INNER upper at hard upper: old margin/2 tolerance
+    # would allow both trials without the shared measured-contract check.
+    r24 = drive(script24,gT10,max_iter=2,fwhm_bounds_um=strict24,
+                wgp_v3_band_um=(W0-.2,W0))
+    r24default = drive(script24,gT10,max_iter=2,wgp_v3_band_um=(W0-.2,W0))
+    check(f"V24 strict hard upper rejects +{excess24} um despite inner tolerance",
+          r24["exc"] is None and r24["pr"][1]["phase"].endswith("-retry")
+          and r24["pr"][1]["hard_width_violation_um"] > 0
+          and r24["pr"][1]["fom_best"] == F0 and r24["ost"]["n_acc"] == 1,
+          str(r24["pr"][1]))
+    check(f"V24 default ±2% retains acceptance for +{excess24} um",
+          r24default["exc"] is None and not r24default["pr"][1]["phase"].endswith("-retry")
+          and r24default["pr"][1]["hard_width_violation_um"] == 0,
+          r24default["pr"][1]["phase"])
+r24bad = drive([dict(fom=F0,W=W0)],gT10,max_iter=1,fwhm_bounds_um=strict24,
+               wgp_v3_band_um=(W0-.2,W0+.1))
+check("V24 inconsistent inner/hard band rejected before any forward",
+      isinstance(r24bad["exc"], ValueError) and not r24bad["ev"] and not r24bad["pr"],
+      str(r24bad["exc"]))
 
 # -- V10 RECENTER: an ACCEPTED v3 point beyond recenter_nm from the scan centre
 s10 = [dict(fom=F0, W=W0, lam=LAM0 + SV.recenter_nm + 0.1)]
@@ -1147,7 +1213,8 @@ class FakeFdtd:
 
     def getresult(self, mon, key):
         if mon == "FDTD::ports::Port_2":
-            return {"S": np.sqrt(T7).astype(complex), "lambda": wl_nm * 1e-9}
+            return {"S": np.sqrt(T7).astype(complex), "T_out": 0.9*T7,
+                    "lambda": wl_nm * 1e-9}
         if mon == "FDTD::ports::Port_1":
             return {"S": np.full(wl_nm.size, 0.2 + 0j), "lambda": wl_nm * 1e-9}
         if mon == "field_profile":
@@ -1187,6 +1254,14 @@ def real_cb_row(fdtd, spec=SV):
 
 
 row7 = real_cb_row(FakeFdtd())[0]
+ilo7, ihi7 = SV._wg_lam_idx
+slopes7 = [(T7[i+1]-T7[i-1])/(wl_nm[i+1]-wl_nm[i-1]) for i in (ilo7, ihi7)]
+check("port normalization: gLambda denominator uses selector T_out, not modal S squared",
+      np.isclose(SV._wg_dTp, .9*(slopes7[1]-slopes7[0]), rtol=1e-10)
+      and not np.isclose(SV._wg_dTp, slopes7[1]-slopes7[0], rtol=.01))
+check("port normalization: callback records separate objective and modal peaks",
+      np.isclose(row7.get('tout_over_modal_at_peak'), .9)
+      and np.isclose(row7.get('tout_peak3'), .9*row7.get('modal_peak3')))
 cw7 = row7.get("cw_um_per_nm")
 check("V7 REAL callback: cw_um_per_nm within 5 % of the profile's dFWHM/dλ = 0.3",
       cw7 is not None and abs(cw7 - RATE7) / RATE7 < 0.05 and "diag_error" not in row7,
@@ -1216,7 +1291,8 @@ class FakeFdtd14(FakeFdtd):
 
     def getresult(self, mon, key):
         if mon == "FDTD::ports::Port_2":
-            return {"S": np.sqrt(self.T).astype(complex), "lambda": wl_nm * 1e-9}
+            return {"S": np.sqrt(self.T).astype(complex), "T_out": .9*self.T,
+                    "lambda": wl_nm * 1e-9}
         return FIELD14 if mon == "field_profile" else super().getresult(mon, key)
 
 
@@ -1272,6 +1348,37 @@ check("  tooth: the old single-span 3-point estimator flags the same profile cur
 check("V17 (iii) odd cubic: adjacent slopes disagree > 20 % ⇒ curved, NARROWEST slope reported",
       cub17.get("cw_curved") is True and cub17["cw_um_per_nm"] == cub17["cw_slopes"][-1],
       f"slopes {cub17.get('cw_slopes')} → cw {cub17.get('cw_um_per_nm')}")
+
+# V18: a width-rejected high FOM must not poison the acceptance reference.
+r18 = drive([dict(fom=F0, W=W0, cw=0),
+             dict(fom=F0+.1, W=W_HI+.2, cw=0),
+             dict(fom=F0+.005, W=W0, cw=0)], gT_pred(10),
+            max_iter=3, wgp_mode_mac=None)
+check("V18 wide high-FOM trial rejected without raising best",
+      r18['exc'] is None and r18['pr'][1].get('v3_width_reject') is not None
+      and r18['pr'][1]['fom_best'] == F0, str(r18['pr'][1]))
+check("V18 subsequent in-band improvement accepted",
+      not r18['pr'][2]['phase'].endswith('-retry')
+      and r18['pr'][2]['fom_best'] == F0+.005, str(r18['pr'][2]))
+
+# -- V25 callback tripwire and surrogate penalty share explicit hard bounds.
+cb25 = dataclasses.replace(SV,wgp_v3=False,fwhm0_um=None,
+                          fwhm_bounds_um=(FW14-.4,FW14-.01))
+row25,err25 = real_cb_row(FakeFdtd14(LAMPK7),cb25)
+check("V25 callback explicit hard band trips even without fwhm0 anchor",
+      isinstance(err25,eng.WidthTrip) and row25["fwhm_env_um"] > cb25.fwhm_bounds_um[1],str(err25))
+anc25 = {"softw":18.738,"fwhm":W0}
+pen25strict = dataclasses.replace(SV,wg_anchor=anc25,fwhm_bounds_um=strict24)
+pen25old = dataclasses.replace(SV,wg_anchor=anc25)
+check("V25 AL hinge uses strict hard upper; default unchanged in-band",
+      float(eng.width_band_penalty(pen25strict,18.748)) > 0
+      and float(eng.width_band_penalty(pen25old,18.748)) == 0)
+fwanc25 = {"fwhm":W0+.01,"mcorr":float(P0[eng.layout(SV.n_free).SL_CORR].mean()),"elong":0.0}
+fws25 = dataclasses.replace(SV,fw_anchor=fwanc25,fw_tooth_w=None,
+                           fwhm_bounds_um=strict24)
+fwo25 = dataclasses.replace(fws25,fwhm_bounds_um=None)
+check("V25 fwhm wall uses hard upper; default unchanged in-band",
+      float(eng.make_fwhm_wall(fws25)[0](P0)) > 0 and float(eng.make_fwhm_wall(fwo25)[0](P0)) == 0)
 
 print("V3 LOCAL GATE: ALL PASS" if not FAILS else f"V3 LOCAL GATE: FAIL ({len(FAILS)}): {FAILS}")
 sys.exit(1 if FAILS else 0)

@@ -369,7 +369,7 @@ with _tf.TemporaryDirectory() as td:
           eng.profile_mac(g0, _os.path.join(td, "nope.npz")) is None)
 check("U3 wired: mode hop rejects exactly like the λ jump",
       "lam_jump or mode_hop or" in src10
-      and 'acc[\'eval_num\']' in src10 and '"eval_num": int(it)' in src10)
+      and 'acc["profile_path"]' in src10 and 'persistence.profile_path' in src10)
 
 # -- 11) DRIVER-LEVEL: the REAL run_projected through a FAKE project ---------
 # (2026-10-05, GPT review A1/A4/A5). No Lumerical: the project returns
@@ -435,13 +435,19 @@ class _FakeLog:
         self.spec._wg_lam_idx = None if e.get("stale") else (0, 1)
         # softw_adj_um (the twin's sample) differs from softw_um by an
         # eval-DEPENDENT offset so T7 can tell which one the secant used
-        with open(_os.path.join(self.out_dir, f"{lab}_evals.jsonl"), "a") as f:
-            f.write(_json.dumps({"eval": int(it), "fom": float(fom),
+        row = {"eval": int(it), "fom": float(fom),
                                  "params": [float(v) for v in p],
                                  "fwhm_env_um": e["W"], "lam_pk_nm": LAM0,
                                  "softw_um": e["W"] - 0.4,
-                                 "softw_adj_um": e["W"] - 0.3 + 0.01 * it})
-                    + "\n")
+                                 "softw_adj_um": e["W"] - 0.3 + 0.01 * it}
+        if e.get("immutable"):
+            row["eval_id"] = eng.persistence.new_id()
+            if not e.get("missing_profile"):
+                row["profile_file"] = eng.persistence.save_profile(
+                    self.out_dir, lab, row, x_um=XG,
+                    I=e.get("prof", GAUSS), lam_pk_nm=LAM0)
+        eng.persistence.append_row(
+            _os.path.join(self.out_dir, f"{lab}_evals.jsonl"), row)
         pd = _os.path.join(self.out_dir, "profiles")
         _os.makedirs(pd, exist_ok=True)
         np.savez_compressed(_os.path.join(pd, f"{lab}_ev{int(it):04d}.npz"),
@@ -573,7 +579,7 @@ check("T3b post-hop improvement (MAC 1) ACCEPTED, anchor not raised",
       f"{r3b['pr'][2]['phase']} fom_best {r3b['pr'][1]['fom_best']:.4f}")
 check("T3b _best_from_log returns it", _ev_idx(r3b, bp3b) == [2],
       f"-> eval {_ev_idx(r3b, bp3b)}")
-FB_FIX = "if not (lam_jump or mode_hop):\n            fom_best = max(fom_best"
+FB_FIX = "if accepted_this_eval:\n            fom_best = max(fom_best"
 ns3b = dict(vars(eng))
 exec(compile(src_rp.replace(FB_FIX, "if True:\n            fom_best = max("
                             "fom_best"), eng.__file__, "exec"), ns3b)
@@ -809,6 +815,28 @@ check("teeth: cond_norm=False returns the FREE step (λ uncontrolled)",
       ph14o == "ns2_free" and np.allclose(s14o, free14, rtol=1e-12)
       and abs(float(gL8 @ s14o) + hL14) > 1e-3,
       f"{ph14o} gLam.d {float(gL8 @ s14o):+.4g}")
+
+# A new row without a profile must not borrow a stale same-number legacy
+# file. The fake callback deliberately leaves that tempting file present.
+for missing in (False, True):
+    with _tf.TemporaryDirectory() as td:
+        script = [dict(fom=F0, W=W0, immutable=True),
+                  dict(fom=F0 + .01, W=W0, immutable=True,
+                       missing_profile=missing)]
+        result = _drive(td, script, max_iter=2)
+        trial = result["pr"][1]
+        rejected = trial["phase"].endswith("-retry")
+        check(f"T15 immutable profile missing={missing}: correct MAC/rejection",
+              rejected == missing and
+              (trial["mac"] is None if missing else abs(trial["mac"]-1) < 1e-12))
+        expected_ids = [e['eval_id'] for e in result['ev'][:1 if missing else 2]]
+        check(f"T15 missing={missing}: committed acceptance IDs match decisions",
+              result['ost'].get('accepted_eval_ids') == expected_ids)
+        if missing:
+            bp, _ = eng._best_from_log(result["spec"], td,
+                                       {"fom": -np.inf, "params": P0})
+            check("T15 missing-profile higher-FOM trial excluded from restart",
+                  np.allclose(bp, P0) and len(result["ost"]["ineligible"]) == 1)
 
 print(("\nALL PASS" if not fails else f"\nFAILED: {fails}"))
 sys.exit(1 if fails else 0)

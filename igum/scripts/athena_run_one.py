@@ -105,6 +105,17 @@ def _patched_FDTD_init(self, *args, **kwargs):
             sys.exit(2)
         print(f"[athena_run_one] WARNING: {msg}; will run on CPU.")
         return
+    # Match the allocated CPU threads for GPU initialization, independently
+    # of per-node CAD resource defaults. Do not change the MPI process count.
+    if "SLURM_CPUS_PER_TASK" in os.environ:
+        threads = int(os.environ["SLURM_CPUS_PER_TASK"])
+        if threads < 1:
+            raise RuntimeError("SLURM_CPUS_PER_TASK must be positive")
+        self.setresource("FDTD", 1, "threads", str(threads))
+        actual = int(float(self.getresource("FDTD", 1, "threads")))
+        if actual != threads:
+            raise RuntimeError(f"FDTD thread readback {actual} != allocation {threads}")
+        print(f"[athena_run_one] FDTD threads = {actual} (Slurm allocation).")
     # NOTE — DO NOT set processes=1 explicitly. The user already discovered
     # (on the legacy DGX cluster, 2026-04) that setting it
     # BREAKS the simulation: FDTD aborts after ~2 s without computing modal

@@ -128,7 +128,13 @@ except AssertionError as e:
     print(f"  FAIL task 49 (rescale_s5 replay): {e}")
     allok = False
 
-print("\n" + ("ALL SEEDS IN BOUNDS — safe to dispatch"
+from runners.lumopt2_design import validate_te as _te
+for _mod in _te.SEEDS.values():
+    allok &= check(_mod.SPEC_V3.label + " seed", _mod.SPEC_V3,
+                   eng.seed_params(_mod.SPEC_V3))
+allok &= _te.check_points()
+
+print("\n" + ("ALL CHECKED SEEDS AND FD LEGS IN BOUNDS"
                if allok else "*** DO NOT DISPATCH — fix the bounds first ***"))
 # ★INDEX-REACHABILITY (2026-08-28, after TWO collisions with _GFR_RUNGS'
 # membership branch ate tasks 27 and 34): our named tasks must not be

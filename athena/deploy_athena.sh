@@ -837,10 +837,11 @@ echo "=== Uploading project files ==="
 # repeated deploys are near-instant when nothing has changed.
 rsync -av --itemize-changes "${LOCAL_PROJECT}"/*.py "${SSH}:${REMOTE_BASE}/project/"
 echo "  syncing runners/ (single + sweeps + studies)"
-rsync -av --delete --itemize-changes \
+# Preserve remote-only files; cleanup requires a separate, explicitly authorized action.
+rsync -av --itemize-changes \
     "${LOCAL_PROJECT}/runners/" "${SSH}:${REMOTE_BASE}/project/runners/"
 echo "  syncing convergence_testing/"
-rsync -av --delete --itemize-changes \
+rsync -av --itemize-changes \
     "${LOCAL_PROJECT}/convergence_testing/" "${SSH}:${REMOTE_BASE}/project/convergence_testing/"
 
 echo ""

@@ -1,5 +1,10 @@
 # THE DESIGN, AND THE METHOD — pi-shift Bragg grating, inverse design
 
+> **Current TE method (2026-10-06): read §13 first.** Chapters 1–12 describe
+> historical TM methods and experiments; they are not the current TE v3
+> specification. Current audit/state: [CODEX_AUDIT_2026-10-06.md](../../docs/CODEX_AUDIT_2026-10-06.md).
+> The self-contained handoffs are dated snapshots, not automatically regenerated.
+
 > ### ℹ️ You probably want `HANDOFF_SELF_CONTAINED.md` instead
 > This file is the **method chapters only**, and it is *entirely contained in*
 > `HANDOFF_SELF_CONTAINED.md`, which adds the 191-parameter design vector, the
@@ -10,7 +15,7 @@
 
 **What this file is.** The handoff for the inverse-design programme. `HANDOFF.md` is *state* — jobs, numbers, what to run
 next. This is the *explanation*: the device we have built, why we are doing
-inverse design at all, why a single cost function provably cannot do this job,
+inverse design at all, why the earlier penalty implementations failed here,
 and what our algorithm actually does instead.
 
 Diagrams: §7 specifies what to draw and how. Every number is **MEASURED** (from a named file),
@@ -53,8 +58,9 @@ one resonant mode inside that gap. Resonant light tunnels through; the rest of
 the stopband reflects.
 
 **What we optimize for.**
-- **Transmission `T` at resonance.** `1 − T` is cavity loss — resonant energy
-  radiated out of the guide instead of transmitted.
+- **Transmission `T` at resonance.** `1 − T` includes reflection. The recorded
+  residual is `1 − T − R`; interpreting all of it as radiation requires
+  negligible absorption and adequate numerical/port accuracy.
 - **Spatial mode width `W`** — FWHM of the resonant field envelope along `x`,
   in µm. This is the **sensing aperture** for the acousto-optic application.
 
@@ -548,6 +554,16 @@ unproven.
 
 ## 10. ★ The route we have NOT taken yet — a proper augmented Lagrangian
 
+**October 7 qualification:** this historical chapter is not a validated AL
+implementation. Its clipped linear/quadratic expression is not the shifted
+PHR inequality formula, and one scalar FOM does not merge the current two
+physical adjoint files. A real source merger, compatible frequency weights,
+calibration and an outer loop are required. AL can solve a fixed constrained
+problem, not only a trade-off curve. See
+`docs/TE_OBJECTIVE_DECISION_2026-10-07.md` for the corrected equations, source
+audit, cost accounting and current recommendation. The old 33% figure assumes
+equal solve costs and is not a measured speedup.
+
 §4b rejected a *fixed-μ penalty*. An **augmented Lagrangian** is not that, and
 it is the strongest alternative to the projection method. It deserves a fair
 statement, because parts of it are already built.
@@ -747,3 +763,73 @@ is not the same as *validated*.
 | offline gates, all zero-GPU | `gates/` |
 | project invariants and the trap list | `../../CLAUDE.md` |
 | the defect history in full detail | `HANDOFF.md`, and the memory file `project_v2_width_gradient_plan.md` |
+
+## 13. Current TE v3 method (2026-10-06)
+
+The active lane uses `campaign_te_s1.SPEC_V3` and `campaign_te_s2.SPEC_V3`:
+TE, N=98 per side, 60 free teeth per side, bare geometry. `layout(60)` has
+296 entries: 60 corrugations, 60 average widths, 60 shifts, 114 inert comb
+entries, one inert comb-distance entry, and cavity width. There are 181
+physical design variables; retained comb slots do not create posts.
+
+The measured spatial envelope FWHM remains the acceptance authority, with a
+two-sided ±2% band around EACH seed's own anchor: S1 19.121 µm and S2
+19.636 µm. These bands are different. Comparing the two basins at an exactly
+common width needs an explicit shared target; none was changed in this audit.
+
+`make_fct_peak` estimates the selected resonance peak with a three-sample
+parabola on the uniform-frequency grid. `PortResults` supplies `abs(T_out)`;
+the callback independently reports `abs(S)**2`. The October 6 spectrum audit
+reproduced both definitions; FOM and reported peak transmission are distinct
+quantities with no exact universal offset or scale conversion.
+The older power-mean objective is not linewidth-neutral: its frozen-window
+gradient rewards broadening. It remains only in the baseline comparison lane.
+
+One forward and TWO distinct adjoint solves supply the port and width
+sensitivities. Selector passes reuse those solved fields; they do not make
+the two adjoint sources interchangeable. The width twin is explicitly pinned
+to one wavelength and follows the previous evaluation's resonance, so it can
+lag. Compare `twin_lam_nm` with the current resonance. The measured profile is
+integrated over y before envelope extraction; `softW` supplies derivatives,
+not the acceptance width.
+
+The v3 step solves a bounded quadratic program with objective ascent,
+parameter bounds, an infinity-norm trust radius, and linear width/wavelength
+bands. Its moving-resonance width row is
+`gW_res = gW_fixed_lambda + cW * gLambda`, with `cW` measured from multiple
+spectral spans of the same forward profile. Unreliable curvature is logged
+and reduces the wavelength allowance. The wavelength row is a local trust
+bound, not a globally fixed wavelength requirement. Restoration keeps that
+bound. Acceptance/rejection precedes recentering. Width-gradient reuse is
+disabled in both current v3 specs. See `v3_step.py` and `run_projected` for the
+implemented equations and `gates/gate_v3_local.py` for behavioral checks.
+
+The current metric is the squared parameter bound half-range. For S1,
+350 nm corrugation range versus 15 nm shift range gives a 544.44 ratio of
+metric weights. Changing that scaling is a design/algorithm choice still
+pending user agreement; its predicted benefit is not a measured improvement.
+
+Calibration is per device/numerics/functional: S1 has port and field factors;
+S2 has its own field factor but no completed port fit. Never fill S2's missing
+factor from S1 merely to make its campaign run. The legacy monolithic FD
+validator has no incremental recovery. The 2026-10-06 `recover_te_s2` and
+`recover_te_s2_peak` task arrays now provide isolated, checkpointed recovery
+and validation of both softmax and the actual peak3 objective; numerical
+calibration remains pending until those results pass.
+
+The 2026-10-06 stored-spectrum audit reproduced the S1 FOM exactly from
+T_out and confirmed its difference from modal S power. The wavelength
+selector denominator now uses T_out spectral slopes to match its adjoint
+numerator; using modal slopes had introduced about a 5% scaling mismatch.
+Both definitions are logged explicitly. This remains a local translating
+lineshape approximation. See `docs/TE_RECOVERY_2026-10-06.md` for evidence,
+limits, tests and active job IDs; no campaign was restarted by that recovery.
+
+Scientific qualifications to historical chapters: failures of these particular
+surrogates and fixed penalties are not a proof that scalar constrained
+optimization or augmented Lagrangians cannot solve this problem. A scalar
+width constraint can define a valid high-dimensional feasible set. The v3
+QP's dual multipliers themselves combine objective and constraint gradients.
+Also, `Q_i = Q_L/(1-sqrt(T_peak))` is a model-derived estimate under the
+coupling assumptions, not an independent radiation-Q measurement. The
+recorded `1-T-R` residual is not automatically pure cavity radiation.

@@ -6,8 +6,10 @@ Study dir: runners/lumopt2_design/  |  Created 2026-10-04  |  Job(s): TBD
 Tasks 0-9 = S1 (campaign_te_s1), 10-19 = S2 (campaign_te_s2); k = task % 10:
   k=0  λ-FINDER canary: one forward, 8 nm window / 161 pts (50 pm) centred on
        the stored conformal λ + 4 nm (covers PVA shifts 0..+8 nm). ★168240 lesson:
-       the region DFT monitor stores every cell × every λ — 801 pts blew the 40 GB
-       A100 (88.8 GiB). Peak located to ~25 pm; k=1 refines at the production grid. Reads lam_pk at
+       the region DFT monitor stores every cell × every λ. The 88.8 GiB estimate
+       in job 168240 was HOST memory, not GPU memory; the later audit traced its
+       failure to deleted server containers. Peak located to ~25 pm;
+       k=1 refines at the production grid. Reads lam_pk at
        PVA numerics → paste into the campaign file's SCAN_CENTER_NM.
   k=1  PRODUCTION-WINDOW canary at the measured centre → the seed's own
        fwhm_env (= the width SPEC), softW anchor, T0, Q0. These anchors are
@@ -44,7 +46,7 @@ mandatory second operating point); S2 gets its own fit only if ≤10 % fails.
 Fit helper: `python -m runners.lumopt2_design.validate_te fit <fd> <re> <im>`
 prints the ENGINE tuple (a, b) = (s cosφ, −s sinφ) for adj_fix_re/im.
 
-Lane sizing (skill items 29/30): k=4 → 14 concurrent sims ≈ 50 GB scratch,
+Lane sizing (skill items 29/30): k=4 → 14 sequential solves with LocalRunner capacity 1,
 ≥10 h, LUMOPT2_QOS=12h_4g; k=6 → fwd + adj + 6 legs ≈ 8 h, 250G; k=1/2/3/5/7
 ≈ 1-2 h each, 160G; k=8 ≈ 2 h, 256G; k=9 ≈ 6-8 h, 256G.
 Dispatch: SBATCH_MEM=<see above> bash athena/deploy_athena.sh \
@@ -288,7 +290,8 @@ def main(task_idx):
         spec = _forward_spec(mod, seed_i, "_anchor", scan_center_nm=_centre(mod))
         row = eng.run_canary(spec, out_dir)
         print(f"[te-s{seed_i+1} k1] PASTE FWHM0_UM = {row.get('fwhm_env_um')}  "
-              f"SOFTW0_UM = {row.get('softw_um')}  | T0 {row.get('t_pk')} "
+              f"SOFTW0_UM = {row['softw_adj_um']}  (adjoint twin; raw-profile "
+              f"softW {row.get('softw_um')}) | T0 {row.get('t_pk')} "
               f"λ {row.get('lam_pk_nm')} Q {row.get('q_loaded')} "
               f"sigma {row.get('sigma_um')} | spectral pts/FWHM check: "
               f"{row.get('fwhm_nm')} nm at {spec.scan_width_nm/(spec.n_wl_points-1):.4f} nm grid")

@@ -1,7 +1,10 @@
-"""Run the four mandatory pre-dispatch gates (CLAUDE.md section 5), fail fast.
+"""Run the thirteen offline pre-dispatch gates, fail fast.
 
 Study dir: runners/lumopt2_design/gates/ | Created 2026-09-01 | zero GPU.
-Usage:  python run_all_gates.py     (exit 0 = all green, safe to dispatch)
+Usage: python run_all_gates.py (exit 0 = offline checks passed).
+TE bounds are included in predispatch_check. Separately run gate_te_local.py
+--generate for licensed build checks. Calibration, hardware smoke, resources
+and authorization must also be satisfied before dispatch.
 """
 import os
 import subprocess
@@ -11,7 +14,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 GATES = ["gate_projection_local.py", "gate_lam_chain.py",
          "gate_lam_chain_plumbing.py", "predispatch_check.py",
          "gate_tm_identity.py",
-         "gate_v3_local.py"]         # 2026-10-05: v3 step engine (math + driver-level)      # 2026-10-04: engine is device-parametric; TM must stay bit-identical
+         "gate_v3_local.py", "gate_recovery.py",
+         "gate_persistence.py", "gate_s2_smoke.py", "gate_width_contract.py",
+         "gate_evaluation_budget.py", "gate_campaign_budget.py",
+         "gate_modal_guard.py"]
 
 env = dict(os.environ, PYTHONIOENCODING="utf-8")   # the lam-chain gate prints λ
 for g in GATES:
@@ -20,4 +26,4 @@ for g in GATES:
     if r.returncode != 0:
         print(f"*** GATE FAILED: {g} — do NOT dispatch ***")
         sys.exit(1)
-print("ALL SIX GATES GREEN — safe to dispatch")
+print(f"ALL {len(GATES)} OFFLINE GATES GREEN — build, calibration and dispatch checks still apply")

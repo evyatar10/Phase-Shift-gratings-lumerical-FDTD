@@ -39,6 +39,38 @@ def _read(fdtd, names):
                      for k in ("x", "x span", "y span")) for n in names}
 
 
+def check_monitors(fdtd, spec):
+    """Build-only geometry/sampling checks; not a PML-convergence test."""
+    def val(obj, prop):
+        return float(np.squeeze(fdtd.getnamed(obj, prop)))
+
+    edge = (spec.n_periods_side + 0.25) * spec.pitch_nm * eng.NM
+    x_min, x_max = (val("FDTD", k) for k in ("x min", "x max"))
+    port1, port2 = (val("FDTD::ports::" + n, "x") for n in ("Port_1", "Port_2"))
+    assert x_min < port1 < -edge < edge < port2 < x_max
+    assert fdtd.getnamed("FDTD", "y min bc") == "Anti-Symmetric"
+    assert fdtd.getnamed("FDTD", "z min bc") == "Symmetric"
+    assert fdtd.getnamed("FDTD::ports::Port_1", "mode selection") == "fundamental TE mode"
+    assert val("FDTD::ports", "monitor frequency points") == spec.n_wl_points
+    widest = max(spec.avg_bounds_nm[1] + spec.corr_max_nm / 2,
+                 spec.wcav_bounds_nm[1]) * eng.NM
+    for mon in ("field_profile", "field_profile_adj"):
+        assert abs(val(mon, "z")) < 1e-15 and abs(val(mon, "y")) < 1e-15
+        half = val(mon, "x span") / 2
+        center = val(mon, "x")
+        assert x_min < center - half <= -edge and edge <= center + half < x_max
+        assert val(mon, "y span") > widest
+    assert val("field_profile", "frequency points") > 1
+    assert val("field_profile", "use source limits") == 1
+    for mon in ["field_profile_adj"] + [f"field_profile_adj_t{i}" for i in range(spec.wg_src_tiles)]:
+        assert val(mon, "use source limits") == 0
+        assert val(mon, "frequency points") == 1 and val(mon, "source mode") == 0
+        assert abs(val(mon, "wavelength center") / eng.NM - spec.scan_center_nm) < 1e-6
+        assert abs(val(mon, "wavelength span")) < 1e-15
+    print(f"  monitor geometry/sampling PASS: ports {port1/1e-6:.3f}/{port2/1e-6:.3f} µm, "
+          f"grating ±{edge/1e-6:.3f} µm; twin explicitly pinned")
+
+
 def _builder_ref(spec, p, objs):
     """Scene drawn by the production builder from p's per-tooth widths."""
     L = eng.layout(spec.n_free)
@@ -76,6 +108,7 @@ def gate(spec, workdir):
     ok = True
     applied = {}
     with lumapi.FDTD(filename=fsp, hide=True) as fdtd:
+        check_monitors(fdtd, spec)
         for tag, p in (("seed", p0), ("perturbed", p1)):
             for k, v in func(p).items():
                 obj, prop = k.split("::")
@@ -143,8 +176,8 @@ def generate_smoke(spec, workdir):
 
 
 if __name__ == "__main__":
-    wd = os.path.join(tempfile.gettempdir(), "lumopt2_te_b1")
-    os.makedirs(wd, exist_ok=True)
+    wd = tempfile.mkdtemp(prefix="lumopt2_te_b1_")
+    print(f"Build artifacts (preserved): {wd}", flush=True)
     allok = True
     for spec in (S1, S2):
         allok &= gate(spec, wd)

@@ -69,6 +69,10 @@ from sim_helpers import (apply_monitor_overrides, find_bragg_resonance,
                          extract_envelope_peaks, calculate_fwhm_relative)
 from runners.scatterers import _common
 from runners.lumopt2_design import v3_step as v3s
+from runners.lumopt2_design import persistence
+from runners.lumopt2_design import width_contract as wc
+from runners.lumopt2_design.evaluation_budget import (
+    ForwardEvaluationBudget, BudgetExhausted, find_budget_exhausted)
 
 NM = 1e-9
 C0 = 299792458.0
@@ -254,6 +258,8 @@ class CampaignSpec:
     # (legacy). Rows logged before fwhm_env_um existed PASS the filter —
     # whether an old best is spec-compliant is a per-campaign decision.
     fwhm0_um: float = None
+    # Explicit measured envelope-FWHM contract; None retains anchor ±2%.
+    fwhm_bounds_um: tuple = None
     # ── V2 width GRADIENT (2026-08-21, V2_FWHM_PLAN.md; skill item 28) ─────
     # width_grad=True adds a second FOM entry: softW, the soft level-set width
     # of the y-integrated resonance profile (VALIDATED offline: tracks the
@@ -506,6 +512,11 @@ class CampaignSpec:
     # that use cap-collapse as a convergence signal. Default keeps every
     # existing spec bit-identical.
     wgp_fom_slack: float = 1e-4
+    # Optional pilot guard: T_out remains the search/gradient carrier, while
+    # measured modal peak3 may not fall below the best accepted feasible row.
+    # No modal slack is inferred from the carrier's noise allowance.
+    wgp_modal_guard: bool = False
+    best_metric: str = "fom"     # "fom" or measured "modal_peak3"
     # ★wgp_noise_freeze / wgp_noise_stop (2026-10-04, noise-aware trust cap —
     # Cao/Berahas/Scheinberg arXiv 2205.03667; Sun & Nocedal 2023): a filter
     # reject whose PREDICTED gain |gT·Δp| is below 2×wgp_fom_slack could not
@@ -1002,7 +1013,7 @@ def make_fwhm_wall(spec):
         else:
             d_corr = FW_A_MCORR * (anp.mean(p[L.SL_CORR]) - anc["mcorr"])
         fhat = anc["fwhm"] + d_corr + d_elong
-        hi, lo = RHO_UP * spec.fwhm0_um, RHO_DN * spec.fwhm0_um
+        lo, hi = wc.hard_band(spec, RHO_DN, RHO_UP)
         band = (BETA_FW * anp.maximum(0.0, fhat - hi) ** 2
                 + BETA_FW * anp.maximum(0.0, lo - fhat) ** 2)
         cap = getattr(spec, "fw_pen_cap", None)
@@ -1546,7 +1557,7 @@ def make_project(spec, out_dir, lmpt=None):
         # two_kl_floor being set) — a physics campaign without a width band
         # must still die here, before the scene build.
         _smoke = getattr(spec, "two_kl_floor", None) is not None
-        assert (spec.fwhm0_um or _smoke) and spec.wg_anchor and \
+        assert (spec.fwhm0_um or spec.fwhm_bounds_um or _smoke) and spec.wg_anchor and \
             {"softw", "fwhm"} <= set(spec.wg_anchor), \
             "width_grad requires fwhm0_um (or smoke spec) + wg_anchor {'softw','fwhm'}"
     os.makedirs(out_dir, exist_ok=True)
@@ -1742,13 +1753,17 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
     from lumopt2.utils.callbacks import BaseCallback
     path = os.path.join(out_dir, f"{spec.label}_evals.jsonl")
     fwhm0_um = fwhm0_um or getattr(spec, "fwhm0_um", None)
+    hard_width = wc.hard_band(SimpleNamespace(
+        fwhm0_um=fwhm0_um, fwhm_bounds_um=getattr(spec, "fwhm_bounds_um", None)),
+        RHO_DN, RHO_UP)
     L = layout(spec.n_free)
 
     class CampaignLog(BaseCallback):
         def on_function_eval(self, project, eval_num, params, fom_value,
                              gradient=None, **kw):
             p = np.asarray(params, dtype=float)
-            row = {"eval": int(eval_num), "t": time.time(), "fom": float(fom_value),
+            row = {"eval": int(eval_num), "eval_id": persistence.new_id(),
+                   "t": time.time(), "fom": float(fom_value),
                    "rho": float(np.mean(p[L.SL_CORR]) / spec.corr0_nm),
                    "two_kL": two_kappa_L(p, spec),
                    "params": p.tolist()}
@@ -1756,18 +1771,29 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                 project.load_forward_results()
                 fdtd = project.fdtd_session.fdtd
                 t2 = fdtd.getresult("FDTD::ports::Port_2", "expansion for port monitor")
-                s11 = np.abs(np.squeeze(
-                    fdtd.getresult("FDTD::ports::Port_1", "expansion for port monitor")["S"])) ** 2
+                t1 = fdtd.getresult("FDTD::ports::Port_1", "expansion for port monitor")
+                s11 = np.abs(np.squeeze(t1["S"])) ** 2
                 T = np.abs(np.squeeze(t2["S"])) ** 2   # modal |S21|²; expansion
                                                        # results carry no "T" key
+                T_objective = np.abs(np.squeeze(t2["T_out"]))
                 wl = np.squeeze(t2["lambda"]) / NM
                 lam_pk, t_pk, fwhm = measure_peak(wl, T)
+                lam_out, peak_out, _ = measure_peak(wl, T_objective)
+                row.update(t_pk_definition="sampled_abs_S21_squared",
+                           port_objective_definition="abs_T_out",
+                           tout_pk=float(peak_out), lam_tout_pk_nm=float(lam_out),
+                           tout_peak3=float(make_fct_peak(wl)(T_objective)),
+                           modal_peak3=float(make_fct_peak(wl)(T)))
                 if getattr(spec, "wg_track_resonance", False):
                     # advance the twin's λ-pin for the NEXT eval (make_func
                     # reads it per call; every eval, probes included, so
                     # consecutive line-search probes chain correctly)
                     spec._wg_lam_track = float(lam_pk)
                 i_pk = int(np.argmin(np.abs(wl - lam_pk)))
+                row["tout_at_modal_peak"] = float(T_objective[i_pk])
+                row["tout_over_modal_at_peak"] = float(T_objective[i_pk] / T[i_pk])
+                if "T_in" in t1:
+                    row["source_port_tin_at_peak"] = float(np.real(np.squeeze(t1["T_in"])[i_pk]))
                 # stale-state guard (review A9): an ineligible spectrum must not
                 # leave the PREVIOUS eval's stencil for the gradient pass
                 spec._wg_lam_idx = None
@@ -1810,11 +1836,18 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                     i_lo, i_hi = i_pk - k, i_pk + k
                     if wl[i_hi] < wl[i_lo]:
                         i_lo, i_hi = i_hi, i_lo
+                    # Selector adjoints differentiate abs(T_out), so the
+                    # denominator MUST use that same spectrum. Using |S21|²
+                    # here silently scaled gLambda by the normalization ratio
+                    # (~0.95 on the stored TE examples; audit 2026-10-06).
+                    # This remains a local translating-lineshape estimate;
+                    # it is not an exact derivative of the modal peak when
+                    # the normalization itself varies with geometry.
                     # T' from the measured spectrum (free). Spacing is uniform
                     # in FREQUENCY, so take it from the actual wl values.
-                    tp_lo = float(T[i_lo + 1] - T[i_lo - 1]) / float(
+                    tp_lo = float(T_objective[i_lo + 1] - T_objective[i_lo - 1]) / float(
                         wl[i_lo + 1] - wl[i_lo - 1])
-                    tp_hi = float(T[i_hi + 1] - T[i_hi - 1]) / float(
+                    tp_hi = float(T_objective[i_hi + 1] - T_objective[i_hi - 1]) / float(
                         wl[i_hi + 1] - wl[i_hi - 1])
                     spec._wg_lam_idx = (i_lo, i_hi)
                     # denom < 0 ⟺ the stencil straddles a MAXIMUM (T' falls
@@ -1827,10 +1860,8 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                 except Exception:
                     px = pI = None
                 if pI is not None:
-                    prof_dir = os.path.join(out_dir, "profiles")
-                    os.makedirs(prof_dir, exist_ok=True)
-                    np.savez_compressed(
-                        os.path.join(prof_dir, f"{spec.label}_ev{int(eval_num):04d}.npz"),
+                    row["profile_file"] = persistence.save_profile(
+                        out_dir, spec.label, row,
                         x_um=px, I=pI, lam_pk_nm=lam_pk)
                 row.update(lam_pk_nm=lam_pk, t_pk=t_pk, fwhm_nm=fwhm, q_loaded=q_l,
                            q_i=(q_l / (1.0 - np.sqrt(t_pk)) if q_l else None),
@@ -1917,8 +1948,7 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                 check_sigma_surrogate(row)   # predicted vs measured, every eval
             except Exception as e:                # diagnostics must never kill an eval
                 row["diag_error"] = repr(e)
-            with open(path, "a") as f:
-                f.write(json.dumps(row) + "\n")
+            persistence.append_row(path, row)
             # spec override (2026-08-28): the PIPELINE SMOKE runs a deliberate
             # weak-grating surrogate (N=60, 2κL≈2.2) — an honesty guard for
             # optimization results must not block a plumbing exercise whose
@@ -1964,9 +1994,9 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                     raise WidthTrip(f"sigma {s:.2f} µm vs ctrl {sigma0_um:.2f} "
                                     f"(ratio {s / sigma0_um:.3f})")
                 fw = row.get("fwhm_env_um")
-                if fwhm0_um and fw and not (RHO_DN <= fw / fwhm0_um <= RHO_UP):
-                    raise WidthTrip(f"fwhm_env {fw:.2f} µm vs ctrl {fwhm0_um:.2f} "
-                                    f"(ratio {fw / fwhm0_um:.3f}) — spec observable")
+                if hard_width is not None and wc.violation(fw, hard_width) > 0:
+                    raise WidthTrip(f"fwhm_env {fw!r} um outside measured band "
+                                    f"{hard_width} — spec observable")
 
     CampaignLog.best_fom = -np.inf
     return CampaignLog()
@@ -2126,10 +2156,11 @@ def softw_and_weight(x, I, fringe_um=WG_FRINGE_UM):
 def width_band_penalty(spec, softw):
     """Augmented-Lagrangian band penalty on the anchor-mapped FWHM prediction
     (autograd in softw). Band = the standing +2%/−5% deadband on fwhm0_um."""
-    anc, f0 = spec.wg_anchor, spec.fwhm0_um
+    anc = spec.wg_anchor
+    lo, hi = wc.hard_band(spec, RHO_DN, RHO_UP)
     fhat = anc["fwhm"] + (softw - anc["softw"])         # µm, delta-anchored
-    g_hi = fhat - RHO_UP * f0
-    g_lo = RHO_DN * f0 - fhat
+    g_hi = fhat - hi
+    g_lo = lo - fhat
     return (spec.wg_lam_hi * anp.maximum(0.0, g_hi)
             + 0.5 * spec.wg_mu * anp.maximum(0.0, g_hi) ** 2
             + spec.wg_lam_lo * anp.maximum(0.0, g_lo)
@@ -2735,23 +2766,13 @@ def _optstate_path(out_dir, label):
 
 
 def _load_opt_state(out_dir, label):
-    """Optimizer-state sidecar: cap / wgain / dTp0 / dwdlam / λ target.
-    Every restart (REQUEUE or run_campaign's restart loop) re-enters
-    run_projected fresh, which used to reset the whole trust state (measured:
-    alpha/wgain/dTp0 all lost per restart). Missing/corrupt file ⇒ {}."""
-    try:
-        with open(_optstate_path(out_dir, label)) as f:
-            return json.load(f)
-    except (OSError, ValueError):
-        return {}
+    """Missing state starts fresh; corrupt state must never reset rejection history."""
+    return persistence.load_state(_optstate_path(out_dir, label))
 
 
 def _save_opt_state(out_dir, label, state):
-    path = _optstate_path(out_dir, label)
-    tmp = path + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(state, f)
-    os.replace(tmp, path)
+    """Publish atomically, retaining prior and new state snapshots for recovery."""
+    persistence.save_state(_optstate_path(out_dir, label), state)
 
 
 def profile_mac(npz_a, npz_b):
@@ -2759,7 +2780,7 @@ def profile_mac(npz_a, npz_b):
     tracking, Kim & Kim 2000): (∫I_a·I_b)² / (∫I_a² ∫I_b²), b interpolated
     onto a's x (0 outside). 1 = same shape; a mode hop drops it. None if
     either file is missing."""
-    if not (os.path.exists(npz_a) and os.path.exists(npz_b)):
+    if not (npz_a and npz_b and os.path.exists(npz_a) and os.path.exists(npz_b)):
         return None
     with np.load(npz_a) as a, np.load(npz_b) as b:
         x = np.asarray(a["x_um"], dtype=float)
@@ -2823,16 +2844,12 @@ def run_projected(spec, project, cb, out_dir, p0):
     lo, hi = b[:, 0], b[:, 1]
     D = ((hi - lo) / 2.0) ** 2
     W_tgt, marg = float(spec.wgp_target_um), float(spec.wgp_margin_um)
-    # v3: the width is a BAND on the measured value, not a ride target
+    # One measured contract controls proposal, acceptance and result selection.
+    hard_width = wc.hard_band(spec, RHO_DN, RHO_UP)
     v3 = bool(getattr(spec, "wgp_v3", False))
     if v3:
         assert getattr(spec, "wgp_ns2", False), "wgp_v3 requires wgp_ns2"
-        if getattr(spec, "wgp_v3_band_um", None):
-            W_lo, W_hi = (float(v) for v in spec.wgp_v3_band_um)
-        else:
-            f0_ = float(getattr(spec, "fwhm0_um", None) or W_tgt)
-            W_lo, W_hi = RHO_DN * f0_ + marg, RHO_UP * f0_ - marg
-        assert W_lo < W_hi, "v3 width band is empty — margin too large"
+        W_lo, W_hi = wc.qp_band(spec, RHO_DN, RHO_UP)
         dlam_b = float(getattr(spec, "wgp_v3_dlam_nm", 0.2))
         print(f"[proj] v3 engine: width band [{W_lo:.4f}, {W_hi:.4f}] um, "
               f"|dlam| <= {dlam_b} nm per step, peak objective "
@@ -2888,7 +2905,24 @@ def run_projected(spec, project, cb, out_dir, p0):
     # rejects are therefore three DIFFERENT scales (cap, cap/2, cap/4).
     retry_shrink = float(ost.get("retry_shrink", 1.0))
     rej_trials = []      # trials rejected since the last accept (duplicate guard)
+    n_missing_width = 0
+    missing_width_limit = 3  # bounded measurement recovery, never convergence
     inelig = list(ost.get("ineligible", []))
+    accepted_eval_ids = list(ost.get("accepted_eval_ids", []))
+    metric = _selection_metric(spec)
+    modal_guard = bool(getattr(spec, "wgp_modal_guard", False))
+    modal_required = modal_guard or metric == "modal_peak3"
+    modal_best = None
+    if modal_guard:
+        if not (ns2 or cap_adapt):
+            raise ValueError("wgp_modal_guard requires committed projected state")
+        # Reconstruct from the authoritative journal and committed IDs rather
+        # than trusting an orphaned/stale scalar in the sidecar.
+        _, _, modal_row = _best_from_log(
+            spec, out_dir, {"fom": -np.inf, "params": p},
+            return_row=True, metric="modal_peak3")
+        if modal_row is not None:
+            modal_best = _modal_value(modal_row)
     filter_band = bool(getattr(spec, "wgp_filter_band", False))
     range_alpha = float(getattr(spec, "wgp_range_alpha", 1.0))
     range_frac = getattr(spec, "wgp_range_cap_frac", None)
@@ -2919,7 +2953,8 @@ def run_projected(spec, project, cb, out_dir, p0):
                 "n_acc": n_acc, "n_rej": n_rej, "reuse_age": reuse_age,
                 "reuse_W0": reuse_W0, "reuse_travel": reuse_travel,
                 "n_noise_rej": n_noise_rej, "retry_shrink": retry_shrink,
-                "ineligible": inelig})
+                "ineligible": inelig, "accepted_eval_ids": accepted_eval_ids,
+                **({"modal_best": modal_best} if modal_guard else {})})
 
     def _step_of(gTv, gWv, Wv, a, gLamv=None, lamv=None, mutate=False,
                  p_base=None, cw=None, cw_bad=False):
@@ -2928,6 +2963,9 @@ def run_projected(spec, project, cb, out_dir, p0):
         pass mutate=False."""
         nonlocal ns2_diag, v3_last
         if v3:
+            if (gLamv is None or not np.all(np.isfinite(gLamv))
+                    or lamv is None or not np.isfinite(lamv)):
+                raise RuntimeError("v3: missing/nonfinite gLambda or resonance; refusing an unrestricted step")
             # total moving-resonance width row when both pieces exist; else
             # the fixed-λ row (the λ trust row then bounds the cross term)
             gWr = (gWv + float(cw) * gLamv
@@ -3038,7 +3076,7 @@ def run_projected(spec, project, cb, out_dir, p0):
         fom = float(project.compute_fom(p))
         cb.on_function_eval(project, it, p, fom)  # same jsonl + guards
         row = _row_of_params(spec, out_dir, p, need=("fwhm_env_um",))
-        if not row:
+        if not row or not np.isfinite(float(row["fwhm_env_um"])):
             # ★A MISSING WIDTH IS A REJECTED STEP, NOT A DEAD CAMPAIGN (audit
             # S6, 2026-08-25). profile extraction failures are swallowed into
             # diag_error, so one flaky eval used to raise here and end an 81 h
@@ -3050,28 +3088,49 @@ def run_projected(spec, project, cb, out_dir, p0):
                 raise RuntimeError(
                     "wg_project: no fwhm_env_um on the FIRST eval — the width "
                     "pipeline is broken, not flaky; fix before rerunning")
+            n_missing_width += 1
+            rej_trials.append(p.copy())
             alpha *= 0.5
             if cap_adapt:
-                cap_state = max(cap_state * 0.5, 2.0)
+                cap_state = max(0.5 * _cap(alpha), 2.0)
+                retry_shrink = 1.0
                 n_rej += 1
             reuse_dirty = True
-            step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha,
-                                        acc.get("gLam"), acc.get("lam_pk"),
-                                        p_base=acc["p"], cw=acc.get("cw"),
-                                        cw_bad=bool(acc.get("cw_bad")))
-            p = np.clip(acc["p"] + step, lo, hi)
-            pred_step = float(acc["gT"] @ (p - acc["p"]))
-            print(f"[proj {it}] NO WIDTH READ — treating as a rejected step, "
-                  f"alpha -> {alpha:.4g}, retrying from the accepted point",
-                  flush=True)
+            width_rec = {"it": it, "t": time.time(), "fom": fom, "W": None,
+                         "alpha": alpha, "cap_nm": _cap(alpha),
+                         "phase": "no-width-retry", "missing_width_count": n_missing_width}
+            reason = None
+            if n_missing_width >= missing_width_limit:
+                reason = "consecutive missing-width retry limit reached"
+            else:
+                step, phase, lam = _step_of(acc["gT"], acc["gW"], acc["W"], alpha,
+                                            acc.get("gLam"), acc.get("lam_pk"),
+                                            p_base=acc["p"], cw=acc.get("cw"),
+                                            cw_bad=bool(acc.get("cw_bad")))
+                p_next = np.clip(acc["p"] + step, lo, hi)
+                if (float(np.max(np.abs(p_next - acc["p"]))) < 1e-9 or
+                        any(float(np.max(np.abs(p_next - r))) < 1e-9 for r in rej_trials)):
+                    reason = "missing-width retry would repeat an attempted geometry"
+                else:
+                    p = p_next
+                    pred_step = float(acc["gT"] @ (p - acc["p"]))
+            if reason:
+                width_rec.update(phase="unresolved-width", unresolved_reason=reason)
             _save_state()
-            with open(ppath, "a") as f:
-                f.write(json.dumps({"it": it, "t": time.time(), "fom": fom,
-                                    "W": None, "alpha": alpha,
-                                    "cap_nm": _cap(alpha),
-                                    "phase": "no-width-retry"}) + "\n")
+            persistence.append_row(ppath, width_rec)
+            if reason:
+                raise RuntimeError("wg_project: UNRESOLVED WIDTH MEASUREMENT: " + reason +
+                                   "; accepted state preserved; fix the profile pipeline before resume")
+            print(f"[proj {it}] NO WIDTH READ — treating as a rejected step, "
+                  f"alpha -> {alpha:.4g}, retrying from the accepted point "
+                  f"({n_missing_width}/{missing_width_limit})", flush=True)
             continue
+        n_missing_width = 0
         W = float(row["fwhm_env_um"])
+        modal = _modal_value(row) if modal_required else None
+        if modal_required and modal is None:
+            raise RuntimeError("Missing/nonfinite measured modal_peak3; "
+                               "pilot acceptance fails closed")
         h = (max(0.0, W_lo - W, W - W_hi) if v3 else abs(W - W_tgt))
         rec = {"it": it, "t": time.time(), "fom": fom, "W": W, "alpha": alpha,
                "cap_nm": _cap(alpha)}
@@ -3096,18 +3155,17 @@ def run_projected(spec, project, cb, out_dir, p0):
             print(f"[proj {it}] ★λ STEP BOUND: peak moved "
                   f"{rec['lam_jump_nm']:+.3f} nm > {lam_bound} nm — rejecting "
                   f"the step like a filter fail.", flush=True)
-        # ★wgp_mode_mac: profile overlap vs the accepted point. Files are keyed
-        # by `it` (what cb.on_function_eval was just called with) — row["eval"]
-        # can be an older run's index when _row_of_params matches a repeat p.
+        # Profiles belong to immutable evaluation rows, not reused iteration
+        # numbers. Legacy callbacks use their current-run file convention.
         mode_hop = False
         if mode_mac is not None and acc is not None:
             mac = profile_mac(
-                os.path.join(prof_dir, f"{spec.label}_ev{acc['eval_num']:04d}.npz"),
-                os.path.join(prof_dir, f"{spec.label}_ev{int(it):04d}.npz"))
+                acc["profile_path"],
+                persistence.profile_path(out_dir, spec.label, row, int(it)))
             rec["mac"] = mac
-            mode_hop = mac is not None and mac < float(mode_mac)
+            mode_hop = mac is None or mac < float(mode_mac)
             if mode_hop:
-                print(f"[proj {it}] ★MODE HOP: MAC {mac:.4f} < {mode_mac} — "
+                print(f"[proj {it}] ★MODE HOP OR MISSING PROFILE: MAC {mac} threshold {mode_mac} — "
                       f"rejecting", flush=True)
         # ★RATCHET FIX (2026-09-01, MEASURED on d1/139520): the noise slack
         # must be anchored to the BEST fom seen, never to the last accepted
@@ -3128,16 +3186,34 @@ def run_projected(spec, project, cb, out_dir, p0):
         # rejected although 0.093 um inside the spec. Acceptance therefore keeps
         # half the margin as tolerance: aim inside, accept up to marg/2 beyond.
         hv = (max(0.0, h - marg / 2.0) if (v3 or filter_band) else h)
+        hard_violation = wc.violation(W, hard_width)
+        hv = max(hv, hard_violation)
+        rec["hard_width_violation_um"] = hard_violation
+        modal_reject = False
+        if modal_guard:
+            previous_violation = (wc.violation(acc["W"], hard_width)
+                                  if acc is not None else None)
+            restoring = ((acc is None and hard_violation > 0) or
+                         (previous_violation is not None and previous_violation > 0
+                          and hard_violation < previous_violation))
+            modal_reject = (modal_best is not None and modal < modal_best
+                            and not restoring)
+            rec.update(modal_peak3=modal, modal_reference=modal_best,
+                       modal_restoration=restoring, modal_reject=modal_reject)
+            if modal_reject and acc is None:
+                raise RuntimeError("Initial measured modal_peak3 fell below "
+                                   "the committed feasible pilot reference")
         # ★v3 (GPT v3 review H2): a trial whose width violation GREW (incl.
         # leaving the band from inside) is rejected whatever its FOM — a
         # transmission gain must never buy a width violation.
-        w_inf = bool(v3 and acc and hv > acc["hv"] + 1e-6)
+        w_inf = bool(acc and ((v3 and hv > acc["hv"] + 1e-6) or
+                     (hard_violation > 0 and wc.violation(acc["W"], hard_width) == 0)))
         if w_inf:
             rec["v3_width_reject"] = float(hv)
             print(f"[proj {it}] ★v3 WIDTH REJECT: violation {hv:.4f} um > "
                   f"accepted {acc['hv']:.4f} um — rejecting regardless of FOM",
                   flush=True)
-        if acc and (lam_jump or mode_hop or w_inf or
+        if acc and (lam_jump or mode_hop or w_inf or modal_reject or
                     not (fom > fom_ref
                          - float(getattr(spec, "wgp_fom_slack", 1e-4))
                          or hv < acc["hv"])):
@@ -3151,7 +3227,7 @@ def run_projected(spec, project, cb, out_dir, p0):
             # λ-jump / mode-hop rejects are real failures, never "noise"
             new_cap, noise = _reject_cap(cap_state, dT_pred_trial, slack,
                                          noise_freeze
-                                         and not (lam_jump or mode_hop or w_inf),
+                                         and not (lam_jump or mode_hop or w_inf or modal_reject),
                                          loss=fom_ref - fom)
             if cap_adapt:
                 # ONE effective radius (GPT follow-up F1, 2026-10-05): an
@@ -3306,7 +3382,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                           f"(|dTp| {abs(dTp):.3g} < 5% of it-0 {dTp0:.3g}) — "
                           f"skipping the chain term this step.", flush=True)
                     rec.update(lam_chain="curvature-floor")
-                if ffl is not None and ffh is not None and dTp < 0.0 \
+                if ffl is not None and ffh is not None and np.isfinite(dTp) and dTp < 0.0 \
                         and not flat:
                     if dTp0 is None:
                         dTp0 = abs(dTp)
@@ -3358,6 +3434,23 @@ def run_projected(spec, project, cb, out_dir, p0):
                           f"falling back to the FIXED-λ ∇W for this step; do "
                           f"not trust its width control.", flush=True)
                     rec.update(lam_chain="skipped")
+            # gLambda is the model's wavelength trust row. Without it,
+            # halving a numerical allowance cannot constrain a one-row QP.
+            # Stop BEFORE acceptance, radius updates or proposing geometry.
+            if v3 and (gLam_vec is None or not np.all(np.isfinite(gLam_vec))
+                       or lam_pk_row is None or not np.isfinite(lam_pk_row)):
+                for key in ("gLam_n", "proj_rot_deg", "dTp"):
+                    if rec.get(key) is not None and not np.isfinite(rec[key]):
+                        rec[key] = None
+                if gLam_vec is not None:
+                    rec["nonfinite_glambda_indices"] = np.flatnonzero(
+                        ~np.isfinite(gLam_vec)).tolist()
+                rec.update(phase="unresolved-gradient", ns2_fallback=True,
+                           unresolved_reason="missing/nonfinite gLambda or resonance")
+                _save_state()
+                persistence.append_row(ppath, rec)
+                raise RuntimeError("v3: UNRESOLVED WAVELENGTH GRADIENT; accepted state preserved; "
+                                   "refresh/recenter the spectrum before resume; no step proposed")
             if (getattr(spec, "wgp_autogain", False) and acc is not None
                     and acc.get("phase") == "restore"):
                 # ★DEFECT #18 (2026-08-25): the old gate was `abs(dW_pred) >
@@ -3452,12 +3545,14 @@ def run_projected(spec, project, cb, out_dir, p0):
             np.savez_compressed(
                 # time stamp: `it` restarts at 0 after every recenter/requeue
                 os.path.join(out_dir, f"{spec.label}_grads_it{int(it):03d}"
-                                      f"_{int(time.time())}.npz"),
+                                      f"_{persistence.new_id()}.npz"),
                 p=p, gT=gT, gW=gW, gW_eff=gW_eff,
                 gLam=(gLam_vec if gLam_vec is not None else np.zeros(0)))
             acc = {"p": p.copy(), "fom": fom, "W": W, "h": h, "hv": hv,
                    "gT": gT, "gW": gW_eff, "gW_raw": gW, "gLam": gLam_vec,
                    "lam_pk": lam_pk_row, "eval_num": int(it),
+                   "profile_path": persistence.profile_path(out_dir, spec.label, row, int(it)),
+                   "eval_id": row.get("eval_id"),
                    "cw": (row.get("cw_um_per_nm") if v3 else None),
                    "cw_bad": bool(row.get("cw_curved")) or bool(
                        v3 and row.get("twin_lam_nm") is not None
@@ -3550,15 +3645,23 @@ def run_projected(spec, project, cb, out_dir, p0):
                 rec["dlam_pred_nm"] = float(gl @ (p - acc["p"]))
                 spec._wg_gLam = None
         rec["cap_nm"] = _cap(alpha)               # actual cap after any change
-        # AFTER the filter test, never before — and never from a trial REJECTED
-        # for a λ jump / mode hop (gate §11, 2026-10-05: such a trial's FOM set
-        # the acceptance bar and every later genuine improvement was rejected).
-        if not (lam_jump or mode_hop):
+        # Only an accepted evaluation may raise the acceptance reference.
+        # Width-rejected high-FOM trials otherwise poison later valid gains,
+        # just as wavelength/mode-hop rejects did in the older regression.
+        accepted_this_eval = bool(acc is not None and acc["eval_num"] == int(it))
+        if accepted_this_eval:
             fom_best = max(fom_best, fom)
+            if modal_guard and hard_violation == 0:
+                modal_best = modal if modal_best is None else max(modal_best, modal)
+        # An evaluation is restart-eligible only after the optimizer's
+        # acceptance and gradient work succeeded. A crash after callback
+        # logging must not promote an unclassified high-FOM trial.
+        if accepted_this_eval and row.get("eval_id"):
+            if row["eval_id"] not in accepted_eval_ids:
+                accepted_eval_ids.append(row["eval_id"])
         rec["fom_best"] = fom_best
         _save_state()
-        with open(ppath, "a") as f:
-            f.write(json.dumps(rec) + "\n")
+        persistence.append_row(ppath, rec)
         print(f"[proj {it}] {rec['phase']} fom {fom:.5f} W {W:.4f} "
               f"lam {rec.get('lam', 0.0):.4g} alpha {alpha:.3g} "
               f"cap {rec['cap_nm']:.3g}", flush=True)
@@ -3586,6 +3689,9 @@ def run_campaign(spec, out_dir, sigma0_um=None):
     """The main loop. Restarts from the best params on a recenter or width
     trip (rebuilding the base scene at the new λ) — also the crash-recovery
     path, since lumopt2 has no checkpointing. Returns the best (fom, params)."""
+    # One persistent total spans every recenter and cold resume of this label.
+    budget = ForwardEvaluationBudget(out_dir, spec.label, spec.max_feval)
+    _selection_metric(spec)       # reject invalid selector before any CAD
     lmpt = import_lumopt2()
     L = layout(spec.n_free)
     best = {"fom": -np.inf, "params": seed_params(spec)}
@@ -3635,11 +3741,10 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                 sw_anchor = rowb.get("softw_adj_um") or rowb["softw_um"]
                 spec.wg_anchor = {"softw": float(sw_anchor),
                                   "fwhm": float(rowb["fwhm_env_um"])}
-                if spec.fwhm0_um is not None:
-                    # fwhm0_um=None (pipeline smoke) ⇒ no band ⇒ no AL
-                    # multiplier update (137870_47 died here on None*float)
-                    g_hi = rowb["fwhm_env_um"] - RHO_UP * spec.fwhm0_um
-                    g_lo = RHO_DN * spec.fwhm0_um - rowb["fwhm_env_um"]
+                hard_width = wc.hard_band(spec, RHO_DN, RHO_UP)
+                if hard_width is not None:
+                    g_hi = rowb["fwhm_env_um"] - hard_width[1]
+                    g_lo = hard_width[0] - rowb["fwhm_env_um"]
                     spec.wg_lam_hi = max(0.0, spec.wg_lam_hi + spec.wg_mu * g_hi)
                     spec.wg_lam_lo = max(0.0, spec.wg_lam_lo + spec.wg_mu * g_lo)
                 print(f"[width-grad {attempt}] anchor softW "
@@ -3667,6 +3772,17 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                       f"{spec.fw_anchor['fwhm']:.4f} um "
                       f"(mcorr {spec.fw_anchor['mcorr']:.1f})")
         project, _ = make_project(spec, out_dir, lmpt)
+        queue_forward = getattr(project, '_queue_forward_jobs', None)
+        if not callable(queue_forward):
+            raise RuntimeError('Campaign project lacks the required forward queue budget hook')
+
+        def queue_forward_with_budget(_queue=queue_forward, _project=project):
+            # Covers compute_fom AND an uncached compute_gradient forward batch;
+            # adjoint queues and cached gradients consume no additional unit.
+            _project._forward_reservation_id = budget.reserve()
+            return _queue()
+
+        project._queue_forward_jobs = queue_forward_with_budget
         cb = make_log_callback(spec, out_dir, sigma0_um, lmpt)
         try:
             if getattr(spec, "wg_project", False):
@@ -3692,7 +3808,12 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                 best["fom"] = rows_best             # bookkeeping only; params
                                                     # always from filtered log
             break                                   # converged / budget exhausted
+        except BudgetExhausted:
+            raise  # Terminal budget outcome, never convergence or a recenter.
         except (RecenterNeeded, WidthTrip, RuntimeError) as e:
+            terminal_budget = find_budget_exhausted(e)
+            if terminal_budget is not None:
+                raise terminal_budget from e
             # lumopt2 wraps fct exceptions TWICE: scipy_optimizer.py:583
             # raises RuntimeError WITHOUT `from e` (original only in
             # __context__ — measured job 133016), then optimization.py:852
@@ -3764,9 +3885,23 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                     print(f"[width trip {attempt}] {root} -> corr cap {spec.corr_max_nm:.0f} nm")
             else:
                 raise                               # a real error — let it crash loudly
+    # Keep the reported value tied to the exact eligible row that supplied
+    # the returned vector. The optimizer's last accepted FOM can be lower
+    # than the best historical point (and was previously reported beside it).
+    best["params"], _, selected = _best_from_log(
+        spec, out_dir, {"fom": -np.inf, "params": best["params"]}, sigma0_um,
+        return_row=True)
+    if selected is None:
+        raise RuntimeError("Campaign has no eligible measured result to report")
+    best["fom"] = float(selected["fom"])
+    if getattr(spec, "wgp_modal_guard", False) or _selection_metric(spec) == "modal_peak3":
+        best["modal_peak3"] = _modal_value(selected)
     out = {"label": spec.label, "best_fom": best["fom"],
            "best_params_nm": np.asarray(best["params"]).tolist(),
            "scan_center_nm": spec.scan_center_nm}
+    if "modal_peak3" in best:
+        out.update(best_modal_peak3=best["modal_peak3"],
+                   best_metric=_selection_metric(spec), best_eval_id=selected["eval_id"])
     with open(os.path.join(out_dir, f"{spec.label}_best.json"), "w") as f:
         json.dump(out, f, indent=1)
     print(f"[done] best FOM {best['fom']:.5f} -> {spec.label}_best.json")
@@ -3774,7 +3909,7 @@ def run_campaign(spec, out_dir, sigma0_um=None):
 
 
 def _row_of_params(spec, out_dir, p, tol=1e-6, need=()):
-    """NEWEST eval-log row matching params p and carrying every `need` key
+    """NEWEST eval-log row matching params p, only if it has every `need` key.
     (None if absent). Newest, not first (GPT review J1, 2026-10-06): a campaign
     warm-started from a copied toy log re-evaluates the toy's point, and the
     first match handed the driver the TOY's row (old window, old c_W) next to
@@ -3784,13 +3919,11 @@ def _row_of_params(spec, out_dir, p, tol=1e-6, need=()):
         return None
     p = np.asarray(p, dtype=float)
     match = None
-    with open(path) as f:
-        for line in f:
-            row = json.loads(line)
-            if all(row.get(k) for k in need) and np.allclose(
-                    np.asarray(row["params"], dtype=float), p, atol=tol, rtol=0.0):
-                match = row
-    return match
+    for row in persistence.read_rows(path):
+        if np.allclose(
+                np.asarray(row["params"], dtype=float), p, atol=tol, rtol=0.0):
+            match = row
+    return match if match is not None and all(match.get(k) is not None for k in need) else None
 
 
 def _sigma_of_params(spec, out_dir, p, tol=1e-6):
@@ -3799,7 +3932,26 @@ def _sigma_of_params(spec, out_dir, p, tol=1e-6):
     return float(row["sigma_um"]) if row else None
 
 
-def _best_from_log(spec, out_dir, fallback, sigma0_um=None):
+def _selection_metric(spec):
+    metric = getattr(spec, "best_metric", "fom")
+    if metric not in ("fom", "modal_peak3"):
+        raise ValueError("best_metric must be 'fom' or 'modal_peak3'")
+    return metric
+
+
+def _modal_value(row):
+    value = row.get("modal_peak3")
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
+    return value if np.isfinite(value) else None
+
+
+def _best_from_log(spec, out_dir, fallback, sigma0_um=None, return_row=False,
+                   metric=None):
     """Best WIDTH-COMPLIANT params + their peak λ from the eval log.
 
     2026-08-16: selection MUST filter on the σ deadband — the width-cheat
@@ -3808,39 +3960,52 @@ def _best_from_log(spec, out_dir, fallback, sigma0_um=None):
     without a σ reading are treated as non-compliant when a σ0 exists.
     """
     path = os.path.join(out_dir, f"{spec.label}_evals.jsonl")
-    best_fom = fallback["fom"]
+    metric = _selection_metric(spec) if metric is None else metric
+    if metric not in ("fom", "modal_peak3"):
+        raise ValueError("Invalid best-row metric")
+    modal_required = metric == "modal_peak3" or bool(getattr(spec, "wgp_modal_guard", False))
+    # Fallback supplies starting geometry only for modal selection: its
+    # carrier FOM is not a measured modal score or a certified best row.
+    best_score = fallback["fom"] if metric == "fom" else -np.inf
+    selected_row = None
     best_p = np.asarray(fallback["params"], dtype=float)
     lam = spec.scan_center_nm
-    inelig = set(_load_opt_state(out_dir, spec.label).get("ineligible", []))
-    if os.path.exists(path):
-        with open(path) as f:
-            for line in f:
-                row = json.loads(line)
-                if inelig and _param_key(row["params"]) in inelig:
-                    continue        # rejected for a λ jump / mode hop
-                if sigma0_um and not (row.get("sigma_um") and
-                        RHO_DN <= row["sigma_um"] / sigma0_um <= RHO_UP):
+    hard_width = wc.hard_band(spec, RHO_DN, RHO_UP)
+    state = _load_opt_state(out_dir, spec.label)
+    inelig = set(state.get("ineligible", []))
+    accepted_ids = set(state.get("accepted_eval_ids", []))
+    classified = bool(getattr(spec, "wg_project", False) and
+                      (getattr(spec, "wgp_ns2", False) or
+                       getattr(spec, "wgp_cap_adapt", False)))
+    for row in persistence.read_rows(path):
+        if modal_required and (not row.get("eval_id") or
+                               row["eval_id"] not in accepted_ids or
+                               _modal_value(row) is None):
+            continue  # modal pilots require proven acceptance and measurement
+        if classified and row.get("eval_id") and row["eval_id"] not in accepted_ids:
+            continue
+        if inelig and _param_key(row["params"]) in inelig:
+            continue        # rejected for a λ jump / mode hop
+        if sigma0_um and not (row.get("sigma_um") and
+                RHO_DN <= row["sigma_um"] / sigma0_um <= RHO_UP):
+            continue
+        # Explicit measured bands apply even without a seed anchor. Historical
+        # rows may omit width only for legacy specs with no width machinery.
+        if hard_width is not None:
+            fw = row.get("fwhm_env_um")
+            if fw is None:
+                if (getattr(spec, "fwhm_bounds_um", None) is not None or
+                        getattr(spec, "fwhm_wall", False) or getattr(spec, "width_grad", False)):
                     continue
-                # FWHM (spec observable) filter. Rows predating fwhm_env_um
-                # PASS here (missing != violating) — see CampaignSpec.fwhm0_um.
-                f0 = getattr(spec, "fwhm0_um", None)
-                if f0:
-                    fw = row.get("fwhm_env_um")
-                    if not fw:
-                        # ★FAIL-CLOSED 2026-08-23 (proactive audit): a row
-                        # whose profile extraction failed carries NO width
-                        # evidence. For a width-guarded campaign that row must
-                        # not be selectable — the legacy fail-open rule exists
-                        # only for pre-fwhm_env logs, so keep it exactly there.
-                        if getattr(spec, "fwhm_wall", False) or                                 getattr(spec, "width_grad", False):
-                            continue
-                    elif not (RHO_DN <= fw / f0 <= RHO_UP):
-                        continue
-                if row["fom"] > best_fom:
-                    best_fom, best_p = row["fom"], np.asarray(row["params"])
-                    if row.get("lam_pk_nm"):
-                        lam = row["lam_pk_nm"]
-    return best_p, lam
+            elif wc.violation(fw, hard_width) > 0:
+                continue
+        score = _modal_value(row) if metric == "modal_peak3" else row["fom"]
+        if score > best_score:
+            best_score, best_p = score, np.asarray(row["params"])
+            selected_row = row
+            if row.get("lam_pk_nm"):
+                lam = row["lam_pk_nm"]
+    return (best_p, lam, selected_row) if return_row else (best_p, lam)
 
 
 def run_canary(spec, out_dir):
@@ -3861,8 +4026,7 @@ def run_canary(spec, out_dir):
     except (RecenterNeeded, WidthTrip):
         pass                                       # canary only reports, gates decide
     path = os.path.join(out_dir, f"{spec.label}_evals.jsonl")
-    with open(path) as f:
-        row = json.loads(f.readlines()[-1])
+    row = persistence.read_rows(path)[-1]
     print(f"[canary {spec.label}] FOM {fom:.5f}  T {row.get('t_pk')}  "
           f"λ {row.get('lam_pk_nm')}  Q {row.get('q_loaded')}  "
           f"σ {row.get('sigma_um')} µm")
