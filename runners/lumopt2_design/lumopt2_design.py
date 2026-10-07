@@ -3034,7 +3034,8 @@ def run_projected(spec, project, cb, out_dir, p0):
                 # may drop the λ row; a gain bought that way, or any probe in
                 # restoration, must not justify growth).
                 q["gain_1p5"] = 0.0
-                if q["mode"] == "ascent" and q["status"] == "ok":
+                q["r_factor"] = 1.0 if glam_ok else 0.25   # degraded = quarter radius
+                if q["mode"] == "ascent" and q["status"] == "ok" and glam_ok:
                     q15 = v3s.qp_step(gTv, rows, bands, D, lo - p_base,
                                       hi - p_base,
                                       min(_cap(a) * 1.5, float(spec.wgp_cap_max_nm)))
@@ -3508,16 +3509,24 @@ def run_projected(spec, project, cb, out_dir, p0):
             if v3 and cap_adapt and acc is not None and pred_step is not None:
                 # v3 radius rule: model agreement on the step just accepted
                 # (v3_step.radius_update), starting from the radius USED.
-                r_used_ = cap_state * retry_shrink
+                r_fac_ = float((v3_last or {}).get("r_factor", 1.0))
+                r_used_ = cap_state * retry_shrink * r_fac_
                 act_ = float((v3_last or {}).get("active_cap", 0.0))
                 g15_ = float((v3_last or {}).get("gain_1p5", 0.0))
                 if act_ == 0.0 and g15_ > 0.05 * abs(pred_step):
                     act_ = 1.0     # radius-limited via the proximal term
                 rec["v3_gain_1p5"] = g15_
+                cap_prev_ = cap_state
                 cap_state, rtag_ = v3s.radius_update(
                     r_used_, pred_step, fom - acc["fom"], slack, act_,
                     grow=float(spec.wgp_cap_grow),
                     cap_max=float(spec.wgp_cap_max_nm))
+                if r_fac_ < 1.0:
+                    # claude-te review fix: a degraded (no-gLambda) quarter-radius
+                    # step can SHRINK the radius but never justifies growth
+                    # beyond the radius it was not tested at.
+                    cap_state = min(cap_state / r_fac_, cap_prev_)
+                    rtag_ += "+degraded"
                 rec.update(v3_radius=rtag_, dT_meas=float(fom - acc["fom"]),
                            dT_pred_prev=float(pred_step))
                 print(f"[proj {it}] v3 radius {r_used_:.3g} -> {cap_state:.3g} "
@@ -4019,6 +4028,8 @@ def _best_from_log(spec, out_dir, fallback, sigma0_um=None, return_row=False,
             elif wc.violation(fw, hard_width) > 0:
                 continue
         score = _modal_value(row) if metric == "modal_peak3" else row["fom"]
+        if score is None:      # NaN fom is journaled as null (persistence) — never eligible
+            continue
         if score > best_score:
             best_score, best_p = score, np.asarray(row["params"])
             selected_row = row
