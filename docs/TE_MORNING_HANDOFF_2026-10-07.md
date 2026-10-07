@@ -1,5 +1,71 @@
 # TE readiness handoff — 2026-10-07
 
+## Update11:58 Israel - fixed-frequency reconstruction preparation
+
+Source trace confirms port excitation has no objective-Jacobian weighting;
+weights enter BaseFom after the saved broadband forward/adjoint fields are
+read. Relevant local vendor source normalized to LF exactly matches recorded
+Athena source hashes; runtime byte-hash requirements remain unchanged.
+Report: readiness_evidence_20261007/s2_stored_field_reweight_reviewed_1158.zip.
+This permits a new no-solve reconstruction in principle, not physical validity.
+Sol objective_code_audit is preparing a separate TEMP-only strict helper for
+union bins244,251,252,253,260: original peak3 shift30h1 reproduction control,
+then one-hot244/252/260 raw Re/Im contractions and read-only source metadata.
+No upload/CPU dispatch yet. Existing GPU171162 sources remain frozen.
+
+Measured endpoint ratios also depend on geometry. At fixedbin252, corr30h.5
+Tout central FD5.87609e-5/nm versus modal3.974996e-4/nm. Exact finite-product
+algebra with R=Tout/modal attributes3.36173e-4/nm to the ratio term. For
+shift30h.5 corresponding Tout/modal FD are-.00568072/-.08960917 pernm.
+This reinforces separate observable reporting; it is not an infinitesimal
+chain-rule or physical normalization proof. Full endpoint values and identities:
+readiness_evidence_20261007/s2_fixed_bin_observable_ratio_1158.json.
+
+## Update11:55 Israel - result analyzer validated; simulation in progress
+
+Prepared strict offline shift30 analyzer at
+C:/Users/evyat/AppData/Local/Temp/s2_shift30_analyzer_e125c232ed434191b386d27c8044a3db.
+Main SHA435e0e033a2f125726f19988455f3f605bbe9377ead56f8d62d5282c7f077e05.
+Ten focused offline tests passed again under lead review. Package retained in
+readiness_evidence_20261007/s2_shift30_analyzer_reviewed_1155.zip; README
+contains exact CLI and independent new artifact-pin template. Required actual
+171162 checkpoints and spectra are absent so no measured report exists yet.
+After completion verify remote cold resumes, preserved FSP/H5/logs and hashes,
+fetch original JSON/NPZ bytes, record independent pins, then run analyzer.
+It reports full-grid fixed-frequency FD/even responses against both nominal
+centers and moving peaks; no automatic convergence or calibration approval.
+
+At11:51 all4 Athena tasks still RUNNING, three logs in timestepping and one
+in source initialization, no fatal error in inspected tails. No checkpoints.
+Source/weight compatibility review remains in progress. Port T_out means
+outgoing mode-expansion transmission, not general total-flux transmission;
+PortResults reads abs(T_out), vendor scales port overlap by sourcepower.
+Preserved code/official-definition note: port_observable_definition_review_1153.json.
+Do not assume a universal conversion to modal |S21|^2.
+
+## Update11:48 Israel - next diagnostic interpretation and capacity
+
+Actual account tool reports78% weekly Codex allowance remaining, separate
+model/Claude limits unknown; no reset redeemed or credits purchased.
+A second bounded text-only Claude consultation succeeded with verified
+claude-opus-5-5 metadata. Lead retained the useful fixed-frequency diagnostic
+plan and corrected overclaims about phase cancellation, finite-step chain
+mismatch, source weights and generality of the failed fit. Saved review:
+readiness_evidence_20261007/claude_next_decision_review_1148.json.
+Sol workers are preparing strict smaller-step result analysis and reviewing
+saved broadband adjoint source/weight compatibility for possible individual
+frequency reconstruction. Do not duplicate those tasks or modify frozen sources.
+
+## Update11:44 Israel - array startup verified; checkpoint committed
+
+All four171162 tasks RUNNING since11:41:32 on n306/n307. Each startup log
+confirms GPU resource mode and8threads; all allocated A100/256G/8CPU.
+Source generation is underway; no completed result or calibration pass yet.
+Evidence: readiness_evidence_20261007/s2_shift30_status_1145.json (actual11:43:57).
+Local commit0eab7a2 preserves the reviewed runner, raw reconstruction and
+first-wave evidence, model studies, tests, lead marker and maintained status skill.
+Existing heartbeat remains ACTIVE and points at171162; no duplicate schedule.
+
 ## Update11:42 Israel - four smaller shift30 solves submitted
 
 Athena array **171162 tasks0-3** submitted11:41:31 for shift30(index149)

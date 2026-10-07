@@ -1,0 +1,113 @@
+{
+  "status": "MEASURED_ENDPOINT_ALGEBRA_NOT_AN_INFINITESIMAL_GRADIENT",
+  "indices": [
+    244,
+    252,
+    260
+  ],
+  "pairs": {
+    "corr30_h0.5": {
+      "pins": {
+        "s2_half_classes_task00_ports.npz": "25395d232792378b5ff098ad050e39ebea59d68a4cf5c8e067d6b386f18acd23",
+        "s2_half_classes_task01_ports.npz": "50bcaee3c3538acef0e81497369553e3d8ac0db6743605aa6c2336a32ca21f9b"
+      },
+      "half_step_nm": 0.5,
+      "rows": [
+        {
+          "index": 244,
+          "lambda_nm": 1560.902219322978,
+          "DT_per_nm": -0.0010629786343508973,
+          "DM_per_nm": -0.0009634467197459085,
+          "ratio_plus_minus": [
+            0.9260002581305721,
+            0.9261847451994251
+          ],
+          "DR_per_nm": -0.00018448706885298982,
+          "DM_exact_direct_term": -0.0011478104319382725,
+          "DM_exact_ratio_term": 0.00018436371219237086,
+          "identity_residual": -6.8575787409708155e-18
+        },
+        {
+          "index": 252,
+          "lambda_nm": 1560.8702190080865,
+          "DT_per_nm": 5.876088942480262e-05,
+          "DM_per_nm": 0.0003974996124920249,
+          "ratio_plus_minus": [
+            0.9579988955662614,
+            0.9583322941808445
+          ],
+          "DR_per_nm": -0.0003333986145831469,
+          "DM_exact_direct_term": 6.13264447598509e-05,
+          "DM_exact_ratio_term": 0.0003361731677322009,
+          "identity_residual": -2.688821387764051e-17
+        },
+        {
+          "index": 260,
+          "lambda_nm": 1560.8382200052554,
+          "DT_per_nm": 0.0011251856747723776,
+          "DM_per_nm": 0.0014111695513310263,
+          "ratio_plus_minus": [
+            1.0010188213926714,
+            1.0013567348965415
+          ],
+          "DR_per_nm": -0.0003379135038701353,
+          "DM_exact_direct_term": 0.001123850789366969,
+          "DM_exact_ratio_term": 0.00028731876196410726,
+          "identity_residual": -4.992751004295748e-17
+        }
+      ]
+    },
+    "shift30_h0.5": {
+      "pins": {
+        "s2_half_classes_task02_ports.npz": "3ee423f1292390318867b92a6c0d0fc911c1cdf529b6924c503e60cbbb3678f6",
+        "s2_half_classes_task03_ports.npz": "d1fc60b97fa46a2dab9ad2cc113d11622cffec6466bf2337292bd1fc5492b872"
+      },
+      "half_step_nm": 0.5,
+      "rows": [
+        {
+          "index": 244,
+          "lambda_nm": 1560.902219322978,
+          "DT_per_nm": 0.30095658457565677,
+          "DM_per_nm": 0.26818801040322826,
+          "ratio_plus_minus": [
+            0.9755282475554525,
+            0.9165517595881431
+          ],
+          "DR_per_nm": 0.05897648796730948,
+          "DM_exact_direct_term": 0.31812247203013366,
+          "DM_exact_ratio_term": -0.04993446162690532,
+          "identity_residual": -8.326672684688674e-17
+        },
+        {
+          "index": 252,
+          "lambda_nm": 1560.8702190080865,
+          "DT_per_nm": -0.005680717022493287,
+          "DM_per_nm": -0.08960916806414332,
+          "ratio_plus_minus": [
+            1.017612173841801,
+            0.9187544274062042
+          ],
+          "DR_per_nm": 0.09885774643559675,
+          "DM_exact_direct_term": -0.005867398269348392,
+          "DM_exact_ratio_term": -0.08374176979479493,
+          "identity_residual": 0.0
+        },
+        {
+          "index": 260,
+          "lambda_nm": 1560.8382200052554,
+          "DT_per_nm": -0.30980852793499747,
+          "DM_per_nm": -0.39277771683497553,
+          "ratio_plus_minus": [
+            1.0470715403917137,
+            0.9425004857663473
+          ],
+          "DR_per_nm": 0.10457105462536642,
+          "DM_exact_direct_term": -0.31143233204102644,
+          "DM_exact_ratio_term": -0.08134538479394916,
+          "identity_residual": 6.938893903907228e-17
+        }
+      ]
+    }
+  },
+  "note": "R=abs(Tout)/abs(S21)^2 at a fixed common frequency, not a presumed physical normalization constant. Product finite-difference identity uses endpoint averages, not nominal/infinite-step chain rule. These pairs alone do not establish local gradients, convergence or noise bounds."
+}

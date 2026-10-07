@@ -1,0 +1,11 @@
+{
+  "reported_bucket": "codex",
+  "used_percent": 22,
+  "remaining_percent": 78,
+  "window_minutes": 10080,
+  "resets_at_unix": 1791949208,
+  "model_specific_limits": "unknown",
+  "claude_remaining": "unknown",
+  "reset_redeemed": false,
+  "credits_purchased": false
+}

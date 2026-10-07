@@ -1,0 +1,16 @@
+{
+  "status": "CODE_AND_OFFICIAL_DEFINITION_REVIEW_NOT_PHYSICAL_GRADIENT_PASS",
+  "source": "https://optics.ansys.com/hc/en-us/articles/360034382554-Ports-FDTD-Simulation-Object",
+  "definitions": {
+    "T_out": "Outgoing direction mode-expansion transmission, selected by port injection axis/direction; not general total-flux monitor transmission",
+    "S": "Complex port S parameter with modal power normalization"
+  },
+  "local_code": {
+    "file": "C:/Program Files/Lumerical/v261/api/python/lumopt2/fom/simulation_results.py",
+    "method": "PortResults.get_transmission_results",
+    "reads": "abs(expansion for port monitor.T_out)",
+    "adjoint_scaling": "port_fom.py:716 uses i*omega*0.25*conj(a_or_b)/sourcepower; does not directly substitute abs(S)^2"
+  },
+  "qualification": "Do not assume constant conversion or exact physical gradient from code trace alone. Saved metadata and finite-frequency comparisons still required.",
+  "communication_correction": "Earlier status described T_out as total flux; corrected explicitly."
+}
