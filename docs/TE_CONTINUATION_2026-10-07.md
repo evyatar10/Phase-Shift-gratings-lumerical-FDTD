@@ -8,6 +8,76 @@ the project `AGENTS.md` records that instruction.
 
 ## Overnight extension and current continuation
 
+## Active diagnostic at 06:02 Israel — use this state first
+
+Source fixes are committed locally as `1b2d75e`. The local integrated engine
+and diagnostic were uploaded AFTER preserving remote sources and confirming
+no jobs used them. **Freeze their fingerprinted sources while170901 is active.**
+Old archive: `/home/evyatarrubin/bragg_sim_athena/source_history/before_s2_fd_diagnostic_20261007T055137.zip`,
+348 source files, SHA`71d1e7e1f39a122c8d387b8628896b28dfc868f30771f2fb3388ded0b89fa9a0`.
+
+New job **170901_0** RUNNING n306, A100-public,12h_4g,256G,8CPUs,
+02:00:00 limit; exactly task0 was submitted (no ±legs). Start06:00:37.
+Runner `runners.lumopt2_design.diagnose_te_s2_fdstep`, SHA
+`3bf24e3ea47600f1c08f13803c7ab29bc6cf8b95c08fef63152168b1069ee361`;
+remote engine SHA`53108bbd368dd699179ab65029628aa4c4b2d8ad687777f88b82f404a0952569`.
+Both hashes were verified after upload. Early log confirms8threads/build4572.
+Checkpoint expected under
+`/home/evyatarrubin/bragg_sim_athena/results/diagnose_te_s2_fdstep/results/lumopt2_te_s2_fdstep_diagnostic_20261007/task_00.json`;
+log `jobs/logs/lum_array-170901_0.out` relative to the Athena base.
+
+Next: inspect accounting, exact task0 checkpoint and preserved ports; compare
+new/old center spectra, not merely job exit. Only after explicit center review
+may task1/2 be enabled by writing the exact NEW task00 SHA into
+`center_reviewed.sha256` in that study's output directory. No ±task has yet
+been submitted. The marker is not a calibration pass. Decide the next small
+calibration diagnostic from measured reproducibility; preserve the failed10%
+gradient gate and all old evidence. Do not restart the old recovery watcher;
+the native heartbeat should monitor this new exact job directly at low cadence.
+
+Six offline diagnostic checks passed. Hidden CAD actual task0 preparation
+passed in `C:/Users/evyat/AppData/Local/Temp/s2_fdstep_hidden_build_nsak9n13/`:
+hide=True enforced, zero solves, locked mesh unchanged with recorder disabled,
+ports-58.018739/+58.067845um,501samples. An earlier probe's monkeypatch replaced
+the lumapi class and failed before CAD; corrected test wrapped its constructor
+method instead. No project code fix was required for that test-harness error.
+Pinned reference hash is the ORIGINAL remote task00
+`732ca5752ff2b0449a892ebafe7ba6a87a5ee1fce63bd929f8f7343bf50df13f`;
+watcher's reformatted local JSON has different bytes but verified equal data.
+The exact original is saved in readiness evidence. All13 integrated gates pass.
+Last account allowance6% at05:49; no reset redeemed. Parent/worker preparation
+is complete, no workers active. Calibration/optimizer hardware gates remain
+FAILED/BLOCKED, not passed by this forward-only job.
+
+## Current authoritative state after the final fit, 05:50 Israel
+
+The recovery chain is terminal: all FD and both peak quadratures completed;
+170754_2 FAILED the scientific gate after saving the fit. Queue empty at05:47.
+Watcher42384 exited normally on the failed verdict; do not restart it for this
+completed chain. Read `TE_S2_CALIBRATION_FAILURE_2026-10-07.md`: peak fit worst
+162.11%, held-out worst315.81%; independent relative-minimax best58.10%.
+No coefficients may be installed, and optimizer hardware smoke remains blocked.
+
+The consolidated candidate is ALREADY integrated locally; **do not apply the
+patch again**. All13 actual integrated offline suites pass. Current engine SHA
+`53108bbd368dd699179ab65029628aa4c4b2d8ad687777f88b82f404a0952569`.
+See `TE_INTEGRATION_2026-10-07.md`; defaults/S1/S2 configs unchanged. Remote
+sources remain the original recovery version; no integration upload occurred.
+The older frozen-source/candidate-pending paragraphs below are historical.
+
+Stored-spectrum diagnostic reproduces all leg scores, shows ~50samples per
+linewidth and strong one-sided asymmetry; no physical root cause proven.
+Exact Opus5.5 review completed, with several claims corrected in the failure
+report. A new forward-only nominal-repeat / corr30 step diagnostic is being
+prepared by `/root/objective_code_audit`, exclusive ownership of
+`diagnose_te_s2_fdstep.py`, its new gate and preparation doc. Do not duplicate
+or edit those while active. Intended first dispatch is task0 ONLY after its
+offline/build checks; ±0.5nm tasks require exact center-checkpoint review.
+This is calibration diagnosis, not optimization. Preflight05:47queueempty,
+quota225/300G,sharedseats0/50; full details and preserved spectral paths in
+the failure report. Old jobs/results must remain intact; no cancellation or
+cleanup authorized. Last measured model allowance8% at05:10, unknown now.
+
 05:11 Israel milestone: all twelve FD legs completed exit0. Fresh bounded
 read-only SSH confirms170752_0 (peak real quadrature) completed exit0,
 170752_1 running on n306, and170754_2 dependency-pending. The real vector is

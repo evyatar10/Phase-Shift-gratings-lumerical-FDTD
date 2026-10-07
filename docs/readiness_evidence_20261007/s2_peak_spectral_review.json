@@ -1,0 +1,145 @@
+{
+  "spectra_archive": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_peak_failure_spectra_ppyzxc75\\stored_port_spectra.zip",
+  "archive_sha256": "b996142caf4a66d73336ed2845a564626e6fbd9e0e9a695ee89bf498e7522204",
+  "base": {
+    "index": 252,
+    "sampled_wavelength_nm": 1560.8702190080865,
+    "peak3_tout": 0.925748506956398,
+    "vertex_offset": -0.14422842223884416,
+    "jacobian_weights": [
+      0.08251513001017524,
+      0.9791981622184937,
+      -0.06171329222866893
+    ],
+    "modal_index": 250,
+    "modal_peak3": 0.9718102149755974,
+    "grid_spacing_nm": 0.003999947105967294,
+    "linewidth_nm_from_recovery": 0.2023,
+    "approx_samples_per_linewidth": 50.57566878776974
+  },
+  "rows": [
+    {
+      "index": 0,
+      "peak_indices": [
+        252,
+        252
+      ],
+      "peak_fd": 0.00013655356412689557,
+      "fixed_center_fd": 0.00013146174736997085,
+      "base_jacobian_weighted_fd": 0.00013666100929410154,
+      "forward_one_sided": 0.0001303821050754328,
+      "backward_one_sided": 0.00014272502317835833,
+      "relative_one_sided_difference": 0.09038883885488037
+    },
+    {
+      "index": 29,
+      "peak_indices": [
+        252,
+        252
+      ],
+      "peak_fd": 1.874864880122007e-05,
+      "fixed_center_fd": 4.055823609208642e-05,
+      "base_jacobian_weighted_fd": 1.8560335166942897e-05,
+      "forward_one_sided": 0.00010906712273150987,
+      "backward_one_sided": -7.156982512906973e-05,
+      "relative_one_sided_difference": 9.634664864426105
+    },
+    {
+      "index": 60,
+      "peak_indices": [
+        250,
+        254
+      ],
+      "peak_fd": -0.00011174518605347461,
+      "fixed_center_fd": -0.0004413771022038493,
+      "base_jacobian_weighted_fd": -4.6590645501591496e-05,
+      "forward_one_sided": 9.167743252597171e-05,
+      "backward_one_sided": -0.00031516780463292093,
+      "relative_one_sided_difference": 3.6408301021951917
+    },
+    {
+      "index": 120,
+      "peak_indices": [
+        252,
+        252
+      ],
+      "peak_fd": -9.78284248115413e-06,
+      "fixed_center_fd": -2.1143197702522265e-05,
+      "base_jacobian_weighted_fd": -9.771428671201251e-06,
+      "forward_one_sided": 2.7445824724636747e-05,
+      "backward_one_sided": -4.701150968694501e-05,
+      "relative_one_sided_difference": 7.6110122957635165
+    },
+    {
+      "index": 149,
+      "peak_indices": [
+        207,
+        297
+      ],
+      "peak_fd": -0.00015767962792700985,
+      "fixed_center_fd": -0.00033471144570836747,
+      "base_jacobian_weighted_fd": 0.00022990270853836593,
+      "forward_one_sided": -0.00013256681290224615,
+      "backward_one_sided": -0.00018279244295177355,
+      "relative_one_sided_difference": 0.3185296078500193
+    },
+    {
+      "index": 295,
+      "peak_indices": [
+        251,
+        252
+      ],
+      "peak_fd": -0.00014148531327409786,
+      "fixed_center_fd": -0.0002401791024736477,
+      "base_jacobian_weighted_fd": -0.00013740316840584079,
+      "forward_one_sided": 5.13924480038952e-05,
+      "backward_one_sided": -0.0003343630745520909,
+      "relative_one_sided_difference": 2.7264704274193208
+    }
+  ],
+  "diagnostic_fits": {
+    "peak_fd": {
+      "coefficients": [
+        1.0504029172434433,
+        0.12843949874154387
+      ],
+      "relative_residual": [
+        0.16702626862195016,
+        1.621104852004119,
+        -0.08313541238391477,
+        0.13340413500552178,
+        0.006434393445615312,
+        -0.3194543025989969
+      ]
+    },
+    "fixed_center_fd": {
+      "coefficients": [
+        1.960165818841719,
+        0.23971258340148635
+      ],
+      "relative_residual": [
+        1.261879801335919,
+        1.2647944068370534,
+        -0.5606923899341525,
+        -0.017664444718444448,
+        0.04066090580458159,
+        -0.2489629272379169
+      ]
+    },
+    "base_jacobian_weighted_fd": {
+      "coefficients": [
+        0.9560841072168954,
+        0.11668698626424336
+      ],
+      "relative_residual": [
+        0.06326024971100762,
+        1.351303432323387,
+        0.5838163498706498,
+        -0.024884187962154008,
+        0.003226830534892514,
+        -0.3988329820284315
+      ]
+    }
+  },
+  "warning": "Spectral diagnostics at existing +/-2nm steps only. No small-step convergence or field-geometry provenance claim; one-sided asymmetry is diagnostic, not a new acceptance gate."
+}

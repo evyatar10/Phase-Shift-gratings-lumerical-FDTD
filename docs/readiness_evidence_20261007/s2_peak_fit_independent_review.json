@@ -1,0 +1,52 @@
+{
+  "peak_fit_checkpoint_sha256": "53726b1aafef32ddd4a95fb15ea8d02f2df5d978bb2aeaf495cec30f7453c881",
+  "labels": [
+    "corr_1",
+    "corr_30",
+    "avg_1",
+    "shift_1",
+    "shift_30",
+    "wcav"
+  ],
+  "coefficients": [
+    1.0504029172434433,
+    0.12843949874154387
+  ],
+  "relative_residual": [
+    0.16702626862195016,
+    1.621104852004119,
+    -0.08313541238391477,
+    0.13340413500552178,
+    0.006434393445615312,
+    -0.3194543025989969
+  ],
+  "held_out_relative": [
+    0.3774107620860972,
+    1.7098750604126962,
+    -0.10339542515295642,
+    0.13374892171089772,
+    3.1580883775479704,
+    -0.3964214169052154
+  ],
+  "rank": 2,
+  "signs_match": true,
+  "pass_existing_10pct_gate": false,
+  "minimax_diagnostic": {
+    "coefficients": [
+      0.6239720807812417,
+      0.07638780539356418
+    ],
+    "minimum_worst_relative_error": 0.5810147901115359,
+    "verified_worst": 0.5810147901116807,
+    "relative_residual": [
+      -0.3075193136878043,
+      0.581014790111535,
+      -0.38336279463191403,
+      -0.30289407066297613,
+      0.5810147901116807,
+      -0.5810147901115368
+    ],
+    "solver": "scipy.optimize.linprog(method=highs)",
+    "note": "Diagnostic only; no installed coefficient. Even optimal relative minimax cannot meet10% for these stored vectors; does not prove physical root cause."
+  }
+}

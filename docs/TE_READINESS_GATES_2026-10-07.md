@@ -59,17 +59,21 @@ from an optimizer regression test or a fixed-grid improvement.
 
 ## Current limits
 
-At 05:11 Israel time, all twelve S2 FD legs and the peak real quadrature are
-complete;170752_1 (imaginary quadrature) is running. The independently assembled
-legacy softmax fit fails the 10% gate and cannot be installed. The current
-peak3 calibration verdict, candidate integration, hardware smoke and N98
-validation are pending. Historical S1 final spatial profiles and raw spectra
+At 06:02 Israel time, all twelve S2 FD legs and both peak quadratures are
+complete. Both legacy and current peak3 calibration FAIL the 10% gate;
+neither can be installed. Independent minimax fitting still leaves58.1%
+worst relative error. Candidate integration and all13 actual offline gates
+are complete; optimizer hardware smoke and N98 validation remain blocked.
+Forward-only nominal-repeat diagnostic170901_0 is running; it is not an
+optimizer or calibration pass. Read `TE_S2_CALIBRATION_FAILURE_2026-10-07.md`.
+Historical S1 final spatial profiles and raw spectra
 are not available in the local result bundle. See the saved-results audit
 for exactly which measurements were reconstructed versus read from logs.
 
-The native thread heartbeat and separate read-only watcher are active. Their
+The native thread heartbeat is active; the old recovery watcher exited on
+the failed fit as designed. The heartbeat now monitors the diagnostic. Its
 existence does not guarantee model availability after usage exhaustion. The
-account reported8% weekly Codex allowance remaining at 05:10 Israel time,
+account reported6% weekly Codex allowance remaining at 05:49 Israel time,
 reset October12 at10:44 Israel time. There is no defensible conversion of this
 percentage into guaranteed research hours or a number of tomorrow's runs.
 

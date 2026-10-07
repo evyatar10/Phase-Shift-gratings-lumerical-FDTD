@@ -1,0 +1,479 @@
+=== gate_projection_local.py ===
+PASS P0 gW.d == 0 (ride) worst rel 8.31e-17
+PASS scaled round-trip exact
+PASS clip: predicted W <= ceiling worst over 1.42e-14
+PASS no clip when safe
+PASS restore phase fires
+PASS restore 1st-order exact
+PASS cap inf-norm
+PASS cap is scalar (parallel)
+PASS gW=0 finite
+PASS CampaignSpec default OFF
+PASS legacy fct == base - penalty
+PASS wg_project fct == pure T
+PASS width jac exactly 0 under wg_project
+PASS MixedFom override gated on wg_project
+PASS run_campaign dispatches on wg_project
+PASS RGP surgery complete: _rgp_step gone
+PASS ns2 gW.d == 0 (mid-band) worst rel 9.68e-17
+PASS ns2 gLam.d == 0 (mid-band) worst rel 8.53e-17
+PASS ns2 phase mid-band
+PASS teeth: old ride violates gLam.d=0
+PASS ns2 chain-coef +0.1 drops out
+PASS ns2 chain-coef +0.365 drops out
+PASS ns2 chain-coef +0.7 drops out
+PASS ns2 chain-coef -0.5 drops out
+PASS ns2 restore phase
+PASS ns2 restore gW exact
+PASS ns2 restore gLam exact
+PASS ns2 deadband: no restore inside bands
+PASS ns2 collinear degrades finite
+PASS ns2 degraded keeps gW.d == 0
+PASS ns2 gLam=None == ride direction
+PASS ns2 cap inf-norm
+PASS ns2 cap parallel (mid-band)
+PASS ns2 rho_T in (0,1]
+PASS ns2 rho_T == 1 for feasible gT
+PASS ns2 gW=0 finite
+PASS optstate round-trip
+PASS optstate missing -> {}
+PASS wgp_ns2 default OFF
+PASS wgp_cap_adapt default OFF
+PASS slack anchored to fom_best (not the moving acc)
+PASS reuse gate carries the travel budget
+PASS ns2 WidthTrip shrinks the cap, not corr_max
+PASS new spec knobs default-safe
+PASS ratchet FIX bounds drift to one slack below best [True, False, False]
+PASS teeth: old acc-anchored form accepts all three (the ratchet) [True, True, True]
+PASS U1-U4 spec knobs default OFF
+PASS U4 defaults bit-identical to pre-edit _ns2_step (6 cases x 2)
+PASS U4 range_alpha=0.5 halves xi_C
+PASS U4 range_alpha=0.5 halves the restoration
+PASS teeth: range_alpha=0.5 changes the step
+PASS U4 alpha=0.5: gW.xi_J = gLam.xi_J = 0 worst rel 4.57e-17
+PASS teeth: unclamped xi_C exceeds 1 nm (cap test is live) 4.23
+PASS U4 range_cap_nm=1.0 bounds |xi_C|_inf <= 1
+PASS U4 range cap is scalar (parallel)
+PASS U4 wired: _step_of threads range_alpha / range_cap_nm
+PASS U1 noise reject keeps the cap
+PASS U1 negative predicted gain counts by magnitude
+PASS U1 non-noise reject halves
+PASS U1 non-noise floor 2 nm
+PASS teeth: freeze=False halves the noise case too
+PASS U1 wired: reject branch uses _reject_cap + stop rule + persistence
+PASS U2 secant: |g.dp - dW| ~ 0 after one update 3.55e-15
+PASS U2 logged residual is the pre-update one
+PASS U2 unchanged orthogonal to dp
+PASS U2 error to g_true shrinks
+PASS U2 skip when |dlam| > 0.05
+PASS U2 skip when dlam unknown
+PASS teeth: no-update path leaves the residual unchanged (and large)
+PASS U2 wired: reuse branch applies _broyden_update on softW
+PASS U3 MAC self == 1 1.0
+PASS U3 MAC self across grids ~ 1 1.000000
+PASS U3 MAC 3-width shift < 0.1 0.0111
+PASS U3 MAC two-lobe < 0.9 0.2658
+PASS U3 missing file -> None
+PASS U3 wired: mode hop rejects exactly like the λ jump
+PASS T1 precondition: predicted |gT.dp| < 2*slack on every trial [0.0002, 0.0001, 5e-05]
+PASS T1 three noise rejects, then stop (4 evals, marker fired) evals 4
+PASS T1 trial steps = cap, cap/2, cap/4 (inf-norm, 1e-9) [10.0, 5.0, 2.5]
+PASS T1 three trials are DIFFERENT vectors min gap 2.5
+PASS T1 persisted cap_nm unchanged cap 10.0
+PASS teeth: pre-fix driver proposes 3 IDENTICAL trials and 'converges' steps [10.0, 10.0, 10.0]
+PASS T2 cap 10: big loss is not noise, cap -> 5 cap 5.0 pred 2.00e-04
+PASS T2 cap 3: big loss is not noise, cap -> 2 cap 2.0 pred 5.99e-05
+PASS teeth: without the loss arm the same reject WOULD be noise
+PASS T3 precondition: hop trial rejected on MAC, highest fom in log mac 0.2658
+PASS T3 hop key in ineligible list
+PASS T3 _best_from_log returns the best ACCEPTED row -> eval 0 fom 0.7
+PASS teeth: cleared ineligible list -> the mode-hop row is returned
+PASS T3b post-hop improvement (MAC 1) ACCEPTED, anchor not raised ns2 fom_best 0.7000
+PASS T3b _best_from_log returns it -> eval [2]
+PASS teeth: old unconditional fom_best update REJECTS it ns2-retry
+PASS T5 stale stencil: chain skipped + ns2 fallback logged, loop continues [('ns2', None), ('ride', 'skipped'), ('ns2', None)]
+PASS teeth: pre-fix float(_wg_dTp) raises TypeError on the stale eval
+PASS T6 exact params match (control)
+PASS T6 0.05 nm at magnitude 1e4 does NOT match (tol 1e-6)
+PASS teeth: np.allclose default rtol WOULD match them
+PASS T7 eval 1 reused the width row and ran the secant {'gw_reused': 1, 'broyden_skipped': None}
+PASS T7 secant residual == the softw_adj_um values -0.014978370937733132 vs -0.014978370937733132
+PASS teeth: the softw_um residual differs (T7 discriminates)
+PASS T4 precondition: both points inside marg/2
+PASS T4 filter_band=True rejects the in-band FOM loss ns2-retry
+PASS teeth: filter_band=False ACCEPTS it (legacy distance-to-centre arm) ns2
+PASS T8 trials 10, 5, 2.5, then 2.0 (<= 2.5) after the ordinary reject [10.0, 5.0, 2.5, 2.0]
+PASS teeth: pre-fix (halve base, reset shrink) ENLARGES trial 4 to 5 [10.0, 5.0, 2.5, 5.0]
+PASS T9 precondition: delivered step << every cap (restoration-only) deliv ['0.000215', '0.0001075', '5.374e-05'] dup [1, 1, 1] conv True
+PASS T9 trials s, s/2, s/4: no geometry evaluated twice deliv ['0.000215', '0.0001075', '5.374e-05'] dup [1, 1, 1] conv True min gap 5.37e-05
+PASS T9 halved retries carry dup_retry; CONVERGED only after 3 distinct deliv ['0.000215', '0.0001075', '5.374e-05'] dup [1, 1, 1] conv True
+PASS teeth: no duplicate guard -> 3 IDENTICAL trials, 'converged' evals 4
+PASS T11 collapse: stalled row + STOPPED, no CONVERGED, 2 evals s 1.5e-09 nm, evals 2
+PASS teeth: without the stall stop a geometry < 1e-9 from the accepted point is re-solved deliv ['1.5e-09', '7.5e-10']
+PASS T10 accepted retry adopts the radius used (held: 15 x 0.5 = 7.5) cap 7.5
+PASS teeth: pre-fix accept snaps back to the (grown) base cap 15 cap 15.0
+PASS T12 total_cap: |step|_inf <= cap 10 10
+PASS T12 one common gamma in (0,1] on both constraint rows gamma W 0.758383186 lam 0.758383186
+PASS teeth: total_cap=False delivers |step|_inf > cap 13.1859
+PASS T13 cond_norm: both scalings stay ns2, not degraded [('ns2', 1.4766156335204677), ('ns2', 1.476615633520467)]
+PASS T13 cond_norm: step direction unchanged by the 1e-5 row scaling |du| 1.82e-16
+PASS teeth: cond_norm=False flips to ns2_degraded at 1e-5 ns2_degraded condM 1.14e+10
+PASS T14 dead gW: λ row kept, gLam.step == -h_lam, degraded ns2_degraded gLam.d -0.1
+PASS teeth: cond_norm=False returns the FREE step (λ uncontrolled) ns2_free gLam.d +18.25
+PASS T15 immutable profile missing=False: correct MAC/rejection
+PASS T15 missing=False: committed acceptance IDs match decisions
+PASS T15 immutable profile missing=True: correct MAC/rejection
+PASS T15 missing=True: committed acceptance IDs match decisions
+PASS T15 missing-profile higher-FOM trial excluded from restart
+
+ALL PASS
+=== gate_lam_chain.py ===
+grid 251 pts / 5.0 nm = 20.0 pm/pt, 41 pts per FWHM; engine k = 20
+true dlam_pk/dp = +0.037000 nm/param
+
+  stencil sweep -- NAIVE vs MATCHED (rel. err of glam):
+    k    x=h/g    naive      matched
+    1    0.049     0.24%     0.4849%
+    2    0.099     0.97%     0.4744%
+    4    0.198     3.76%     0.4349%
+    8    0.395    13.50%     0.3086%
+   16    0.790    38.43%     0.0699%
+   20    0.988    49.38%     0.0034%
+   40    1.975    79.60%     0.0587%
+
+  OK   matched estimator < 1% for every k
+  OK   naive error matches closed form C/(1+x^2): got +0.018730, predicted +0.018730
+
+  OK   p=+0.00  glam +0.037001  err  0.003%  (dTp=-2.253)
+  OK   p=+0.50  glam +0.036968  err  0.086%  (dTp=-2.278)
+  OK   p=-0.50  glam +0.037035  err  0.094%  (dTp=-2.228)
+  OK   p=+2.00  glam +0.036874  err  0.341%  (dTp=-2.353)
+
+  OK   sign: red-shifting peak -> glam +0.037001 (must be > 0)
+  OK   guard: dTp<0 at a maximum
+  OK   guard: dTp>=0 at a minimum -> engine prints a loud skip
+
+  delta-leak (grid offset vs true peak): worst 0.60% -- expected ~0.60%, accepted
+  OK   λ-descending grid: gLam invariant (+0.037001 vs +0.037001), dTp -2.253/-2.253
+  OK   old unswapped recipe still refuses the descending grid (dTp +2.253 > 0) — teeth confirmed
+
+ALL PASS
+=== gate_lam_chain_plumbing.py ===
+flat x: 502 entries = 501 wavelengths + 1 softW
+  OK   x[0] is a SCALAR (not the T array) -- the assumption that killed 137267
+  OK   make_fct_v2 evaluates on the flat x -> 0.705197
+  peak idx 250, k 20 -> i_lo 230, i_hi 270
+  OK   width  x[-1]: jacobian is one-hot at 501 (shape (502,), J[501]=+1, sum=+1)
+  OK   Tlo    x[i_lo]: jacobian is one-hot at 230 (shape (502,), J[230]=+1, sum=+1)
+  OK   Thi    x[i_hi]: jacobian is one-hot at 270 (shape (502,), J[270]=+1, sum=+1)
+  OK   the old x[0][i] form still raises IndexError (gate has teeth)
+  OK   calculate_gradient_fields stashes gfields_Tlo/Thi and does NOT convert in-place (analysis-mode dEps hazard, 137845_41)
+  OK   run_projected converts the stashed selector fields at the driver (layout-mode site)
+  OK   d1 spec fct on flat x -> 0.705197, width jac +0 (pure-T under wg_project)
+  OK   run_projected keeps gLam as its own row under ns2 (chain not folded into gW)
+  OK   wgp_reuse_k: default off, zero-read + pass-skip guarded, stored-gW substitution, rejects mark dirty
+  OK   filtered queue BEHAVIOR: width job queued fresh (2) / skipped on reuse (1), port always queued
+  OK   near-null guard: rho_T 7.93e-03 -> step inf-norm 3.96 nm (< cap*rho/0.02)
+
+ALL PASS
+=== predispatch_check.py ===
+PRE-DISPATCH BOUNDS CHECK
+
+  OK   task 42 (C re-fit, detune1): 0 out of bounds
+  OK   task 43 (C re-fit, detune1): 0 out of bounds
+  OK   task 38 (P2 uniform seed): 0 out of bounds
+  OK   task 39 (P3 see-saw seed): 0 out of bounds
+  OK   task 41 + campaign (uniform seed): 0 out of bounds
+  OK   task 51 + d1 campaign (BEST seed, ns2 spec): 0 out of bounds
+  OK   task 50 (ns2 smoke, N=60): 0 out of bounds
+  OK   d1u resume row (c1 eval 5, fom 0.68758): 0 out of bounds
+  OK   task 49 (rescale_s5 replay): 0 out of bounds
+  OK   lumopt2_te_s1_v3 seed: 0 out of bounds
+  OK   lumopt2_te_s2_v3 seed: 0 out of bounds
+  lumopt2_te_s1_chk6: point + FD legs ±2.0 nm in bounds (6 indices)
+  lumopt2_te_s1_chk3: point + FD legs ±4.0 nm in bounds (3 indices)
+  lumopt2_te_s2_chk6: point + FD legs ±2.0 nm in bounds (6 indices)
+  lumopt2_te_s2_chk3: point + FD legs ±4.0 nm in bounds (3 indices)
+
+ALL CHECKED SEEDS AND FD LEGS IN BOUNDS
+  OK   task 41 (lam-chain toy): literal x1, in _GFR_RUNGS=False, < N_TASKS=True
+  OK   task 46 (control twin): literal x1, in _GFR_RUNGS=False, < N_TASKS=True
+  OK   task 47 (pipeline smoke): literal x1, in _GFR_RUNGS=False, < N_TASKS=True
+  OK   task 48 (ride toy): literal x1, in _GFR_RUNGS=False, < N_TASKS=True
+  OK   task 49 (rescale s5): literal x1, in _GFR_RUNGS=False, < N_TASKS=True
+  OK   task 50 (ns2 smoke): literal x1, in _GFR_RUNGS=False, < N_TASKS=True
+  OK   task 51 (ns2 ride toy): literal x1, in _GFR_RUNGS=False, < N_TASKS=True
+  OK   task 52 (reuse smoke): literal x1, in _GFR_RUNGS=False, < N_TASKS=True
+  OK   task 53 (gW angle probe): literal x1, in _GFR_RUNGS=False, < N_TASKS=True
+INDEXES REACHABLE
+=== gate_tm_identity.py ===
+INFO new inert config key /C1/cfg/farfield.save_surface_eh = False (not a difference)
+INFO new inert config key /C1_bare/cfg/farfield.save_surface_eh = False (not a difference)
+INFO new inert config key /C1_freecomb/cfg/farfield.save_surface_eh = False (not a difference)
+INFO new inert config key /D1/cfg/farfield.save_surface_eh = False (not a difference)
+INFO new inert config key /D1U/cfg/farfield.save_surface_eh = False (not a difference)
+INFO new inert config key /UNI/cfg/farfield.save_surface_eh = False (not a difference)
+INFO new inert config key /smoke50/cfg/farfield.save_surface_eh = False (not a difference)
+TM IDENTITY: ALL IDENTICAL (7 specs + module constants)
+=== gate_v3_local.py ===
+[PASS] peak3 weights: analytic vs autograd vs FD  r=+0.300 |ad-an|=2.8e-17 |fd-an|=9.9e-10
+[PASS] peak3 Lorentzian bias (50 pts/FWHM, offsets ±½ step) < 5e-6  worst 1.29e-06
+[PASS]   tooth: raw sampled max FAILS the same bar  worst 3.60e-04
+[PASS] peak3 fallback B≥0 → T[i], one-hot grad  
+[PASS] peak3 edge index → T[i]  
+[PASS] cw linear 5-pt: slope exact, not curved  slope 0.800000000000
+[PASS] cw linear 3-pt: slope exact, not curved  
+[PASS] cw mild curvature not flagged  2c2h/s=0.10
+[PASS] cw strong curvature flagged (tooth)  2c2h/s=40.0
+[PASS] (a) vs SLSQP on 216 instances (200×n40 + 16×n296, 1-2 rows)  worst (f_ref−f_v3)/|f| 5.4e-11; worst v3 viol 1.9e-16; ref feasible 216/216 (worst ref viol 5.0e-13); rows active in 127; Newton iters median 2 max 7; 14s
+[PASS]   tooth: rows-ignored step FAILS the violation check; v3 passes  
+[PASS] (b) no rows active ⇒ d = clip(τ·D·gT)  |Δ|=0.0e+00
+[PASS] (h) τ rule: slack bands ⇒ max|d| = cap exactly  max|d|=18.695941 cap=18.695941
+[PASS]   tooth: τ=1 (D·g) step does NOT reach the cap  
+[PASS]   tooth: with an active row the (b) identity FAILS  
+[PASS] (c) gT×1e3 ⇒ same d (1e-9)  worst 1.3e-13  (17/30 with active rows)
+[PASS] (c) row+band ×1e-5 ⇒ same d (1e-7)  worst 5.2e-14
+[PASS]   tooth: unnormalised D·g step is NOT gT-scale invariant  
+[PASS] (e) reachable L>0 ⇒ ascent and a·d ≥ L  a·d=23.707 L=23.707
+[PASS] (e) unreachable ⇒ restore, a·d = LP max (up to the ε-prox)  relative shortfall 2.3e-05 at ε=1e-6, -1.8e-16 at ε=1e-10
+[PASS]   tooth: tangent (old null-space) step has a·d=0 < L  
+[PASS] (f) λ row unreachable ⇒ ascent_dropped_row, width row held  mode ascent_dropped_row, a_W·d=-30.4 in [-30.4,30.4]
+[PASS] (d) max|d| ≤ cap and lo ≤ d ≤ hi on all 260 steps (incl. 40 restore)  
+[PASS]   tooth: old projection+clip step breaks the cap and the tangency  worst max|d_old|/cap=2.00; clipped-tangent row drift 7.1e+01
+[PASS] (g) frozen params (D=1e-6, ±1e-3 nm) move < 1e-3 nm  max 1.0e-03 (holds by construction: box)
+[PASS] gT=0, band contains 0 ⇒ d=0 (minimum-norm feasible step)  
+[PASS] radius_update: all 11 table rows (every branch + clamps + edges)  []
+[PASS] status ok/dual on a normal instance; result carries viol per row  ok/dual viol [1.3322676295501878e-15, 0.0]
+[PASS] dual fails on reachable rows ⇒ SLSQP fallback, mode ascent, status ok, same optimum  Δobj rel 3.5e-13
+[PASS] both solvers fail ⇒ solver_failed, mode NOT downgraded, d feasible (0 in bands: scaled step)  mode ascent
+[PASS] both solvers fail, band excludes 0 ⇒ LP feasible vertex, solver_failed, feasible  viol [0.0]
+[PASS]   tooth: those rows ARE LP-reachable (the old code would have dropped/restored)  
+[PASS] restore: d / viol consistent with the FINAL μ (converged and MAX_NEWTON=1)  status infeasible/infeasible, viol 5978 vs LP min 5978
+[PASS] restore converged: status infeasible, viol = LP min violation (ε-prox)  
+[PASS]   tooth: at the limit the stale (μ=0) d = 0 differs from the returned d  
+[PASS] non-finite gT/rows/bands/D/lo/hi/cap ⇒ ValueError naming the input  [True, True, True, True, True, True, True]
+[PASS] radius_update pred = meas = −0.01, active cap ⇒ keep (not grow)  
+[PASS]   tooth: the ratio test alone would have grown it (ratio 1, cap active)  
+[PASS] peak3 tie (0,.9,.9,.8): left 1.0125 vs right 0.9125 (documented jump)  1.0125 / 0.9125
+[PASS] peak3 |r| > ½ (i not nearest the max) ⇒ plain sample, one-hot grad, r = 0  
+[PASS]   tooth: the raw parabola there extrapolates above every sample  0.9204
+[PASS] restore_lam_step collinear ⇒ width change = sgn·min(need, ½|c|·dl) (allowance- AND need-limited), |gλ·d| <= dl, box  [(0.0375, '1.6e-16', 'minnorm'), (0.0375, '1.6e-16', 'minnorm'), (-0.0375, '1.6e-16', 'minnorm'), (0.02, '6.9e-18', 'minnorm')]
+[PASS]   tooth: the pre-H5.3 projected objective is round-off (|g_obj|_D/|gW|_D < 1e-12)  ratio 1.7e-16; old rule's width change on this instance +0.075
+[PASS] restore_lam_step generic case = the projected QP (solver qp), radius filled  max|d| 10.000000
+[PASS] restore_lam_step dense case: minnorm to ½·y*, ‖d‖₂ < LP vertex's, few params at the cap  y 2.754 = ½·5.507 (projected QP 1.661); ‖d‖₂ 12.6 vs LP vertex 21.9; at cap 12% vs LP at box edge 97%
+[PASS] restore_lam_step min-norm failure ⇒ lp_scaled: t·d_lp on target, inside λ band and box  y 2.754, ‖d‖₂ 10.9
+[PASS] restore_lam_step non-finite gW ⇒ ValueError  
+[PASS] V1 v3 fct: 3 nonzeros = parabola weights at peak±1, softW slot 0, value = peak3  i_pk 250 r +0.300 value−T0 -5.6e-07
+[PASS]   tooth: non-v3 fct = windowed softmax (many nonzeros)  250 nonzero entries
+[PASS] V2 every step: max|dp| <= logged cap_nm, inside param_bounds (5 evals)  worst excess -4.04e-01; caps [10.0, 15.0, 22.5, 30.0, 30.0]
+[PASS] V2 rows carry v3_mode / v3_mu(2) / v3_active_cap; v3_pred_rows inside the bands  [('ascent', [-0.2824, 0.125]), ('ascent', [-0.2824, 0.125]), ('ascent', [-0.2824, 0.125]), ('ascent', [-0.2824, 0.125]), ('ascent', [-0.2824, 0.125])]
+[PASS] V3 cw=0.3 in the rows ⇒ v3_pred_rows[0] == (gW + 0.3·gλ)·d  logged -0.282420 total -0.282420 fixed -0.357420
+[PASS]   tooth: cw missing ⇒ v3_pred_rows[0] == gW·d (fixed-λ row)  
+[PASS] V4 reachable: phase v3-*, width row reaches the band (pred >= W_lo − W)  v3-ascent pred +0.6000 need +0.6000
+[PASS] V4 width alone unreachable ⇒ v3-restore_lam, λ pred <= dl_eff, 0 < W pred <= W_hi − W  v3-restore_lam W pred +5.682e-02 λ pred +0.1250
+[PASS] V4 (smoke shape) jointly unreachable ⇒ v3-restore_lam, λ pred <= dl_eff, partial W gain, no overshoot  W pred +0.1655 λ pred +0.1250
+[PASS]   tooth: pre-fix (no restore_lam block) ⇒ ascent_dropped_row, |λ pred| > dl  ascent_dropped_row λ pred +4.857 nm, W pred +1.165
+[PASS] V5 (a') rows bind, cap inactive, probe gain > 5 % of pred, meas = pred ⇒ grow  gain_1p5 2.500e-03 vs pred 5.000e-03 -> grow
+[PASS] V5 (a'') row-determined step: probe gain ~0 ⇒ keep, cap 10  gain_1p5 8.7e-19, step 3.000000
+[PASS] V5 (a) meas = pred, cap active ⇒ grow 10 → 15  ('grow', 15.0)
+[PASS] V5 (b) meas 0 vs pred 10×slack, accepted ⇒ shrink 10 → 5  ('shrink', 5.0)
+[PASS] V5 (c) |pred| < 2×slack ⇒ unresolved, cap 10 kept  ('unresolved', 10.0)
+[PASS] V6 noise reject ⇒ retry is a different QP trial with step <= cap/2  trial steps [9.595964, 4.803654, 2.407499]
+[PASS] V6 W INSIDE the band, 3 noise rejects ⇒ CONVERGED WITHIN NOISE  
+[PASS] V6 W OUTSIDE the band (hv>0), 3 noise rejects ⇒ STOPPED restoration unresolved, NOT converged  evals 4
+[PASS] V6 dup guard under v3: trials s, s/2, s/4 distinct; out of band ⇒ STOPPED, not CONVERGED  deliv ['0.002691', '0.001346', '0.0006728']
+[PASS] V6 stalled path under v3: STOPPED, no CONVERGED  evals 2
+[PASS] V8 v3: width leaves the band ⇒ rejected (v3_width_reject), not noise, cap halved 10 → 5  v3-ascent-retry hv 0.030000000000001845 cap 5.0
+[PASS]   tooth: non-v3 spec ACCEPTS the same trial (FOM buys the width violation)  ns2+restore
+[PASS] V21 trial 0.03 um past W_hi (< marg/2): accepted, next width pred <= W_hi − W < 0 (pulls back)  v3-ascent W pred -0.5948 (upper -0.0300)
+[PASS]   tooth: without the marg/2 tolerance the same trial is a width reject  v3-ascent-retry
+[PASS] V9 missing/curved cW logged with degraded lambda-row warning  {'ok': ('ok', False, 0.24999999999998468), 'missing': ('missing', True, 0.12500000000001155), 'curved': ('curved', True, 0.124999999999998)}
+[PASS] V9 degraded lambda row <= half allowance; valid cW uses full allowance  {'ok': ('ok', False, 0.24999999999998468), 'missing': ('missing', True, 0.12500000000001155), 'curved': ('curved', True, 0.124999999999998)}
+[PASS] V22 persistent missing width: 3 failures stop explicitly, accepted state retained  evals 4 exception wg_project: UNRESOLVED WIDTH MEASUREMENT: consecutive missing-width retry limit reached; accepted state preserved; fix the profile pipeline before resume
+[PASS] V22 cap floor: identical next geometry is stopped before a repeated forward  wg_project: UNRESOLVED WIDTH MEASUREMENT: missing-width retry would repeat an attempted geometry; accepted state preserved; fix the profile pipeline before resume
+[PASS] V22 one transient missing width retries a distinct point and recovers  None
+[PASS] V23 missing gLambda later=False: unresolved before acceptance/radius/proposal  v3: UNRESOLVED WAVELENGTH GRADIENT; accepted state preserved; refresh/recenter the spectrum before resume; no step proposed
+[PASS] V23 missing gLambda later=True: unresolved before acceptance/radius/proposal  v3: UNRESOLVED WAVELENGTH GRADIENT; accepted state preserved; refresh/recenter the spectrum before resume; no step proposed
+[PASS] V23 nonfinite gLambda fails explicitly with preserved finite state and diagnostic indices  v3: UNRESOLVED WAVELENGTH GRADIENT; accepted state preserved; refresh/recenter the spectrum before resume; no step proposed
+[PASS] V24 strict hard upper rejects +0.03 um despite inner tolerance  {'it': 1, 't': 1791341038.296143, 'fom': 0.71, 'W': 19.151, 'alpha': 0.3, 'cap_nm': 5.0, 'range_alpha': 0.5, 'mac': 1.0, 'hard_width_violation_um': 0.030000000000001137, 'v3_width_reject': 0.030000000000001137, 'dT_pred_trial': 0.00499969112779367, 'phase': 'v3-ascent-retry', 'lam': -1.9733444187626996e-06, 'fom_best': 0.7}
+[PASS] V24 default ±2% retains acceptance for +0.03 um  v3-ascent
+[PASS] V24 strict hard upper rejects +1e-07 um despite inner tolerance  {'it': 1, 't': 1791341038.4675622, 'fom': 0.71, 'W': 19.1210001, 'alpha': 0.3, 'cap_nm': 5.0, 'range_alpha': 0.5, 'mac': 1.0, 'hard_width_violation_um': 1.0000000116860974e-07, 'v3_width_reject': 1.0000000116860974e-07, 'dT_pred_trial': 0.00499969112779367, 'phase': 'v3-ascent-retry', 'lam': -1.9733444187626996e-06, 'fom_best': 0.7}
+[PASS] V24 default ±2% retains acceptance for +1e-07 um  v3-ascent
+[PASS] V24 inconsistent inner/hard band rejected before any forward  QP width band lies outside the measured hard band
+[PASS] V10 accepted peak > recenter_nm off centre ⇒ RecenterNeeded AFTER the proj row is logged  RecenterNeeded('accepted peak 1563.036 nm vs centre 1560.936 (> 2.0 nm)')
+[PASS]   tooth: non-v3 driver does NOT recenter (only the callback's best-FOM guard did)  
+[PASS] V11 reused row: broyden_dW_resid == (Δsoftw_adj − cw·Δtwin_λ) − gW·Δp  logged 0.3754200000029256 want 0.375420000
+[PASS]   tooth: without the correction the residual differs by cw·Δtwin_λ = 0.012  uncorrected 0.387420000
+[PASS] V12 accepted halved retry: radius rule does not grow from the stale QP record  dup True tag keep pred 0.002541721260329327 meas 0.002541721260329366
+[PASS]   tooth: pre-fix (stale record kept) GROWS the radius after the halved accept  grow, it-0 active_cap 0.00552
+[PASS] V13 (i) every restore_lam step is radius- OR band-limited (never a sliver of the cap)  steps [10.0, 10.0, 10.0] caps [10.0, 10.0, 10.0]; D-orth fraction 0.79
+[PASS] V13 (ii) width pred >= 0 = the resonance-neutral reference; |λ pred| <= bound  W gain per step [0.35, 0.35, 0.35] um; λ preds [-0.0264, -0.0264, -0.0264]
+[PASS] V13 (iii) FAST fixture: W climbs monotonically INTO the band within 6 accepted steps  W−W_lo [-1.26, -0.91, -0.56, -0.21, 0.0, 0.027, 0.066]; in band after 4 steps
+[PASS]   tooth: full-row objective (pre-fix) delivers a sliver of the cap (smoke-shaped gW)  pre-fix step 0.00863298614285668 nm (fast fixture 6.000405949800779) under cap 10.0
+[PASS] V13 SLOW (nearly λ-aligned gW): monotone progress, radius/band-limited steps, λ inside the trust  gain 0.2100 um/step; in band after 6 steps (W−W_lo now +0.000)
+[PASS]   tooth: pre-fix first step drops the λ row and predicts a multi-nm resonance move  pre-fix λ pred +7.61 nm
+[PASS] V15 Δλ 0.6 nm (> 2×0.25): rejected, key ineligible, _best_from_log skips it, no recenter  v3-ascent-retry jump 0.599999999999909
+[PASS] V15 Δλ 0.4 nm (< 2×0.25) is NOT λ-rejected  v3-ascent
+[PASS] V16 twin lag 0.3 nm ⇒ cw_state curved, |λ pred| <= ½·dlam; lag 0.1 ⇒ ok, full bound used  {0.3: ('curved', 0.124999999999998), 0.1: ('ok', 0.24999999999998468)}
+[PASS] V18 (a) after every restore_lam step: v3_gain_1p5 == 0 and the radius rule never grows  [(0.0, 'unresolved'), (0.0, 'unresolved'), (0.0, 'unresolved')]
+[PASS]   tooth: the unconditional probe (pre-H5.4) logs a NONZERO gain after a restore step  [(0.000527, 'unresolved'), (0.004236, 'unresolved'), (0.007603, 'unresolved')]
+[PASS] V18 (b) probe solve not a full ascent ⇒ gain_1p5 == 0, no grow (same run grows without the stub: V5 a')  keep
+[PASS] V19 cw flagged at acc ⇒ residual = Δsoftw_adj − gW·Δp (no cw·Δtwin_λ term)  logged 0.34992000000199486 want 0.349920000 (V11 clean-cw case corrected)
+[PASS] V19 cw flagged + |Δλ| 0.1 > 0.05 ⇒ Broyden update skipped as before  dlam
+[PASS] V20 collinear gW = c·gλ: v3-restore_lam, W pred = min(need, ½|c|·dl_eff) = 0.0375, nonzero step, not stalled  W pred 0.037500 λ pred +0.1250 step 0.003663 nm
+[PASS]   tooth: projected-only restore (pre-H5.3) predicts ZERO width change here  -2.4e-10
+[PASS] no proj row of ANY unpatched v3 drive has v3_mode ascent_dropped_row  104 rows; modes ['ascent', 'restore_lam']
+[PASS] port normalization: gLambda denominator uses selector T_out, not modal S squared  
+[PASS] port normalization: callback records separate objective and modal peaks  
+[PASS] V7 REAL callback: cw_um_per_nm within 5 % of the profile's dFWHM/dλ = 0.3  cw 0.302765 curved False lam_pk 1560.9199839685932 fwhm_nm 0.9999797826189933 err None
+[PASS] V7 getresult raising in the c_W block ⇒ row cw_error, no exception, eval logged  cw_error 'synthetic getresult failure'
+FWHM Calc -> Max: 1.00e+00, Min: 2.58e-08, Target: 5.00e-01
+[PASS] V14 v3 callback: λ 3 nm off centre / fwhm_env +5 % ⇒ NO raise, rows still logged  fwhm_env 19.121122711234293; lam 1563.9458071526321; errs None/None
+[PASS]   tooth: wgp_v3=False raises RecenterNeeded and WidthTrip on the same calls  RecenterNeeded('peak 1563.946 vs center 1560.936') / WidthTrip('fwhm_env 19.121122711234293 um outside measured band (17.846381197152006, 18.57480491948474) — spec observable')
+[PASS] V17 (i) linear width: all span slopes equal (1 %), not curved, spans logged  slopes [0.302765, 0.302765, 0.302765] spans [0.24154, 0.12077, 0.06038]
+[PASS] V17 (ii) strong SYMMETRIC curvature: central slope 0.3 within 5 %, NOT curved  cw 0.302775 slopes [0.302916, 0.302803, 0.302775]
+[PASS]   tooth: the old single-span 3-point estimator flags the same profile curved  widest half-span 0.24154 nm
+[PASS] V17 (iii) odd cubic: adjacent slopes disagree > 20 % ⇒ curved, NARROWEST slope reported  slopes [0.59139, 0.155417, 0.046423] → cw 0.046423
+[PASS] V18 wide high-FOM trial rejected without raising best  {'it': 1, 't': 1791341042.632575, 'fom': 0.7999999999999999, 'W': 19.603419999999996, 'alpha': 0.3, 'cap_nm': 5.0, 'range_alpha': 0.5, 'hard_width_violation_um': 0.09999999999999787, 'v3_width_reject': 0.1499999999999993, 'dT_pred_trial': 0.004999999999999925, 'phase': 'v3-ascent-retry', 'lam': -1.956629534695152e-06, 'fom_best': 0.7}
+[PASS] V18 subsequent in-band improvement accepted  {'it': 2, 't': 1791341042.6759312, 'fom': 0.705, 'W': 19.121, 'alpha': 0.15, 'cap_nm': 5.0, 'range_alpha': 0.5, 'hard_width_violation_um': 0.0, 'gW_refresh_cos': 0.9999999999999999, 'proj_rot_deg': 0.2680766849420137, 'gLam_n': 27.49371129671983, 'dwdlam': 0.3655, 'dTp': -1.0, 'v3_gain_1p5': 0.0, 'v3_radius': 'keep', 'dT_meas': 0.0050000000000000044, 'dT_pred_prev': 0.002500427329291491, 'phase': 'v3-ascent', 'lam': -1.956629534695151e-06, 'wgain': 1.0, 'dw_pred': -0.2824199999989534, 'dT_pred': 0.002500427329291491, 'gT_n': 0.0003660592802082454, 'gW_n': 15.75725637715808, 'rho_T': 0.15518044833685196, 'condM': None, 'rW_um': 0.0, 'rLam_nm': None, 'v3_mode': 'ascent', 'v3_mu': [-1.956629534695151e-06, 1.1283872743530351e-06], 'v3_pred_rows': [-0.28242000000000633, 0.24999999999999656], 'v3_active_cap': 0.0, 'v3_row_active': [True, True], 'cw': 0, 'v3_cw_state': 'ok', 'step_shares_nm': {'corr': 4.801991864800985, 'avg': 0.1123052099363862, 'shift': 0.008764010207917937, 'comb': 1.8882846988357254e-10, 'cav': 4.184852276956349}, 'dlam_pred_nm': 0.25000000000677547, 'fom_best': 0.705}
+[PASS] V25 callback explicit hard band trips even without fwhm0 anchor  fwhm_env 19.121122711234293 um outside measured band (18.721122711234294, 19.11112271123429) — spec observable
+[PASS] V25 AL hinge uses strict hard upper; default unchanged in-band  
+[PASS] V25 fwhm wall uses hard upper; default unchanged in-band  
+V3 LOCAL GATE: ALL PASS
+=== gate_recovery.py ===
+.......C fit (exact LSQ): a 0.940000 b +0.120000 | s 0.94763 phi -7.2750 deg | cond 1 | vector resid 0.000%
+ENGINE TUPLE (adj_fix_re, adj_fix_im) = (0.940000, +0.120000)
+     corr_1: FD +1.18000e-03 model +1.18000e-03 resid -0.0% held-out -0.0% |Z|/|FD| 2 sign OK
+    corr_30: FD +2.70000e-03 model +2.70000e-03 resid +0.0% held-out +0.0% |Z|/|FD| 1 sign OK
+      avg_1: FD +2.00000e-03 model +2.00000e-03 resid +0.0% held-out -0.0% |Z|/|FD| 1 sign OK
+    shift_1: FD +4.46000e-03 model +4.46000e-03 resid -0.0% held-out -0.0% |Z|/|FD| 1 sign OK
+   shift_30: FD +4.12000e-03 model +4.12000e-03 resid -0.0% held-out -0.0% |Z|/|FD| 1 sign OK
+       wcav: FD +2.36000e-03 model +2.36000e-03 resid +0.0% held-out +0.0% |Z|/|FD| 2 sign OK
+  per-class worst |resid|: corr 0.0%, avg 0.0%, shift 0.0%, wcav 0.0%
+C fit (exact LSQ): a 0.604008 b +0.432686 | s 0.74300 phi -35.6162 deg | cond 2 | vector resid 58.414%
+ENGINE TUPLE (adj_fix_re, adj_fix_im) = (0.604008, +0.432686)
+     corr_1: FD +1.18000e-03 model -2.15467e-03 resid -282.6% held-out -478.0% |Z|/|FD| 5 sign FLIP
+    corr_30: FD +2.70000e-03 model +1.37934e-03 resid -48.9% held-out -56.5% |Z|/|FD| 1 sign OK
+      avg_1: FD +2.00000e-03 model +1.64070e-03 resid -18.0% held-out -19.5% |Z|/|FD| 1 sign OK
+    shift_1: FD +4.46000e-03 model +2.15467e-03 resid -51.7% held-out -87.4% |Z|/|FD| 1 sign OK
+   shift_30: FD +4.12000e-03 model +3.71409e-03 resid -9.9% held-out -18.2% |Z|/|FD| 1 sign OK
+       wcav: FD +2.36000e-03 model +2.93876e-03 resid +24.5% held-out +50.2% |Z|/|FD| 2 sign OK
+  per-class worst |resid|: corr 282.6%, avg 18.0%, shift 51.7%, wcav 24.5%
+  ★FAIL >10 % in class(es) ['corr', 'avg', 'shift', 'wcav']. If corr/avg fail while shift passes → E-normal boundary error (TE hard case): try bc_patch, not a bigger C.
+REUSED C:\Users\evyat\AppData\Local\Temp\te_recovery_gate_a8ol_mvx\lumopt2_te_s2_cport_recovery_20261006\task_01.json {'fom': 0.4}
+..
+----------------------------------------------------------------------
+Ran 9 tests in 0.471s
+
+OK
+=== gate_persistence.py ===
+..........C:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\runners\lumopt2_design\lumopt2_design.py:2064: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  w = np.trapz(I, x)
+C:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\runners\lumopt2_design\lumopt2_design.py:2065: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  mu = np.trapz(x * I, x) / w
+C:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\runners\lumopt2_design\lumopt2_design.py:2066: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.sqrt(np.trapz((x - mu) ** 2 * I, x) / w))
+C:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\runners\lumopt2_design\lumopt2_design.py:2790: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  ab, aa, bb = (float(np.trapz(v, x)) for v in (Ia * Ib, Ia * Ia, Ib * Ib))
+.C:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\runners\lumopt2_design\evaluation_budget.py:51: RuntimeWarning: Forward budget bootstrapped from callback rows; old failed unlogged forwards cannot be reconstructed
+  self._load()
+...
+----------------------------------------------------------------------
+Ran 14 tests in 0.193s
+
+OK
+FWHM Calc -> Max: 1.00e+00, Min: 1.23e-08, Target: 5.00e-01
+FWHM Calc -> Max: 2.00e+00, Min: 2.47e-08, Target: 1.00e+00
+[width-grad 0] anchor softW 18.7500 / fwhm 19.1200 um; lam_hi 0.0000 lam_lo 0.0000
+[done] best FOM 0.90000 -> persistence_gate_best.json
+=== gate_s2_smoke.py ===
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.098s
+
+OK
+=== gate_width_contract.py ===
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK
+=== gate_evaluation_budget.py ===
+test_bad_configuration_rejected (__main__.BudgetChecks.test_bad_configuration_rejected) ... ok
+test_corrupt_active_is_fatal_even_with_valid_history (__main__.BudgetChecks.test_corrupt_active_is_fatal_even_with_valid_history) ... ok
+test_extension_is_explicit_total_and_stale_config_rejected (__main__.BudgetChecks.test_extension_is_explicit_total_and_stale_config_rejected) ... ok
+test_forward_queue_hook_counts_forwards_and_excludes_adjoints (__main__.BudgetChecks.test_forward_queue_hook_counts_forwards_and_excludes_adjoints) ... ok
+test_interrupted_atomic_publication_counts_flushed_reservation (__main__.BudgetChecks.test_interrupted_atomic_publication_counts_flushed_reservation) ... ok
+test_interrupted_forward_reservation_is_not_refunded (__main__.BudgetChecks.test_interrupted_forward_reservation_is_not_refunded) ... ok
+test_invalid_numeric_state_is_never_overwritten (__main__.BudgetChecks.test_invalid_numeric_state_is_never_overwritten) ... ok
+test_invalid_or_conflicting_history_fails_closed (__main__.BudgetChecks.test_invalid_or_conflicting_history_fails_closed) ... ok
+test_legacy_bootstrap_counts_duplicate_ids_and_partial_attempt (__main__.BudgetChecks.test_legacy_bootstrap_counts_duplicate_ids_and_partial_attempt) ... ok
+test_legacy_complete_last_record_and_blank_lines_are_not_partial (__main__.BudgetChecks.test_legacy_complete_last_record_and_blank_lines_are_not_partial) ... ok
+test_legacy_over_budget_cannot_start_another_forward (__main__.BudgetChecks.test_legacy_over_budget_cannot_start_another_forward) ... ok
+test_missing_active_after_initial_publication_uses_own_history (__main__.BudgetChecks.test_missing_active_after_initial_publication_uses_own_history) ... ok
+test_recenter_and_cold_resume_share_total_budget (__main__.BudgetChecks.test_recenter_and_cold_resume_share_total_budget) ... ok
+test_terminal_outcome_survives_vendor_exception_wrapping (__main__.BudgetChecks.test_terminal_outcome_survives_vendor_exception_wrapping) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.407s
+
+OK
+=== gate_campaign_budget.py ===
+test_automatic_recenter_does_not_refill_budget (__main__.CampaignBudgetChecks.test_automatic_recenter_does_not_refill_budget) ... ok
+test_cached_adjoint_free_uncached_gradient_forward_counted (__main__.CampaignBudgetChecks.test_cached_adjoint_free_uncached_gradient_forward_counted) ... ok
+test_cold_resume_preserves_consumed_total_and_best_result (__main__.CampaignBudgetChecks.test_cold_resume_preserves_consumed_total_and_best_result) ... ok
+test_explicit_extension_after_cold_resume_adds_only_remaining_units (__main__.CampaignBudgetChecks.test_explicit_extension_after_cold_resume_adds_only_remaining_units) ... ok
+test_failed_unlogged_forward_is_counted_before_launch (__main__.CampaignBudgetChecks.test_failed_unlogged_forward_is_counted_before_launch) ... ok
+test_wrapped_exhaustion_is_terminal_and_does_not_recenter (__main__.CampaignBudgetChecks.test_wrapped_exhaustion_is_terminal_and_does_not_recenter) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.696s
+
+OK
+=== gate_modal_guard.py ===
+[proj] v3 engine: width band [18.9000, 19.1200] um, |dlam| <= 0.25 nm per step, peak objective True
+[proj 0] ns2: λ target latched at 1560.936 nm
+[proj 0] v3-ascent fom 0.70000 W 19.1200 lam 0 alpha 0.3 cap 10
+[proj] v3 engine: width band [18.9000, 19.1200] um, |dlam| <= 0.25 nm per step, peak objective True
+[proj] optstate resumed: cap 10 nm, wgain 1.000, lam_tgt 1560.936
+[proj 0] v3-ascent fom 0.72000 W 19.1200 lam 0 alpha 0.3 cap 10
+[proj 1] v3-ascent-retry fom 0.80000 W 19.1200 lam 0 alpha 0.15 cap 5
+..[proj] v3 engine: width band [18.9000, 19.1200] um, |dlam| <= 0.25 nm per step, peak objective True
+[proj 0] ns2: λ target latched at 1560.936 nm
+[proj 0] v3-restore_lam fom 0.90000 W 19.3000 lam 0 alpha 0.3 cap 10
+[proj 1] v3 radius 10 -> 10 (unresolved; dT meas -1.00e-01 vs pred +0.00e+00)
+[proj 1] v3-ascent fom 0.80000 W 19.1200 lam 0 alpha 0.36 cap 10
+[proj 2] v3-ascent-retry fom 0.85000 W 19.1200 lam 0 alpha 0.18 cap 5
+..[proj] v3 engine: width band [18.9000, 19.1200] um, |dlam| <= 0.25 nm per step, peak objective True
+[proj] v3 engine: width band [18.9000, 19.1200] um, |dlam| <= 0.25 nm per step, peak objective True
+[proj] v3 engine: width band [18.9000, 19.1200] um, |dlam| <= 0.25 nm per step, peak objective True
+[proj] v3 engine: width band [18.9000, 19.1200] um, |dlam| <= 0.25 nm per step, peak objective True
+.C:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\runners\lumopt2_design\evaluation_budget.py:51: RuntimeWarning: Forward budget bootstrapped from callback rows; old failed unlogged forwards cannot be reconstructed
+  self._load()
+.[width-grad 0] anchor softW 18.7500 / fwhm 19.1200 um; lam_hi 0.0000 lam_lo 0.0000
+[done] best FOM 0.80000 -> modal_gate_best.json
+[proj] v3 engine: width band [18.9000, 19.1200] um, |dlam| <= 0.25 nm per step, peak objective True
+[proj 0] ns2: λ target latched at 1560.936 nm
+[proj 0] v3-ascent fom 0.70000 W 19.1200 lam 0 alpha 0.3 cap 10
+[proj 1] ★v3 WIDTH REJECT: violation 0.1790 um > accepted 0.0000 um — rejecting regardless of FOM
+[proj 1] v3-ascent-retry fom 0.90000 W 19.3000 lam 0 alpha 0.15 cap 5
+[proj 2] v3 radius 5 -> 5 (keep; dT meas +5.00e-02 vs pred +5.00e-03)
+[proj 2] v3-ascent fom 0.75000 W 19.1200 lam 0 alpha 0.18 cap 5
+..[proj] v3 engine: width band [18.9000, 19.1200] um, |dlam| <= 0.25 nm per step, peak objective True
+[proj 0] ns2: λ target latched at 1560.936 nm
+[proj 0] v3-ascent fom 0.70000 W 19.1200 lam 0 alpha 0.3 cap 10
+[proj 1] v3-ascent-retry fom 0.80000 W 19.1200 lam 0 alpha 0.15 cap 5
+[proj 2] v3-ascent-retry fom 0.81000 W 19.1200 lam 0 alpha 0.075 cap 2.5
+[proj 3] v3-ascent-retry fom 0.82000 W 19.1200 lam 0 alpha 0.0375 cap 2
+.[proj] v3 engine: width band [18.9000, 19.1200] um, |dlam| <= 0.25 nm per step, peak objective True
+[proj 0] ns2: λ target latched at 1560.936 nm
+[proj 0] v3-ascent fom 0.70000 W 19.1200 lam 0 alpha 0.3 cap 10
+[proj 1] v3-ascent-retry fom 0.80000 W 19.1200 lam 0 alpha 0.15 cap 5
+[proj 2] v3 radius 5 -> 5 (keep; dT meas +5.00e-02 vs pred +5.00e-03)
+[proj 2] v3-ascent fom 0.75000 W 19.1200 lam 0 alpha 0.18 cap 5
+.
+----------------------------------------------------------------------
+Ran 10 tests in 0.951s
+
+OK
+ALL 13 OFFLINE GATES GREEN — build, calibration and dispatch checks still apply

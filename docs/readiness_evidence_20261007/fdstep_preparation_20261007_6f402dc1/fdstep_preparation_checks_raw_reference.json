@@ -1,0 +1,67 @@
+{
+  "date_utc": "2026-10-07T02:55:55.996659+00:00",
+  "checks": [
+    {
+      "check": "six_checks_raw_reference",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_s2_fdstep_diagnostic.py"
+      ],
+      "exit_code": 0,
+      "log": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\fdstep_preparation_20261007_6f402dc1\\six_checks_raw_reference.log"
+    },
+    {
+      "check": "athena_tasklist_raw_reference",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\athena\\scripts\\build_sweep_list.py",
+        "--kind",
+        "lumopt2_design",
+        "--module",
+        "runners.lumopt2_design.diagnose_te_s2_fdstep",
+        "--output",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\fdstep_preparation_20261007_6f402dc1\\athena_tasklist_raw_reference.txt"
+      ],
+      "exit_code": 0,
+      "log": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\fdstep_preparation_20261007_6f402dc1\\athena_tasklist_raw_reference.log"
+    },
+    {
+      "check": "igum_tasklist_raw_reference",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\igum\\scripts\\build_sweep_list.py",
+        "--kind",
+        "lumopt2_design",
+        "--module",
+        "runners.lumopt2_design.diagnose_te_s2_fdstep",
+        "--output",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\fdstep_preparation_20261007_6f402dc1\\igum_tasklist_raw_reference.txt"
+      ],
+      "exit_code": 0,
+      "log": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\fdstep_preparation_20261007_6f402dc1\\igum_tasklist_raw_reference.log"
+    }
+  ],
+  "test_count": 6,
+  "source": {
+    "runners/lumopt2_design/diagnose_te_s2_fdstep.py": "3bf24e3ea47600f1c08f13803c7ab29bc6cf8b95c08fef63152168b1069ee361",
+    "runners/lumopt2_design/gates/gate_s2_fdstep_diagnostic.py": "dfcec332d7dcfc7ed656866631a2d914f7d36628d11ede07a31f08c3ad56113b",
+    "runners/lumopt2_design/lumopt2_design.py": "53108bbd368dd699179ab65029628aa4c4b2d8ad687777f88b82f404a0952569",
+    "runners/lumopt2_design/recover_te_s2.py": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91"
+  },
+  "helper": true,
+  "menu_activation": false,
+  "CAD": false,
+  "FDTD": false,
+  "server_actions": false,
+  "reference_checkpoint_sha256": "732ca5752ff2b0449a892ebafe7ba6a87a5ee1fce63bd929f8f7343bf50df13f",
+  "raw_reference": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_reference_task00_remote_original.json",
+  "watch_copy_sha256": "90b1b4a2423c4f37c8299611b5fb56478668c0d836a8f119da48be7a21ce37c2",
+  "semantic_JSON_equal": true,
+  "note": "Default pins exact remote raw bytes; local test fixtures use explicit SHA overrides"
+}
