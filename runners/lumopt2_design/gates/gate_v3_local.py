@@ -911,23 +911,31 @@ check("V22 one transient missing width retries a distinct point and recovers",
       and np.max(np.abs(np.array(r22ok['ev'][1]['params'])-np.array(r22ok['ev'][2]['params']))) > 1e-9,
       str(r22ok["exc"]))
 
-# -- V23 ESSENTIAL LAMBDA ROW: first or later stale stencil cannot propose/grow.
+# -- V23 MISSING LAMBDA ROW (claude-te 2026-10-07, restores a3fab34 intent): a
+# stale/nonfinite gLambda gives a DEGRADED step at <= 1/4 of the trust radius
+# (no resonance row), logged loudly — never a campaign-killing raise.
+def _maxstep(r, k):
+    return float(np.max(np.abs(np.asarray(r["ev"][k + 1]["params"], float)
+                               - np.asarray(r["ev"][k]["params"], float))))
 for later in (False, True):
-    s23 = ([dict(fom=F0,W=W0)] if later else []) + [dict(fom=F0+.01,W=W0,stale=True)]
+    s23 = (([dict(fom=F0,W=W0)] if later else []) + [dict(fom=F0+.01,W=W0,stale=True)]
+           + [dict(fom=F0+.02,W=W0)])
     r23 = drive(s23,gT10,max_iter=len(s23))
-    check(f"V23 missing gLambda later={later}: unresolved before acceptance/radius/proposal",
-          isinstance(r23["exc"], RuntimeError) and "UNRESOLVED WAVELENGTH GRADIENT" in str(r23["exc"])
-          and r23["pr"][-1]["phase"] == "unresolved-gradient"
-          and "v3_pred_rows" not in r23["pr"][-1] and "v3_radius" not in r23["pr"][-1]
-          and r23["ost"]["cap_nm"] == CAPV and r23["ost"]["n_acc"] == int(later)
-          and "CONVERGED" not in r23["out"], str(r23["exc"]))
+    k = 1 if later else 0
+    cap_k = max(float(q.get("cap_nm", CAPV)) for q in r23["pr"])
+    ms = _maxstep(r23, k) if len(r23["ev"]) > k + 1 else None
+    check(f"V23 missing gLambda later={later}: degraded step, no raise, <= cap/4",
+          r23["exc"] is None and "NO gLambda" in r23["out"] and ms is not None
+          and 0 < ms <= cap_k / 4 + 1e-6, f"exc {r23['exc']} step {ms} cap {cap_k}")
+r23t = drive([dict(fom=F0+.01,W=W0,stale=True), dict(fom=F0+.02,W=W0)], gT10, max_iter=2,
+             fn=patched("_cap(a) * (1.0 if glam_ok else 0.25)", "_cap(a)"))
+check("  tooth: without the 1/4 shrink the degraded step exceeds cap/4",
+      r23t["exc"] is None and _maxstep(r23t, 0) > CAPV / 4 + 1e-3, str(_maxstep(r23t, 0)))
 with grads(gHi=np.full(NP_, np.nan)):
-    r23nan = drive([dict(fom=F0,W=W0)],gT10,max_iter=1)
-check("V23 nonfinite gLambda fails explicitly with preserved finite state and diagnostic indices",
-      isinstance(r23nan["exc"], RuntimeError)
-      and "UNRESOLVED WAVELENGTH GRADIENT" in str(r23nan["exc"])
-      and len(r23nan["pr"][0].get("nonfinite_glambda_indices", [])) == NP_
-      and r23nan["ost"]["n_acc"] == 0 and r23nan["ost"]["cap_nm"] == CAPV, str(r23nan["exc"]))
+    r23nan = drive([dict(fom=F0,W=W0), dict(fom=F0+.01,W=W0)],gT10,max_iter=2)
+check("V23 nonfinite gLambda: degraded step logged with diagnostic indices, no raise",
+      r23nan["exc"] is None and "NO gLambda" in r23nan["out"]
+      and len(r23nan["pr"][0].get("nonfinite_glambda_indices", [])) == NP_, str(r23nan["exc"]))
 
 # -- V24 shared hard width: even sub-tolerance violations cannot buy transmission.
 strict24 = (eng.RHO_DN*W0, W0)

@@ -1,4 +1,5 @@
-"""Run the thirteen offline pre-dispatch gates, fail fast.
+"""Run the offline pre-dispatch gates, fail fast (claude-te: 11; the two S2
+recovery-script gates were archived with their scripts 2026-10-07).
 
 Study dir: runners/lumopt2_design/gates/ | Created 2026-09-01 | zero GPU.
 Usage: python run_all_gates.py (exit 0 = offline checks passed).
@@ -14,8 +15,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 GATES = ["gate_projection_local.py", "gate_lam_chain.py",
          "gate_lam_chain_plumbing.py", "predispatch_check.py",
          "gate_tm_identity.py",
-         "gate_v3_local.py", "gate_recovery.py",
-         "gate_persistence.py", "gate_s2_smoke.py", "gate_width_contract.py",
+         "gate_v3_local.py",
+         "gate_persistence.py", "gate_width_contract.py",
          "gate_evaluation_budget.py", "gate_campaign_budget.py",
          "gate_modal_guard.py"]
 

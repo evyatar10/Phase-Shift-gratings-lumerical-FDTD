@@ -18,13 +18,15 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
 > for this program** (the CMT ban is scoped to the lumopt2 optimizer/width-wall).
 >
 > ## ★★★CURRENT PROGRAM STATE — READ BEFORE ANY INVERSE-DESIGN WORK
-> **TE v3 update (2026-10-06):** start with `docs/TE_RECOVERY_2026-10-06.md`,
-> `docs/INVERSE_DESIGN_READINESS_2026-10-06.md` and `docs/CODEX_AUDIT_2026-10-06.md`.
-> The user subsequently authorized S2 calibration recovery on Athena; its
-> job chain is active. Unrelated campaigns remain stopped. The earlier stop
-> snapshot in `docs/HANDOFF_FOR_NEW_AI.md` §6.2.7 predates that authorization.
-> The August handoffs below are historical TM state. Current TE method is
-> `runners/lumopt2_design/THEORY.md` §13; live runner code wins over snapshots.
+> **★TWO LANES since 2026-10-07 (user):** this folder = branch `claude-te`
+> (Claude's lane, Athena base `~/bragg_sim_athena`, IGUM `~/research/bragg_sim_igum`).
+> Codex works ONLY in `c:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes_codex`
+> on branch `codex-te` with its own server bases (`~/bragg_sim_codex`,
+> `~/research/bragg_sim_igum_codex`). Never edit, deploy or cancel the other
+> lane's files/jobs; learning crosses lanes only by deliberate merge. Read
+> `docs/TWO_LANE_SETUP_2026-10-07.md` first. Live TE work: `campaign_te_n80.py`
+> (Athena 171897). Current TE method: `runners/lumopt2_design/THEORY.md` §13.
+> The August handoffs below are historical TM state.
 > **`runners/lumopt2_design/HANDOFF.md`** is the live, self-contained state of the
 > lumopt2 inverse-design programme (2026-08-18). Read it before touching that
 > programme, quoting any of its numbers, or resuming a campaign.

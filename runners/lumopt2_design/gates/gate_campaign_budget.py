@@ -111,6 +111,12 @@ class CampaignBudgetChecks(unittest.TestCase):
                 contextlib.redirect_stdout(self.output):
             return eng.run_campaign(spec, str(self.root))
 
+    def run_to_budget_stop(self, driver, limit=None):
+        """claude-te 2026-10-07: exhaustion is a CLEAN stop (best.json, exit 0)."""
+        result = self.run_driver(driver, limit)
+        self.assertIn('[budget] forward budget exhausted', self.output.getvalue())
+        return result
+
     @staticmethod
     def one_forward(spec, project, callback, out_dir, params):
         fom = project.compute_fom(params)
@@ -121,12 +127,10 @@ class CampaignBudgetChecks(unittest.TestCase):
         def recenter(spec, project, callback, out_dir, params):
             self.one_forward(spec, project, callback, out_dir, params)
             raise eng.RecenterNeeded('simulated accepted-point recenter')
-        with self.assertRaises(BudgetExhausted):
-            self.run_driver(recenter)
+        self.run_to_budget_stop(recenter)
         self.assertEqual(self.h.forward_launches, 2)
         self.assertEqual(json.loads(self.h.budget_path.read_text())['used'], 2)
         self.assertNotIn('CONVERGED', self.output.getvalue())
-        self.assertNotIn('[done]', self.output.getvalue())
 
     def test_cold_resume_preserves_consumed_total_and_best_result(self):
         first = self.run_driver(self.one_forward, limit=1)
@@ -134,20 +138,21 @@ class CampaignBudgetChecks(unittest.TestCase):
         best_raw = best_path.read_bytes()
         rows_raw = (self.root/(self.spec.label+'_evals.jsonl')).read_bytes()
         self.output = streams.StringIO()
-        with self.assertRaises(BudgetExhausted):
-            self.run_driver(self.one_forward, limit=1)
+        self.run_to_budget_stop(self.one_forward, limit=1)
         self.assertEqual(self.h.forward_launches, 1)
-        self.assertEqual(best_path.read_bytes(), best_raw)
+        # the clean stop REWRITES best.json; same point and FOM (the resumed
+        # scan centre follows the best row's resonance, so bytes may differ)
+        old_b, new_b = json.loads(best_raw), json.loads(best_path.read_bytes())
+        self.assertEqual(new_b['best_fom'], old_b['best_fom'])
+        self.assertEqual(new_b['best_params_nm'], old_b['best_params_nm'])
         self.assertEqual((self.root/(self.spec.label+'_evals.jsonl')).read_bytes(), rows_raw)
         self.assertEqual(first['fom'], .81)
         self.assertNotIn('CONVERGED', self.output.getvalue())
-        self.assertNotIn('[done]', self.output.getvalue())
 
     def test_explicit_extension_after_cold_resume_adds_only_remaining_units(self):
         self.run_driver(self.one_forward, limit=1)
         self.run_driver(self.one_forward, limit=2)
-        with self.assertRaises(BudgetExhausted):
-            self.run_driver(self.one_forward, limit=2)
+        self.run_to_budget_stop(self.one_forward, limit=2)
         self.assertEqual(self.h.forward_launches, 2)
         self.assertEqual(json.loads(self.h.budget_path.read_text())['used'], 2)
 
@@ -161,8 +166,7 @@ class CampaignBudgetChecks(unittest.TestCase):
         self.assertEqual(self.h.forward_launches, 2)
         self.assertEqual(self.h.adjoint_launches, 2)
         self.assertEqual(json.loads(self.h.budget_path.read_text())['used'], 2)
-        with self.assertRaises(BudgetExhausted):
-            self.run_driver(self.one_forward)
+        self.run_to_budget_stop(self.one_forward)
         self.assertEqual(self.h.forward_launches, 2)
 
     def test_wrapped_exhaustion_is_terminal_and_does_not_recenter(self):
@@ -171,12 +175,10 @@ class CampaignBudgetChecks(unittest.TestCase):
             self.one_forward(spec, project, callback, out_dir, params)
             self.one_forward(spec, project, callback, out_dir, params)
             return self.one_forward(spec, project, callback, out_dir, params)
-        with self.assertRaises(BudgetExhausted):
-            self.run_driver(excessive)
+        self.run_to_budget_stop(excessive)
         self.assertEqual(len(self.h.projects), 1)
         self.assertEqual(self.h.forward_launches, 2)
         self.assertNotIn('[recenter', self.output.getvalue())
-        self.assertNotIn('[done]', self.output.getvalue())
 
     def test_failed_unlogged_forward_is_counted_before_launch(self):
         self.h.fail_forward = True
@@ -184,7 +186,8 @@ class CampaignBudgetChecks(unittest.TestCase):
             self.run_driver(self.one_forward, limit=1)
         self.assertFalse((self.root/(self.spec.label+'_evals.jsonl')).exists())
         self.h.fail_forward = False
-        with self.assertRaises(BudgetExhausted):
+        # budget stop with NO logged eval: nothing eligible to report -> loud error
+        with self.assertRaisesRegex(RuntimeError, 'no eligible measured result'):
             self.run_driver(self.one_forward, limit=1)
         self.assertEqual(self.h.forward_launches, 1)
         self.assertEqual(json.loads(self.h.budget_path.read_text())['used'], 1)

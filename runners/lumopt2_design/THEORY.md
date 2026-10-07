@@ -833,3 +833,21 @@ QP's dual multipliers themselves combine objective and constraint gradients.
 Also, `Q_i = Q_L/(1-sqrt(T_peak))` is a model-derived estimate under the
 coupling assumptions, not an independent radiation-Q measurement. The
 recorded `1-T-R` residual is not automatically pure cavity radiation.
+
+### 13a. claude-te lane decisions (2026-10-07)
+
+Branch `claude-te` only (Codex's `codex-te` keeps its own §13 text).
+- Length: N = 80/side, 60 free/side (user). Runner `campaign_te_n80.py`.
+- Calibration: S1 reuses its N98 port/field C (they absorb LOCAL tooth-wall
+  errors at the unchanged free teeth). S2 runs with port C = (1, 0) and its own
+  field C. The S2 N98 FD "failure" used ±2 nm legs that moved a 0.20 nm line by
+  ~0.18 nm (non-local) and small-h legs at the 1.3e-5 noise floor, so it is not
+  evidence against the adjoint. The QP is scale-free in gT (τ = cap/max|D·gT|),
+  only direction matters; acceptance is on MEASURED T, W, λ. The calibration
+  gate is therefore the per-iterate gain ratio (measured ΔFOM / dT_pred);
+  re-open FD calibration only if it flips sign or stays < ~0.3.
+- Engine reverts vs the Codex integration: a missing/nonfinite gλ is a DEGRADED
+  step at ¼ trust radius (no λ row), not a raise; port-diagnostic readouts no
+  longer share the width measurement's try block; budget exhaustion is a clean
+  stop that writes `_best.json`; NaN diagnostics in journal rows become null.
+  Gates V23 (`gate_v3_local`) and `gate_campaign_budget` assert the new forms.

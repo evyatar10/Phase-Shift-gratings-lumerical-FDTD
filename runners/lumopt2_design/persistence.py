@@ -59,9 +59,21 @@ def _write_new(path, data):
         os.fsync(f.fileno())
 
 
+def _nan_to_none(v):
+    """Non-finite floats -> None (claude-te 2026-10-07): a NaN DIAGNOSTIC in a
+    log row must not kill a campaign; numbers that matter are checked where used."""
+    if isinstance(v, float) and not math.isfinite(v):
+        return None
+    if isinstance(v, dict):
+        return {k: _nan_to_none(x) for k, x in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [_nan_to_none(x) for x in v]
+    return v
+
+
 def append_row(path, row):
     path = Path(path)
-    encoded = (json.dumps(row, allow_nan=False)+'\n').encode('utf8')
+    encoded = (json.dumps(_nan_to_none(row), allow_nan=False)+'\n').encode('utf8')
     raw, _, partial = _jsonl(path)
     if partial is not None:
         backup = path.with_name(path.name+'.interrupted_'+new_id())

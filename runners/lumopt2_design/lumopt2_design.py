@@ -1778,22 +1778,30 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                 T_objective = np.abs(np.squeeze(t2["T_out"]))
                 wl = np.squeeze(t2["lambda"]) / NM
                 lam_pk, t_pk, fwhm = measure_peak(wl, T)
-                lam_out, peak_out, _ = measure_peak(wl, T_objective)
-                row.update(t_pk_definition="sampled_abs_S21_squared",
-                           port_objective_definition="abs_T_out",
-                           tout_pk=float(peak_out), lam_tout_pk_nm=float(lam_out),
-                           tout_peak3=float(make_fct_peak(wl)(T_objective)),
-                           modal_peak3=float(make_fct_peak(wl)(T)))
+                # claude-te 2026-10-07: diagnostics in their OWN try — a failure
+                # here must not cost the eval its width (fwhm_env_um below).
+                try:
+                    lam_out, peak_out, _ = measure_peak(wl, T_objective)
+                    row.update(t_pk_definition="sampled_abs_S21_squared",
+                               port_objective_definition="abs_T_out",
+                               tout_pk=float(peak_out), lam_tout_pk_nm=float(lam_out),
+                               tout_peak3=float(make_fct_peak(wl)(T_objective)),
+                               modal_peak3=float(make_fct_peak(wl)(T)))
+                except Exception as e_diag:
+                    row["diag_peak_error"] = repr(e_diag)[:200]
                 if getattr(spec, "wg_track_resonance", False):
                     # advance the twin's λ-pin for the NEXT eval (make_func
                     # reads it per call; every eval, probes included, so
                     # consecutive line-search probes chain correctly)
                     spec._wg_lam_track = float(lam_pk)
                 i_pk = int(np.argmin(np.abs(wl - lam_pk)))
-                row["tout_at_modal_peak"] = float(T_objective[i_pk])
-                row["tout_over_modal_at_peak"] = float(T_objective[i_pk] / T[i_pk])
-                if "T_in" in t1:
-                    row["source_port_tin_at_peak"] = float(np.real(np.squeeze(t1["T_in"])[i_pk]))
+                try:
+                    row["tout_at_modal_peak"] = float(T_objective[i_pk])
+                    row["tout_over_modal_at_peak"] = float(T_objective[i_pk] / T[i_pk])
+                    if "T_in" in t1:
+                        row["source_port_tin_at_peak"] = float(np.real(np.squeeze(t1["T_in"])[i_pk]))
+                except Exception as e_diag:
+                    row["diag_tout_error"] = repr(e_diag)[:200]
                 # stale-state guard (review A9): an ineligible spectrum must not
                 # leave the PREVIOUS eval's stencil for the gradient pass
                 spec._wg_lam_idx = None
@@ -2963,9 +2971,16 @@ def run_projected(spec, project, cb, out_dir, p0):
         pass mutate=False."""
         nonlocal ns2_diag, v3_last
         if v3:
-            if (gLamv is None or not np.all(np.isfinite(gLamv))
-                    or lamv is None or not np.isfinite(lamv)):
-                raise RuntimeError("v3: missing/nonfinite gLambda or resonance; refusing an unrestricted step")
+            # claude-te 2026-10-07: a missing gLambda used to be a degraded
+            # step (a3fab34); the Codex integration made it a campaign-killing
+            # raise. Restored as a DEGRADED step at 1/4 of the trust radius:
+            # with no lambda row the step is lambda-unconstrained (169002 moved
+            # +3.75 nm at full radius), so it is kept small, and acceptance
+            # still runs on the MEASURED T, W and resonance.
+            glam_ok = (gLamv is not None and np.all(np.isfinite(gLamv))
+                       and lamv is not None and np.isfinite(lamv))
+            if not glam_ok:
+                gLamv = None
             # total moving-resonance width row when both pieces exist; else
             # the fixed-λ row (the λ trust row then bounds the cross term)
             gWr = (gWv + float(cw) * gLamv
@@ -2983,7 +2998,7 @@ def run_projected(spec, project, cb, out_dir, p0):
                 rows.append(np.asarray(gLamv, dtype=float))
                 bands.append((-dl_eff, dl_eff))
             q = v3s.qp_step(gTv, rows, bands, D, lo - p_base, hi - p_base,
-                            _cap(a))
+                            _cap(a) * (1.0 if glam_ok else 0.25))
             if q["mode"] != "ascent" and gLamv is not None:
                 # ★MEASURED on hardware (v3 smoke 169002, it 0): with the width
                 # band unreachable the QP dropped the λ row and the peak moved
@@ -3445,12 +3460,11 @@ def run_projected(spec, project, cb, out_dir, p0):
                 if gLam_vec is not None:
                     rec["nonfinite_glambda_indices"] = np.flatnonzero(
                         ~np.isfinite(gLam_vec)).tolist()
-                rec.update(phase="unresolved-gradient", ns2_fallback=True,
+                rec.update(ns2_fallback=True,
                            unresolved_reason="missing/nonfinite gLambda or resonance")
-                _save_state()
-                persistence.append_row(ppath, rec)
-                raise RuntimeError("v3: UNRESOLVED WAVELENGTH GRADIENT; accepted state preserved; "
-                                   "refresh/recenter the spectrum before resume; no step proposed")
+                print(f"[proj {it}] ★v3 NO gLambda — DEGRADED step at 1/4 radius, "
+                      f"no resonance row (claude-te restore of a3fab34)", flush=True)
+                gLam_vec = None
             if (getattr(spec, "wgp_autogain", False) and acc is not None
                     and acc.get("phase") == "restore"):
                 # ★DEFECT #18 (2026-08-25): the old gate was `abs(dW_pred) >
@@ -3809,11 +3823,16 @@ def run_campaign(spec, out_dir, sigma0_um=None):
                                                     # always from filtered log
             break                                   # converged / budget exhausted
         except BudgetExhausted:
-            raise  # Terminal budget outcome, never convergence or a recenter.
+            # claude-te 2026-10-07: budget end = CLEAN stop (write _best.json,
+            # exit 0 so afterok chains fire), never a recenter or a retry.
+            print("[budget] forward budget exhausted -> clean stop", flush=True)
+            break
         except (RecenterNeeded, WidthTrip, RuntimeError) as e:
             terminal_budget = find_budget_exhausted(e)
             if terminal_budget is not None:
-                raise terminal_budget from e
+                print("[budget] forward budget exhausted (wrapped) -> clean stop",
+                      flush=True)
+                break
             # lumopt2 wraps fct exceptions TWICE: scipy_optimizer.py:583
             # raises RuntimeError WITHOUT `from e` (original only in
             # __context__ — measured job 133016), then optimization.py:852

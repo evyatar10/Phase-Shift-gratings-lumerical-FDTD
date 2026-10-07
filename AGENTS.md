@@ -1,11 +1,11 @@
 # Pi-shift Bragg grating project
 
-**UPDATE 2026-10-07 23:xx (Claude, on user direction):** TE optimization RESUMED
-at N=80/side for BOTH seeds — `runners/lumopt2_design/campaign_te_n80.py`,
-Athena job 171897 (task 0 S1 from the N98 best 0.9528, task 1 S2 seed). Do not
-dispatch duplicates on these labels. S2 port C is (1,0) by explicit decision;
-the S2 FD-calibration forensics are off the critical path. State: Claude memory
-`project_te_inverse_design_lane.md`.
+**★THIS FOLDER IS THE CLAUDE LANE (branch `claude-te`) since 2026-10-07.**
+Codex: do NOT work here. Your lane is
+`C:/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes_codex` (branch
+`codex-te`, server bases `~/bragg_sim_codex` and `~/research/bragg_sim_igum_codex`).
+Read `docs/TWO_LANE_SETUP_2026-10-07.md` there. Everything below is the
+historical Codex text as of the split.
 
 New-chat entry point: read `docs/TE_NEW_CHAT_HANDOFF_2026-10-07.md` first.
 Autonomous work and the existing heartbeat are PAUSED at the user-requested
