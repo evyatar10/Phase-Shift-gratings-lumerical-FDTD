@@ -39,9 +39,11 @@ Afterok chains wait indefinitely if an upstream stage fails. Diagnose before
 altering dependencies or resubmitting only genuinely failed/missing work.
 Arm proportionate monitoring, inspect an early new-code log, and carry through
 result review/next authorized stages. No cancellation or cleanup is implied.
-Historical recipes: [Claude source](../../../.claude/skills/dispatch-study/SKILL.md).
+Historical recipes: [Claude source](references/claude-original.md).
 
 Before dispatching a new module, exercise the real driver call convention in an
 offline guard/reuse test. The current Athena driver calls main(task_idx=idx);
 a runner that only accepts main(task) is incompatible despite passing positional
 unit tests. Check the live IGUM driver too when that cluster is targeted.
+
+The bundled runbook is historical evidence. Current user instructions, AGENTS.md, this Codex entrypoint and live code take precedence. Interpret repository paths from the repository root; historical memory references remain external and are not bundled.

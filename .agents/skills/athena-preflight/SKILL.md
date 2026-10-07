@@ -30,4 +30,6 @@ Before a fan-out, hold at HIGH shared usage (>=35/50) and do not dispatch at
 CRITICAL (>=45/50); these are project operating bands, not seat guarantees.
 Report concrete go/no-go evidence and the intended resource request. Diagnose
 resource failures without deleting HDF5 or cancelling unrelated jobs.
-Original incidents: [Claude source](../../../.claude/skills/athena-preflight/SKILL.md).
+Original incidents: [Claude source](references/claude-original.md).
+
+The bundled runbook is historical evidence. Current user instructions, AGENTS.md, this Codex entrypoint and live code take precedence. Interpret repository paths from the repository root; historical memory references remain external and are not bundled.

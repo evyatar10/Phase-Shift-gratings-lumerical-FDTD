@@ -30,4 +30,6 @@ VPN loss from the accounting failure, and do not submit a replacement job.
 Report job/task IDs, running/pending/completed counts, latest meaningful solver
 phase, new valid results versus expected, and any explicit access failure.
 If result inspection/fetching is already authorized, continue it automatically.
-Original history: [Claude source](../../../.claude/skills/athena-status/SKILL.md).
+Original history: [Claude source](references/claude-original.md).
+
+The bundled runbook is historical evidence. Current user instructions, AGENTS.md, this Codex entrypoint and live code take precedence. Interpret repository paths from the repository root; historical memory references remain external and are not bundled.

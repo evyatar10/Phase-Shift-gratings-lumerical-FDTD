@@ -45,7 +45,7 @@ heartbeat is a wakeup mechanism, not an exemption from usage limits. Use the
 installed ask-claude helper only within its verified text-only boundaries.
 The retained `campaign_monitor_template.sh` is a historical template, not an
 executable default; inspect/update its paths and failure semantics before use.
-[Original history](../../../.claude/skills/work-alone/SKILL.md).
+[Original history](references/claude-original.md).
 
 ## Plan around expensive simulations
 
@@ -56,3 +56,7 @@ Prepare downstream extraction and validation before the current run ends.
 Read the installed cluster-ops skill's `references/runtime-planning.md` for
 the concrete planning fields. Store volatile estimates and job identities in
 the dated project plan, not as permanent runtime promises in this skill.
+
+The bundled runbook is historical evidence. Current user instructions, AGENTS.md, this Codex entrypoint and live code take precedence. Interpret repository paths from the repository root; historical memory references remain external and are not bundled.
+
+The byte-preserved [historical monitor template](references/campaign_monitor_template.sh) accompanies the runbook; review it before any use.

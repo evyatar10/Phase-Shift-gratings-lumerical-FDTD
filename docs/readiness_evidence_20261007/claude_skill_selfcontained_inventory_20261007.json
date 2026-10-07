@@ -1,0 +1,2502 @@
+{
+  "date": "2026-10-07",
+  "prior_inventory_sha256": "9e718fd3a9e1a491df38e794482f640b6e950d7be2be898eaf5234fb2f527eba",
+  "before_archive": {
+    "path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\skills_selfcontained_transfer_24_y6isc\\before_transfer.zip",
+    "sha256": "49cf057d25f411b989aeb8f68759df69f980f2654b7e423b1db9a7954fcb6104"
+  },
+  "project": [
+    {
+      "name": "add-study",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\add-study\\SKILL.md",
+      "source_sha256": "e14d5dbe7de4c1f387412f97ddf4887806b0956bb639a67c25e3648061d069af",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\add-study\\SKILL.md",
+      "before_entrypoint_sha256": "7f0567a2351995e785f289cb7bec746b1543f6dc16d7167963430431eb9769cd",
+      "after_entrypoint_sha256": "d496fb022c1f581d371b475b874750defe218d17711666dfd458957f699e8fba",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\add-study\\references\\claude-original.md",
+      "local_runbook_sha256": "e14d5dbe7de4c1f387412f97ddf4887806b0956bb639a67c25e3648061d069af",
+      "companions": []
+    },
+    {
+      "name": "athena-preflight",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\athena-preflight\\SKILL.md",
+      "source_sha256": "619b0f3ec87b32873d36a1f62f1cdf8c569ced6b344f599ec5979d4fc5c760bf",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\athena-preflight\\SKILL.md",
+      "before_entrypoint_sha256": "c7adfd7af780ca7d2a6746934ba9e6deebf16fc2231e49673414376c0f79d114",
+      "after_entrypoint_sha256": "8aca7068bb77a85c5cc183583f9e7b6349accc4d5df4ed2bd65887385ccfdd78",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\athena-preflight\\references\\claude-original.md",
+      "local_runbook_sha256": "619b0f3ec87b32873d36a1f62f1cdf8c569ced6b344f599ec5979d4fc5c760bf",
+      "companions": []
+    },
+    {
+      "name": "athena-status",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\athena-status\\SKILL.md",
+      "source_sha256": "962c7e0b4c7120191c4df5df4bbf21de71c5e287d990ff664a26f2a76ad87ece",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\athena-status\\SKILL.md",
+      "before_entrypoint_sha256": "2bc60ae02272ac8ee6e3319952538730217fc7fc1f494e554f5ecda5a4ba8597",
+      "after_entrypoint_sha256": "3029ff88aacfb06130e03b590100b243a59bbe6f94af7380593d5f50554f5153",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\athena-status\\references\\claude-original.md",
+      "local_runbook_sha256": "962c7e0b4c7120191c4df5df4bbf21de71c5e287d990ff664a26f2a76ad87ece",
+      "companions": []
+    },
+    {
+      "name": "check-result",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\check-result\\SKILL.md",
+      "source_sha256": "03c375297630cdad5cf261024a5de4cfb4d98753f537af034ddf723e3029691f",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\check-result\\SKILL.md",
+      "before_entrypoint_sha256": "0ca14984937456d6e4fda3edf978c702c1cfbd2daa039931c70eafa494acc557",
+      "after_entrypoint_sha256": "a5493dff029fcb0780a6c32614fdd6dc5f7407cc424ebcc220553c54a5fce843",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\check-result\\references\\claude-original.md",
+      "local_runbook_sha256": "03c375297630cdad5cf261024a5de4cfb4d98753f537af034ddf723e3029691f",
+      "companions": []
+    },
+    {
+      "name": "dispatch-study",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\dispatch-study\\SKILL.md",
+      "source_sha256": "2db43667d9d6cb461b0f77dc837d3655e0b8df7871dd3a570dc07c6da4c037e4",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\dispatch-study\\SKILL.md",
+      "before_entrypoint_sha256": "aad31acd469315b424eaadd5deb876524adb50f4a889e7f7accdb03bf1f741b8",
+      "after_entrypoint_sha256": "aba7af03c82af788011f79624fbe4aefd66cc1f692741ee80f0d333e41091b27",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\dispatch-study\\references\\claude-original.md",
+      "local_runbook_sha256": "2db43667d9d6cb461b0f77dc837d3655e0b8df7871dd3a570dc07c6da4c037e4",
+      "companions": []
+    },
+    {
+      "name": "fetch-results",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\fetch-results\\SKILL.md",
+      "source_sha256": "498a9f41360a88e5b46b5d4b3834ca7f5686271f4693bed44e8b846f335b7ec6",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\fetch-results\\SKILL.md",
+      "before_entrypoint_sha256": "b30c67a7664656c53217468595bad960e756d71b94c5c6a25b8c0707969f9f86",
+      "after_entrypoint_sha256": "4df11c44255682b2602073e70d5192e3ca03bda9f6631ac37b9b1faf7cbcb2cb",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\fetch-results\\references\\claude-original.md",
+      "local_runbook_sha256": "498a9f41360a88e5b46b5d4b3834ca7f5686271f4693bed44e8b846f335b7ec6",
+      "companions": []
+    },
+    {
+      "name": "lock-target",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\lock-target\\SKILL.md",
+      "source_sha256": "b0d8fdd0f0200ca70b9db8e02225372be9d12792681f2788d218ee0e9b90197f",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\lock-target\\SKILL.md",
+      "before_entrypoint_sha256": "94a76d45d2ec26a33967aa9c360d9641d4245b3a99b8790853258b79d4113dd2",
+      "after_entrypoint_sha256": "3fb1547d4a09e40bc71e47337b71abe94a1366cd47f29d26b3fd2ec42d510d01",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\lock-target\\references\\claude-original.md",
+      "local_runbook_sha256": "b0d8fdd0f0200ca70b9db8e02225372be9d12792681f2788d218ee0e9b90197f",
+      "companions": []
+    },
+    {
+      "name": "lumopt2-design",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\lumopt2-design\\SKILL.md",
+      "source_sha256": "66a65117aa6216b6bbfbad06d2e2013c6cc0216c5f720fa815c9ccfe5c689d6c",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\lumopt2-design\\SKILL.md",
+      "before_entrypoint_sha256": "e0f70ac2cef1b9a5964829c3ae2acffd9ee83bdf8a09fb57850b4f5479c0d977",
+      "after_entrypoint_sha256": "ea8ebc38b2eb9f97a066985b443cc39c2de0f355ef47f495ae896ae4d38b5be2",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\lumopt2-design\\references\\claude-original.md",
+      "local_runbook_sha256": "66a65117aa6216b6bbfbad06d2e2013c6cc0216c5f720fa815c9ccfe5c689d6c",
+      "companions": []
+    },
+    {
+      "name": "predict-q3db",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\predict-q3db\\SKILL.md",
+      "source_sha256": "d8c06b206843aa86cc5407ba53efbe73924ae0f125c0d792790fa9f751a02d4d",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\predict-q3db\\SKILL.md",
+      "before_entrypoint_sha256": "022bed81358277fa667c44efec0c9f14743db931ac0b1b9d32fd0f2e3789572e",
+      "after_entrypoint_sha256": "5cec0381d3229781bb9229679919d99bb39c7b1e2fe2bf0e84ff6707a35594f4",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\predict-q3db\\references\\claude-original.md",
+      "local_runbook_sha256": "d8c06b206843aa86cc5407ba53efbe73924ae0f125c0d792790fa9f751a02d4d",
+      "companions": []
+    },
+    {
+      "name": "safe-compact",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\safe-compact\\SKILL.md",
+      "source_sha256": "6f72c64c541f80b46080ff776407e16e0bda2445a7168a6db773438021aaf905",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\safe-compact\\SKILL.md",
+      "before_entrypoint_sha256": "96c777658e2373caa93a7a8589fb1e18568ff85120907d31fdc83088546e1aec",
+      "after_entrypoint_sha256": "5e2acabfcb970002a7087afcc7cc232f1f5619753f4d734c85154341e1890193",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\safe-compact\\references\\claude-original.md",
+      "local_runbook_sha256": "6f72c64c541f80b46080ff776407e16e0bda2445a7168a6db773438021aaf905",
+      "companions": []
+    },
+    {
+      "name": "stop-runs",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\stop-runs\\SKILL.md",
+      "source_sha256": "1b44554cb8a6d22da5ddcef565f909015eb7de764863b2b70128f3c64aa6073a",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\stop-runs\\SKILL.md",
+      "before_entrypoint_sha256": "d34280fc93ddfb8cef05cc563dde678ca0eba06ead9a86163ce692cd1ea30229",
+      "after_entrypoint_sha256": "5ec2beff27e6dcb8f6309f6f2f90a16b2b9dd44c76b4ae8aa1d6067dce5f375a",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\stop-runs\\references\\claude-original.md",
+      "local_runbook_sha256": "1b44554cb8a6d22da5ddcef565f909015eb7de764863b2b70128f3c64aa6073a",
+      "companions": []
+    },
+    {
+      "name": "update-container",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\update-container\\SKILL.md",
+      "source_sha256": "83535a80c542f943ae07934b13697167071e5e873c86d361c763d05cd0f7569f",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\update-container\\SKILL.md",
+      "before_entrypoint_sha256": "7a58a67e70ea0450b943cbcf087911a6fd6a19e9a700326fbda91b8228734554",
+      "after_entrypoint_sha256": "15603871cabce023723e8776556469f1129dc8fbdc17fafe9822d1a179db63f7",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\update-container\\references\\claude-original.md",
+      "local_runbook_sha256": "83535a80c542f943ae07934b13697167071e5e873c86d361c763d05cd0f7569f",
+      "companions": []
+    },
+    {
+      "name": "work-alone",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\work-alone\\SKILL.md",
+      "source_sha256": "4aeb426339726e7df07a695ab356b1fcf6e67669f1b6f1556b75d1dc921e8cf1",
+      "entrypoint": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\work-alone\\SKILL.md",
+      "before_entrypoint_sha256": "53c1b24f74f8943f422a45e4a33de9c234fdeceed1a4629619e9112079726df6",
+      "after_entrypoint_sha256": "c2742c661ca510eefc1e20811f233b52716f4d71c5a9c37457965db82b446603",
+      "local_runbook": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\work-alone\\references\\claude-original.md",
+      "local_runbook_sha256": "4aeb426339726e7df07a695ab356b1fcf6e67669f1b6f1556b75d1dc921e8cf1",
+      "companions": [
+        {
+          "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\work-alone\\campaign_monitor_template.sh",
+          "local_reference": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\work-alone\\references\\campaign_monitor_template.sh",
+          "sha256": "7ea4ec45b6eb0d9c9fac11ee7a1b4daa0e8ce0c5028757f304cf6929b4af5e73"
+        }
+      ]
+    }
+  ],
+  "personal": [
+    {
+      "name": "ask-gpt",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\ask-gpt",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\ask-gpt",
+      "source_file_count": 2,
+      "support_file_count": 1,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "ask_gpt.py",
+          "source_sha256": "a4d810a2ed9739c0e80f87653255d2c476fe0c13a009cea12c39567e3c07d7b4",
+          "destination_sha256": "a4d810a2ed9739c0e80f87653255d2c476fe0c13a009cea12c39567e3c07d7b4",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "ca5de4c1ba08abbcc4d29056c86ca6a4728291a300f0dcdcd92a8fb78be46603",
+          "destination_sha256": "95b1af66ea54cd6e850677230f3bfa79dd010b7be7087f5dd3b05d91061c45bf",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "research-deck",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\research-deck",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\research-deck",
+      "source_file_count": 33,
+      "support_file_count": 32,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "assets/fonts/GUST-FONT-LICENSE.TXT",
+          "source_sha256": "49ea6cb9257bbee0a3979c48a774cd221550ac1c20c95549efe45fc99cc18050",
+          "destination_sha256": "49ea6cb9257bbee0a3979c48a774cd221550ac1c20c95549efe45fc99cc18050",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/latinmodern-math.otf",
+          "source_sha256": "6075562b771f8b82f0c179e363389684f2dd09de30038269e2628e504bd7be0f",
+          "destination_sha256": "6075562b771f8b82f0c179e363389684f2dd09de30038269e2628e504bd7be0f",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmroman10-bold.otf",
+          "source_sha256": "102fe06c430a8b681b2bf6876b7cd967ae4d47b4b6b41d915eb7913b726d9fb1",
+          "destination_sha256": "102fe06c430a8b681b2bf6876b7cd967ae4d47b4b6b41d915eb7913b726d9fb1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmroman10-italic.otf",
+          "source_sha256": "c1fce25075567bb8dbf2151658c3b442690041db17a2d49fc9e55905ea5b7169",
+          "destination_sha256": "c1fce25075567bb8dbf2151658c3b442690041db17a2d49fc9e55905ea5b7169",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmroman10-regular.otf",
+          "source_sha256": "1aa18cfefa58132c52ce5de70db1fd1154201c19cd2b2cdaffba4906a33e6852",
+          "destination_sha256": "1aa18cfefa58132c52ce5de70db1fd1154201c19cd2b2cdaffba4906a33e6852",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmsans10-bold.otf",
+          "source_sha256": "a597b710326c1a8a2c7238d808e5d38711638a72a32383478db4829d63afd687",
+          "destination_sha256": "a597b710326c1a8a2c7238d808e5d38711638a72a32383478db4829d63afd687",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmsans10-boldoblique.otf",
+          "source_sha256": "e45673d84754a94f2f053bd4c15950b4b320144fbb622c630a26fd7b68cfabc5",
+          "destination_sha256": "e45673d84754a94f2f053bd4c15950b4b320144fbb622c630a26fd7b68cfabc5",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmsans10-oblique.otf",
+          "source_sha256": "1b38b36efc21f9d3f34edf6a13f9d71f59c41f824e790f5d3ee5ba5b4936f377",
+          "destination_sha256": "1b38b36efc21f9d3f34edf6a13f9d71f59c41f824e790f5d3ee5ba5b4936f377",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmsans10-regular.otf",
+          "source_sha256": "d431b786b9b603662718e79cfe9b441f47a8b0b3e854dde89d5acb3ed7cfd682",
+          "destination_sha256": "d431b786b9b603662718e79cfe9b441f47a8b0b3e854dde89d5acb3ed7cfd682",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/README.md",
+          "source_sha256": "5d8015cd8b3de7ba110bd0b6ba1fcf55cd2d827954691d9192a2f11c4e174807",
+          "destination_sha256": "5d8015cd8b3de7ba110bd0b6ba1fcf55cd2d827954691d9192a2f11c4e174807",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/omml/MML2OMML.XSL",
+          "source_sha256": "fdbb663cbbf0ab0b8387d1c65f6691ac6771e96bbb8b4a256af251834e35ed72",
+          "destination_sha256": "fdbb663cbbf0ab0b8387d1c65f6691ac6771e96bbb8b4a256af251834e35ed72",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/template/research_beamer_template.pptx",
+          "source_sha256": "e50e5a5890351b2de6297a7cf622dba7c0eed49ea5499cc17469cf94bd3ba945",
+          "destination_sha256": "e50e5a5890351b2de6297a7cf622dba7c0eed49ea5499cc17469cf94bd3ba945",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "install_for_claude_code.sh",
+          "source_sha256": "78286589503ee5bdbee8e284b00b6bcd708e12a4a3c1d129292d6bd8ddb757b9",
+          "destination_sha256": "78286589503ee5bdbee8e284b00b6bcd708e12a4a3c1d129292d6bd8ddb757b9",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/figure_sizing.md",
+          "source_sha256": "5551a17ab73f50e3ed283e00c4cd47e2af3026280d31ac709c6fa52bf85769c1",
+          "destination_sha256": "5551a17ab73f50e3ed283e00c4cd47e2af3026280d31ac709c6fa52bf85769c1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/frame_templates.tex",
+          "source_sha256": "0ad986d88bfa32ed5539961b400ce0f1364a28576900b9e7672a04b904fbc3fe",
+          "destination_sha256": "0ad986d88bfa32ed5539961b400ce0f1364a28576900b9e7672a04b904fbc3fe",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/pptx_example_spec.json",
+          "source_sha256": "41e63a20e1c3437bed187ee6bba81e4e23033950a529602a03203752732fedeb",
+          "destination_sha256": "41e63a20e1c3437bed187ee6bba81e4e23033950a529602a03203752732fedeb",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/pptx_geometry.md",
+          "source_sha256": "f45c3923a2094f35ec19a2323b23238a8c36c5837578a36f3cf03b101e1a587a",
+          "destination_sha256": "f45c3923a2094f35ec19a2323b23238a8c36c5837578a36f3cf03b101e1a587a",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/pptx_spec_format.md",
+          "source_sha256": "05acdeb92de2f94e28980cc6bd15e1669c878fb1c879951a67ad8a2fa1c4a6ed",
+          "destination_sha256": "05acdeb92de2f94e28980cc6bd15e1669c878fb1c879951a67ad8a2fa1c4a6ed",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/pptx_template_spec.json",
+          "source_sha256": "b99acb237c22aec6893afeda67e5decf6a672bf80ea1e565c76785346235c9e0",
+          "destination_sha256": "b99acb237c22aec6893afeda67e5decf6a672bf80ea1e565c76785346235c9e0",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck.tex",
+          "source_sha256": "ef481ff23c2250f317e6d9bf84c2dccef9ab38d7f779d2b2f65173353a3d7aa2",
+          "destination_sha256": "ef481ff23c2250f317e6d9bf84c2dccef9ab38d7f779d2b2f65173353a3d7aa2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck_2_followup.tex",
+          "source_sha256": "afb1b3a43a4268bb27ad39682068c9f342dfa2bd9a8aca6f83bf20eb2a03e8c5",
+          "destination_sha256": "afb1b3a43a4268bb27ad39682068c9f342dfa2bd9a8aca6f83bf20eb2a03e8c5",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck_3_grating_coupler.tex",
+          "source_sha256": "15309e868e9d3dd7dbbc72ee0e6225daa1d83b2d248f7a3de8ac1629fb1bd3fa",
+          "destination_sha256": "15309e868e9d3dd7dbbc72ee0e6225daa1d83b2d248f7a3de8ac1629fb1bd3fa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck_4_inverse_experiment.tex",
+          "source_sha256": "c4fc4f14f0c1d7c6b7c168c6e3260e7e9207b8a5c66aec33f9e0b65dfec1144f",
+          "destination_sha256": "c4fc4f14f0c1d7c6b7c168c6e3260e7e9207b8a5c66aec33f9e0b65dfec1144f",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/style_rules.md",
+          "source_sha256": "5723e8bcad2554e12863433d0204b3179c4d7c49a1ef7b19829512f2a52242a4",
+          "destination_sha256": "5723e8bcad2554e12863433d0204b3179c4d7c49a1ef7b19829512f2a52242a4",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/build_and_check.sh",
+          "source_sha256": "2535045c8a4c91407d6ad23100a70750b56ae0b29ff29ad3c046bb56adafbae7",
+          "destination_sha256": "2535045c8a4c91407d6ad23100a70750b56ae0b29ff29ad3c046bb56adafbae7",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/__pycache__/build_deck.cpython-314.pyc",
+          "source_sha256": "487f1bfac3790b8e04d830cad765967a70e593bb5db767643f3c375d7c7a240c",
+          "destination_sha256": "487f1bfac3790b8e04d830cad765967a70e593bb5db767643f3c375d7c7a240c",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/__pycache__/omml.cpython-314.pyc",
+          "source_sha256": "a008f677bf960a9580d38d313d462780ef3d10ce8a49bddb45a77ba69d89d75e",
+          "destination_sha256": "a008f677bf960a9580d38d313d462780ef3d10ce8a49bddb45a77ba69d89d75e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/build_deck.py",
+          "source_sha256": "696fc692f824425ad7d56d2059937d2433bdea5b96223bd3fa32a74017b5be5e",
+          "destination_sha256": "696fc692f824425ad7d56d2059937d2433bdea5b96223bd3fa32a74017b5be5e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/compare_with_beamer.py",
+          "source_sha256": "410f781012a20c80f6eab080cc382f11e265c86199cd55689e7dbd2fd77457e2",
+          "destination_sha256": "410f781012a20c80f6eab080cc382f11e265c86199cd55689e7dbd2fd77457e2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/emit_pptx.js",
+          "source_sha256": "8997bdd2be68c802328db5d1ffa036ebc8c5d4108457a693bf944bfaf88f2024",
+          "destination_sha256": "8997bdd2be68c802328db5d1ffa036ebc8c5d4108457a693bf944bfaf88f2024",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/omml.py",
+          "source_sha256": "cc86940678cad47180cf7b6e62f78bdcf3139a8662616f7fa9db90854a26cce7",
+          "destination_sha256": "cc86940678cad47180cf7b6e62f78bdcf3139a8662616f7fa9db90854a26cce7",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/render_check.sh",
+          "source_sha256": "5e4e794bae5b8bec80a2745741953f8ffa9a94dee161dabca6ad123e2e32a228",
+          "destination_sha256": "5e4e794bae5b8bec80a2745741953f8ffa9a94dee161dabca6ad123e2e32a228",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "bb4e389023eea3ce36a4218261e7bf375ac1dc9cf28aa3141e09585cea6a5cfe",
+          "destination_sha256": "2087797d864def43ba9ac9dfe2c25f4131256c5e38313f94b4170b42f24c4223",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "study-narrator",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\study-narrator",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\study-narrator",
+      "source_file_count": 7,
+      "support_file_count": 6,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "__pycache__/lexicon.cpython-314.pyc",
+          "source_sha256": "c50e21728037418abfa63215c66f300cefad7841a61f35f092b72394c3e32a0e",
+          "destination_sha256": "c50e21728037418abfa63215c66f300cefad7841a61f35f092b72394c3e32a0e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "__pycache__/narrate.cpython-314.pyc",
+          "source_sha256": "556faf1e62b4382beaf852bfb15cbd86cf6b3e766cf2b5b801e6b6278127ef94",
+          "destination_sha256": "556faf1e62b4382beaf852bfb15cbd86cf6b3e766cf2b5b801e6b6278127ef94",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "corpus_he.txt",
+          "source_sha256": "ef788e477b7661425582696b9499388fef0de9ca63793e9608fa4e8a23b997de",
+          "destination_sha256": "ef788e477b7661425582696b9499388fef0de9ca63793e9608fa4e8a23b997de",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "lexicon.py",
+          "source_sha256": "8cd23574b2d3050d0713c89fab94ae7ea75570ea7fcf20e0267498e9648b9125",
+          "destination_sha256": "8cd23574b2d3050d0713c89fab94ae7ea75570ea7fcf20e0267498e9648b9125",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "narrate.py",
+          "source_sha256": "6f694c75c00a4c3785d258fd4c001ffd3d7c363c03c2f8fd061a640d7013dd41",
+          "destination_sha256": "6f694c75c00a4c3785d258fd4c001ffd3d7c363c03c2f8fd061a640d7013dd41",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "909c15f210c2465e697f050b64d0c2eb88287df5d80d00dd846f2db9f99e8334",
+          "destination_sha256": "4472b7cb55fb306d393deb659b3ea0ac4df9c7fa60edbec380359957b6ad17e8",
+          "byte_equal": false,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "template.html",
+          "source_sha256": "8d8ab5d1d300c963c64d9bd1164de7350f0a61adf19e09fd0653ddc0297e64e0",
+          "destination_sha256": "8d8ab5d1d300c963c64d9bd1164de7350f0a61adf19e09fd0653ddc0297e64e0",
+          "byte_equal": true,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\built-in-browser",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\built-in-browser",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\built-in-browser",
+      "source_file_count": 2,
+      "support_file_count": 1,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "LICENSE.txt",
+          "source_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "destination_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "b5a720afbcde0d6a77c1bc1d34ab56f3d4b09d071b92129783b4faf7f2a3fe62",
+          "destination_sha256": "878ae449414042b04a5d18729523124173c710df1268a89da8685854edaadf38",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\chrome-browser",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\chrome-browser",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\chrome-browser",
+      "source_file_count": 2,
+      "support_file_count": 1,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "LICENSE.txt",
+          "source_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "destination_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "c8b0afeee246f333529be3c73c49efaf7d9d10a46d8948b4b736cc758cb4e885",
+          "destination_sha256": "00d5488dbb85e7237e07a4c25c497c533702c004bc523d53510c7dbf35d64d7f",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\computer-use",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\computer-use",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\computer-use",
+      "source_file_count": 2,
+      "support_file_count": 1,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "LICENSE.txt",
+          "source_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "destination_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "bc4b958fd640143d2738ffdf31b7af149cfb85165f6952224dc9e0e42118edb9",
+          "destination_sha256": "ef5968dcb537266d6a3e18dd953372e43d780dc5e20effed276cafd68d751276",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\deep-research",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\deep-research",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\deep-research",
+      "source_file_count": 3,
+      "support_file_count": 2,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "references/report-writer.md",
+          "source_sha256": "832f4f7867e550cd211cdbeb05a58d2f590a9f626fa92fd0e66ea23544461731",
+          "destination_sha256": "832f4f7867e550cd211cdbeb05a58d2f590a9f626fa92fd0e66ea23544461731",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/researcher.md",
+          "source_sha256": "29a8c709c7714f89687495c0ff572ac686be2eb43df3c2a704abae2294686a11",
+          "destination_sha256": "29a8c709c7714f89687495c0ff572ac686be2eb43df3c2a704abae2294686a11",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "46ae8d5a0b95efad0329ac287ea5248c19fbbe195d8270231c4a78ba6217c024",
+          "destination_sha256": "46ae8d5a0b95efad0329ac287ea5248c19fbbe195d8270231c4a78ba6217c024",
+          "byte_equal": true,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docs",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docs",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docs",
+      "source_file_count": 1,
+      "support_file_count": 0,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "98e4fb5934042152d57bc9cb8c0736d5d8e31c6c0122b13ff5836f4c2411fa3e",
+          "destination_sha256": "d35db4eaeb32be04086884008fc07aa1c120fe2065fcf518e93eddd5c8776f39",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docx",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docx",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docx",
+      "source_file_count": 61,
+      "support_file_count": 60,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "LICENSE.txt",
+          "source_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "destination_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/__init__.py",
+          "source_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+          "destination_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/accept_changes.py",
+          "source_sha256": "0c991d2bc7304a1248e9f3bf9b1498f0b6e76641fc457e7cbd73c99b4eef3a74",
+          "destination_sha256": "0c991d2bc7304a1248e9f3bf9b1498f0b6e76641fc457e7cbd73c99b4eef3a74",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/comment.py",
+          "source_sha256": "37d116e5f56bb142b208c6c6a4bbcf960495abf470ddb7c6675ccfac864ba3d7",
+          "destination_sha256": "37d116e5f56bb142b208c6c6a4bbcf960495abf470ddb7c6675ccfac864ba3d7",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/merge_runs.py",
+          "source_sha256": "3ab367fd7fba4647943d0aa5e65203b15458551410f5ffc821d902616a4b9f40",
+          "destination_sha256": "3ab367fd7fba4647943d0aa5e65203b15458551410f5ffc821d902616a4b9f40",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/__init__.py",
+          "source_sha256": "e62e525673baa71fa2c9f01d637c37b44383146a46c28957ba3d9d41e1a4ba21",
+          "destination_sha256": "e62e525673baa71fa2c9f01d637c37b44383146a46c28957ba3d9d41e1a4ba21",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/pptx_chart.py",
+          "source_sha256": "47ac266f7d39d11ede6bb0d1f3a19d801394fd2964636f1b48beb701f1832964",
+          "destination_sha256": "47ac266f7d39d11ede6bb0d1f3a19d801394fd2964636f1b48beb701f1832964",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/pptx_slide.py",
+          "source_sha256": "7b9f69b4a5bd6a2d9eabf9e0e3e796d7a421373145f6a8cd11f60b7ba2d6a5d0",
+          "destination_sha256": "7b9f69b4a5bd6a2d9eabf9e0e3e796d7a421373145f6a8cd11f60b7ba2d6a5d0",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/pptx_theme.py",
+          "source_sha256": "ebb54c56e9c13807f5f98f0cae22d47cdd0162da8525eaa664e3f2c8c8d6bb03",
+          "destination_sha256": "ebb54c56e9c13807f5f98f0cae22d47cdd0162da8525eaa664e3f2c8c8d6bb03",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-contentTypes.xsd",
+          "source_sha256": "9e0b7209fc69ab11987900404540969976000c5ebe4d4f58c43dc3842886bf3a",
+          "destination_sha256": "9e0b7209fc69ab11987900404540969976000c5ebe4d4f58c43dc3842886bf3a",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-coreProperties.xsd",
+          "source_sha256": "451958454e8588dfc7cd945981ada142ca06ff3307937f5700df059c2b307fa8",
+          "destination_sha256": "451958454e8588dfc7cd945981ada142ca06ff3307937f5700df059c2b307fa8",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-digSig.xsd",
+          "source_sha256": "6de111e11403f7cd49027400755bae0ea1cabef2815f09bd40a24f0017613b24",
+          "destination_sha256": "6de111e11403f7cd49027400755bae0ea1cabef2815f09bd40a24f0017613b24",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-relationships.xsd",
+          "source_sha256": "f565adfef5a502044abc3a9153e157edc25af78304d335994afb958874b15e26",
+          "destination_sha256": "f565adfef5a502044abc3a9153e157edc25af78304d335994afb958874b15e26",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-chart.xsd",
+          "source_sha256": "41b93bd8857cc68b1e43be2806a872d736a9bdd6566900062d8fdb57d7bbb354",
+          "destination_sha256": "41b93bd8857cc68b1e43be2806a872d736a9bdd6566900062d8fdb57d7bbb354",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-chartDrawing.xsd",
+          "source_sha256": "3fd0586f2637b98bb9886f0e0b67d89e1cc987c2d158cc7deb5f5b9890ced412",
+          "destination_sha256": "3fd0586f2637b98bb9886f0e0b67d89e1cc987c2d158cc7deb5f5b9890ced412",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-diagram.xsd",
+          "source_sha256": "29b254ee0d10414a8504b5a08149c7baec35a60d5ff607d6b3f492aa36815f40",
+          "destination_sha256": "29b254ee0d10414a8504b5a08149c7baec35a60d5ff607d6b3f492aa36815f40",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-lockedCanvas.xsd",
+          "source_sha256": "5cb76dabd8b97d1e9308a1700b90c20139be4d50792d21a7f09789f5cccd6026",
+          "destination_sha256": "5cb76dabd8b97d1e9308a1700b90c20139be4d50792d21a7f09789f5cccd6026",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-main.xsd",
+          "source_sha256": "5375417f0f5394b8dd1a7035b9679151f19a6b65df309dec10cfb4a420cb00e9",
+          "destination_sha256": "5375417f0f5394b8dd1a7035b9679151f19a6b65df309dec10cfb4a420cb00e9",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-picture.xsd",
+          "source_sha256": "5d389d42befbebd91945d620242347caecd3367f9a3a7cf8d97949507ae1f53c",
+          "destination_sha256": "5d389d42befbebd91945d620242347caecd3367f9a3a7cf8d97949507ae1f53c",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-spreadsheetDrawing.xsd",
+          "source_sha256": "b4532b6d258832953fbb3ee4c711f4fe25d3faf46a10644b2505f17010d01e88",
+          "destination_sha256": "b4532b6d258832953fbb3ee4c711f4fe25d3faf46a10644b2505f17010d01e88",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-wordprocessingDrawing.xsd",
+          "source_sha256": "bdad416b096b61d37b71603b2c949484f9070c830bdaeba93bf35e15c8900614",
+          "destination_sha256": "bdad416b096b61d37b71603b2c949484f9070c830bdaeba93bf35e15c8900614",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/pml.xsd",
+          "source_sha256": "d173c3e5d61e42e2e3a97226c632fd2ab7cc481fc4e492365b87024ab546daff",
+          "destination_sha256": "d173c3e5d61e42e2e3a97226c632fd2ab7cc481fc4e492365b87024ab546daff",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-additionalCharacteristics.xsd",
+          "source_sha256": "3c6709101c6aaa82888df5d8795c33f9e857196790eb320d9194e64be2b6bdd8",
+          "destination_sha256": "3c6709101c6aaa82888df5d8795c33f9e857196790eb320d9194e64be2b6bdd8",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-bibliography.xsd",
+          "source_sha256": "0b364451dc36a48dd6dae0f3b6ada05fd9b71e5208211f8ee5537d7e51a587e2",
+          "destination_sha256": "0b364451dc36a48dd6dae0f3b6ada05fd9b71e5208211f8ee5537d7e51a587e2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd",
+          "source_sha256": "e2abacbb9a55ce1365f8961bc1b1395bbc811e512b111000d8c333f98458dece",
+          "destination_sha256": "e2abacbb9a55ce1365f8961bc1b1395bbc811e512b111000d8c333f98458dece",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-customXmlDataProperties.xsd",
+          "source_sha256": "0ef4bb354ff44b923564c4ddbdda5987919d220225129ec94614a618ceafc281",
+          "destination_sha256": "0ef4bb354ff44b923564c4ddbdda5987919d220225129ec94614a618ceafc281",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-customXmlSchemaProperties.xsd",
+          "source_sha256": "0d103b99a4a8652f8871552a69d42d2a3760ac6a5e3ef02d979c4273257ff6a4",
+          "destination_sha256": "0d103b99a4a8652f8871552a69d42d2a3760ac6a5e3ef02d979c4273257ff6a4",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesCustom.xsd",
+          "source_sha256": "9c085407751b9061c1f996f6c39ce58451be22a8d334f09175f0e89e42736285",
+          "destination_sha256": "9c085407751b9061c1f996f6c39ce58451be22a8d334f09175f0e89e42736285",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesExtended.xsd",
+          "source_sha256": "bc92e36ccd233722d4c5869bec71ddc7b12e2df56059942cce5a39065cc9c368",
+          "destination_sha256": "bc92e36ccd233722d4c5869bec71ddc7b12e2df56059942cce5a39065cc9c368",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesVariantTypes.xsd",
+          "source_sha256": "7b5b7413e2c895b1e148e82e292a117d53c7ec65b0696c992edca57b61b4a74b",
+          "destination_sha256": "7b5b7413e2c895b1e148e82e292a117d53c7ec65b0696c992edca57b61b4a74b",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-math.xsd",
+          "source_sha256": "3213ef1631606250f5010b42cad7ef716f7c59426367798e33c374c0ec391d3a",
+          "destination_sha256": "3213ef1631606250f5010b42cad7ef716f7c59426367798e33c374c0ec391d3a",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-relationshipReference.xsd",
+          "source_sha256": "12264f3c03d738311cd9237d212f1c07479e70f0cbe1ae725d29b36539aef637",
+          "destination_sha256": "12264f3c03d738311cd9237d212f1c07479e70f0cbe1ae725d29b36539aef637",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/sml.xsd",
+          "source_sha256": "beffeed56945c22a77440122c8bdc426f3fcbe7f3b12ea0976c770d1f8d54578",
+          "destination_sha256": "beffeed56945c22a77440122c8bdc426f3fcbe7f3b12ea0976c770d1f8d54578",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-main.xsd",
+          "source_sha256": "f5ee623b08b6a66935e5aced2f5d8ad0fc71bf9e8e833cd490150c0fa94b8763",
+          "destination_sha256": "f5ee623b08b6a66935e5aced2f5d8ad0fc71bf9e8e833cd490150c0fa94b8763",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-officeDrawing.xsd",
+          "source_sha256": "585bedc1313b40888dcc544cb74cd939a105ee674f3b1d3aa1cc6d34f70ff155",
+          "destination_sha256": "585bedc1313b40888dcc544cb74cd939a105ee674f3b1d3aa1cc6d34f70ff155",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-presentationDrawing.xsd",
+          "source_sha256": "133c9f64a5c5d573b78d0a474122b22506d8eadb5e063f67cdbbb8fa2f161d0e",
+          "destination_sha256": "133c9f64a5c5d573b78d0a474122b22506d8eadb5e063f67cdbbb8fa2f161d0e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-spreadsheetDrawing.xsd",
+          "source_sha256": "6bdeb169c3717eb01108853bd9fc5a3750fb1fa5b82abbdd854d49855a40f519",
+          "destination_sha256": "6bdeb169c3717eb01108853bd9fc5a3750fb1fa5b82abbdd854d49855a40f519",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-wordprocessingDrawing.xsd",
+          "source_sha256": "475dcae1e7d1ea46232db6f8481040c15e53a52a3c256831d3df204212b0e831",
+          "destination_sha256": "475dcae1e7d1ea46232db6f8481040c15e53a52a3c256831d3df204212b0e831",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/wml.xsd",
+          "source_sha256": "c2dd9f61f892deae6acd8d20771ea79b12018af25f3bf8d06639c8542d218cfd",
+          "destination_sha256": "c2dd9f61f892deae6acd8d20771ea79b12018af25f3bf8d06639c8542d218cfd",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/xml.xsd",
+          "source_sha256": "a539aa2fb154fa50e0f5cc97e6ad7cbc66f8ec3e3746f61ec6a8b0d5d15ecdf2",
+          "destination_sha256": "a539aa2fb154fa50e0f5cc97e6ad7cbc66f8ec3e3746f61ec6a8b0d5d15ecdf2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/mce/mc.xsd",
+          "source_sha256": "3a37e461ecf5a8670fdec34029703401f8728ab9c96ec1739a6ae58d55212413",
+          "destination_sha256": "3a37e461ecf5a8670fdec34029703401f8728ab9c96ec1739a6ae58d55212413",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-2010.xsd",
+          "source_sha256": "568b26ee156cb9549aa439ca2158965f77b7c1602b7e0316f40ac6cf586e35f2",
+          "destination_sha256": "568b26ee156cb9549aa439ca2158965f77b7c1602b7e0316f40ac6cf586e35f2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-2012.xsd",
+          "source_sha256": "0fa75578a000439a7988ba0c59fdc69f774bbd416cbacc14d07125b3f686cb74",
+          "destination_sha256": "0fa75578a000439a7988ba0c59fdc69f774bbd416cbacc14d07125b3f686cb74",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-2018.xsd",
+          "source_sha256": "be0ff793a22dd31384650c3a4da14c2fa8062751c2e97b0e5ee852bda13c60ad",
+          "destination_sha256": "be0ff793a22dd31384650c3a4da14c2fa8062751c2e97b0e5ee852bda13c60ad",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-cex-2018.xsd",
+          "source_sha256": "fddc2b880cabb9005aebbc7e783e53c19fec1c03df7d0e2f2076a33a0fdfd081",
+          "destination_sha256": "fddc2b880cabb9005aebbc7e783e53c19fec1c03df7d0e2f2076a33a0fdfd081",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-cid-2016.xsd",
+          "source_sha256": "127ca209fa73d7cb708449cb355c871867948a96e4a74f7bf5811ef62d17991d",
+          "destination_sha256": "127ca209fa73d7cb708449cb355c871867948a96e4a74f7bf5811ef62d17991d",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-sdtdatahash-2020.xsd",
+          "source_sha256": "842e7163409c8d74f4d7088a8bc99500d80bc75332681a0980055b08f374a604",
+          "destination_sha256": "842e7163409c8d74f4d7088a8bc99500d80bc75332681a0980055b08f374a604",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-symex-2015.xsd",
+          "source_sha256": "16f6f8072249f431370723c2cd8974672e0d9c897e00e97dd918079df934871b",
+          "destination_sha256": "16f6f8072249f431370723c2cd8974672e0d9c897e00e97dd918079df934871b",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/soffice.py",
+          "source_sha256": "c1b83a67bf7e784ce6255d7b3a58999445f3dad19809845821f1293ab4cbf43e",
+          "destination_sha256": "c1b83a67bf7e784ce6255d7b3a58999445f3dad19809845821f1293ab4cbf43e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validate.py",
+          "source_sha256": "346a4c89d92fff55e610f11efda48c30228815b29bdb10b987e48f7af70acf1e",
+          "destination_sha256": "346a4c89d92fff55e610f11efda48c30228815b29bdb10b987e48f7af70acf1e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/__init__.py",
+          "source_sha256": "83e0f035c5abea238d3f2c3968afbd511ed022b527b7c9cb60a9434cc34ff987",
+          "destination_sha256": "83e0f035c5abea238d3f2c3968afbd511ed022b527b7c9cb60a9434cc34ff987",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/base.py",
+          "source_sha256": "a5ed6c647ceaf7f48f60386b347ea5c91071073866bdd148532e9eab04c8c347",
+          "destination_sha256": "a5ed6c647ceaf7f48f60386b347ea5c91071073866bdd148532e9eab04c8c347",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/docx.py",
+          "source_sha256": "93d3444c0ef3f043d21a2285c46d2cda478426b930dc33dcf3b11265935517b5",
+          "destination_sha256": "93d3444c0ef3f043d21a2285c46d2cda478426b930dc33dcf3b11265935517b5",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/pptx.py",
+          "source_sha256": "17eadad2b7a8374ccbe4cda45693bcd6a36f9d61a7d60f9c9ceef9464dec8299",
+          "destination_sha256": "17eadad2b7a8374ccbe4cda45693bcd6a36f9d61a7d60f9c9ceef9464dec8299",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/redlining.py",
+          "source_sha256": "25ff68611a7cfcfe88644fe3cf011438c9e9a544ae39bad3ae740d96d99a9d43",
+          "destination_sha256": "25ff68611a7cfcfe88644fe3cf011438c9e9a544ae39bad3ae740d96d99a9d43",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/templates/comments.xml",
+          "source_sha256": "a08ba83ee8790ac9e3dc61921f4988f19edd7e06ac09d6f1897a877c1581818d",
+          "destination_sha256": "a08ba83ee8790ac9e3dc61921f4988f19edd7e06ac09d6f1897a877c1581818d",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/templates/commentsExtended.xml",
+          "source_sha256": "544eeecfeceed4b468fff163cd9c366d33641c8b8ab691ce002576197846afe8",
+          "destination_sha256": "544eeecfeceed4b468fff163cd9c366d33641c8b8ab691ce002576197846afe8",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/templates/commentsExtensible.xml",
+          "source_sha256": "bad10b3283e6ad6e7ef6d1ca5169683721ed690ee331282c65df04017e080631",
+          "destination_sha256": "bad10b3283e6ad6e7ef6d1ca5169683721ed690ee331282c65df04017e080631",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/templates/commentsIds.xml",
+          "source_sha256": "db20f9616e004ec42ef736e80c2384e45db0f8d1194d31dc8b37c7d6ecdd6420",
+          "destination_sha256": "db20f9616e004ec42ef736e80c2384e45db0f8d1194d31dc8b37c7d6ecdd6420",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/templates/people.xml",
+          "source_sha256": "056f63aa1197fd8c9dda980c9f1b9ff016fd5fa4a462df8aec5f384f39d23e37",
+          "destination_sha256": "056f63aa1197fd8c9dda980c9f1b9ff016fd5fa4a462df8aec5f384f39d23e37",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "912cb15683a476a285033f9a40c5099248f9c6a06d581b106b95796f9d33d118",
+          "destination_sha256": "41373257a5b614ef482d9a56df681fdedc67f5d8c93794a7fe8881d0a6a7a807",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\google-workspace",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\google-workspace",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\google-workspace",
+      "source_file_count": 9,
+      "support_file_count": 8,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "references/charts.md",
+          "source_sha256": "60af1c2fb7d673aec45664ce9bbced7c7e1bf7121ec91dc3b640f34d77167c34",
+          "destination_sha256": "60af1c2fb7d673aec45664ce9bbced7c7e1bf7121ec91dc3b640f34d77167c34",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/docs.md",
+          "source_sha256": "a24742b34557fe6b6afad80a137db0eca34b3461bf6eb444786c84e60335f6d4",
+          "destination_sha256": "2124d21be189d5392b73987d87106fa9d70ef596b4ea668c14d8045a32690231",
+          "byte_equal": false,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/sheets.md",
+          "source_sha256": "1fbfc448a95aa988372d5cae85a318e06f16c5ff19b4cba5128201af07d5e987",
+          "destination_sha256": "3906d940cdd552a757e6b27eeab0bd159718cd9f3fb789d23ec0f9677b3ce58f",
+          "byte_equal": false,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/slides.md",
+          "source_sha256": "00ffa114f4e06815509e613a748f8f393481e0057a20b23114a646ffd6f2be59",
+          "destination_sha256": "985e3d936d9b0b095552eba69eace25d7763c1d298252be25965769d387ee9a6",
+          "byte_equal": false,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/docs_index.py",
+          "source_sha256": "735b8ed4e9c292d0e0cc0af46e7b5f054fbf0bd51148a6b3318de774a4299b96",
+          "destination_sha256": "735b8ed4e9c292d0e0cc0af46e7b5f054fbf0bd51148a6b3318de774a4299b96",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/render_export.py",
+          "source_sha256": "a27468ad1d016cd58bcb33a2b619fd31cdeea59f214948ee937232fe4b6435ba",
+          "destination_sha256": "a27468ad1d016cd58bcb33a2b619fd31cdeea59f214948ee937232fe4b6435ba",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/sheets_helper.py",
+          "source_sha256": "c6d92a87fae349b235becf6f7fad110e641b9de100a597fd26e023c3d2dacbf4",
+          "destination_sha256": "91b2b5baa2220fc102870e21ba955fbac265e19a8cc328abc820876955c3bde5",
+          "byte_equal": false,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/slides_helper.py",
+          "source_sha256": "40ed9169a005513347aacea800b2fda4860d7b9477e0db50dc9c46705eec1fc8",
+          "destination_sha256": "40ed9169a005513347aacea800b2fda4860d7b9477e0db50dc9c46705eec1fc8",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "bb860cdb59a328a9ed37314e4f5038681f2c2b880112014aceb7b4d110de18b8",
+          "destination_sha256": "26f118315a2afb011abcdb75a7bc6db3417e50a7fc07c783c31d286c1de32309",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\import-memory",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\import-memory",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\import-memory",
+      "source_file_count": 1,
+      "support_file_count": 0,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "5179b0780b7025c93271c181636a23acc8d05cad3b20584639cbaf1cf9c3b07a",
+          "destination_sha256": "123a54cb83675df7c9ce73dd4fa091b3774379d69fc20024d05d6ad7838fcd14",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\morning",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\morning",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\morning",
+      "source_file_count": 3,
+      "support_file_count": 2,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "assets/fonts/fraunces-latin-600-normal.woff2",
+          "source_sha256": "3a1de7711d147bad4422825045f87597fd77cca72e7c96d3b0a81735d00dda82",
+          "destination_sha256": "3a1de7711d147bad4422825045f87597fd77cca72e7c96d3b0a81735d00dda82",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/Fraunces-OFL.txt",
+          "source_sha256": "0bc0daaa78b715774d4ad27d7f4ee8b436f48cef8e2f773531a8f22e27c06248",
+          "destination_sha256": "0bc0daaa78b715774d4ad27d7f4ee8b436f48cef8e2f773531a8f22e27c06248",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "a7c4dbcb745799736991b027cceae39aae4880cc00ff43871ae5e87b38023bdd",
+          "destination_sha256": "9c7677b95f783e480c546f2d0621056adb57557442dcd72c2b406fbdf94ee9bb",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pdf",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pdf",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pdf",
+      "source_file_count": 12,
+      "support_file_count": 11,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "FORMS.md",
+          "source_sha256": "9530b3f57034792e0242a3abfe8b3c296466329551916f2ff6c5a70db78f7e44",
+          "destination_sha256": "9530b3f57034792e0242a3abfe8b3c296466329551916f2ff6c5a70db78f7e44",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "LICENSE.txt",
+          "source_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "destination_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "REFERENCE.md",
+          "source_sha256": "03a5f964f8abecbbe156f363356e927e864d7ee964f1012c84ee1bfc8acbeb95",
+          "destination_sha256": "03a5f964f8abecbbe156f363356e927e864d7ee964f1012c84ee1bfc8acbeb95",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/check_bounding_boxes.py",
+          "source_sha256": "0ced522402dd7b3c82a0be9518cf4e485fa9cc0467d7beab6ddb04cb36fcc3e1",
+          "destination_sha256": "0ced522402dd7b3c82a0be9518cf4e485fa9cc0467d7beab6ddb04cb36fcc3e1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/check_fillable_fields.py",
+          "source_sha256": "1fe10b9980a5493c9bbec8c20630c603eaa475b45403751c08f26738736647b8",
+          "destination_sha256": "1fe10b9980a5493c9bbec8c20630c603eaa475b45403751c08f26738736647b8",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/convert_pdf_to_images.py",
+          "source_sha256": "7f58e292a67e18a8ff000d30bad2469389546731f7e8a698cc1d0aed001ea15d",
+          "destination_sha256": "7f58e292a67e18a8ff000d30bad2469389546731f7e8a698cc1d0aed001ea15d",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/create_validation_image.py",
+          "source_sha256": "8fa9fd7962c9f940045b81cf6b991e7c1057c1838e3f9cc6d305007a222ffebf",
+          "destination_sha256": "8fa9fd7962c9f940045b81cf6b991e7c1057c1838e3f9cc6d305007a222ffebf",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/extract_form_field_info.py",
+          "source_sha256": "bb235b36f497bbb1c7c6821cecf527bbba7213520de11219da99f7b13a38c109",
+          "destination_sha256": "bb235b36f497bbb1c7c6821cecf527bbba7213520de11219da99f7b13a38c109",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/extract_form_structure.py",
+          "source_sha256": "6814e3fe8f78c2b16d766c132b5a727ff7a31b71d76a7d46bd6e40fe50bc97c5",
+          "destination_sha256": "6814e3fe8f78c2b16d766c132b5a727ff7a31b71d76a7d46bd6e40fe50bc97c5",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/fill_fillable_fields.py",
+          "source_sha256": "d140872c2e92e41b1e05370ae8d270c5b7f5ebdf55d9905f03bc974a9c708ff5",
+          "destination_sha256": "d140872c2e92e41b1e05370ae8d270c5b7f5ebdf55d9905f03bc974a9c708ff5",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/fill_pdf_form_with_annotations.py",
+          "source_sha256": "8a56e063a49ed53c0b0e1d312ecf8023af76816ed139486ec3b539873de202fd",
+          "destination_sha256": "8a56e063a49ed53c0b0e1d312ecf8023af76816ed139486ec3b539873de202fd",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "9f78b8359fbd4943ad260a7a1e436e5a96503406d6c34e99f69223d647d85b9c",
+          "destination_sha256": "9f78b8359fbd4943ad260a7a1e436e5a96503406d6c34e99f69223d647d85b9c",
+          "byte_equal": true,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pptx",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pptx",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pptx",
+      "source_file_count": 57,
+      "support_file_count": 56,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "LICENSE.txt",
+          "source_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "destination_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/__init__.py",
+          "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "destination_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/add_slide.py",
+          "source_sha256": "3922f819ee1f6b8bdc6aa146d1a86de70640f5f919321fe3f01a764482ff69c9",
+          "destination_sha256": "3922f819ee1f6b8bdc6aa146d1a86de70640f5f919321fe3f01a764482ff69c9",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/apply_theme.js",
+          "source_sha256": "cd7caefb9d03fedf07d17695929a3988c70c4ae9f653afa07649687f7151e0e1",
+          "destination_sha256": "cd7caefb9d03fedf07d17695929a3988c70c4ae9f653afa07649687f7151e0e1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/clean.py",
+          "source_sha256": "5c808cd4dff7e02661ef3c68b5917f4e25097cc6610c92a3a7df4a6366a5c3c1",
+          "destination_sha256": "5c808cd4dff7e02661ef3c68b5917f4e25097cc6610c92a3a7df4a6366a5c3c1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/__init__.py",
+          "source_sha256": "e62e525673baa71fa2c9f01d637c37b44383146a46c28957ba3d9d41e1a4ba21",
+          "destination_sha256": "e62e525673baa71fa2c9f01d637c37b44383146a46c28957ba3d9d41e1a4ba21",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/pptx_chart.py",
+          "source_sha256": "47ac266f7d39d11ede6bb0d1f3a19d801394fd2964636f1b48beb701f1832964",
+          "destination_sha256": "47ac266f7d39d11ede6bb0d1f3a19d801394fd2964636f1b48beb701f1832964",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/pptx_slide.py",
+          "source_sha256": "7b9f69b4a5bd6a2d9eabf9e0e3e796d7a421373145f6a8cd11f60b7ba2d6a5d0",
+          "destination_sha256": "7b9f69b4a5bd6a2d9eabf9e0e3e796d7a421373145f6a8cd11f60b7ba2d6a5d0",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/pptx_theme.py",
+          "source_sha256": "ebb54c56e9c13807f5f98f0cae22d47cdd0162da8525eaa664e3f2c8c8d6bb03",
+          "destination_sha256": "ebb54c56e9c13807f5f98f0cae22d47cdd0162da8525eaa664e3f2c8c8d6bb03",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-contentTypes.xsd",
+          "source_sha256": "9e0b7209fc69ab11987900404540969976000c5ebe4d4f58c43dc3842886bf3a",
+          "destination_sha256": "9e0b7209fc69ab11987900404540969976000c5ebe4d4f58c43dc3842886bf3a",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-coreProperties.xsd",
+          "source_sha256": "451958454e8588dfc7cd945981ada142ca06ff3307937f5700df059c2b307fa8",
+          "destination_sha256": "451958454e8588dfc7cd945981ada142ca06ff3307937f5700df059c2b307fa8",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-digSig.xsd",
+          "source_sha256": "6de111e11403f7cd49027400755bae0ea1cabef2815f09bd40a24f0017613b24",
+          "destination_sha256": "6de111e11403f7cd49027400755bae0ea1cabef2815f09bd40a24f0017613b24",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-relationships.xsd",
+          "source_sha256": "f565adfef5a502044abc3a9153e157edc25af78304d335994afb958874b15e26",
+          "destination_sha256": "f565adfef5a502044abc3a9153e157edc25af78304d335994afb958874b15e26",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-chart.xsd",
+          "source_sha256": "41b93bd8857cc68b1e43be2806a872d736a9bdd6566900062d8fdb57d7bbb354",
+          "destination_sha256": "41b93bd8857cc68b1e43be2806a872d736a9bdd6566900062d8fdb57d7bbb354",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-chartDrawing.xsd",
+          "source_sha256": "3fd0586f2637b98bb9886f0e0b67d89e1cc987c2d158cc7deb5f5b9890ced412",
+          "destination_sha256": "3fd0586f2637b98bb9886f0e0b67d89e1cc987c2d158cc7deb5f5b9890ced412",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-diagram.xsd",
+          "source_sha256": "29b254ee0d10414a8504b5a08149c7baec35a60d5ff607d6b3f492aa36815f40",
+          "destination_sha256": "29b254ee0d10414a8504b5a08149c7baec35a60d5ff607d6b3f492aa36815f40",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-lockedCanvas.xsd",
+          "source_sha256": "5cb76dabd8b97d1e9308a1700b90c20139be4d50792d21a7f09789f5cccd6026",
+          "destination_sha256": "5cb76dabd8b97d1e9308a1700b90c20139be4d50792d21a7f09789f5cccd6026",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-main.xsd",
+          "source_sha256": "5375417f0f5394b8dd1a7035b9679151f19a6b65df309dec10cfb4a420cb00e9",
+          "destination_sha256": "5375417f0f5394b8dd1a7035b9679151f19a6b65df309dec10cfb4a420cb00e9",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-picture.xsd",
+          "source_sha256": "5d389d42befbebd91945d620242347caecd3367f9a3a7cf8d97949507ae1f53c",
+          "destination_sha256": "5d389d42befbebd91945d620242347caecd3367f9a3a7cf8d97949507ae1f53c",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-spreadsheetDrawing.xsd",
+          "source_sha256": "b4532b6d258832953fbb3ee4c711f4fe25d3faf46a10644b2505f17010d01e88",
+          "destination_sha256": "b4532b6d258832953fbb3ee4c711f4fe25d3faf46a10644b2505f17010d01e88",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-wordprocessingDrawing.xsd",
+          "source_sha256": "bdad416b096b61d37b71603b2c949484f9070c830bdaeba93bf35e15c8900614",
+          "destination_sha256": "bdad416b096b61d37b71603b2c949484f9070c830bdaeba93bf35e15c8900614",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/pml.xsd",
+          "source_sha256": "d173c3e5d61e42e2e3a97226c632fd2ab7cc481fc4e492365b87024ab546daff",
+          "destination_sha256": "d173c3e5d61e42e2e3a97226c632fd2ab7cc481fc4e492365b87024ab546daff",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-additionalCharacteristics.xsd",
+          "source_sha256": "3c6709101c6aaa82888df5d8795c33f9e857196790eb320d9194e64be2b6bdd8",
+          "destination_sha256": "3c6709101c6aaa82888df5d8795c33f9e857196790eb320d9194e64be2b6bdd8",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-bibliography.xsd",
+          "source_sha256": "0b364451dc36a48dd6dae0f3b6ada05fd9b71e5208211f8ee5537d7e51a587e2",
+          "destination_sha256": "0b364451dc36a48dd6dae0f3b6ada05fd9b71e5208211f8ee5537d7e51a587e2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd",
+          "source_sha256": "e2abacbb9a55ce1365f8961bc1b1395bbc811e512b111000d8c333f98458dece",
+          "destination_sha256": "e2abacbb9a55ce1365f8961bc1b1395bbc811e512b111000d8c333f98458dece",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-customXmlDataProperties.xsd",
+          "source_sha256": "0ef4bb354ff44b923564c4ddbdda5987919d220225129ec94614a618ceafc281",
+          "destination_sha256": "0ef4bb354ff44b923564c4ddbdda5987919d220225129ec94614a618ceafc281",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-customXmlSchemaProperties.xsd",
+          "source_sha256": "0d103b99a4a8652f8871552a69d42d2a3760ac6a5e3ef02d979c4273257ff6a4",
+          "destination_sha256": "0d103b99a4a8652f8871552a69d42d2a3760ac6a5e3ef02d979c4273257ff6a4",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesCustom.xsd",
+          "source_sha256": "9c085407751b9061c1f996f6c39ce58451be22a8d334f09175f0e89e42736285",
+          "destination_sha256": "9c085407751b9061c1f996f6c39ce58451be22a8d334f09175f0e89e42736285",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesExtended.xsd",
+          "source_sha256": "bc92e36ccd233722d4c5869bec71ddc7b12e2df56059942cce5a39065cc9c368",
+          "destination_sha256": "bc92e36ccd233722d4c5869bec71ddc7b12e2df56059942cce5a39065cc9c368",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesVariantTypes.xsd",
+          "source_sha256": "7b5b7413e2c895b1e148e82e292a117d53c7ec65b0696c992edca57b61b4a74b",
+          "destination_sha256": "7b5b7413e2c895b1e148e82e292a117d53c7ec65b0696c992edca57b61b4a74b",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-math.xsd",
+          "source_sha256": "3213ef1631606250f5010b42cad7ef716f7c59426367798e33c374c0ec391d3a",
+          "destination_sha256": "3213ef1631606250f5010b42cad7ef716f7c59426367798e33c374c0ec391d3a",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-relationshipReference.xsd",
+          "source_sha256": "12264f3c03d738311cd9237d212f1c07479e70f0cbe1ae725d29b36539aef637",
+          "destination_sha256": "12264f3c03d738311cd9237d212f1c07479e70f0cbe1ae725d29b36539aef637",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/sml.xsd",
+          "source_sha256": "beffeed56945c22a77440122c8bdc426f3fcbe7f3b12ea0976c770d1f8d54578",
+          "destination_sha256": "beffeed56945c22a77440122c8bdc426f3fcbe7f3b12ea0976c770d1f8d54578",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-main.xsd",
+          "source_sha256": "f5ee623b08b6a66935e5aced2f5d8ad0fc71bf9e8e833cd490150c0fa94b8763",
+          "destination_sha256": "f5ee623b08b6a66935e5aced2f5d8ad0fc71bf9e8e833cd490150c0fa94b8763",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-officeDrawing.xsd",
+          "source_sha256": "585bedc1313b40888dcc544cb74cd939a105ee674f3b1d3aa1cc6d34f70ff155",
+          "destination_sha256": "585bedc1313b40888dcc544cb74cd939a105ee674f3b1d3aa1cc6d34f70ff155",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-presentationDrawing.xsd",
+          "source_sha256": "133c9f64a5c5d573b78d0a474122b22506d8eadb5e063f67cdbbb8fa2f161d0e",
+          "destination_sha256": "133c9f64a5c5d573b78d0a474122b22506d8eadb5e063f67cdbbb8fa2f161d0e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-spreadsheetDrawing.xsd",
+          "source_sha256": "6bdeb169c3717eb01108853bd9fc5a3750fb1fa5b82abbdd854d49855a40f519",
+          "destination_sha256": "6bdeb169c3717eb01108853bd9fc5a3750fb1fa5b82abbdd854d49855a40f519",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-wordprocessingDrawing.xsd",
+          "source_sha256": "475dcae1e7d1ea46232db6f8481040c15e53a52a3c256831d3df204212b0e831",
+          "destination_sha256": "475dcae1e7d1ea46232db6f8481040c15e53a52a3c256831d3df204212b0e831",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/wml.xsd",
+          "source_sha256": "c2dd9f61f892deae6acd8d20771ea79b12018af25f3bf8d06639c8542d218cfd",
+          "destination_sha256": "c2dd9f61f892deae6acd8d20771ea79b12018af25f3bf8d06639c8542d218cfd",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/xml.xsd",
+          "source_sha256": "a539aa2fb154fa50e0f5cc97e6ad7cbc66f8ec3e3746f61ec6a8b0d5d15ecdf2",
+          "destination_sha256": "a539aa2fb154fa50e0f5cc97e6ad7cbc66f8ec3e3746f61ec6a8b0d5d15ecdf2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/mce/mc.xsd",
+          "source_sha256": "3a37e461ecf5a8670fdec34029703401f8728ab9c96ec1739a6ae58d55212413",
+          "destination_sha256": "3a37e461ecf5a8670fdec34029703401f8728ab9c96ec1739a6ae58d55212413",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-2010.xsd",
+          "source_sha256": "568b26ee156cb9549aa439ca2158965f77b7c1602b7e0316f40ac6cf586e35f2",
+          "destination_sha256": "568b26ee156cb9549aa439ca2158965f77b7c1602b7e0316f40ac6cf586e35f2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-2012.xsd",
+          "source_sha256": "0fa75578a000439a7988ba0c59fdc69f774bbd416cbacc14d07125b3f686cb74",
+          "destination_sha256": "0fa75578a000439a7988ba0c59fdc69f774bbd416cbacc14d07125b3f686cb74",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-2018.xsd",
+          "source_sha256": "be0ff793a22dd31384650c3a4da14c2fa8062751c2e97b0e5ee852bda13c60ad",
+          "destination_sha256": "be0ff793a22dd31384650c3a4da14c2fa8062751c2e97b0e5ee852bda13c60ad",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-cex-2018.xsd",
+          "source_sha256": "fddc2b880cabb9005aebbc7e783e53c19fec1c03df7d0e2f2076a33a0fdfd081",
+          "destination_sha256": "fddc2b880cabb9005aebbc7e783e53c19fec1c03df7d0e2f2076a33a0fdfd081",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-cid-2016.xsd",
+          "source_sha256": "127ca209fa73d7cb708449cb355c871867948a96e4a74f7bf5811ef62d17991d",
+          "destination_sha256": "127ca209fa73d7cb708449cb355c871867948a96e4a74f7bf5811ef62d17991d",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-sdtdatahash-2020.xsd",
+          "source_sha256": "842e7163409c8d74f4d7088a8bc99500d80bc75332681a0980055b08f374a604",
+          "destination_sha256": "842e7163409c8d74f4d7088a8bc99500d80bc75332681a0980055b08f374a604",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-symex-2015.xsd",
+          "source_sha256": "16f6f8072249f431370723c2cd8974672e0d9c897e00e97dd918079df934871b",
+          "destination_sha256": "16f6f8072249f431370723c2cd8974672e0d9c897e00e97dd918079df934871b",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/soffice.py",
+          "source_sha256": "c1b83a67bf7e784ce6255d7b3a58999445f3dad19809845821f1293ab4cbf43e",
+          "destination_sha256": "c1b83a67bf7e784ce6255d7b3a58999445f3dad19809845821f1293ab4cbf43e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validate.py",
+          "source_sha256": "346a4c89d92fff55e610f11efda48c30228815b29bdb10b987e48f7af70acf1e",
+          "destination_sha256": "346a4c89d92fff55e610f11efda48c30228815b29bdb10b987e48f7af70acf1e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/__init__.py",
+          "source_sha256": "83e0f035c5abea238d3f2c3968afbd511ed022b527b7c9cb60a9434cc34ff987",
+          "destination_sha256": "83e0f035c5abea238d3f2c3968afbd511ed022b527b7c9cb60a9434cc34ff987",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/base.py",
+          "source_sha256": "a5ed6c647ceaf7f48f60386b347ea5c91071073866bdd148532e9eab04c8c347",
+          "destination_sha256": "a5ed6c647ceaf7f48f60386b347ea5c91071073866bdd148532e9eab04c8c347",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/docx.py",
+          "source_sha256": "93d3444c0ef3f043d21a2285c46d2cda478426b930dc33dcf3b11265935517b5",
+          "destination_sha256": "93d3444c0ef3f043d21a2285c46d2cda478426b930dc33dcf3b11265935517b5",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/pptx.py",
+          "source_sha256": "17eadad2b7a8374ccbe4cda45693bcd6a36f9d61a7d60f9c9ceef9464dec8299",
+          "destination_sha256": "17eadad2b7a8374ccbe4cda45693bcd6a36f9d61a7d60f9c9ceef9464dec8299",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/redlining.py",
+          "source_sha256": "25ff68611a7cfcfe88644fe3cf011438c9e9a544ae39bad3ae740d96d99a9d43",
+          "destination_sha256": "25ff68611a7cfcfe88644fe3cf011438c9e9a544ae39bad3ae740d96d99a9d43",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/thumbnail.py",
+          "source_sha256": "94ef83a84346aa2d63913de0d42bb2fe902ccdc17bfac6130096ca758381793c",
+          "destination_sha256": "94ef83a84346aa2d63913de0d42bb2fe902ccdc17bfac6130096ca758381793c",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "d8bf85f2ef187ce78cf1afa0eab0566d8760df158ea99815b84ac8bc813f04ab",
+          "destination_sha256": "d8bf85f2ef187ce78cf1afa0eab0566d8760df158ea99815b84ac8bc813f04ab",
+          "byte_equal": true,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-beamer",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-beamer",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-beamer",
+      "source_file_count": 9,
+      "support_file_count": 8,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "references/figure_sizing.md",
+          "source_sha256": "5551a17ab73f50e3ed283e00c4cd47e2af3026280d31ac709c6fa52bf85769c1",
+          "destination_sha256": "5551a17ab73f50e3ed283e00c4cd47e2af3026280d31ac709c6fa52bf85769c1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/frame_templates.tex",
+          "source_sha256": "0ad986d88bfa32ed5539961b400ce0f1364a28576900b9e7672a04b904fbc3fe",
+          "destination_sha256": "0ad986d88bfa32ed5539961b400ce0f1364a28576900b9e7672a04b904fbc3fe",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck.tex",
+          "source_sha256": "ef481ff23c2250f317e6d9bf84c2dccef9ab38d7f779d2b2f65173353a3d7aa2",
+          "destination_sha256": "ef481ff23c2250f317e6d9bf84c2dccef9ab38d7f779d2b2f65173353a3d7aa2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck_2_followup.tex",
+          "source_sha256": "afb1b3a43a4268bb27ad39682068c9f342dfa2bd9a8aca6f83bf20eb2a03e8c5",
+          "destination_sha256": "afb1b3a43a4268bb27ad39682068c9f342dfa2bd9a8aca6f83bf20eb2a03e8c5",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck_3_grating_coupler.tex",
+          "source_sha256": "15309e868e9d3dd7dbbc72ee0e6225daa1d83b2d248f7a3de8ac1629fb1bd3fa",
+          "destination_sha256": "15309e868e9d3dd7dbbc72ee0e6225daa1d83b2d248f7a3de8ac1629fb1bd3fa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck_4_inverse_experiment.tex",
+          "source_sha256": "c4fc4f14f0c1d7c6b7c168c6e3260e7e9207b8a5c66aec33f9e0b65dfec1144f",
+          "destination_sha256": "c4fc4f14f0c1d7c6b7c168c6e3260e7e9207b8a5c66aec33f9e0b65dfec1144f",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/style_rules.md",
+          "source_sha256": "beba67c3cfd7002132093cb7f592671c8d80d96008133802818487ac9552acb1",
+          "destination_sha256": "beba67c3cfd7002132093cb7f592671c8d80d96008133802818487ac9552acb1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/build_and_check.sh",
+          "source_sha256": "2535045c8a4c91407d6ad23100a70750b56ae0b29ff29ad3c046bb56adafbae7",
+          "destination_sha256": "2535045c8a4c91407d6ad23100a70750b56ae0b29ff29ad3c046bb56adafbae7",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "953d5a00724d082743b77a9d97a4e7651049be49fb4d01c1d905cad743c39a3f",
+          "destination_sha256": "872f57e6d5cceed945fb6fcad5013c777e13253507860f563b04083076883cea",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-deck",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-deck",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-deck",
+      "source_file_count": 31,
+      "support_file_count": 30,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "assets/fonts/GUST-FONT-LICENSE.TXT",
+          "source_sha256": "49ea6cb9257bbee0a3979c48a774cd221550ac1c20c95549efe45fc99cc18050",
+          "destination_sha256": "49ea6cb9257bbee0a3979c48a774cd221550ac1c20c95549efe45fc99cc18050",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/latinmodern-math.otf",
+          "source_sha256": "6075562b771f8b82f0c179e363389684f2dd09de30038269e2628e504bd7be0f",
+          "destination_sha256": "6075562b771f8b82f0c179e363389684f2dd09de30038269e2628e504bd7be0f",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmroman10-bold.otf",
+          "source_sha256": "102fe06c430a8b681b2bf6876b7cd967ae4d47b4b6b41d915eb7913b726d9fb1",
+          "destination_sha256": "102fe06c430a8b681b2bf6876b7cd967ae4d47b4b6b41d915eb7913b726d9fb1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmroman10-italic.otf",
+          "source_sha256": "c1fce25075567bb8dbf2151658c3b442690041db17a2d49fc9e55905ea5b7169",
+          "destination_sha256": "c1fce25075567bb8dbf2151658c3b442690041db17a2d49fc9e55905ea5b7169",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmroman10-regular.otf",
+          "source_sha256": "1aa18cfefa58132c52ce5de70db1fd1154201c19cd2b2cdaffba4906a33e6852",
+          "destination_sha256": "1aa18cfefa58132c52ce5de70db1fd1154201c19cd2b2cdaffba4906a33e6852",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmsans10-bold.otf",
+          "source_sha256": "a597b710326c1a8a2c7238d808e5d38711638a72a32383478db4829d63afd687",
+          "destination_sha256": "a597b710326c1a8a2c7238d808e5d38711638a72a32383478db4829d63afd687",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmsans10-boldoblique.otf",
+          "source_sha256": "e45673d84754a94f2f053bd4c15950b4b320144fbb622c630a26fd7b68cfabc5",
+          "destination_sha256": "e45673d84754a94f2f053bd4c15950b4b320144fbb622c630a26fd7b68cfabc5",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmsans10-oblique.otf",
+          "source_sha256": "1b38b36efc21f9d3f34edf6a13f9d71f59c41f824e790f5d3ee5ba5b4936f377",
+          "destination_sha256": "1b38b36efc21f9d3f34edf6a13f9d71f59c41f824e790f5d3ee5ba5b4936f377",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/lmsans10-regular.otf",
+          "source_sha256": "d431b786b9b603662718e79cfe9b441f47a8b0b3e854dde89d5acb3ed7cfd682",
+          "destination_sha256": "d431b786b9b603662718e79cfe9b441f47a8b0b3e854dde89d5acb3ed7cfd682",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/fonts/README.md",
+          "source_sha256": "5d8015cd8b3de7ba110bd0b6ba1fcf55cd2d827954691d9192a2f11c4e174807",
+          "destination_sha256": "5d8015cd8b3de7ba110bd0b6ba1fcf55cd2d827954691d9192a2f11c4e174807",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/omml/MML2OMML.XSL",
+          "source_sha256": "fdbb663cbbf0ab0b8387d1c65f6691ac6771e96bbb8b4a256af251834e35ed72",
+          "destination_sha256": "fdbb663cbbf0ab0b8387d1c65f6691ac6771e96bbb8b4a256af251834e35ed72",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/template/research_beamer_template.pptx",
+          "source_sha256": "e50e5a5890351b2de6297a7cf622dba7c0eed49ea5499cc17469cf94bd3ba945",
+          "destination_sha256": "e50e5a5890351b2de6297a7cf622dba7c0eed49ea5499cc17469cf94bd3ba945",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "install_for_claude_code.sh",
+          "source_sha256": "78286589503ee5bdbee8e284b00b6bcd708e12a4a3c1d129292d6bd8ddb757b9",
+          "destination_sha256": "78286589503ee5bdbee8e284b00b6bcd708e12a4a3c1d129292d6bd8ddb757b9",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/figure_sizing.md",
+          "source_sha256": "5551a17ab73f50e3ed283e00c4cd47e2af3026280d31ac709c6fa52bf85769c1",
+          "destination_sha256": "5551a17ab73f50e3ed283e00c4cd47e2af3026280d31ac709c6fa52bf85769c1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/frame_templates.tex",
+          "source_sha256": "0ad986d88bfa32ed5539961b400ce0f1364a28576900b9e7672a04b904fbc3fe",
+          "destination_sha256": "0ad986d88bfa32ed5539961b400ce0f1364a28576900b9e7672a04b904fbc3fe",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/pptx_example_spec.json",
+          "source_sha256": "41e63a20e1c3437bed187ee6bba81e4e23033950a529602a03203752732fedeb",
+          "destination_sha256": "41e63a20e1c3437bed187ee6bba81e4e23033950a529602a03203752732fedeb",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/pptx_geometry.md",
+          "source_sha256": "fcb9e2c53b7b7ac8cac5a5c592e1811d536e726931bc79f607fe071e8093f92f",
+          "destination_sha256": "fcb9e2c53b7b7ac8cac5a5c592e1811d536e726931bc79f607fe071e8093f92f",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/pptx_spec_format.md",
+          "source_sha256": "83118984c784a7084b451f9cbc9b83f8eb5e73dab88c067b7739f62c86d3b99e",
+          "destination_sha256": "83118984c784a7084b451f9cbc9b83f8eb5e73dab88c067b7739f62c86d3b99e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/pptx_template_spec.json",
+          "source_sha256": "b99acb237c22aec6893afeda67e5decf6a672bf80ea1e565c76785346235c9e0",
+          "destination_sha256": "b99acb237c22aec6893afeda67e5decf6a672bf80ea1e565c76785346235c9e0",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck.tex",
+          "source_sha256": "ef481ff23c2250f317e6d9bf84c2dccef9ab38d7f779d2b2f65173353a3d7aa2",
+          "destination_sha256": "ef481ff23c2250f317e6d9bf84c2dccef9ab38d7f779d2b2f65173353a3d7aa2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck_2_followup.tex",
+          "source_sha256": "afb1b3a43a4268bb27ad39682068c9f342dfa2bd9a8aca6f83bf20eb2a03e8c5",
+          "destination_sha256": "afb1b3a43a4268bb27ad39682068c9f342dfa2bd9a8aca6f83bf20eb2a03e8c5",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck_3_grating_coupler.tex",
+          "source_sha256": "15309e868e9d3dd7dbbc72ee0e6225daa1d83b2d248f7a3de8ac1629fb1bd3fa",
+          "destination_sha256": "15309e868e9d3dd7dbbc72ee0e6225daa1d83b2d248f7a3de8ac1629fb1bd3fa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/reference_deck_4_inverse_experiment.tex",
+          "source_sha256": "c4fc4f14f0c1d7c6b7c168c6e3260e7e9207b8a5c66aec33f9e0b65dfec1144f",
+          "destination_sha256": "c4fc4f14f0c1d7c6b7c168c6e3260e7e9207b8a5c66aec33f9e0b65dfec1144f",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/style_rules.md",
+          "source_sha256": "beba67c3cfd7002132093cb7f592671c8d80d96008133802818487ac9552acb1",
+          "destination_sha256": "beba67c3cfd7002132093cb7f592671c8d80d96008133802818487ac9552acb1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/build_and_check.sh",
+          "source_sha256": "2535045c8a4c91407d6ad23100a70750b56ae0b29ff29ad3c046bb56adafbae7",
+          "destination_sha256": "2535045c8a4c91407d6ad23100a70750b56ae0b29ff29ad3c046bb56adafbae7",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/build_deck.py",
+          "source_sha256": "9774cbfad16f6139603f54e51f089c15723a4b14a628293545ccc3881bbe142b",
+          "destination_sha256": "9774cbfad16f6139603f54e51f089c15723a4b14a628293545ccc3881bbe142b",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/compare_with_beamer.py",
+          "source_sha256": "410f781012a20c80f6eab080cc382f11e265c86199cd55689e7dbd2fd77457e2",
+          "destination_sha256": "410f781012a20c80f6eab080cc382f11e265c86199cd55689e7dbd2fd77457e2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/emit_pptx.js",
+          "source_sha256": "3b44a43a3eb9ae8c4ab0b096fcd18bd46b8770bfead09477f25383f828a1d4cb",
+          "destination_sha256": "3b44a43a3eb9ae8c4ab0b096fcd18bd46b8770bfead09477f25383f828a1d4cb",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/omml.py",
+          "source_sha256": "cc86940678cad47180cf7b6e62f78bdcf3139a8662616f7fa9db90854a26cce7",
+          "destination_sha256": "cc86940678cad47180cf7b6e62f78bdcf3139a8662616f7fa9db90854a26cce7",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/pptx/render_check.sh",
+          "source_sha256": "5e4e794bae5b8bec80a2745741953f8ffa9a94dee161dabca6ad123e2e32a228",
+          "destination_sha256": "5e4e794bae5b8bec80a2745741953f8ffa9a94dee161dabca6ad123e2e32a228",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "7fc3ee86811c15ab1e3552d741521cde184b157db78993af2317d1de4c322912",
+          "destination_sha256": "f6557a81d4e75b05fce0fafaeec7a08d54085317a2c4de95f9e1fd6fe75f0f0e",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\skill-creator",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\skill-creator",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\skill-creator",
+      "source_file_count": 18,
+      "support_file_count": 17,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "agents/analyzer.md",
+          "source_sha256": "bf68f4cac5a56c673a928c2e6d619586c5b93ea364026ab37547772cb45a663a",
+          "destination_sha256": "bf68f4cac5a56c673a928c2e6d619586c5b93ea364026ab37547772cb45a663a",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "agents/comparator.md",
+          "source_sha256": "fe1fc9787c495d864c5d6eada47396478572325fde1b33a96d78bf4b849b7a3e",
+          "destination_sha256": "fe1fc9787c495d864c5d6eada47396478572325fde1b33a96d78bf4b849b7a3e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "agents/grader.md",
+          "source_sha256": "57134da0c1a4eea33fbd74a1c9c44aa814f07d6bc64de303edb586f941e5d21a",
+          "destination_sha256": "57134da0c1a4eea33fbd74a1c9c44aa814f07d6bc64de303edb586f941e5d21a",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "assets/eval_review.html",
+          "source_sha256": "ce477dcc74dc1c0d1d3352646a79167b5a63634e936b1019160025065974e452",
+          "destination_sha256": "ce477dcc74dc1c0d1d3352646a79167b5a63634e936b1019160025065974e452",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "eval-viewer/generate_review.py",
+          "source_sha256": "fc9d1b9243fe5ab6012ebd579bd76d0035de1b79fd3b969de114defab26478fb",
+          "destination_sha256": "fc9d1b9243fe5ab6012ebd579bd76d0035de1b79fd3b969de114defab26478fb",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "eval-viewer/viewer.html",
+          "source_sha256": "a53213426ee1100441d701a3a0d49cda7a842f992d2c36463f4d3cc0258575fa",
+          "destination_sha256": "a53213426ee1100441d701a3a0d49cda7a842f992d2c36463f4d3cc0258575fa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "LICENSE.txt",
+          "source_sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+          "destination_sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "references/schemas.md",
+          "source_sha256": "8e8876180a8989b406a4d3edddf875b04cdfd5805cc8616686d552b11ce4455f",
+          "destination_sha256": "8e8876180a8989b406a4d3edddf875b04cdfd5805cc8616686d552b11ce4455f",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/__init__.py",
+          "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "destination_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/aggregate_benchmark.py",
+          "source_sha256": "123ef128ea5ccc01a4b1ac212ef5567f21e9c13d3d240609780beeb3200c49aa",
+          "destination_sha256": "123ef128ea5ccc01a4b1ac212ef5567f21e9c13d3d240609780beeb3200c49aa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/generate_report.py",
+          "source_sha256": "13df7118a3c50c83c4c3250a606d5f2b20b25a3d44cbc392b3d669ec75281453",
+          "destination_sha256": "13df7118a3c50c83c4c3250a606d5f2b20b25a3d44cbc392b3d669ec75281453",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/improve_description.py",
+          "source_sha256": "87d864570220b699fac52da309d2d6efdb060647bfebc74f768128e646accf80",
+          "destination_sha256": "87d864570220b699fac52da309d2d6efdb060647bfebc74f768128e646accf80",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/package_skill.py",
+          "source_sha256": "1a33059b0db1ef73375d46d513e5ea81369d2e8838c970597b0d52ddef8d1c0f",
+          "destination_sha256": "1a33059b0db1ef73375d46d513e5ea81369d2e8838c970597b0d52ddef8d1c0f",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/quick_validate.py",
+          "source_sha256": "f65315971b2a723349234947062de2ffae76cad98884b7f441e453e6dbe01892",
+          "destination_sha256": "f65315971b2a723349234947062de2ffae76cad98884b7f441e453e6dbe01892",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/run_eval.py",
+          "source_sha256": "43e3b8f80dbf69c343967ba77e268fae991d9fa3ed68b32a0ff02532cd48657f",
+          "destination_sha256": "43e3b8f80dbf69c343967ba77e268fae991d9fa3ed68b32a0ff02532cd48657f",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/run_loop.py",
+          "source_sha256": "7bd6f674203168520517eec94c55f493c0d154339b061b4d7c0f0dad187d0f21",
+          "destination_sha256": "7bd6f674203168520517eec94c55f493c0d154339b061b4d7c0f0dad187d0f21",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/utils.py",
+          "source_sha256": "3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1",
+          "destination_sha256": "3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "42765c880e446a83c85f7852fc77b43ecd46c76ca219d68051799ac7425e6943",
+          "destination_sha256": "614cc82a45173d04a481eb7e2a3c78d060a6c9ce13dfe4234212aeb23aae5b63",
+          "byte_equal": false,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\xlsx",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\xlsx",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\xlsx",
+      "source_file_count": 53,
+      "support_file_count": 52,
+      "missing": [],
+      "files": [
+        {
+          "relative_path": "LICENSE.txt",
+          "source_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "destination_sha256": "79f6d8f5b427252fa3b1c11ecdbdb6bf610b944f7530b4de78f770f38741cfaa",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/__init__.py",
+          "source_sha256": "e62e525673baa71fa2c9f01d637c37b44383146a46c28957ba3d9d41e1a4ba21",
+          "destination_sha256": "e62e525673baa71fa2c9f01d637c37b44383146a46c28957ba3d9d41e1a4ba21",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/pptx_chart.py",
+          "source_sha256": "47ac266f7d39d11ede6bb0d1f3a19d801394fd2964636f1b48beb701f1832964",
+          "destination_sha256": "47ac266f7d39d11ede6bb0d1f3a19d801394fd2964636f1b48beb701f1832964",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/pptx_slide.py",
+          "source_sha256": "7b9f69b4a5bd6a2d9eabf9e0e3e796d7a421373145f6a8cd11f60b7ba2d6a5d0",
+          "destination_sha256": "7b9f69b4a5bd6a2d9eabf9e0e3e796d7a421373145f6a8cd11f60b7ba2d6a5d0",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/helpers/pptx_theme.py",
+          "source_sha256": "ebb54c56e9c13807f5f98f0cae22d47cdd0162da8525eaa664e3f2c8c8d6bb03",
+          "destination_sha256": "ebb54c56e9c13807f5f98f0cae22d47cdd0162da8525eaa664e3f2c8c8d6bb03",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-contentTypes.xsd",
+          "source_sha256": "9e0b7209fc69ab11987900404540969976000c5ebe4d4f58c43dc3842886bf3a",
+          "destination_sha256": "9e0b7209fc69ab11987900404540969976000c5ebe4d4f58c43dc3842886bf3a",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-coreProperties.xsd",
+          "source_sha256": "451958454e8588dfc7cd945981ada142ca06ff3307937f5700df059c2b307fa8",
+          "destination_sha256": "451958454e8588dfc7cd945981ada142ca06ff3307937f5700df059c2b307fa8",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-digSig.xsd",
+          "source_sha256": "6de111e11403f7cd49027400755bae0ea1cabef2815f09bd40a24f0017613b24",
+          "destination_sha256": "6de111e11403f7cd49027400755bae0ea1cabef2815f09bd40a24f0017613b24",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ecma/fouth-edition/opc-relationships.xsd",
+          "source_sha256": "f565adfef5a502044abc3a9153e157edc25af78304d335994afb958874b15e26",
+          "destination_sha256": "f565adfef5a502044abc3a9153e157edc25af78304d335994afb958874b15e26",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-chart.xsd",
+          "source_sha256": "41b93bd8857cc68b1e43be2806a872d736a9bdd6566900062d8fdb57d7bbb354",
+          "destination_sha256": "41b93bd8857cc68b1e43be2806a872d736a9bdd6566900062d8fdb57d7bbb354",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-chartDrawing.xsd",
+          "source_sha256": "3fd0586f2637b98bb9886f0e0b67d89e1cc987c2d158cc7deb5f5b9890ced412",
+          "destination_sha256": "3fd0586f2637b98bb9886f0e0b67d89e1cc987c2d158cc7deb5f5b9890ced412",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-diagram.xsd",
+          "source_sha256": "29b254ee0d10414a8504b5a08149c7baec35a60d5ff607d6b3f492aa36815f40",
+          "destination_sha256": "29b254ee0d10414a8504b5a08149c7baec35a60d5ff607d6b3f492aa36815f40",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-lockedCanvas.xsd",
+          "source_sha256": "5cb76dabd8b97d1e9308a1700b90c20139be4d50792d21a7f09789f5cccd6026",
+          "destination_sha256": "5cb76dabd8b97d1e9308a1700b90c20139be4d50792d21a7f09789f5cccd6026",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-main.xsd",
+          "source_sha256": "5375417f0f5394b8dd1a7035b9679151f19a6b65df309dec10cfb4a420cb00e9",
+          "destination_sha256": "5375417f0f5394b8dd1a7035b9679151f19a6b65df309dec10cfb4a420cb00e9",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-picture.xsd",
+          "source_sha256": "5d389d42befbebd91945d620242347caecd3367f9a3a7cf8d97949507ae1f53c",
+          "destination_sha256": "5d389d42befbebd91945d620242347caecd3367f9a3a7cf8d97949507ae1f53c",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-spreadsheetDrawing.xsd",
+          "source_sha256": "b4532b6d258832953fbb3ee4c711f4fe25d3faf46a10644b2505f17010d01e88",
+          "destination_sha256": "b4532b6d258832953fbb3ee4c711f4fe25d3faf46a10644b2505f17010d01e88",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/dml-wordprocessingDrawing.xsd",
+          "source_sha256": "bdad416b096b61d37b71603b2c949484f9070c830bdaeba93bf35e15c8900614",
+          "destination_sha256": "bdad416b096b61d37b71603b2c949484f9070c830bdaeba93bf35e15c8900614",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/pml.xsd",
+          "source_sha256": "d173c3e5d61e42e2e3a97226c632fd2ab7cc481fc4e492365b87024ab546daff",
+          "destination_sha256": "d173c3e5d61e42e2e3a97226c632fd2ab7cc481fc4e492365b87024ab546daff",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-additionalCharacteristics.xsd",
+          "source_sha256": "3c6709101c6aaa82888df5d8795c33f9e857196790eb320d9194e64be2b6bdd8",
+          "destination_sha256": "3c6709101c6aaa82888df5d8795c33f9e857196790eb320d9194e64be2b6bdd8",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-bibliography.xsd",
+          "source_sha256": "0b364451dc36a48dd6dae0f3b6ada05fd9b71e5208211f8ee5537d7e51a587e2",
+          "destination_sha256": "0b364451dc36a48dd6dae0f3b6ada05fd9b71e5208211f8ee5537d7e51a587e2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd",
+          "source_sha256": "e2abacbb9a55ce1365f8961bc1b1395bbc811e512b111000d8c333f98458dece",
+          "destination_sha256": "e2abacbb9a55ce1365f8961bc1b1395bbc811e512b111000d8c333f98458dece",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-customXmlDataProperties.xsd",
+          "source_sha256": "0ef4bb354ff44b923564c4ddbdda5987919d220225129ec94614a618ceafc281",
+          "destination_sha256": "0ef4bb354ff44b923564c4ddbdda5987919d220225129ec94614a618ceafc281",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-customXmlSchemaProperties.xsd",
+          "source_sha256": "0d103b99a4a8652f8871552a69d42d2a3760ac6a5e3ef02d979c4273257ff6a4",
+          "destination_sha256": "0d103b99a4a8652f8871552a69d42d2a3760ac6a5e3ef02d979c4273257ff6a4",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesCustom.xsd",
+          "source_sha256": "9c085407751b9061c1f996f6c39ce58451be22a8d334f09175f0e89e42736285",
+          "destination_sha256": "9c085407751b9061c1f996f6c39ce58451be22a8d334f09175f0e89e42736285",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesExtended.xsd",
+          "source_sha256": "bc92e36ccd233722d4c5869bec71ddc7b12e2df56059942cce5a39065cc9c368",
+          "destination_sha256": "bc92e36ccd233722d4c5869bec71ddc7b12e2df56059942cce5a39065cc9c368",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-documentPropertiesVariantTypes.xsd",
+          "source_sha256": "7b5b7413e2c895b1e148e82e292a117d53c7ec65b0696c992edca57b61b4a74b",
+          "destination_sha256": "7b5b7413e2c895b1e148e82e292a117d53c7ec65b0696c992edca57b61b4a74b",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-math.xsd",
+          "source_sha256": "3213ef1631606250f5010b42cad7ef716f7c59426367798e33c374c0ec391d3a",
+          "destination_sha256": "3213ef1631606250f5010b42cad7ef716f7c59426367798e33c374c0ec391d3a",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/shared-relationshipReference.xsd",
+          "source_sha256": "12264f3c03d738311cd9237d212f1c07479e70f0cbe1ae725d29b36539aef637",
+          "destination_sha256": "12264f3c03d738311cd9237d212f1c07479e70f0cbe1ae725d29b36539aef637",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/sml.xsd",
+          "source_sha256": "beffeed56945c22a77440122c8bdc426f3fcbe7f3b12ea0976c770d1f8d54578",
+          "destination_sha256": "beffeed56945c22a77440122c8bdc426f3fcbe7f3b12ea0976c770d1f8d54578",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-main.xsd",
+          "source_sha256": "f5ee623b08b6a66935e5aced2f5d8ad0fc71bf9e8e833cd490150c0fa94b8763",
+          "destination_sha256": "f5ee623b08b6a66935e5aced2f5d8ad0fc71bf9e8e833cd490150c0fa94b8763",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-officeDrawing.xsd",
+          "source_sha256": "585bedc1313b40888dcc544cb74cd939a105ee674f3b1d3aa1cc6d34f70ff155",
+          "destination_sha256": "585bedc1313b40888dcc544cb74cd939a105ee674f3b1d3aa1cc6d34f70ff155",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-presentationDrawing.xsd",
+          "source_sha256": "133c9f64a5c5d573b78d0a474122b22506d8eadb5e063f67cdbbb8fa2f161d0e",
+          "destination_sha256": "133c9f64a5c5d573b78d0a474122b22506d8eadb5e063f67cdbbb8fa2f161d0e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-spreadsheetDrawing.xsd",
+          "source_sha256": "6bdeb169c3717eb01108853bd9fc5a3750fb1fa5b82abbdd854d49855a40f519",
+          "destination_sha256": "6bdeb169c3717eb01108853bd9fc5a3750fb1fa5b82abbdd854d49855a40f519",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/vml-wordprocessingDrawing.xsd",
+          "source_sha256": "475dcae1e7d1ea46232db6f8481040c15e53a52a3c256831d3df204212b0e831",
+          "destination_sha256": "475dcae1e7d1ea46232db6f8481040c15e53a52a3c256831d3df204212b0e831",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/wml.xsd",
+          "source_sha256": "c2dd9f61f892deae6acd8d20771ea79b12018af25f3bf8d06639c8542d218cfd",
+          "destination_sha256": "c2dd9f61f892deae6acd8d20771ea79b12018af25f3bf8d06639c8542d218cfd",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/ISO-IEC29500-4_2016/xml.xsd",
+          "source_sha256": "a539aa2fb154fa50e0f5cc97e6ad7cbc66f8ec3e3746f61ec6a8b0d5d15ecdf2",
+          "destination_sha256": "a539aa2fb154fa50e0f5cc97e6ad7cbc66f8ec3e3746f61ec6a8b0d5d15ecdf2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/mce/mc.xsd",
+          "source_sha256": "3a37e461ecf5a8670fdec34029703401f8728ab9c96ec1739a6ae58d55212413",
+          "destination_sha256": "3a37e461ecf5a8670fdec34029703401f8728ab9c96ec1739a6ae58d55212413",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-2010.xsd",
+          "source_sha256": "568b26ee156cb9549aa439ca2158965f77b7c1602b7e0316f40ac6cf586e35f2",
+          "destination_sha256": "568b26ee156cb9549aa439ca2158965f77b7c1602b7e0316f40ac6cf586e35f2",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-2012.xsd",
+          "source_sha256": "0fa75578a000439a7988ba0c59fdc69f774bbd416cbacc14d07125b3f686cb74",
+          "destination_sha256": "0fa75578a000439a7988ba0c59fdc69f774bbd416cbacc14d07125b3f686cb74",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-2018.xsd",
+          "source_sha256": "be0ff793a22dd31384650c3a4da14c2fa8062751c2e97b0e5ee852bda13c60ad",
+          "destination_sha256": "be0ff793a22dd31384650c3a4da14c2fa8062751c2e97b0e5ee852bda13c60ad",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-cex-2018.xsd",
+          "source_sha256": "fddc2b880cabb9005aebbc7e783e53c19fec1c03df7d0e2f2076a33a0fdfd081",
+          "destination_sha256": "fddc2b880cabb9005aebbc7e783e53c19fec1c03df7d0e2f2076a33a0fdfd081",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-cid-2016.xsd",
+          "source_sha256": "127ca209fa73d7cb708449cb355c871867948a96e4a74f7bf5811ef62d17991d",
+          "destination_sha256": "127ca209fa73d7cb708449cb355c871867948a96e4a74f7bf5811ef62d17991d",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-sdtdatahash-2020.xsd",
+          "source_sha256": "842e7163409c8d74f4d7088a8bc99500d80bc75332681a0980055b08f374a604",
+          "destination_sha256": "842e7163409c8d74f4d7088a8bc99500d80bc75332681a0980055b08f374a604",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/schemas/microsoft/wml-symex-2015.xsd",
+          "source_sha256": "16f6f8072249f431370723c2cd8974672e0d9c897e00e97dd918079df934871b",
+          "destination_sha256": "16f6f8072249f431370723c2cd8974672e0d9c897e00e97dd918079df934871b",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/soffice.py",
+          "source_sha256": "c1b83a67bf7e784ce6255d7b3a58999445f3dad19809845821f1293ab4cbf43e",
+          "destination_sha256": "c1b83a67bf7e784ce6255d7b3a58999445f3dad19809845821f1293ab4cbf43e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validate.py",
+          "source_sha256": "346a4c89d92fff55e610f11efda48c30228815b29bdb10b987e48f7af70acf1e",
+          "destination_sha256": "346a4c89d92fff55e610f11efda48c30228815b29bdb10b987e48f7af70acf1e",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/__init__.py",
+          "source_sha256": "83e0f035c5abea238d3f2c3968afbd511ed022b527b7c9cb60a9434cc34ff987",
+          "destination_sha256": "83e0f035c5abea238d3f2c3968afbd511ed022b527b7c9cb60a9434cc34ff987",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/base.py",
+          "source_sha256": "a5ed6c647ceaf7f48f60386b347ea5c91071073866bdd148532e9eab04c8c347",
+          "destination_sha256": "a5ed6c647ceaf7f48f60386b347ea5c91071073866bdd148532e9eab04c8c347",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/docx.py",
+          "source_sha256": "93d3444c0ef3f043d21a2285c46d2cda478426b930dc33dcf3b11265935517b5",
+          "destination_sha256": "93d3444c0ef3f043d21a2285c46d2cda478426b930dc33dcf3b11265935517b5",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/pptx.py",
+          "source_sha256": "17eadad2b7a8374ccbe4cda45693bcd6a36f9d61a7d60f9c9ceef9464dec8299",
+          "destination_sha256": "17eadad2b7a8374ccbe4cda45693bcd6a36f9d61a7d60f9c9ceef9464dec8299",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/office/validators/redlining.py",
+          "source_sha256": "25ff68611a7cfcfe88644fe3cf011438c9e9a544ae39bad3ae740d96d99a9d43",
+          "destination_sha256": "25ff68611a7cfcfe88644fe3cf011438c9e9a544ae39bad3ae740d96d99a9d43",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "scripts/recalc.py",
+          "source_sha256": "8dfa9882a5363cf82376a714967c8f421fcbe9c4ad2cedcb1b7d1ad13046b34d",
+          "destination_sha256": "8dfa9882a5363cf82376a714967c8f421fcbe9c4ad2cedcb1b7d1ad13046b34d",
+          "byte_equal": true,
+          "destination_preserved": true
+        },
+        {
+          "relative_path": "SKILL.md",
+          "source_sha256": "6712b39718fe815054abca9c3ee72f989613e6f771c8a5c58f30a65a6c905622",
+          "destination_sha256": "6712b39718fe815054abca9c3ee72f989613e6f771c8a5c58f30a65a6c905622",
+          "byte_equal": true,
+          "destination_preserved": true
+        }
+      ],
+      "action": "verified_complete_existing_adaptations_preserved"
+    }
+  ],
+  "no_memory_import": true
+}

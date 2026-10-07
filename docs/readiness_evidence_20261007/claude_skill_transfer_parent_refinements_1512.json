@@ -1,0 +1,42 @@
+{
+  "original_transfer_inventory_is_before_parent_refinements": true,
+  "refinements": {
+    "stop-runs": "Removed inherited claim that scancel itself prompts; current body already denied inherited Claude hook.",
+    "safe-compact": "Allow focused commits when explicitly authorized by user instead of absolute no-commit wording."
+  },
+  "validator_exit_after_refinements": 0,
+  "final_hashes": {
+    ".agents/skills/project-context.md": "7e2922d21274995dd781f5b761a6cddba052de950ca37bf9ba95d9a0c1ce2bda",
+    ".agents/skills/add-study/SKILL.md": "d496fb022c1f581d371b475b874750defe218d17711666dfd458957f699e8fba",
+    ".agents/skills/athena-preflight/SKILL.md": "8aca7068bb77a85c5cc183583f9e7b6349accc4d5df4ed2bd65887385ccfdd78",
+    ".agents/skills/athena-status/SKILL.md": "3029ff88aacfb06130e03b590100b243a59bbe6f94af7380593d5f50554f5153",
+    ".agents/skills/check-result/SKILL.md": "a5493dff029fcb0780a6c32614fdd6dc5f7407cc424ebcc220553c54a5fce843",
+    ".agents/skills/dispatch-study/SKILL.md": "aba7af03c82af788011f79624fbe4aefd66cc1f692741ee80f0d333e41091b27",
+    ".agents/skills/fetch-results/SKILL.md": "4df11c44255682b2602073e70d5192e3ca03bda9f6631ac37b9b1faf7cbcb2cb",
+    ".agents/skills/lock-target/SKILL.md": "3fb1547d4a09e40bc71e47337b71abe94a1366cd47f29d26b3fd2ec42d510d01",
+    ".agents/skills/lumopt2-design/SKILL.md": "ea8ebc38b2eb9f97a066985b443cc39c2de0f355ef47f495ae896ae4d38b5be2",
+    ".agents/skills/predict-q3db/SKILL.md": "5cec0381d3229781bb9229679919d99bb39c7b1e2fe2bf0e84ff6707a35594f4",
+    ".agents/skills/safe-compact/SKILL.md": "098acc00c22cfab3cd6cd3b4cea92f5237f0fb30d40d4db0d9960ae8599e5294",
+    ".agents/skills/stop-runs/SKILL.md": "93a7c7c62c6ddde90cf5a3223ad416dac2e7b57e0918bfa3260e7cfc5c77dca2",
+    ".agents/skills/update-container/SKILL.md": "15603871cabce023723e8776556469f1129dc8fbdc17fafe9822d1a179db63f7",
+    ".agents/skills/work-alone/SKILL.md": "c2742c661ca510eefc1e20811f233b52716f4d71c5a9c37457965db82b446603",
+    "docs/CLAUDE_SKILL_TRANSFER_2026-10-07.md": "46afe5939dcfd0d1641b56004d530cc2186795a54e8aeb794d9f42c514907821",
+    ".agents/skills/work-alone/references/campaign_monitor_template.sh": "7ea4ec45b6eb0d9c9fac11ee7a1b4daa0e8ce0c5028757f304cf6929b4af5e73",
+    ".agents/skills/work-alone/references/claude-original.md": "4aeb426339726e7df07a695ab356b1fcf6e67669f1b6f1556b75d1dc921e8cf1",
+    ".agents/skills/update-container/references/claude-original.md": "83535a80c542f943ae07934b13697167071e5e873c86d361c763d05cd0f7569f",
+    ".agents/skills/stop-runs/references/claude-original.md": "1b44554cb8a6d22da5ddcef565f909015eb7de764863b2b70128f3c64aa6073a",
+    ".agents/skills/safe-compact/references/claude-original.md": "6f72c64c541f80b46080ff776407e16e0bda2445a7168a6db773438021aaf905",
+    ".agents/skills/predict-q3db/references/claude-original.md": "d8c06b206843aa86cc5407ba53efbe73924ae0f125c0d792790fa9f751a02d4d",
+    ".agents/skills/lumopt2-design/references/claude-original.md": "66a65117aa6216b6bbfbad06d2e2013c6cc0216c5f720fa815c9ccfe5c689d6c",
+    ".agents/skills/lock-target/references/claude-original.md": "b0d8fdd0f0200ca70b9db8e02225372be9d12792681f2788d218ee0e9b90197f",
+    ".agents/skills/fetch-results/references/claude-original.md": "498a9f41360a88e5b46b5d4b3834ca7f5686271f4693bed44e8b846f335b7ec6",
+    ".agents/skills/dispatch-study/references/claude-original.md": "2db43667d9d6cb461b0f77dc837d3655e0b8df7871dd3a570dc07c6da4c037e4",
+    ".agents/skills/check-result/references/claude-original.md": "03c375297630cdad5cf261024a5de4cfb4d98753f537af034ddf723e3029691f",
+    ".agents/skills/athena-status/references/claude-original.md": "962c7e0b4c7120191c4df5df4bbf21de71c5e287d990ff664a26f2a76ad87ece",
+    ".agents/skills/athena-preflight/references/claude-original.md": "619b0f3ec87b32873d36a1f62f1cdf8c569ced6b344f599ec5979d4fc5c760bf",
+    ".agents/skills/add-study/references/claude-original.md": "e14d5dbe7de4c1f387412f97ddf4887806b0956bb639a67c25e3648061d069af",
+    "docs/readiness_evidence_20261007/claude_skill_selfcontained_inventory_20261007.json": "c91d052f7d9e44918714b4f31eba45b4d1cb764530584b9abaf46f8b654e49c9",
+    "docs/readiness_evidence_20261007/claude_skill_selfcontained_validation_20261007.json": "fe7e00f88d2ccd0e2970ba9255a1c89483a230e41e8b2b80e44492474cc95fa7",
+    ".agents/skills/work-alone/campaign_monitor_template.sh": "7ea4ec45b6eb0d9c9fac11ee7a1b4daa0e8ce0c5028757f304cf6929b4af5e73"
+  }
+}

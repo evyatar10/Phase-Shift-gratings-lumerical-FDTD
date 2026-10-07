@@ -43,6 +43,8 @@ Keep peak3(Tout), modal peak and spatial/spectral FWHM distinct. Save raw
 checkpoint bytes for SHA pins; a pretty-printed copy is not the same artifact.
 
 The full historical method, vendor API pitfalls, old TM experiments and
-platform lessons remain in [the original Claude runbook](../../../.claude/skills/lumopt2-design/SKILL.md).
+platform lessons remain in [the original Claude runbook](references/claude-original.md).
 Consult its relevant section as historical evidence, checking current API/code
 and newer TE contracts before applying a recipe. It is not a live job queue.
+
+The bundled runbook is historical evidence. Current user instructions, AGENTS.md, this Codex entrypoint and live code take precedence. Interpret repository paths from the repository root; historical memory references remain external and are not bundled.

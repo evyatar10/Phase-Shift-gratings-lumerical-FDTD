@@ -42,3 +42,5 @@ reconnection. Follow the installed pi-shift-cluster-ops skill: preserve jobs
 and last verified state, distinguish lost visibility from job failure, avoid
 SSH retry loops, and reconcile actual state after access returns. No VPN
 disruption is being reported by the user now.
+
+Each project skill bundles its byte-preserved detailed Claude runbook at `references/claude-original.md`. These local references avoid a dependency on the `.claude/skills/` tree for runbook text. Repository paths in historical examples are relative to the repository root; memory and installed-runtime dependencies remain external.

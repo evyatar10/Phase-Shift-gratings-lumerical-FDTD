@@ -1,0 +1,299 @@
+{
+  "date": "2026-10-07",
+  "validator_path": "C:\\Users\\evyat\\.codex\\skills\\.system\\skill-creator\\scripts\\quick_validate.py",
+  "validator_sha256": "6068513d924ed3559e186dfcdead7439129828dcf402167fd925c06dffbf2806",
+  "project": [
+    {
+      "name": "add-study",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\add-study\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "athena-preflight",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\athena-preflight\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "athena-status",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\athena-status\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "check-result",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\check-result\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "dispatch-study",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\dispatch-study\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "fetch-results",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\fetch-results\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "lock-target",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\lock-target\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "lumopt2-design",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "C:/Users/evyat/.codex/skills/pi-shift-inverse-design/SKILL.md",
+          "resolved": "C:\\Users\\evyat\\.codex\\skills\\pi-shift-inverse-design\\SKILL.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\lumopt2-design\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "predict-q3db",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\predict-q3db\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "safe-compact",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\safe-compact\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "stop-runs",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\stop-runs\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "update-container",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\update-container\\references\\claude-original.md",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    },
+    {
+      "name": "work-alone",
+      "validator_exit": 0,
+      "stdout": "Skill is valid!",
+      "stderr": "",
+      "links": [
+        {
+          "target": "../project-context.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\project-context.md",
+          "exists": true
+        },
+        {
+          "target": "references/claude-original.md",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\work-alone\\references\\claude-original.md",
+          "exists": true
+        },
+        {
+          "target": "references/campaign_monitor_template.sh",
+          "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\work-alone\\references\\campaign_monitor_template.sh",
+          "exists": true
+        }
+      ],
+      "original_equal_local_reference": true,
+      "existing_adaptation_preserved": true
+    }
+  ],
+  "originals_unchanged": true,
+  "personal_destinations_unchanged": true,
+  "project_context_links": [
+    {
+      "target": "../../AGENTS.md",
+      "resolved": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\AGENTS.md",
+      "exists": true
+    },
+    {
+      "target": "C:/Users/evyat/.codex/skills/pi-shift-inverse-design/SKILL.md",
+      "resolved": "C:\\Users\\evyat\\.codex\\skills\\pi-shift-inverse-design\\SKILL.md",
+      "exists": true
+    },
+    {
+      "target": "C:/Users/evyat/.codex/skills/pi-shift-cluster-ops/SKILL.md",
+      "resolved": "C:\\Users\\evyat\\.codex\\skills\\pi-shift-cluster-ops\\SKILL.md",
+      "exists": true
+    }
+  ],
+  "project_count": 13,
+  "personal_count": 18,
+  "personal_missing_count": 0
+}
