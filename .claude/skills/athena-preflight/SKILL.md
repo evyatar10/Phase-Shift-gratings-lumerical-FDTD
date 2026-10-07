@@ -72,8 +72,11 @@ Athena lmstat is the documented false negative):
 ```bash
 ssh igum '$HOME/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/licensingclient/linx64/lmutil lmstat -c 1055@132.68.48.51 -f lum_fdtd_solve' | grep "Users of lum_fdtd_solve"
 ```
-Budget: each array task ≈ 1 seat while solving; each lumopt2 iteration ≈ 2
-(fwd+adj concurrent). Bands (measured oscillation 39-46/50 in single hours):
+Budget by simultaneous solves and GPU SM count: under standard GPU solve
+licensing, ceil(SMs/16) seats per solve (A100 7, L40S 9; also check CPU license
+requirements). LocalRunner capacity 1 runs the forward/adjoint/FD legs
+sequentially. The previous 1-seat/task and concurrent-fwd/adj estimates were
+wrong. Bands (measured oscillation 39-46/50 in single hours):
 ≥35/50 in use = HIGH → hold new fan-outs; ≥45/50 = CRITICAL → no new
 dispatches, tighten the trouble-finder. The pool is faculty-shared: a snapshot
 is not a promise — for long batches keep the seat-band monitor running.

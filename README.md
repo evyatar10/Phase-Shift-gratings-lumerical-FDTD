@@ -2,6 +2,12 @@
 
 3D FDTD simulation of pi-phase-shifted Bragg gratings in silicon nitride (Si3N4) waveguides using Lumerical FDTD. Computes spectral response (S-parameters), intracavity field profiles, far-field radiation patterns, and exports data for Lumerical INTERCONNECT.
 
+For the current TE **lumopt2 v3** inverse-design lane, start with
+[the code, seed and server readiness map](docs/INVERSE_DESIGN_READINESS_2026-10-06.md)
+and [the active S2 recovery record](docs/TE_RECOVERY_2026-10-06.md).
+Athena uses Apptainer; [IGUM](igum/README.md) is the native-install alternative.
+The older optimization families described below are separate implementations.
+
 ## Prerequisites
 
 - **Lumerical FDTD** (v252 or later) with GPU acceleration

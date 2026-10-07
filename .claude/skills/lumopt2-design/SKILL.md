@@ -24,7 +24,36 @@ program learns something — new gates, new lumopt2 bugs, campaign results,
 new device families. It exists so a future session (or a new device) can
 rebuild the whole workflow without re-deriving it.
 
+## ★Main-goal checkpoint (user rule 2026-10-07, CLAUDE.md §9)
+
+At every iterate verdict / gate result / before any new diagnostic: one line each —
+GOAL (TE: raise peak T at spatial envelope FWHM ≈ 20 µm, N80/side, 60 free/side),
+BLOCKER (what actually stops the next accepted iterate), NEXT ACTION removes it?
+v3 accepts on MEASURED T and W, so a miscalibrated gradient only costs rejected
+steps: track the per-iterate gain ratio (measured ΔT / predicted ΔT) as the live
+calibration gate; open an FD calibration study only if that ratio turns bad
+(sign flips, or < ~0.3 on two consecutive accepted steps). Never let an optional
+diagnostic on one seed block the other seed's working lane.
+
 ## Where everything lives
+
+**2026-10-07 TE N80 lane (LIVE):** `campaign_te_n80.py` — task 0 S1 from
+`best_designs.TE_S1_N98_EVAL3`, task 1 S2 seed, N=80/side, 60 free; Athena
+171897. S2 port C = (1,0) uncalibrated by decision (see the runner docstring);
+watch the per-iterate gain ratio in `<label>_proj.jsonl`. Extend a lane by
+raising `MAX_FEVAL` and redeploying (cold resume from the accepted best; budget
+exhaustion ends the job as FAILED with logs intact — that is the normal stop).
+
+**2026-10-06 TE v3 correction:** the contracts and task tables below are
+historical TM recipes. For the current TE lane use `THEORY.md` §13,
+`docs/CODEX_AUDIT_2026-10-06.md`, the latest handoff §6.2.7, and the live
+`campaign_te_s1/s2` and `validate_te` runners. TE uses 296 vector entries,
+181 physical variables, peak3, measured envelope-FWHM bands and a bounded QP;
+it does not use the old kappa/sigma penalty. S2 port calibration is still
+missing. Runs remain stopped until the user requests a restart. The offline
+gate runner excludes licensed TE builds; run `gate_te_local.py --generate`
+separately. Historical model-routing rules describe Claude tooling and do not
+imply that those tools or its permission hooks are present in Codex.
 
 - Engine + studies: `runners/lumopt2_design/` — `lumopt2_design.py` (engine),
   `validate_c325.py` (gates B0–B4), `campaign_c325_seedA.py` (Athena),

@@ -33,6 +33,13 @@ you will PARK for the user. Then stop asking — everything after this is action
 - **Gate failures:** a failed §2 sanity check or a dead stage stops THAT branch —
   report it first (§9), continue independent branches if any, don't improvise a
   replacement study.
+- **Main-goal checkpoint (CLAUDE.md §9, user rule 2026-10-07):** at every milestone,
+  before any new diagnostic, and at least once per wake-up block, write the 3 lines
+  — main goal in the user's words / what actually blocks it now / does my next
+  action remove that blocker or change a decision. Record them in the program's
+  memory file. If the answer to (3) is no, drop the action. Drift signature to
+  watch for: a growing chain of diagnostics on one sub-question while no step of
+  the actual deliverable (an optimizer iterate, a device) has moved for hours.
 
 ## Keeping the loop alive
 

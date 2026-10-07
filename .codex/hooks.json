@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python 'c:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.codex\\hooks\\check_py_syntax.py'",
+            "timeout": 20,
+            "statusMessage": "Checking Python syntax"
+          }
+        ]
+      }
+    ]
+  }
+}

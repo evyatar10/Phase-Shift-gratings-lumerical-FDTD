@@ -18,6 +18,13 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
 > for this program** (the CMT ban is scoped to the lumopt2 optimizer/width-wall).
 >
 > ## ★★★CURRENT PROGRAM STATE — READ BEFORE ANY INVERSE-DESIGN WORK
+> **TE v3 update (2026-10-06):** start with `docs/TE_RECOVERY_2026-10-06.md`,
+> `docs/INVERSE_DESIGN_READINESS_2026-10-06.md` and `docs/CODEX_AUDIT_2026-10-06.md`.
+> The user subsequently authorized S2 calibration recovery on Athena; its
+> job chain is active. Unrelated campaigns remain stopped. The earlier stop
+> snapshot in `docs/HANDOFF_FOR_NEW_AI.md` §6.2.7 predates that authorization.
+> The August handoffs below are historical TM state. Current TE method is
+> `runners/lumopt2_design/THEORY.md` §13; live runner code wins over snapshots.
 > **`runners/lumopt2_design/HANDOFF.md`** is the live, self-contained state of the
 > lumopt2 inverse-design programme (2026-08-18). Read it before touching that
 > programme, quoting any of its numbers, or resuming a campaign.
@@ -421,8 +428,11 @@ Over-testing never once cost anything. So:
   (measured: pool oscillated 39-46/50 within hours). Probe the count from
   IGUM (Athena lmstat is the false negative):
   `$LUM/licensingclient/linx64/lmutil lmstat -c 1055@132.68.48.51 -f lum_fdtd_solve`.
-  Budget concurrency vs FREE seats (array task ≈ 1 seat; lumopt2 iteration
-  ≈ 2); for long batches keep the trouble-finder seat bands running (≥35/50
+  Budget concurrency vs FREE seats and actual simultaneous solves. Under the
+  standard GPU solve licenses, each solve consumes ceil(SMs/16) seats (A100:
+  7; L40S: 9), subject also to CPU licensing requirements. LocalRunner capacity
+  1 runs FD legs sequentially; an iteration is not two concurrent solves.
+  For long batches keep the trouble-finder seat bands running (≥35/50
   HIGH = hold fan-outs; ≥45/50 CRITICAL = no new dispatches). LocalRunner's
   2 auto-retries are blip-cover, not a plan.
 - **License starvation has TWO signatures, one per cluster (measured 2026-08-04).**
@@ -542,6 +552,20 @@ them; when a convergence study finishes, state where the files live.
   disagree, the code wins and the memory gets corrected in the same session.
 - **Push back on wrong premises.** If the user's assumption contradicts the data,
   say so directly instead of building on it.
+- **★MAIN-GOAL CHECKPOINT (user rule 2026-10-07).** At every milestone (a verdict,
+  a job finishing, a gate failing), before any new diagnostic or expensive run,
+  and at least once per autonomous work block, write 3 lines: (1) the user's MAIN
+  goal in their words (TE inverse design now: raise peak T while holding the
+  spatial envelope FWHM ≈ 20 µm), (2) what ACTUALLY blocks it right now, (3) does
+  the next action remove that blocker or change a decision — if not, drop it.
+  INCIDENT that created this rule: 2026-10-07 a whole day (~40 solves) went into
+  S2 FD-calibration forensics (source phases, time traces, step ladders) while no
+  optimizer iterate ran on either seed. Diagnostics of an OPTIONAL check must not
+  block an independent route that already works (S1 had six measured directional
+  gain ratios 0.84–1.01). When acceptance is on MEASURED T and W (as in v3), a
+  gradient error costs efficiency (rejected steps), not correctness — so the live
+  per-iterate gain ratio (measured ΔT / predicted ΔT) is the calibration gate, and
+  a separate FD calibration is only needed when that ratio goes bad.
 
 ## 10. Code lifecycle — AI-generated study code must not accumulate
 

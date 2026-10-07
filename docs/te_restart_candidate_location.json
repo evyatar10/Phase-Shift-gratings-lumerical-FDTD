@@ -1,0 +1,113 @@
+{
+  "root": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_restart_candidate_20261007_z8uiww6_",
+  "files": [
+    "runners/lumopt2_design/lumopt2_design.py",
+    "runners/lumopt2_design/gates/gate_projection_local.py",
+    "runners/lumopt2_design/gates/gate_v3_local.py",
+    "runners/lumopt2_design/gates/gate_persistence.py",
+    "runners/lumopt2_design/gates/run_all_gates.py",
+    "runners/lumopt2_design/gates/gate_campaign_budget.py"
+  ],
+  "candidate_files": [
+    {
+      "path": "runners/lumopt2_design/lumopt2_design.py",
+      "candidate_path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_restart_candidate_20261007_z8uiww6_\\runners\\lumopt2_design\\lumopt2_design.py",
+      "candidate_sha256": "2558954f23df132a57f6de259e2a60ee43bf62012ce87617913b288117a38587",
+      "baseline_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\lumopt2_design.py",
+      "baseline_sha256": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+      "new_file": false,
+      "diff_lines": 573
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_projection_local.py",
+      "candidate_path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_restart_candidate_20261007_z8uiww6_\\runners\\lumopt2_design\\gates\\gate_projection_local.py",
+      "candidate_sha256": "623bb521b33af2774784a5f7ebf3371323b1f913e7594bc976c491bdbc1c8f66",
+      "baseline_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_projection_local.py",
+      "baseline_sha256": "f043906502689766d237221143cadbd1e4a0de9965854fa03522688634b865b5",
+      "new_file": false,
+      "diff_lines": 72
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_v3_local.py",
+      "candidate_path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_restart_candidate_20261007_z8uiww6_\\runners\\lumopt2_design\\gates\\gate_v3_local.py",
+      "candidate_sha256": "1d76af190376fcd1d7157ff9ab3fb67d50b31219d14b33b662402b476a362ac2",
+      "baseline_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_v3_local.py",
+      "baseline_sha256": "ce2f449116199e48f85e32fef196bd693c95736d9b3e22c4443aef1984afd209",
+      "new_file": false,
+      "diff_lines": 162
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_persistence.py",
+      "candidate_path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_restart_candidate_20261007_z8uiww6_\\runners\\lumopt2_design\\gates\\gate_persistence.py",
+      "candidate_sha256": "ce11cf0eb18def5e76ed9a491d68aa34463eb6ef9dfb29ec3e4b96d63ad9faea",
+      "baseline_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_persistence.py",
+      "baseline_sha256": "2e9a7ca91ec34ed7c2bc0a641a325f773510a861788c5cbd79314370cc082f89",
+      "new_file": false,
+      "diff_lines": 43
+    },
+    {
+      "path": "runners/lumopt2_design/gates/run_all_gates.py",
+      "candidate_path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_restart_candidate_20261007_z8uiww6_\\runners\\lumopt2_design\\gates\\run_all_gates.py",
+      "candidate_sha256": "ea902852e9dbde5ca0b34085e470813d965dcb69d121fdaa88e26be36e35c2bc",
+      "baseline_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\run_all_gates.py",
+      "baseline_sha256": "967556bc6f82b42e42ae24bdf1e9b48a606725fe2eaa7e25a167d5f0df8f1498",
+      "new_file": false,
+      "diff_lines": 19
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_campaign_budget.py",
+      "candidate_path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_restart_candidate_20261007_z8uiww6_\\runners\\lumopt2_design\\gates\\gate_campaign_budget.py",
+      "candidate_sha256": "dab266c38da3e086cb4547f975dff300e35baeb6859a59b9ef0d5ecd92d59f8a",
+      "baseline_path": null,
+      "baseline_sha256": null,
+      "new_file": true,
+      "diff_lines": 197
+    }
+  ],
+  "shared_dependencies": [
+    {
+      "path": "runners/lumopt2_design/persistence.py",
+      "absolute_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\persistence.py",
+      "sha256": "8f8a97919485f612f39fb3fc7fc9c289aaa78e989d032edc06fad8d7a410eed6"
+    },
+    {
+      "path": "runners/lumopt2_design/width_contract.py",
+      "absolute_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\width_contract.py",
+      "sha256": "8e1bbdb1b2227b4baca15fa9f35087ce623fed7559f89b1a1aed43e2372e7e0e"
+    },
+    {
+      "path": "runners/lumopt2_design/evaluation_budget.py",
+      "absolute_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\evaluation_budget.py",
+      "sha256": "2be58c80367aa887353175a5d76734ff750ecf4fbb1a0249d3326dd18e244ce1"
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_width_contract.py",
+      "absolute_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_width_contract.py",
+      "sha256": "390167da504bcc35d2c2ef7c7366b49e56404cc5d94a7409f4005dd447f072bb"
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_evaluation_budget.py",
+      "absolute_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_evaluation_budget.py",
+      "sha256": "8bf06d28a423ef6030fcbaca2bbabfaaa01cffa290baf99da4f7ee401024c22f"
+    },
+    {
+      "path": "runners/lumopt2_design/smoke_te_s2_restart.py",
+      "absolute_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\smoke_te_s2_restart.py",
+      "sha256": "b190f5c27860585b95f912c408a871db7a07a7493550168ad21339d6507a343b"
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_s2_smoke.py",
+      "absolute_path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_s2_smoke.py",
+      "sha256": "9ff3b02696d979f992006008dd304ff9726f7de8719bf64f9978b24c2259e561"
+    }
+  ],
+  "integration": "Persistence, newest-row, acceptance, normalization, glambda, explicit width-band and global forward budget candidate; production engine remains frozen",
+  "patch": {
+    "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\te_restart_candidate_20261007.patch",
+    "sha256": "d4cf42eec8844e4a87c2d3dbe7d321ff1d608bdbbde0b795f1206286469dc14e",
+    "baseline": "Current workspace source files; new candidate-only gate uses /dev/null baseline"
+  },
+  "verification": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\budget_integration_gate_results.json",
+  "verification_runner": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_restart_candidate_20261007_z8uiww6_\\run_gate.py",
+  "updated_utc": "2026-10-06T22:17:15.751825+00:00"
+}

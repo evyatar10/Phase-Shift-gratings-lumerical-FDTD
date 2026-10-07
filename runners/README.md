@@ -136,10 +136,11 @@ scanning this tree. The rules, verified against the scripts:
    `runners/` root (never scanned — `optimization_common.py` lives there for
    exactly this reason), or make sure they contain neither a top-level `run`
    nor the literal text `SPEC =`.
-5. **rsync `--delete`**: deploys mirror the whole `runners/` tree to the
-   cluster. A file deleted/moved locally disappears from the server's
-   `project/runners/` copy on the next deploy (results under
-   `~/bragg_sim_athena/results/` are untouched — only synced code).
+5. **Uploads preserve remote-only files** (2026-10-06 safety change): deploys
+   update `runners/` and `convergence_testing/` without rsync `--delete`.
+   Retired modules can remain on the server; inventory them before any
+   separately authorized cleanup. Upload still replaces matching source files,
+   so coordinate changes with running jobs.
 
 ## Typical workflows
 

@@ -1,9 +1,20 @@
 # IGUM — Technion ECE faculty cluster (second dispatch target)
 
-**Status: machinery ready and validated up to the SLURM gate.** Job submission is
-blocked ONLY by a missing SLURM account association for `evyatarrubin` — one admin
-action fixes it (email draft at the bottom). Everything else is proven working,
-including a native lumapi FDTD session with a real license checkout.
+**Current verification, 2026-10-06:** SSH works. `evyatarrubin` has account
+`acct-lumerical`; test-only sbatch requests succeeded for `part-preempt` /
+`qos-preempt` (256G, one GPU) and `part-lumerical` / `qos-lumerical` (32G,
+one GPU). No jobs were submitted by those tests. Native engine build 4572
+and bundled Python imports passed with the job-script library environment.
+See [the current readiness record](../docs/INVERSE_DESIGN_READINESS_2026-10-06.md)
+for CAD verification, limitations, and exact launch paths.
+
+The July reconnaissance below is retained as history. Its missing-association
+blocker, `acct-preempt` recipe, disk figures and fixed seats-per-GPU claim are
+superseded. Current account is **acct-lumerical**. On October 6 the research
+volume reported 124T total / 24T available. GPU license cost depends on hardware.
+Both relevant QOS records report **REQUEUE** and MaxWallPJ=10080 minutes;
+the partitions' displayed `PreemptMode=OFF` does not establish protection
+because this cluster uses `PreemptType=preempt/qos`. Recheck before dispatch.
 
 **IGUM is an ADDITIONAL option, not a migration. Athena remains the default
 cluster.** Nothing here touches `athena/`.
@@ -53,7 +64,7 @@ cluster.** Nothing here touches `athena/`.
 - `sacctmgr` cannot reach slurmdbd from the login node (connection refused) — use
   `sshare -U` and `scontrol show assoc_mgr` instead.
 
-### CURRENT BLOCKER (2026-07-05)
+### Historical blocker (2026-07-05; resolved by the October 6 check)
 `evyatarrubin` has **zero SLURM associations** — `sshare -U` empty; every
 srun/sbatch under every account/partition/QOS combination returns
 "Invalid account or account/partition combination". The admin must add the user
