@@ -1,0 +1,24 @@
+{
+  "requested_and_metadata_model": "claude-opus-5-5",
+  "response_path": "C:/Users/evyat/AppData/Local/Temp/ask_claude_yoll47q5/response.json",
+  "is_error": false,
+  "cli_exit": 0,
+  "scope": "Text-only review of supplied N80 experiment plan; no file or server access",
+  "adopted_advice": [
+    "Keep N98 reference and N80 first, defer N70. Compare both physical fields with own-N and common-N80 windows, recording floor, peak and full envelope.",
+    "Use a matched same-server N98/N80 family to avoid confounding server differences; assess physical mirror coupling separately from domain/PML changes.",
+    "A 150ps length pair can measure finite-duration width sensitivity, while gradient temporal checks remain separate. It does not certify N80 temporal convergence or production readiness.",
+    "Keep existing time monitors and inspect late-time behavior as supporting data; any needed N80 duration rung requires measured review, not automatic release."
+  ],
+  "corrections_and_limits": [
+    "N80 crop effect .151520946um divided by Tout100to150 width drift .000390350399um is about388, not40. Modal comparison is about174. These are ratios of measured changes, not error bounds.",
+    "Nearby-wavelength width spread and a single duration difference are not resolution/noise thresholds. They cannot certify that a physical length effect is resolved or absent.",
+    "A changed mirror-envelope slope, even near the cavity, may follow physical mirror feedback; it does not prove a numerical artifact. Same-window width difference remains affected by finite-time/discretization error.",
+    "A nonzero floor alone does not invalidate the defined relative-floor FWHM. Missing or edge-crossing halfheight requires inspection; report the metric convention rather than substitute an unapproved width.",
+    "Ten cells per pitch does not imply physical ends are mesh nodes: quarter-pitch and actual origin matter. Preserve the exact locked grid and actual physical coordinates; do not round geometry to grid.",
+    "N80 evaluated over N98 coverage includes extended feeds but does not mostly sample feed: the added mirror-to-feed length is roughly18 percent of N98 grating extent. Treat it as a supplemental observable.",
+    "Lower Q/faster decay for a shorter mirror is a hypothesis here, not guaranteed by N alone. A late-time point probe is not a rigorous spatial-FWHM convergence bound.",
+    "Saving a100ps snapshot inside a150ps run is not a demonstrated available extraction path; do not claim this implemented or equivalent to a complete matched100ps solve."
+  ],
+  "release": "N80/N98 hiddenCAD preparation only at this stage; no length solve yet. Global gradient calibration remains failed."
+}

@@ -1,11 +1,86 @@
 # Full-optimization readiness criteria
 
-## Current state 16:33 Israel — fixed200ps triplet queued; N80 first length comparison
+## Current state 17:25 Israel — N80 CAD verified; physical comparison pending
 
-Athena **171390 tasks0/1/2** submitted16:26:12, all PENDING Priority at16:33.
-Requested three A100s,8CPU/256G each,2h,12h_4g; shared planned demand21 seats.
-Scheduler estimate19:46 is provisional, not a promised start. No new result yet:
-**35 new FDTD solves verified complete**, three queued. No duplicate dispatch.
+Latest measured follow-up at17:25: Athena snapshot (filename1729, actual17:24:48)
+shows 61.04%/58.04%/54.04%, about26–31minutes engine time remaining; no
+checkpoints yet. The final combined storage helper ran successfully at17:25:11
+(filename1727). All three IGUM Lustre quota scopes, queue, bytes/inodes and
+seats returned0; standard quota remains unavailable. Local free92.616GiB,
+IGUM results filesystem25950586105856 bytes free, shared21/50, IGUM queue empty.
+This completes live validation of the updated combined helper. Filenames are
+preparation labels; embedded timestamps govern chronology.
+
+Athena 171390 tasks 0/1/2 remain the only active FDTD chain: at 17:07,
+35.0%/32.0%/29.0% complete on separate A100s, with estimated completion
+17:52–17:56 plus extraction. Source SHA remains fa6a6528e34cb9c004604ec490543c3b0579d76224c936568c2e11e4f9996053.
+35 new solves verified complete; three running are not counted complete.
+Global gradient calibration remains FAILED; no optimizer or failed coefficients.
+Exact release, marker and output identities are retained in the next section.
+
+The fixed-domain N98/N80 hidden local CAD pair passed, independently reviewed:
+retained geometry and all 723 free/cavity properties exact, final reload deltas
+zero, mesh/ports/source/PML/profile/timing unchanged. N80 removes exactly 72
+outer tooth objects; feeds join actual grating ends without gaps. Builder
+1788f251da546c1f6a2a2a956325f9fdf6dbb9fc3c345b84cfe2231fe490e798,
+report 89ac37c2686c6eb570608fde297d0ca0de7102c32a96daf568cdc2e0ffd7ae59,
+TEMP/s2_N80_hidden_fixed_domain_7c4f97dd77ad/attempt06.
+Archive `N80_hidden_CAD_verified_1725.zip` preserves code/reports and prior
+failed construction attempts; FSPs stay in TEMP. Preparatory serialization
+roundoff is preserved, not a relaxed final guard. Additional original LOCAL
+build-only outer-geometry check passed; this is not remote solved-geometry proof.
+
+User prefers N80 first and defers N70. N98/free60 remains production/reference.
+Sol owns isolated forward packet TEMP/s2_length_fixed150_candidate_n6nnepfe,
+with independent review pending. No length FDTD released. The intended matched
+native IGUM pair uses fixed150ps, identical N98 domain and independently pinned
+actual port frequency/wavelength grids. Native build/readback, packet tests,
+scientific release and fresh resource checks precede any solve. This measures
+finite-duration length sensitivity, not temporal/mesh/global-gradient convergence.
+
+Strict200 fetch (TEMP/s2_temporal200_completion_fetch_hm79omfm, eight tests)
+and analyzer (TEMP/s2_temporal200_analyzer_dmczo_wv, seven tests) passed parent
+checks; actual input awaits completion. Record independent completion manifest
+and pinmap hashes. Optional200 center saved-field extractor is being reviewed
+in TEMP/s2_saved200_profile_r6g42i97; it is CPU-only and not yet released.
+
+Storage checks: local C had 92.90 GiB free at16:34; Athena quota17:07 used
+228592192 KiB against soft314572800 KiB (~82.00 GiB headroom), filesystem
+8805468143616 bytes free. IGUM17:04 user, results-owning group449857252 and
+inherited project9000001 returned zero block/inode quota limits. This does not
+promise unlimited capacity. IGUM queue empty then; shared solver seats21/50.
+Updated helper includes all three Lustre quota scopes, six existing plus three
+parent tests pass; the final combined helper also passed the17:25 live call.
+Archive `storage_skill_group_project_validated_1725.zip`.
+No cleanup/deletion. Recheck before new dispatch and reserve output/intermediates.
+
+Actual account query17:24: 27% weekly allowance remains; other/model/Claude pools
+unknown. No reset redeemed or capacity purchased. Focused local commit c478d17
+remains latest; later reviewed documentation/evidence will be committed separately.
+Continue useful work without duplicate jobs or completed audits; preserve all
+active source fingerprints and failed scientific gates.
+
+## Current state 16:47 Israel — fixed200ps triplet running; N80 preparation
+
+Follow-up preparations16:53: strict200 analyzer TEMP/s2_temporal200_analyzer_dmczo_wv,
+SHAe65663992a42fa2f13024266203770f4fbf5ff317885e98a7a059968c8f65ee7,
+seven tests plus parent pass; archive `s2_temporal200_analyzer_prepared_1653.zip`.
+It requires independent completion-manifest AND pinmap hashes, preserves exact
+100/150 history and exports selected full curves to MAT. Actual200 input pending.
+Storage helper `C:/Users/evyat/.codex/skills/pi-shift-cluster-ops/scripts/check_storage.py`
+and `references/storage-checks.md` installed/validated (six tests plus two new
+guards and liveIGUM query). LatestIGUM16:46 lfs userquota succeeds:411449144KiB
+used, userblock/inodelimits zero; group/projectlimits still unverified. Standard
+quota command missing. Filesystem free is not proof of unlimited allocation.
+Archive `storage_skill_validated_1649.zip`; original storageaudit1634 retained.
+Latest focused local Git commitc478d17. No production source changed afterward.
+
+
+Athena **171390 tasks0/1/2** all RUNNING at16:47 on separateA100 nodes
+n309/n311/n306, started16:41/16:43/16:46. All wrapper readbacks confirmGPU
+and8CPU threads. Engine200ps/2998039steps; approximate finish17:55 plus
+extraction, not promised. Requested8CPU/256G each,2h,12h_4g,21sharedseats.
+**35 new FDTD solves verified complete**, three running. No duplicate dispatch.
 Runner SHAfa6a6528e34cb9c004604ec490543c3b0579d76224c936568c2e11e4f9996053;
 marker `/work/data/s2_temporal200_review_20261007_1619.json` SHA
 4fe3c0e7fc37cced733ac7cf7b2ee3de3536213ee938e23a1095dffc307cd44f.

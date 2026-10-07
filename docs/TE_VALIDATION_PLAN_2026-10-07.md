@@ -1,5 +1,52 @@
 # TE physical validation and runtime plan
 
+## N80 comparison preparation, October7 afternoon
+
+Decision: determine how removing the outer18 periods per side changes the
+current TE validation-point profile and spectrum, before choosing a shorter
+production device. N70 is deferred. N98 remains the production reference.
+
+Reuse the verified N98 100/150ps fields, profile extraction, same-field crop
+scan and exact N80 mapping blueprint. A fresh hidden-CAD N98/N80 pair passed exact final geometry/control readbacks
+and independent review; its native IGUM forward packet remains in preparation. Hold the locked mesh, domain, port
+positions/phase/source, PML, profile coverage and all296 parameters fixed;
+only the outer mirror length and associated feed extension differ. Verify
+saved/reloaded geometry and controls. No length FDTD solve has been released.
+
+An initial150ps pair can measure finite-duration length sensitivity in parallel
+with the running N98 200ps gradient diagnostic. It cannot establish N80 temporal
+convergence. Same-server comparison avoids attributing platform differences to
+length: on Athena oneN80 could reuse the exact150psN98; on IGUM a matchedN98
+control plusN80 costs two new forwards. Choose after build verification and
+fresh resources/quota. Reference150psAthena runs took about53minutes each;
+IGUM150ps has not been benchmarked. Allow roughly50-70minutes per forward
+plus queue/extraction, about1.7-2.3GPUhours for a pair. These are estimates.
+At twoA100s the pair would commit14solver seats in addition to the outstanding
+Athena21; inspect the live shared pool before any release. Fixed-domain N80
+offers no cell-count saving. Compact-domain speedup is a later comparison.
+
+Prepare four profile views: N98/ownN98 crop, N98/commonN80 crop, N80/ownN80
+crop, N80/N98 crop as a supplemental diagnostic. Report floor/peak/halflevel,
+crossings, full envelope and tails as well as FWHM. The common crop separates
+the known window change from the measured field change, but does not remove
+finite-time/discretization error. Track Tout and modal spectra, resonance,
+linewidth, modal shape and any multiple peaks. Existing time probes can support
+ringdown inspection; GPU logs warn their spatial interpolation is unsupported,
+and they are not a rigorous width-convergence bound.
+
+If profile or resonance identity changes, inspect that change before adopting
+a shorter device; a changed tail/slope is not by itself a numerical artifact.
+If N80 differs appreciably while preserving the tracked mode, report physical
+length sensitivity and consider an intermediate length only if it answers a
+specific remaining decision. If N80 appears close, separately test the compact
+domain and relevant temporal/mesh sensitivity before production adoption.
+Use measured changes and existing bands; no new arbitrary tolerance or noise
+floor. Width-band membership, no-widening and numerical convergence remain
+different claims. None of this releases the failed gradient/optimizer gate.
+
+Verified text-only Opus5.5 review and lead corrections are in
+`readiness_evidence_20261007/claude_N80_plan_review_1651.json`.
+
 Current16:33:35 FDTD complete; NEW fixed200ps Athena171390 tasks0/1/2
 queued Priority after reviewed release16:26:12. Calibration remainsFAILED.
 See TOP `TE_CONTINUATION_2026-10-07.md` for exact hashes/outputs and next steps.
