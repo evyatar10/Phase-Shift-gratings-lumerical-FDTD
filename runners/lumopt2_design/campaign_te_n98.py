@@ -53,6 +53,15 @@ LANES = [
          port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM,
          metric={"shift": 175.0}),
+    # task 3 (2026-10-08 ~03:00): S2 with shifts weighted like ITS corrugations
+    # (corr 0..750 -> half-range 375; legacy D starved S2 shifts ~2400x). Runs
+    # alongside task 1 (legacy) as the S2 A/B, after S1's A/B step 1 MEASURED
+    # 2.35x the legacy gain at gain ratio 0.87 (172159_2 vs 172063_0).
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_shiftw", start=s2.SEED,
+         scan=s2.SCAN_CENTER_NM, two_kl_floor=None,
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM,
+         metric={"shift": 375.0}),
 ]
 N_TASKS = len(LANES)
 
