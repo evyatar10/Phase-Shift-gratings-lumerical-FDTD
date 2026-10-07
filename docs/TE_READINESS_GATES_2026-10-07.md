@@ -1,5 +1,15 @@
 # Full-optimization readiness criteria
 
+## Clarification: S1 versus S2, mesher, and corrected budget boundary
+
+Latest user explicitly sets pause at2% remaining or below, NOT3%. Actual account query this turn showed4% weekly remaining; other/model pools unknown. AGENTS.md and existing ACTIVE heartbeat updated to <=2%. Older3% checkpoints are superseded.
+
+Do not conflate the two TE lanes. Claude's own memory project_te_inverse_design_lane.md (October6 top status) records a successful S1 uniform-seed campaign and S2 C_port still OPEN after interrupted FD work. Live campaign_te_s1.py59 records S1 port fit errors <=5%, with one held-out shift30 discrepancy16.5% explicitly noted, and field fit <=0.2%. campaign_te_s2.py52 still has ADJ_FIX_PORT=None. The recovered global calibration failure and displayed six-probe residuals concern S2 nonuniform/overshoot, not a retrospective demonstration that S1 cannot optimize. S2 comparison errors also do not alone identify whether the adjoint, FD reference, or assumptions cause the discrepancy.
+
+The lead's earlier blanket TE-not-ready statement was too broad. Assess S1's current peak-objective evidence and post-fix optimizer/restart smoke separately; do not make every S1 readiness action wait for repairing S2. No automatic full campaign release. Existing scope still permits bounded readiness validation; avoid speculative audits and new mesh/length studies.
+
+Mesher choice confirmed: precise volume average (PVA), the intended smoother inverse-design setup. S1 configured optimization-region dx50nm; S2 dx49.106nm (pitch/10), dy/dz50nm. Native before/reloaded CAD report s2_length_native_cad_report_original_1757.json explicitly reads PVA and these optimization-mesh settings for N98/N80. Overlapping device mesh override dy57.915nm is separately recorded; nominal optimization settings are not a claim that every realized cell everywhere is identical. No demonstrated wrong mesh choice; do not prescribe wholesale refinement from the gradient mismatch alone.
+
 ## Latest user direction,22:28 — accept N80; focus on failed gradients
 
 N80 is accepted for practical TE work. Further length certification is removed from readiness work unless a concrete consequential anomaly appears. Do not reopen this by following older checklist entries below. Global gradient calibration remains failed; it is the priority. Saved-source CPU171768 completed with preservation: duration-dependent raw phase matches source-normalization phase, with unchanged source power. This removes raw-prefix mismatch as evidence of stochastic noise; it does not cure the measured gradient discrepancy. Exact evidence and next action are at the TOP of the continuation.

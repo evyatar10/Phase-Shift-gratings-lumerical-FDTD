@@ -20,7 +20,7 @@ speculative refinements. Keep confirmed failures visible until resolved.
 
 User reserve instruction (October 7): notify and pause autonomous project work
 and this thread's heartbeat when actual remaining account allowance reaches
-approximately 2–3% (use <=3% as the conservative boundary). Save a brief state
+2% or below (user explicitly corrected the earlier 3% boundary). Save a brief state
 checkpoint first; leave server jobs and artifacts intact. Do not launch a new
 model-intensive stage that is likely to spend this reserve. No reset or purchase.
 Resume only after user direction or a user-approved change to this constraint.
