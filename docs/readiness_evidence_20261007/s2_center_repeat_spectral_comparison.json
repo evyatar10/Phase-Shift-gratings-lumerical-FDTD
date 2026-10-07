@@ -1,0 +1,319 @@
+{
+  "checkpoint_sha256": "cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06",
+  "point_match": true,
+  "scalar_comparison": {
+    "fom": {
+      "new": 0.7274685155280382,
+      "reference": 0.7274685428514254,
+      "signed_delta": -2.7323387219446715e-08,
+      "absolute_delta": 2.7323387219446715e-08,
+      "relative_delta": -3.755954465377771e-08
+    },
+    "peak3_tout": {
+      "new": 0.9257489820745417,
+      "reference": 0.925748506956398,
+      "signed_delta": 4.751181437168128e-07,
+      "absolute_delta": 4.751181437168128e-07,
+      "relative_delta": 5.132259357121388e-07
+    },
+    "peak3_modal": {
+      "new": 0.9718095820307666,
+      "reference": 0.9718102149755974,
+      "signed_delta": -6.329448307695884e-07,
+      "absolute_delta": 6.329448307695884e-07,
+      "relative_delta": -6.513049780871895e-07
+    },
+    "lam_nm": {
+      "new": 1560.8782189638007,
+      "reference": 1560.8782189638007,
+      "signed_delta": 0.0,
+      "absolute_delta": 0.0,
+      "relative_delta": 0.0
+    },
+    "modal_t": {
+      "new": 0.9718052657698802,
+      "reference": 0.9718059082436237,
+      "signed_delta": -6.424737434285177e-07,
+      "absolute_delta": 6.424737434285177e-07,
+      "relative_delta": -6.611132305108963e-07
+    },
+    "width_nm": {
+      "new": 0.20234437266867644,
+      "reference": 0.20234411600176827,
+      "signed_delta": 2.5666690817161e-07,
+      "absolute_delta": 2.5666690817161e-07,
+      "relative_delta": 1.2684673675876347e-06
+    },
+    "tout_at_modal_peak": {
+      "new": 0.9217029104505213,
+      "reference": 0.9217019297569524,
+      "signed_delta": 9.806935689082863e-07,
+      "absolute_delta": 9.806935689082863e-07,
+      "relative_delta": 1.0640029463395933e-06
+    },
+    "p1_T_in": {
+      "new": 0.94373249747353,
+      "reference": 0.9437310954345483,
+      "signed_delta": 1.4020389818014678e-06,
+      "absolute_delta": 1.4020389818014678e-06,
+      "relative_delta": 1.4856339783483432e-06
+    }
+  },
+  "spectral_arrays": {
+    "p1_lambda": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": true,
+      "max_abs_diff": 0.0,
+      "rms_abs_diff": 0.0,
+      "reference_max_abs": 1.5618788596285093e-06
+    },
+    "p1_f": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": true,
+      "max_abs_diff": 0.0,
+      "rms_abs_diff": 0.0,
+      "reference_max_abs": 192189576869704.28
+    },
+    "p1_n": {
+      "shape": [
+        1,
+        1
+      ],
+      "exact": true,
+      "max_abs_diff": 0.0,
+      "rms_abs_diff": 0.0,
+      "reference_max_abs": 1.0
+    },
+    "p1_S": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 1.453076545184624e-06,
+      "rms_abs_diff": 4.4858445078531644e-07,
+      "reference_max_abs": 0.9852987227858357
+    },
+    "p1_a": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 1.4804806095576267e-06,
+      "rms_abs_diff": 5.468931774081903e-07,
+      "reference_max_abs": 1.0686782818646612
+    },
+    "p1_b": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 1.5452701063585285e-06,
+      "rms_abs_diff": 5.57304603142854e-07,
+      "reference_max_abs": 1.0383361457414138
+    },
+    "p1_N": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 7.889576422510742e-31,
+      "rms_abs_diff": 5.5571647796635925e-31,
+      "reference_max_abs": 8.144282997112902e-16
+    },
+    "p1_P": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 2.459045527892441e-21,
+      "rms_abs_diff": 7.857669848788399e-22,
+      "reference_max_abs": 1.340731376240862e-15
+    },
+    "p1_T_total": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 2.202875988455144e-06,
+      "rms_abs_diff": 5.871875128698401e-07,
+      "reference_max_abs": 0.9480947983014176
+    },
+    "p1_T_in": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 1.1022983130160036e-05,
+      "rms_abs_diff": 3.1126878491017517e-06,
+      "reference_max_abs": 1.0494406427999001
+    },
+    "p1_T_out": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 1.022046768295315e-05,
+      "rms_abs_diff": 2.8453889290468416e-06,
+      "reference_max_abs": 0.8988244296250578
+    },
+    "p1_T_net": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 2.219282292603708e-06,
+      "rms_abs_diff": 5.912295303492555e-07,
+      "reference_max_abs": 0.9464351428170504
+    },
+    "p2_lambda": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": true,
+      "max_abs_diff": 0.0,
+      "rms_abs_diff": 0.0,
+      "reference_max_abs": 1.5618788596285093e-06
+    },
+    "p2_f": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": true,
+      "max_abs_diff": 0.0,
+      "rms_abs_diff": 0.0,
+      "reference_max_abs": 192189576869704.28
+    },
+    "p2_n": {
+      "shape": [
+        1,
+        1
+      ],
+      "exact": true,
+      "max_abs_diff": 0.0,
+      "rms_abs_diff": 0.0,
+      "reference_max_abs": 1.0
+    },
+    "p2_S": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 1.1923222071000774e-06,
+      "rms_abs_diff": 2.711700761062153e-07,
+      "reference_max_abs": 0.9858021648604874
+    },
+    "p2_a": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 8.716975064565511e-07,
+      "rms_abs_diff": 2.0910602759346875e-07,
+      "reference_max_abs": 0.9961443730767549
+    },
+    "p2_b": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 9.786124797653272e-07,
+      "rms_abs_diff": 2.148574974523161e-07,
+      "reference_max_abs": 0.0790550701686701
+    },
+    "p2_N": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 7.889508635472583e-31,
+      "rms_abs_diff": 5.8545063620445285e-31,
+      "reference_max_abs": 8.144282997112922e-16
+    },
+    "p2_P": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 1.045935665026178e-21,
+      "rms_abs_diff": 2.091617093671075e-22,
+      "reference_max_abs": 8.181826535962553e-16
+    },
+    "p2_T_total": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 1.1834003560418083e-06,
+      "rms_abs_diff": 1.9605320700388015e-07,
+      "reference_max_abs": 0.9255682682130266
+    },
+    "p2_T_out": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 1.220182015981841e-06,
+      "rms_abs_diff": 2.0010904435341874e-07,
+      "reference_max_abs": 0.925724382253119
+    },
+    "p2_T_in": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 6.3209366006102e-08,
+      "rms_abs_diff": 1.0976981321389424e-08,
+      "reference_max_abs": 0.00583037632347034
+    },
+    "p2_T_net": {
+      "shape": [
+        501,
+        1
+      ],
+      "exact": false,
+      "max_abs_diff": 1.204549419542289e-06,
+      "rms_abs_diff": 1.9965844782019016e-07,
+      "reference_max_abs": 0.9198940059296487
+    }
+  },
+  "conclusion": "Same center parameter vector, exact wavelength/frequency grid, all source identities match, artifacts exist. Peak repeat difference 4.751e-7 is 0.634% of old corr30 +/-2nm central numerator. This single repeat supports smaller-step diagnosis but is not a statistical noise bound or gradient calibration pass. Preserve failed 10% overall gate; assess signal and step dependence after both legs.",
+  "code_hashes_match": {
+    "diagnose_te_s2_fdstep.py": true,
+    "lumopt2_design.py": true,
+    "recover_te_s2.py": true,
+    "validate_te.py": true,
+    "campaign_te_s2.py": true,
+    "bragg_device.py": true,
+    "simulation_config.py": true,
+    "sim_helpers.py": true,
+    "v3_step.py": true
+  },
+  "reviewed_at": "2026-10-07T06:41:20.358322+03:00",
+  "repeat_peak_delta_over_old_corr30_central_numerator": 0.006335365134231627,
+  "decision": "ALLOW_CORR30_PLUS_MINUS_0.5NM_DIAGNOSTIC_ONLY"
+}

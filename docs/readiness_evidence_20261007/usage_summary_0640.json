@@ -1,0 +1,14 @@
+{
+  "queried_at_local": "2026-10-07T06:40:00+03:00",
+  "ordinary_usage_allowed": true,
+  "limit_id": "codex",
+  "used_percent": 0,
+  "remaining_percent": 100,
+  "window_duration_minutes": 10080,
+  "resets_at_unix": 1791949207,
+  "reset_local": "2026-10-14T06:40:07+03:00",
+  "secondary": null,
+  "model_specific_limits": "unknown",
+  "reset_redeemed_by_this_workflow": false,
+  "change_from_prior": "6% remaining at05:49; cause unknown"
+}

@@ -1,4 +1,4 @@
-# TE readiness handoff — measured state at 06:02 Israel
+# TE readiness handoff — measured state at 06:43 Israel
 
 **Not ready for full inverse-design optimization.** The overnight calibration
 finished, exposed a real accuracy failure, and was not promoted to a pass.
@@ -11,11 +11,13 @@ finished, exposed a real accuracy failure, and was not promoted to a pass.
   guard fixes are integrated locally. All13 actual offline suites pass.
   The new forward-only diagnostic also passes six offline checks and a
   hidden CAD build. No local FDTD solve ran.
-- One new Athena diagnostic, **170901_0**, is running on n306/A100 with256G,
-  eight CPUs and2h limit. It repeats the recovered nominal point to investigate
-  the large one-sided asymmetry around the old center. It is not optimization.
-  No smaller-step runs are submitted; inspect the center result first.
-- Current code checkpoint: **1b2d75e**. Earlier documentation/evidence commits:
+- Nominal repeat **170901_0 completed** in31m50s. Peak3(Tout) changed by
+  only4.751e-7; full spectral grids match. Explicit review supports the next
+  diagnostic, but this is not a calibration pass or a statistical noise bound.
+  **Array170906** now evaluates corr30+/-0.5nm serially: task1 running on
+  n306, task2 pending the array throttle. Sources remain unchanged/frozen.
+- Current code checkpoint: **1b2d75e**; failed-calibration evidence **40118f1**.
+  Earlier documentation/evidence commits:
   27bcc6d, d23e6ac,811fa58,770cf17. No push, deletion, cancellation, container
   replacement or cleanup occurred. Old remote sources and results are preserved.
 
@@ -35,8 +37,9 @@ the complete gradient gate or N98 optimization readiness.
 Next agent: read the TOP of `TE_CONTINUATION_2026-10-07.md` for current job,
 hashes, exact output paths and review gate. Sources are frozen while the new
 diagnostic runs. The old recovery watcher has exited; the native30min heartbeat
-is active for the diagnostic. Account allowance was6% at05:49; reset credits
-remain unused. Conserve capacity and record any access limitation honestly.
+is active for the diagnostic. Actual account query06:40 reports100% remaining
+in its weekly codex bucket, versus6% at05:49; the cause is unknown. No reset
+was redeemed by this workflow. Model-specific and Claude allowance are unknown.
 
 Detailed evidence and decisions:
 

@@ -59,6 +59,14 @@ from an optimizer regression test or a fixed-grid improvement.
 
 ## Current limits
 
+06:43 update: center repeat170901_0 COMPLETED and explicitly reviewed.
+Peak3(Tout) repeats within4.751e-7, identical spectral grids; one repeat does
+not establish a noise distribution or gradient accuracy. corr30+/-0.5nm
+diagnostic array170906 is active, serially, after a SHA-pinned center review.
+All calibration and optimizer hardware gates below remain FAILED/BLOCKED.
+Actual account query06:40 now reports100% remaining in its listed weekly
+codex bucket; change cause unknown, and no reset redeemed by this workflow.
+
 At 06:02 Israel time, all twelve S2 FD legs and both peak quadratures are
 complete. Both legacy and current peak3 calibration FAIL the 10% gate;
 neither can be installed. Independent minimax fitting still leaves58.1%

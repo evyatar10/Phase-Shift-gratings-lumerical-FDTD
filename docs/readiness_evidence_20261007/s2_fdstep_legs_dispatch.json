@@ -1,0 +1,5 @@
+{
+  "exit_code": 0,
+  "out": "{\"submitted_at\": \"2026-10-07T06:41:57.240124+03:00\", \"center_sha256\": \"cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06\", \"queue_before\": \"\", \"qos\": \"12h_4g|12:00:00|cpu=512,gres/gpu=4,mem=1792G\\n\", \"args\": [\"sbatch\", \"--parsable\", \"--mem=256G\", \"--array=1-2%1\", \"--gpus=1\", \"--cpus-per-task=8\", \"--time=02:00:00\", \"--qos=12h_4g\", \"--partition=a100-public\", \"--export=ALL,SWEEP_KIND=lumopt2_design,SWEEP_LIST=/work/data/sweep_list_diagnose_te_s2_fdstep.txt,SWEEP_SPEC_MODULE=runners.lumopt2_design.diagnose_te_s2_fdstep,ATHENA_LICENSE=1055@132.68.48.51,ATHENA_INTERCONNECT=2325@132.68.48.51,REQUIRE_GPU=1,KEEP_H5=1,CONV_POL=TE,NTFY_TOPIC=\", \"--chdir=/home/evyatarrubin/bragg_sim_athena/jobs\", \"jobs/run_python_array.sh\"], \"exit_code\": 0, \"stdout\": \"170906\\n\", \"stderr\": \"sbatch: lua: Submitted: 170906.4294967294 component: 0 using: sbatch\\n\", \"source_upload\": false}\n",
+  "err": "...\r\n"
+}

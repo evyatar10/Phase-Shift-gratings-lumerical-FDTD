@@ -8,6 +8,63 @@ the project `AGENTS.md` records that instruction.
 
 ## Overnight extension and current continuation
 
+## Current state 06:43 Israel — center reviewed, smaller-step legs active
+
+Nominal repeat170901_0 COMPLETED exit0 in31m50s. Same recovered parameter
+vector and exact wavelength/frequency grids; all nine checkpoint source hashes
+match local sources and were verified remotely before continuation. Preserved
+FSP/HDF5/ports exist. New center peak3(Tout)=0.9257489820745417 versus
+old0.925748506956398, delta+4.75118e-7. Whole Tout spectrum max absolute
+difference1.22018e-6, RMS2.00109e-7. Modal peak delta-6.32945e-7;
+sampled modal wavelength unchanged1560.8782189638007nm. Spectral FWHM
+delta+2.56667e-7nm; this is not a spatial-width measurement.
+
+Lead explicitly reviewed the scalar AND spectral evidence. Center peak delta
+is0.634% of the old corr30 central numerator at +/-2nm. This supports the
+planned smaller-step diagnosis; one repeat is not a statistical noise bound
+and does not validate adjoint/field provenance or the failed calibration.
+Exact NEW task00 SHA:
+`cd2dd4a58be7b83c46ef6a6ac90a874e5fc33edda884edfc8ac50ce5e3be4a06`.
+The matching `center_reviewed.sha256` was written remotely after this review.
+
+**Array170906 tasks1/2, corr30+/-0.5nm, submitted06:41:57, serial throttle1.**
+At06:42:59 task170906_1 (scheduler JobId170907) RUNNING n306; task170906_2
+PENDING JobArrayTaskLimit. Both A100-public,12h_4g,256G,8CPUs,2h limit.
+Early task1 log confirms8threads/build4572. No source upload: reused verified
+sources, wrapper and existing manifest. Freeze fingerprinted sources through
+these diagnostics. Preflight: user queue empty, quota226/300Gsoft/330Ghard,
+shared licenses0/50, QOS mem1792G/GPU4 cap. Remote receipt:
+`results/diagnose_te_s2_fdstep/results/lumopt2_te_s2_fdstep_diagnostic_20261007/legs_dispatch_20261007.json`.
+
+Next: inspect exact task01/02 checkpoints and ports after completion, verify
+their reviewed-center SHA, then compare central odd response and even curvature
+at h0.5 versus h2nm, full spectra and peak3 scores. Do not refit a global factor
+from one improved probe or call the calibration passed. No optimizer smoke,
+N98 pilot or campaign is allowed while the existing10% gate fails.
+Evidence in `readiness_evidence_20261007/s2_center_repeat_spectral_comparison.json`,
+`s2_fdstep_status_0640.json`, and `s2_fdstep_legs_dispatch_verification.json`.
+
+Actual usage query06:40 reports0% used (100% remaining) in its codex weekly
+bucket, ordinary usage allowed, no secondary/model-specific bucket. This is
+a change from6% remaining at05:49; cause unknown. No reset was redeemed by
+this workflow. Preserve unknown model-specific/Claude limits.
+
+Focused exact Opus5.5 review completed while the new legs run. Read the
+corrections/protocol near the TOP of the failure report: Claude mistakenly
+applied shift30's wavelength sensitivity to corr30. The prepared offline
+`readiness_evidence_20261007/analyze_s2_fdstep.py` passed analytic checks;
+use it only after fetching both endpoints. Failed scientific gates remain.
+The existing30min heartbeat was updated and confirmed ACTIVE for170906.
+
+06:10 Israel heartbeat: bounded read-only SSH succeeded. Exact job170901_0
+remains RUNNING on n306, elapsed00:09:41; task00 checkpoint is absent and
+the wrapper log shows no new failure. Saved snapshot:
+`readiness_evidence_20261007/s2_fdstep_status_0610.json`. No new dispatch,
+source changes or center-review marker. Recheck at the next scheduled
+heartbeat (about06:40); inspect completed checkpoint and spectra before
+authorizing either smaller-step leg. No additional audit is needed during
+this wait; the failed calibration and blocked optimizer gates remain intact.
+
 ## Active diagnostic at 06:02 Israel — use this state first
 
 Source fixes are committed locally as `1b2d75e`. The local integrated engine

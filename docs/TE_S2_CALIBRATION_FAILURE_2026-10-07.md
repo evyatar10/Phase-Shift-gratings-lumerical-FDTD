@@ -1,5 +1,60 @@
 # S2 calibration failure and bounded diagnosis
 
+## New center evidence and next diagnostic, 06:43 Israel
+
+The nominal repeat170901_0 completed exit0. Peak3(Tout) differs by+4.75118e-7
+from the original; full Tout spectrum max difference1.22018e-6 and
+RMS2.00109e-7. Wavelength/frequency grids match exactly and the parameter
+vector/source identities were checked. This observed center difference is
+only0.634% of the original corr30 +/-2nm central numerator; it is too small
+to explain the large one-sided asymmetry by this measured center offset alone.
+One repeat cannot bound run-to-run noise, eliminate all numerical effects or
+validate adjoint-field provenance. The failed calibration is unchanged.
+
+After explicit review, the exact new checkpoint SHA was recorded in the
+remote center marker; serial array170906 now evaluates corr30+/-0.5nm.
+The purpose is to measure step dependence and odd/even response, not to tune
+one coefficient until a selected probe passes. Source files are frozen.
+See TOP continuation and saved scalar/full-spectrum comparison for hashes,
+resources, evidence paths and next actions. All original results are retained.
+
+### Smaller-step interpretation prepared while the jobs run
+
+For scalar f and step h, use odd O=(f+ - f-)/2, even
+E=(f+ + f- - 2f0)/2, D=O/h and C=2E/h^2. Report even terms using both
+old and repeated centers; the interval is center sensitivity, not a confidence
+interval. At h2nm, corr30 O=3.74973e-5 and E=1.80637e-4; even response is
+about4.82 times odd response. For a locally quadratic response, O shrinks
+fourfold and E sixteenfold at h0.5nm. Deviations can also arise from smooth
+higher derivatives; they do not alone diagnose a mesh kink or source error.
+
+The conditional Richardson expression is [16D(0.5)-D(2)]/15. Two sizes do
+not establish its assumed h^2 error law. Compare moving peak3 FD with both
+the fixed center sample FD and the exact center peak3 Jacobian applied to
+the spectral FD. Finite-step disagreement does not itself establish different
+infinitesimal observables or a defective adjoint. Inspect the actual peak
+indices, concavity and spectra before interpreting any discrepancy.
+
+New exact Opus5.5 text-only review succeeded and is saved in
+`readiness_evidence_20261007/claude_s2_center_repeat_review.json`. Its odd/even
+and Richardson formulas were checked. Corrections: it wrongly imported the
+shift30 wavelength slope into corr30; both stored corr30 endpoints have the
+same sampled modal lambda1560.8782189638007nm as center. Its claimed0.045nm
+corr30 peak displacement and derived0.18 fixed-wavelength change are unsupported.
+Its noise-sigma expressions assume independent equal-variance noise, which
+one repeat cannot estimate; no sigma/confidence bound is adopted. Shape-fit
+residuals above the repeat difference or non-h^2 scaling do not prove mesh
+error, since shape deformation and smooth higher-order response also contribute.
+Do not prescribe another solve solely from those heuristic thresholds.
+
+Prepared offline calculator `readiness_evidence_20261007/analyze_s2_fdstep.py`;
+analytic quartic/Richardson, off-grid parabola and invalid-spectrum checks
+passed exit0. It refuses absent endpoints and exclusively creates output.
+After fetching exact task01/02 JSON and small NPZ spectra under the same local
+evidence directory, run it with `--evidence-dir docs/readiness_evidence_20261007`,
+`--old-spectra C:/Users/evyat/AppData/Local/Temp/s2_peak_failure_spectra_ppyzxc75/stored_port_spectra.zip`,
+and a NEW `--output` path. This calculator is not a physics gate.
+
 All twelve finite-difference legs and both peak-objective gradient
 reconstructions completed. Fit job170754_2 failed intentionally after saving
 its result because the scientific accuracy gate failed. The queue was empty

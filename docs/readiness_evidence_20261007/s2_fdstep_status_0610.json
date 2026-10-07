@@ -1,0 +1,14 @@
+{
+  "accounting": {
+    "code": 0,
+    "out": "170901_0|RUNNING|0:0|00:09:41\n",
+    "err": ""
+  },
+  "queue": {
+    "code": 0,
+    "out": "170901_0|RUNNING|n306\n",
+    "err": ""
+  },
+  "checkpoint": null,
+  "log_tail": "1W /  400W |       0MiB /  40960MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|  No running processes found                                                             |\n+-----------------------------------------------------------------------------------------+\n============================================================\n[athena_run_one] kind=lumopt2_design  index=0/2  line='0'\n  USE_GPU=True  REQUIRE_GPU=1\n============================================================\n[athena_run_one] GPU enabled on FDTD resource 1.\n[athena_run_one] FDTD threads = 8 (Slurm allocation).\n[athena_run_one] device type readback = 'GPU'\nUsing CONSTANT Materials (object-defined dielectric): SiN=1.97, SiO2=1.444\n06:00:55 - INFO - Generating optimization project...\n[athena_run_one] GPU enabled on FDTD resource 1.\n[athena_run_one] FDTD threads = 8 (Slurm allocation).\n[athena_run_one] device type readback = 'GPU'\n06:01:00 - INFO - FDTD version '8.35.4572' meets the minimum requirement.\n"
+}
