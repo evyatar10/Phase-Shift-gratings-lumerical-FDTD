@@ -1,0 +1,11 @@
+{
+  "source": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_source_spectrum_h623636f",
+  "operator": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_source_ops_pakzytvv",
+  "source_sha256": "4597f1fbb9a2510fa846a8da0a38459db8b46022c58e76f5ebf065f255ae54b2",
+  "wrapper_sha256": "e562a72e3fe1cd98bd423142cfd0af80655a02b92975e159a95227b6affa7afd",
+  "tests": 4,
+  "scope": "CPU-only saved source normalization, no FDTD, no source edits",
+  "question": "Does source normalization spectrum account for phase-like prefix drift across exact100/150/200 centers?",
+  "expected_runtime": "Saved-field CPU jobs1.8\u20133minutes plus queue; 8CPU128G30minute cap, noGPU, oneGUI seat",
+  "criteria": "Compare exact f-grid complex normalization and positive sourcepower, properties and saved modal S. Global phase alone cannot explain power drift. No automatic new solve or source correction."
+}

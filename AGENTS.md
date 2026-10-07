@@ -1,5 +1,30 @@
 # Pi-shift Bragg grating project
 
+## Proportionate validation — latest user direction, October 7
+
+Treat N80 as an acceptable practical choice for the current TE work: with
+60 free/apodized periods it retains 20 outer periods per side. The user does
+not want further length investigations or repeated qualifications. Length
+convergence is not a readiness blocker now. Reopen it only for a concrete
+observed problem that could materially change the design decision. Preserve
+existing N98 artifacts/configuration identities when comparing or resuming;
+do not rewrite a frozen run to change its length.
+
+Apply this judgment generally: respect established design knowledge, reuse
+adequate evidence, and match verification effort to consequence and uncertainty.
+Before another check, state what decision its result could change. Stop when
+the agreed practical question is answered; do not chase exhaustive certainty,
+repeat caveats, or turn every possible numerical concern into a blocking gate.
+Prioritize demonstrated failures, currently the gradient calibration, over
+speculative refinements. Keep confirmed failures visible until resolved.
+
+User reserve instruction (October 7): notify and pause autonomous project work
+and this thread's heartbeat when actual remaining account allowance reaches
+approximately 2–3% (use <=3% as the conservative boundary). Save a brief state
+checkpoint first; leave server jobs and artifacts intact. Do not launch a new
+model-intensive stage that is likely to spend this reserve. No reset or purchase.
+Resume only after user direction or a user-approved change to this constraint.
+
 Read `docs/TE_CONTINUATION_2026-10-07.md` first for the current continuation and
 isolated restart candidate, then `docs/TE_RECOVERY_2026-10-06.md` for the recovery,
 job state and normalization fix, then `docs/CODEX_AUDIT_2026-10-06.md` for the

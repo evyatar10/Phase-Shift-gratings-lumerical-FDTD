@@ -1,5 +1,9 @@
 # S2 calibration failure and bounded diagnosis
 
+## Latest22:28: source-normalization evidence, practical N80 acceptance
+
+See TOP continuation for CPU171768: unit-magnitude source spectrum ratio, linear phase equivalent to0.198736fs delay per50ps; unchanged power. Do not infer noise or normalized-power failure from raw point-prefix phase differences. Actual gradient calibration remains failed. The user accepts N80 and directed no more length investigations without a consequential observed anomaly. Older pending/blocked length notes below are historical.
+
 ## Access and evidence update, 19:15 Israel
 
 Both cluster SSH connections now time out. No alternate time-result inventory was uploaded/submitted. CPU171516 raw-time export failed safely (noE/H in raw listing), all71inputs preserved; alternative getresult metadata check is reviewed and ready. See TOP continuation for exact recovery instructions.38FDTDcomplete; global calibrationFAILED, N80pair last-knownqueued, no optimizer release.

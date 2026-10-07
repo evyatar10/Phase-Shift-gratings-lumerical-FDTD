@@ -1,0 +1,43 @@
+{
+  "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\te_readiness_20261007\\source_norms_2226",
+  "files_sha256": {
+    "/work/results/s2_source_norms_20261007_2224/source_100ps.npz": "899d769fe5b116cf3fff6e3988c8e6da42487eecc7b343f585530df5ec312049",
+    "/work/results/s2_source_norms_20261007_2224/source_100ps.mat": "f1868694a47233ce73bce86fc8efb8e181597971569ee63bbacf0b0d303b43d7",
+    "/work/results/s2_source_norms_20261007_2224/source_150ps.npz": "170e1bc8f38d882627476e00276effc4084b927252b68c9401d42bfac7cf24e3",
+    "/work/results/s2_source_norms_20261007_2224/source_150ps.mat": "f58aa70db7c92f167347a495f272634b29d05565dcea50c115028b697e9fac81",
+    "/work/results/s2_source_norms_20261007_2224/source_200ps.npz": "8ecdc429663b497e76c5ed9e33668a0c2326bde7759e5f247b1c31dc6443e2cd",
+    "/work/results/s2_source_norms_20261007_2224/source_200ps.mat": "3c80d3505034784524caf36c957c17cc82690cd6c989fb0a5ef0fb447a5e7da0"
+  },
+  "comparisons": {
+    "100_150": {
+      "norm_mag_min": 0.9999999999999994,
+      "norm_mag_max": 1.0000000000000007,
+      "norm_phase_deg_min": 13.732590237034573,
+      "norm_phase_deg_max": 13.750197489228857,
+      "power_ratio_min": 0.9999999999999982,
+      "power_ratio_max": 0.9999999999999998,
+      "modal_mag_ratio_min": 0.999662465626902,
+      "modal_mag_ratio_max": 1.0003306080204577
+    },
+    "150_200": {
+      "norm_mag_min": 0.9999999999999984,
+      "norm_mag_max": 0.9999999999999999,
+      "norm_phase_deg_min": 13.732590237032932,
+      "norm_phase_deg_max": 13.750197489227302,
+      "power_ratio_min": 0.9999999999999987,
+      "power_ratio_max": 1.0000000000000004,
+      "modal_mag_ratio_min": 0.999958254088604,
+      "modal_mag_ratio_max": 1.0000786424207817
+    },
+    "100_200": {
+      "norm_mag_min": 0.9999999999999983,
+      "norm_mag_max": 1.0,
+      "norm_phase_deg_min": 27.46518047406751,
+      "norm_phase_deg_max": 27.500394978456157,
+      "power_ratio_min": 0.9999999999999978,
+      "power_ratio_max": 0.9999999999999994,
+      "modal_mag_ratio_min": 0.9996760053614797,
+      "modal_mag_ratio_max": 1.0003362449592623
+    }
+  }
+}

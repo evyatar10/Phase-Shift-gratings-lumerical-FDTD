@@ -1,5 +1,9 @@
 # Full-optimization readiness criteria
 
+## Latest user direction,22:28 — accept N80; focus on failed gradients
+
+N80 is accepted for practical TE work. Further length certification is removed from readiness work unless a concrete consequential anomaly appears. Do not reopen this by following older checklist entries below. Global gradient calibration remains failed; it is the priority. Saved-source CPU171768 completed with preservation: duration-dependent raw phase matches source-normalization phase, with unchanged source power. This removes raw-prefix mismatch as evidence of stochastic noise; it does not cure the measured gradient discrepancy. Exact evidence and next action are at the TOP of the continuation.
+
 ## Update22:20 Israel — still not ready
 
 Access restored;40 FDTD solves verified. CPU-only saved-field export succeeded. N80 spatial width is0.87% below N98 in own windows,0.10% below using common N80 crop; not a convergence certificate. Duration-dependent point traces contain a phase-like change, whose cause and relevance to normalized power remain unresolved. Q3dB predictor audit found and tested corrections; it does not pass the failed TE gradient gate. See TOP continuation and Q3DB_AUDIT_2026-10-07.md for measured evidence and exact next steps.

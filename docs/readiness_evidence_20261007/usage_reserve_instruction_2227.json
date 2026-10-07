@@ -1,0 +1,12 @@
+{
+  "observed_at_local": "2026-10-07T22:27:46+03:00",
+  "source": "get_usage_limits",
+  "limit_id": "codex",
+  "window_minutes": 10080,
+  "used_percent": 95,
+  "remaining_percent": 5,
+  "other_pools": "unknown",
+  "user_pause_boundary_remaining_percent": 3,
+  "automation_update_status": "ACTIVE",
+  "no_reset_or_purchase": true
+}

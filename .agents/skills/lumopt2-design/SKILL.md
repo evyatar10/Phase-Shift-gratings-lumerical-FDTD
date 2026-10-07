@@ -54,3 +54,9 @@ inverse-design skill's `references/convergence-and-length.md`. Nominal 50 nm
 and N98 are retained working choices, not proof of convergence; distinguish
 mesh, duration, domain and physical mirror length, and recover saved profiles
 before scheduling another baseline solve.
+
+Latest user direction (October 7): accept N80 for practical TE planning and
+stop further length checks unless a concrete consequential anomaly appears.
+Length is no longer a readiness blocker. Use proportionate validation: a
+check needs a decision it could change; prioritize demonstrated gradient
+failures over exhaustive certification of settled design choices.

@@ -1,0 +1,39 @@
+{
+  "physicalN98_cropN80": {
+    "zero_baseline_halfmax_width_um": 19.743473582903924,
+    "halfmax_bracket_um": [
+      -9.874574569244146,
+      9.868899013659778
+    ],
+    "own_window": false,
+    "qualification": "Diagnostic zero-baseline half maximum; production metric uses (min+max)/2 and is unchanged"
+  },
+  "physicalN98_cropN98": {
+    "zero_baseline_halfmax_width_um": 19.743473582903924,
+    "halfmax_bracket_um": [
+      -9.874574569244146,
+      9.868899013659778
+    ],
+    "own_window": true,
+    "qualification": "Diagnostic zero-baseline half maximum; production metric uses (min+max)/2 and is unchanged"
+  },
+  "physicalN80_cropN80": {
+    "zero_baseline_halfmax_width_um": 19.74474640901674,
+    "halfmax_bracket_um": [
+      -9.875430562758607,
+      9.869315846258136
+    ],
+    "own_window": true,
+    "qualification": "Diagnostic zero-baseline half maximum; production metric uses (min+max)/2 and is unchanged"
+  },
+  "physicalN80_cropN98": {
+    "zero_baseline_halfmax_width_um": 19.74474640901674,
+    "halfmax_bracket_um": [
+      -9.875430562758607,
+      9.869315846258136
+    ],
+    "own_window": false,
+    "qualification": "Diagnostic zero-baseline half maximum; production metric uses (min+max)/2 and is unchanged"
+  },
+  "qualification": "Same native fixed domain/mesh, different physical length. Point profiles do not certify mesh/domain or gradient convergence. Sigma not used as width."
+}

@@ -1,0 +1,7 @@
+{
+  "phase_at_mean_frequency_deg": 13.741393863131718,
+  "linear_phase_delay_fs": 0.19873602745637245,
+  "maximum_phase_fit_residual_rad": 7.494005416219807e-16,
+  "zero_frequency_intercept_rad": 1.8599011220032935e-13,
+  "qualification": "Measured spectral phase ratio. Sign follows sourcenorm positive-exponent transform. This is an effective time shift, not independently identified internal cause."
+}
