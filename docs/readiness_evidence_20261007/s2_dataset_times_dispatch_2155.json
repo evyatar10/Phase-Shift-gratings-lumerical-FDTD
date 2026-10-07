@@ -1,0 +1,5 @@
+{
+  "rc": 1,
+  "out": "",
+  "err": "...\r\nTraceback (most recent call last):\n  File \"<stdin>\", line 16, in <module>\nAssertionError: New-only extraction preparation refused existing path\n"
+}

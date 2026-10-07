@@ -1,5 +1,78 @@
 # S2 calibration and restart correction continuation
 
+## Current state 22:20 Israel — 40 FDTD solves verified; saved-data findings
+
+Both clusters accessible. IGUM101434 N98/N80 cold checkpoint/artifact verification passed with repaired no-CAD fetch88fc9c; 40 FDTD solves verified complete. Native pair has N98 peak3 Tout0.994494448/modal0.975014120 and N80 Tout0.998878147/modal0.979402342. Do not pool native/Athena small derivatives: native/Athena Tout normalization differs. Original files unchanged.
+
+CPU-only IGUM101720 saved-profile extraction completed successfully by22:17. Queue empty and terminal report/log successful; sacct database unavailable, so not accounting-confirmed. Exact extractorbd5577e, support994c, ten offline tests passed in owner/root. All source/vendor/artifact hashes and FDTD class/constructor preserved. Report length_profiles_report_original_2220.json; verified MAT/NPZ fetched to results_from_igum/te_readiness_20261007/length_profiles_2222. Own-window FWHM N98=19.643715344um, N80=19.473301618um (-0.8675%). Common N80 crop: N98=19.492190806um versus19.473301618um (-0.0969%). Own-window envelope edge/peak is about0.71–0.74% versus1.94–2.02%; baseline-sensitive half-height matters. No mesh/domain/gradient convergence certificate or N80 production release.
+
+Athena CPU171739_0 completed0:0/3:00, all inputs preserved, official dataset Ey MAT traces fetched/hash-verified. Raw getdata absence was an API-readout issue, not missing recorded fields. Traces100/150/200 share exact t prefixes but not raw Ey. Exploratory1–20ps real/Hilbert fit gives ~13.74degree phase step per50ps, nearunit amplitude, .2–.7% residual. Point tails are small; neither tails nor this fit bound portpower/gradient errors. Global phase alone cancels from normalized power and does not invalidate power convergence. Cause not established. Text-only Claude exact Opus5.5 review agrees to inspect source norm/waveform and complex spectra before more GPU runs; reject its unsupported claim that no frequency/time-shift signature was demonstrated. No source/gradient correction released.
+
+Q3 dB saved-data audit and fixes: docs/Q3DB_AUDIT_2026-10-07.md. Six regression tests pass; full isolated calibration48/50 with same two stress failures, ~4seconds using selective MAT reader. Production CSV preserved. No-leakage forward holdout TM N100→165 misses T by6.6–7.1points while width agrees~0.5%; N120 ladder information improves markedly. TE long-ladder check passes but no matched TE N100 calibration rows. Rules/skills now require saved-data/math checks before long solves. No new FDTD this session; only CPU readers.
+
+Fresh22:15 IGUM queue empty, shared GUI0/50 and solver0/50, filesystem25.904TB free; enforceable quota headroom unknown. Local/Athena last21:42 storage88.22GiB/105.90GiB soft headroom. Account22:19 weekly6% remaining; other/model/Claude pools unknown, no reset/purchase. Existing30-minute heartbeat ACTIVE after21:43 reactivation. Conserve: no repeated broad audit/fanout.
+
+NEXT: finish focused checkpoint/commit, then bounded saved-source normalization inspection on Athena100/150/200 centers (CPU-only, fresh resource checks, private output, preserve all fingerprints), using official sourcenorm/sourcepower and saved ports. Compare actual spectrum/phase before deciding another physical solve. N98 production/free60, N70 deferred. Global calibration FAILED, duration-sensitive finite differences, mesh/domain/held-out gradients and hardware optimizer smoke still open. No coefficients or optimization release.
+
+## Current state 21:55 Israel — access restored; saved-data diagnosis progressing
+
+Both clusters are reachable again (21:42). Existing heartbeat reactivated via
+the app after the user's instruction to continue. Current weekly allowance
+11% at 21:42; model-specific/Claude pools unknown. Sol owns bounded resource
+checks and isolated fetch repair; root owns dispatch/scientific interpretation.
+
+IGUM101434 task0 N98 and task1 N80 have successful terminal wrapper logs and
+checkpoints (20:31:52/20:32:14). Live sacct database unavailable and scontrol
+records expired, so guarded cold verification is required before adopting
+results. Original fetch helper refused an incidental lumapi import by the
+dependency-hashing chain; no ingest. Isolated Sol repair SHA
+88fc9cc4475f3b609582a9e0ffd69078274807daf3cf0fd7401fba1123018fb1
+in TEMP/s2_length_fetch_repair_8yp6zjjx/fetch_length_native.py hashes the exact
+source files instead, retains original nested code maps, and adds CAD-import
+refusal. Four repair tests, nine original protocol tests and the actual local
+17-source map passed in root. Repaired read-only native capture is underway;
+evidence prefix length_resume_fetch_repaired_2155. No redispatch of simulations.
+
+Athena CPU inventory171733_0 COMPLETED0:0 in1:48. All nine saved time monitors
+have E/H datasets, scalar components and expected t shapes via getresult;
+all72 inputs unchanged. Original report SHA
+0bbba1ccd4aec748d553bb13dff06a4a448c0edb16bff05e319525c421ddc27f
+(`s2_time_result_inventory_report_original_2150.json`). Earlier raw getdata
+failure does not mean absent time fields. No physics/convergence pass.
+
+NEW CPU-only time trace export171739_0 submitted21:53:46, output
+/work/results/s2_dataset_times_20261007_2156. Extracts full Ey histories at
+three existing spatial time monitors for100/150/200ps; no FDTD. Frozen reader
+TEMP/s2_dataset_time_readout_vascfgd1/read_saved_times.py SHA
+b4b4944e174a2766c88ff7fa687a8fa9455805d16db6c7b120432ba67f5fc4cd,
+helper994c unchanged, eight offline tests pass. Exact dataset/raw time axes
+must match; components finite and aligned; 256MiB exported-payload cap and
+separate32MiB time-axis cap. Text-only Claude Opus5.5 reviewed the adaptation;
+model metadata verified, claims checked and qualifications saved. First export
+dispatch refused an existing wrapper path before upload; original failure
+preserved. Corrected new-only wrapper SHA
+aa8fbcf14af6e17b3221653ab271d8743de653da2f34b99c58b8a474e75d2400
+and operator TEMP/s2_dataset_time_ops_unique_1w06egth are the actual release.
+Inspect exact job/report and preservation before fetching compact traces.
+
+Fresh resource snapshot21:42: local88.22GiB free; Athena105.90GiB soft quota
+headroom; IGUM25.91TB filesystem free, enforceable quota headroom unknown.
+Proper lum_fdtd_gui query at dispatch showed1/50 in use, solver0/50.
+Global calibration remains FAILED; no coefficients/optimizer/full campaign.
+Next: inspect trace prefixes/tails without treating point fields as port-error
+bounds; verify N98/N80 spectra then obtain actual spatial profiles for FWHM.
+
+## Current state 19:27 Israel — heartbeat paused for access blocker
+
+The scheduled follow-up reused the fresh 19:23 dual-server timeout snapshot;
+no redundant SSH retry. As explicitly instructed by the heartbeat, automation
+`s2-overnight-inverse-design-readiness` was set to PAUSED and read back as PAUSED.
+This pauses agent wakeups only; no server job was cancelled or modified.
+Resume this thread after network/VPN restoration, reconcile exact jobs, then
+use the prepared recovery operator below. Scientific gates remain incomplete.
+Evidence: `readiness_evidence_20261007/heartbeat_paused_access_block_1927.json`.
+Checkpoint commit before this status note: 7d2b886.
+
 ## Current state 19:24 Israel — access still blocked; recovery operator prepared
 
 User asked to continue and requested a delivery estimate. Both independent

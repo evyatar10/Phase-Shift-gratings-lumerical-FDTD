@@ -110,6 +110,32 @@ preserved originals and 18 personal skill packages already available in Codex.
 
 ## Budget-aware autonomous work (user instruction, October 7)
 
+### Use existing evidence before long simulations
+
+The user explicitly prioritizes mathematical/physical analysis and reuse of
+saved results because FDTD solves are expensive. Before proposing a solve,
+inspect matching stored spectra, fields, calibration ladders and previous
+validation. Prefer server-side post-processing or an offline model check when
+it can answer the question. State the unresolved hypothesis, observable,
+decision/pass criterion, expected runtime, resource cost and how each outcome
+changes the next action. Estimate runtime from comparable measured jobs;
+do not treat a requested simulation duration as wall time.
+
+Use CMT/TCMT and the Q3dB predictor as family-qualified hypotheses, with
+conditioning, identifiability and held-out checks. A short-device anchor does
+not by itself identify all long-device loss/width trends. Keep TE/TM,
+conformal/PVA, geometry, normalization and solver-family provenance explicit.
+Do not use Q3dB model-derived width or sigma as the inverse-design FWHM wall.
+Preserve existing calibrations before refitting; compare predictions with
+previous confirmation results before commissioning more simulations.
+
+Plan independent analyses and bounded cluster jobs in parallel when useful,
+respecting shared license seats, storage and dependency gates. Use focused Sol
+tasks for routine collection/implementation/tests and Astra for unresolved
+physical assumptions, experimental design and interpretation. Use authorized
+text-only Claude review when helpful; verify its claims. Do not repeat audits
+or fan out agents merely to stay busy during a long solve.
+
 Use the installed budget-aware-research skill for this workflow. Its tested
 usage summarizer preserves unknown limits and never infers tokens remaining.
 

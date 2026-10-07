@@ -33,4 +33,16 @@ Pre-register prediction and pass bands before an authorized confirmation;
 then compare measured results and update the relevant calibration. Scope and
 worked examples: [Claude source](references/claude-original.md).
 
+The user prioritizes reuse of existing data over long simulation ladders.
+Before a new confirmation, inspect saved anchors/confirmation rows and test
+the extrapolation offline. Separate parameter identification from agreement
+at a fitted anchor: a single short-device row cannot independently establish
+coupling growth, intrinsic-loss saturation and asymptotic spatial width.
+Report sensitivity to borrowed family shape and the extrapolation distance.
+Check TCMT coupling symmetry/background assumptions and whether T is measured
+modal power, total flux or a fitted quantity before decomposing Q. Treat model
+inaccuracy, ill-conditioned inference and solver nonconvergence separately.
+An offline fit is not physical validation. Preserve original calibration CSV
+and raw data; regenerate into a new destination or isolated copy during review.
+
 The bundled runbook is historical evidence. Current user instructions, AGENTS.md, this Codex entrypoint and live code take precedence. Interpret repository paths from the repository root; historical memory references remain external and are not bundled.

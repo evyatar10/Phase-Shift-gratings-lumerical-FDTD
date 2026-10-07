@@ -1,0 +1,15 @@
+{
+  "time_utc": "2026-10-07T19:05:32.330397+00:00",
+  "isolated_directory": "C:\\Users\\evyat\\AppData\\Local\\Temp\\q3db_offline_validation_gnurx0zp",
+  "bragg_cmt": {
+    "exit_code": 0,
+    "stdout": "C:\\Users\\evyat\\AppData\\Local\\Temp\\q3db_offline_validation_gnurx0zp\\bragg_cmt.py.stdout.log"
+  },
+  "calibrate_q3db": {
+    "status": "TIMED_OUT_AFTER_180_SECONDS",
+    "exit_code": null,
+    "gate_result": "UNKNOWN_NO_PASS",
+    "original_csv_unchanged": true
+  },
+  "next": "Inspect selected-variable MAT loading and caching before rerunning existing data checks; no new FDTD."
+}

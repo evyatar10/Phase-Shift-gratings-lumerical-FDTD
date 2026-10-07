@@ -1,0 +1,308 @@
+{
+  "status": "MEASURED_POINT_TRACE_DIAGNOSTICS_ONLY",
+  "stages": {
+    "100": {
+      "time_input": {
+        "samples": 374755,
+        "t_first_s": 0.0,
+        "t_last_s": 9.999975429596532e-11,
+        "dt_median_s": 2.668410591894983e-16,
+        "real_valued": true,
+        "peak_abs": 0.9451479315757751,
+        "tail_windows_ps": {
+          "1": {
+            "samples": 3748,
+            "rms_over_trace_peak": 3.7231818720581606e-07,
+            "max_over_trace_peak": 1.201759891367618e-06
+          },
+          "5": {
+            "samples": 18738,
+            "rms_over_trace_peak": 4.2007470550861364e-07,
+            "max_over_trace_peak": 1.2449192454540026e-06
+          },
+          "10": {
+            "samples": 37476,
+            "rms_over_trace_peak": 5.140444860102223e-07,
+            "max_over_trace_peak": 1.7197176080217617e-06
+          }
+        }
+      },
+      "time_cavity": {
+        "samples": 374755,
+        "t_first_s": 0.0,
+        "t_last_s": 9.999975429596532e-11,
+        "dt_median_s": 2.668410591894983e-16,
+        "real_valued": true,
+        "peak_abs": 0.5237348079681396,
+        "tail_windows_ps": {
+          "1": {
+            "samples": 3748,
+            "rms_over_trace_peak": 5.72042745250402e-06,
+            "max_over_trace_peak": 8.552283621136924e-06
+          },
+          "5": {
+            "samples": 18738,
+            "rms_over_trace_peak": 6.809995077317259e-06,
+            "max_over_trace_peak": 1.1766167322087528e-05
+          },
+          "10": {
+            "samples": 37476,
+            "rms_over_trace_peak": 8.673657138987865e-06,
+            "max_over_trace_peak": 1.751557005181903e-05
+          }
+        }
+      },
+      "time_output": {
+        "samples": 374755,
+        "t_first_s": 0.0,
+        "t_last_s": 9.999975429596532e-11,
+        "dt_median_s": 2.668410591894983e-16,
+        "real_valued": true,
+        "peak_abs": 0.3389884829521179,
+        "tail_windows_ps": {
+          "1": {
+            "samples": 3748,
+            "rms_over_trace_peak": 8.510916239116874e-07,
+            "max_over_trace_peak": 1.3552068127814568e-06
+          },
+          "5": {
+            "samples": 18738,
+            "rms_over_trace_peak": 1.010929758680275e-06,
+            "max_over_trace_peak": 1.8324479251096399e-06
+          },
+          "10": {
+            "samples": 37476,
+            "rms_over_trace_peak": 1.2849258388927248e-06,
+            "max_over_trace_peak": 2.689703975788299e-06
+          }
+        }
+      }
+    },
+    "150": {
+      "time_input": {
+        "samples": 562133,
+        "t_first_s": 0.0,
+        "t_last_s": 1.4999989828500718e-10,
+        "dt_median_s": 2.668410591894983e-16,
+        "real_valued": true,
+        "peak_abs": 0.9512283802032471,
+        "tail_windows_ps": {
+          "1": {
+            "samples": 3748,
+            "rms_over_trace_peak": 1.0161042323410612e-07,
+            "max_over_trace_peak": 3.2239290248090916e-07
+          },
+          "5": {
+            "samples": 18738,
+            "rms_over_trace_peak": 9.444261456684804e-08,
+            "max_over_trace_peak": 3.7138763511238644e-07
+          },
+          "10": {
+            "samples": 37476,
+            "rms_over_trace_peak": 9.454515498306683e-08,
+            "max_over_trace_peak": 4.294556202006064e-07
+          }
+        }
+      },
+      "time_cavity": {
+        "samples": 562133,
+        "t_first_s": 0.0,
+        "t_last_s": 1.4999989828500718e-10,
+        "dt_median_s": 2.668410591894983e-16,
+        "real_valued": true,
+        "peak_abs": 0.5215044021606445,
+        "tail_windows_ps": {
+          "1": {
+            "samples": 3748,
+            "rms_over_trace_peak": 1.0401601586760937e-07,
+            "max_over_trace_peak": 1.7393542859602934e-07
+          },
+          "5": {
+            "samples": 18738,
+            "rms_over_trace_peak": 1.2274820563848019e-07,
+            "max_over_trace_peak": 2.306116401464578e-07
+          },
+          "10": {
+            "samples": 37476,
+            "rms_over_trace_peak": 1.5502103976912532e-07,
+            "max_over_trace_peak": 3.321619594695781e-07
+          }
+        }
+      },
+      "time_output": {
+        "samples": 562133,
+        "t_first_s": 0.0,
+        "t_last_s": 1.4999989828500718e-10,
+        "dt_median_s": 2.668410591894983e-16,
+        "real_valued": true,
+        "peak_abs": 0.3366004228591919,
+        "tail_windows_ps": {
+          "1": {
+            "samples": 3748,
+            "rms_over_trace_peak": 5.2385125206458404e-08,
+            "max_over_trace_peak": 8.894468222269275e-08
+          },
+          "5": {
+            "samples": 18738,
+            "rms_over_trace_peak": 5.3229183045837315e-08,
+            "max_over_trace_peak": 9.295398739992868e-08
+          },
+          "10": {
+            "samples": 37476,
+            "rms_over_trace_peak": 5.5014040913164136e-08,
+            "max_over_trace_peak": 1.0514155319781574e-07
+          }
+        }
+      }
+    },
+    "200": {
+      "time_input": {
+        "samples": 749510,
+        "t_first_s": 0.0,
+        "t_last_s": 1.9999977543298982e-10,
+        "dt_median_s": 2.668410591894983e-16,
+        "real_valued": true,
+        "peak_abs": 0.9504745006561279,
+        "tail_windows_ps": {
+          "1": {
+            "samples": 3748,
+            "rms_over_trace_peak": 1.2016918428498138e-07,
+            "max_over_trace_peak": 2.0504225421731029e-07
+          },
+          "5": {
+            "samples": 18738,
+            "rms_over_trace_peak": 1.2035798818847455e-07,
+            "max_over_trace_peak": 2.2614632088300783e-07
+          },
+          "10": {
+            "samples": 37476,
+            "rms_over_trace_peak": 1.2004325836157467e-07,
+            "max_over_trace_peak": 2.4558439112469564e-07
+          }
+        }
+      },
+      "time_cavity": {
+        "samples": 749510,
+        "t_first_s": 0.0,
+        "t_last_s": 1.9999977543298982e-10,
+        "dt_median_s": 2.668410591894983e-16,
+        "real_valued": true,
+        "peak_abs": 0.5181524753570557,
+        "tail_windows_ps": {
+          "1": {
+            "samples": 3748,
+            "rms_over_trace_peak": 1.480618207680217e-07,
+            "max_over_trace_peak": 1.5073921741633478e-07
+          },
+          "5": {
+            "samples": 18738,
+            "rms_over_trace_peak": 1.4807268100888586e-07,
+            "max_over_trace_peak": 1.517085897223586e-07
+          },
+          "10": {
+            "samples": 37476,
+            "rms_over_trace_peak": 1.4809087324566982e-07,
+            "max_over_trace_peak": 1.535721047903286e-07
+          }
+        }
+      },
+      "time_output": {
+        "samples": 749510,
+        "t_first_s": 0.0,
+        "t_last_s": 1.9999977543298982e-10,
+        "dt_median_s": 2.668410591894983e-16,
+        "real_valued": true,
+        "peak_abs": 0.3375561833381653,
+        "tail_windows_ps": {
+          "1": {
+            "samples": 3748,
+            "rms_over_trace_peak": 1.198706470611941e-07,
+            "max_over_trace_peak": 1.3184621481068328e-07
+          },
+          "5": {
+            "samples": 18738,
+            "rms_over_trace_peak": 1.1988700415611872e-07,
+            "max_over_trace_peak": 1.3536725741564418e-07
+          },
+          "10": {
+            "samples": 37476,
+            "rms_over_trace_peak": 1.198843046706708e-07,
+            "max_over_trace_peak": 1.3536725741564418e-07
+          }
+        }
+      }
+    }
+  },
+  "prefixes": {
+    "100_150": {
+      "time_input": {
+        "samples": 374755,
+        "time_prefix_bitwise_equal": true,
+        "field_prefix_bitwise_equal": false,
+        "relative_l2": 0.24314685573612077,
+        "max_difference_over_reference_peak": 0.2439808415880203
+      },
+      "time_cavity": {
+        "samples": 374755,
+        "time_prefix_bitwise_equal": true,
+        "field_prefix_bitwise_equal": false,
+        "relative_l2": 0.23753485987559664,
+        "max_difference_over_reference_peak": 0.23984312014983364
+      },
+      "time_output": {
+        "samples": 374755,
+        "time_prefix_bitwise_equal": true,
+        "field_prefix_bitwise_equal": false,
+        "relative_l2": 0.233685297173083,
+        "max_difference_over_reference_peak": 0.23206823066919652
+      }
+    },
+    "100_200": {
+      "time_input": {
+        "samples": 374755,
+        "time_prefix_bitwise_equal": true,
+        "field_prefix_bitwise_equal": false,
+        "relative_l2": 0.4825934323228445,
+        "max_difference_over_reference_peak": 0.47927710062293816
+      },
+      "time_cavity": {
+        "samples": 374755,
+        "time_prefix_bitwise_equal": true,
+        "field_prefix_bitwise_equal": false,
+        "relative_l2": 0.4716267759021447,
+        "max_difference_over_reference_peak": 0.4722420657230404
+      },
+      "time_output": {
+        "samples": 374755,
+        "time_prefix_bitwise_equal": true,
+        "field_prefix_bitwise_equal": false,
+        "relative_l2": 0.4640956274036902,
+        "max_difference_over_reference_peak": 0.4586221355610403
+      }
+    },
+    "150_200": {
+      "time_input": {
+        "samples": 562133,
+        "time_prefix_bitwise_equal": true,
+        "field_prefix_bitwise_equal": false,
+        "relative_l2": 0.2431469166894477,
+        "max_difference_over_reference_peak": 0.24194704148715418
+      },
+      "time_cavity": {
+        "samples": 562133,
+        "time_prefix_bitwise_equal": true,
+        "field_prefix_bitwise_equal": false,
+        "relative_l2": 0.2375350563605784,
+        "max_difference_over_reference_peak": 0.2412833514603072
+      },
+      "time_output": {
+        "samples": 562133,
+        "time_prefix_bitwise_equal": true,
+        "field_prefix_bitwise_equal": false,
+        "relative_l2": 0.23368533718512016,
+        "max_difference_over_reference_peak": 0.23433251779902953
+      }
+    }
+  },
+  "qualification": "Point Ey only, not injected-source isolation, port power, a global noise bound, calibration or convergence pass. Prefix mismatch does not alone identify nondeterminism or its cause."
+}

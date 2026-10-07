@@ -1,0 +1,11 @@
+{
+  "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_igum\\te_readiness_20261007\\length_profiles_2222",
+  "remote_sha256": {
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/s2_length_profiles_20261007_2216/N98_profiles.mat": "ab9d6168d50b2bb94694e51334647459d9990a08fea1ef1a0824bd9811db404a",
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/s2_length_profiles_20261007_2216/N98_profiles.npz": "d4352648d83b6088cddcb4326bfa43cdd83c413fbc0ea55085f2e21e31ed4841",
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/s2_length_profiles_20261007_2216/N80_profiles.mat": "d89bfe424a36f48b937f612739003835faede8464c8b3c8cfdf293a1741550d6",
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/s2_length_profiles_20261007_2216/N80_profiles.npz": "f97597ad48273d433319a3c8592f9e94d74633a10adb5c5d6214942449eb695b"
+  },
+  "report_sha256": "38fa0a4aea9efe3ebf6849b7508327615097b86541e988777232ef3301e3d8a0",
+  "accounting": "Unavailable database; empty queue and successful terminal report/log; not sacct-confirmed"
+}

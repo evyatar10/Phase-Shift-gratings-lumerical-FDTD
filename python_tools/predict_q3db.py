@@ -24,20 +24,21 @@ via the per-pol knob line, which rescales Qc rate (kappa prop. corr, measured
 corr^-2.9, MEASURED for TM at N=150; for TE this exponent is UNMEASURED and
 the output is a band, labeled).
 
-Two error bars are printed with every prediction: "model sensitivity" (the fit
+Two different uncertainty summaries are available: "model sensitivity" (the fit
 parameters wiggled) and "expected deviation" — the MEASURED spread of the
 hold-out backtests at the same extrapolation span (family "errband" in the CSV,
 written by calibrate_q3db.py). The second one is what a landed run is judged
-against; compare mode does that comparison for you.
+against for the measured multi-row protocol. Single-anchor extensions have no
+validated empirical error band; their sensitivity sweep is not a confidence interval.
 
 Every number printed is PREDICTED unless labeled; the confirmation-run spec
 is the dispatch note. Validity rules are printed with each output:
-  - calibration rows need 2*kappa*L >= ~3.2 (below that the device is too
-    short to carry the family shape — prediction refused);
+  - the historical 2*kappa*L >= ~3.2 rule is a family-shape heuristic,
+    not a measured length-convergence test for the current TE device;
   - T +-0.03 holds to ~30 periods beyond the anchored range; beyond ~45 it is
     a band, not a point (measured boundary, backtest B2-E);
   - a single-row anchor pins LEVELS but trusts the base family's Qi SHAPE —
-    quote the band, and one extra row ~30 periods away removes most of it.
+    report this assumption; another matched row can test, but not guarantee, it.
 
 EXTENSION SEMANTICS (user rule 2026-09-11): "extending" a device ALWAYS means
 adding UNIFORM periods on the outside. Whatever is inside the measured device
@@ -123,7 +124,9 @@ NUMERICS_NOTE = "y8.0/z8.8 box, 20nm window/4001pts (3nm/0.75pm if Q_L>5e4), dx5
 
 def load_calib():
     fams = {}
-    for line in open(CALIB).read().strip().splitlines()[1:]:
+    with open(CALIB) as stream:
+        lines = stream.read().strip().splitlines()[1:]
+    for line in lines:
         fam, param, val = line.split(",")[:3]
         fams.setdefault(fam, {})[param] = float(val)
     return fams
@@ -163,6 +166,10 @@ def design_N(p, T_target):
 def anchor_on_row(base, row):
     """Extend mode: keep BASE_FAMILY's rates/exponents, shift the Qc and Qi
     LEVELS so the curves pass exactly through the measured row."""
+    if not (np.isfinite([row["T"], row["Q_L"], row["N"], row["lam_nm"]]).all()
+            and 0 < row["T"] < 1 and row["Q_L"] > 0 and row["N"] > 0
+            and row["lam_nm"] > 0):
+        raise ValueError("Anchor needs 0<T<1 and finite positive Q_L, N and wavelength")
     p = dict(base)
     sqT = np.sqrt(row["T"])
     qc_meas, qi_meas = row["Q_L"] / sqT, row["Q_L"] / (1.0 - sqT)
@@ -175,6 +182,8 @@ def anchor_on_row(base, row):
     if "w_Finf" in p and np.isfinite(row.get("width_um", np.nan)):
         p["w_Finf"] += row["width_um"] - width_of_N(base, row["N"])
     p["n_lo"] = p["n_hi"] = row["N"]
+    p["anchor_N"] = row["N"]
+    p["anchor_T_condition"] = sqT / (2 * (1 - sqT))
     return p, qc_meas, qi_meas
 
 def rescale_family_to_corr(p, corr_from, corr_to):
@@ -220,22 +229,35 @@ def retune_corr(p, corr_now, pol, width_target, T_target):
                                  f" {width_target} um at this dB target"
                                  f" (knob-line guess was {corr_line:.1f} nm)")
     corr_new = brentq(miss, lo, hi, xtol=1e-2)
-    return rescale_family_to_corr(p, corr_now, corr_new), corr_new, \
+    candidate = rescale_family_to_corr(p, corr_now, corr_new)
+    n_star = design_N(candidate, T_target)
+    # A missing-N sentinel creates a discontinuity, not a valid width root.
+    # Never advertise convergence at that feasibility boundary as a design.
+    if n_star is None or not np.isfinite(n_star):
+        return None, corr_new, "corrugation search reached an unreachable length boundary"
+    residual = width_of_N(candidate, n_star) - width_target
+    if not np.isfinite(residual) or abs(residual) > max(1e-3, abs(width_target) * 1e-4):
+        return None, corr_new, f"corrugation search did not solve width (residual {residual:+.6g} um)"
+    return candidate, corr_new, \
         f"self-consistent at N*(corr); knob-line guess was {corr_line:.1f} nm"
 
 def validity_notes(p, n, corr=np.nan, pol="TM"):
     notes = []
     n_min, src = np.nan, ""
-    if "w_c" in p:                                       # w_c == 2*kappa*Lambda
+    if "w_c" in p:  # historical proxy for 2*kappa*Lambda, not a physical identity
         n_min = 3.2 / p["w_c"]
     elif np.isfinite(corr):                              # no width fit for this family
         kappa = KAPPA_C325_TM * corr / 325.0             # kappa prop. corr (MEASURED)
         n_min = 3.2 / (2 * kappa * (PITCH_TM_M if pol == "TM" else PITCH_TE_M))
         src = " (kappa from corr, EXPECTED)"
     if np.isfinite(n_min):
+        if p.get("anchor_N", np.inf) < n_min:
+            notes.append(f"ANCHOR WARNING: N={p['anchor_N']:.0f} is below the historical"
+                         f" family-shape heuristic N_min~{n_min:.0f}; a longer predicted"
+                         " device does not validate this short anchor")
         if n < n_min:
             notes.append(f"REFUSE: N={n:.0f} < N_min~{n_min:.0f} (2kL<3.2 — device too short to carry the family shape){src}")
-        notes.append(f"shortest usable calibration/anchor device: N_min ~ {n_min:.0f} (2kL>=3.2){src}")
+        notes.append(f"historical family-shape heuristic: N_min ~ {n_min:.0f} (2kL>=3.2); not a length-convergence certificate{src}")
     span = n - p.get("n_hi", n)
     if span > 45:
         notes.append(f"EXTRAPOLATION {span:.0f} periods beyond anchored range: T is a BAND not a point (measured boundary ~45)")
@@ -288,7 +310,12 @@ def print_prediction(fam, p, n, corr_note="", corr=np.nan, pol="TM", bands=None,
     print("  [ .. ] = model sensitivity (Qi +-7%, Qc rate +-1%)")
     span = max(0.0, n - p.get("n_hi", n))
     dql, dt, nsamp, key, few = deviation_band(bands or {}, span)
-    if corr_moved:      # the span buckets only cover LENGTH extrapolation
+    if "anchor_N" in p:
+        print("  expected deviation: no validated single-anchor error band;"
+              " multi-row family hold-outs do not establish extend-mode accuracy")
+        print(f"  anchor conditioning: relative Qi sensitivity to relative T error"
+              f" is {p['anchor_T_condition']:.2f}; borrowed shape uncertainty remains")
+    elif corr_moved:      # the span buckets only cover LENGTH extrapolation
         print(f"  {knob_band_line()}")
     elif nsamp:
         print(f"  expected deviation (from {nsamp:.0f} hold-outs at span {span:.0f}, bucket"
@@ -349,7 +376,9 @@ def compare(fam, p, corr, pol, bands, corr_moved=False):
     obs = print_prediction(fam, p, n, corr=corr, pol=pol, bands=bands,
                            corr_moved=corr_moved)
     dql, dt, nsamp, key, few = deviation_band(bands or {}, max(0.0, n - p.get("n_hi", n)))
-    if corr_moved:
+    if "anchor_N" in p:
+        dql, dt = np.nan, np.nan
+    elif corr_moved:
         dql, dt = QL_BAND_KNOB, T_BAND_KNOB
     print(f"\nMEASURED vs PREDICTED at N={n:.0f}:")
     if not COMPARE_FROM_ROW and p.get("n_lo", np.inf) <= n <= p.get("n_hi", -np.inf):
@@ -371,7 +400,8 @@ def compare(fam, p, corr, pol, bands, corr_moved=False):
             ("INSIDE" if abs(dev) <= b else "OUTSIDE")
         print(f"  {name}  PREDICTED {pred:>10.4f}   MEASURED {meas:>10.4f}"
               f"   dev {dev:+8.3f}{unit}   band +-{b:.3f}{unit}   {verdict}")
-    print("  bands: T/Q_L " + ("from the corr-knob band (EXPECTED)" if corr_moved else
+    print("  bands: T/Q_L " + ("unvalidated for single-anchor extension" if "anchor_N" in p else
+                             "from the corr-knob band (EXPECTED)" if corr_moved else
                                f"from {nsamp:.0f} hold-outs (bucket {key}"
                                + (", few samples -> max" if few else "") + ")")
           + f"; width +-{100*W_BAND_REL:.0f}%, lambda +-{LAM_BAND_NM:.1f} nm (standing)")
@@ -453,7 +483,8 @@ def main():
     print(f"CONFIRMATION RUN SPEC (ONE run): {NUMERICS_NOTE}")
     print(f"  EXPECTED: T={obs['T']:.4f}, Q_L={obs['Q_L']:.0f}, lam~{lam_s},"
           f" width~{w_s}")
-    print("  pass bands (design-grade): Q_L +-10%, T +-0.03, width +-5%")
+    print("  proposed confirmation criteria: Q_L +-10%, T +-0.03, width +-5%"
+          + ("; single-anchor prediction accuracy is not yet validated" if "anchor_N" in p else ""))
 
 if __name__ == "__main__":
     main()

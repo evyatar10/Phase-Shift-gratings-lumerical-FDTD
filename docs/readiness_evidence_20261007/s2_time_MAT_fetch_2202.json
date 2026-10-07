@@ -1,0 +1,24 @@
+{
+  "time_utc": "2026-10-07T19:01:38.578549+00:00",
+  "source_job": "171739_0",
+  "files": [
+    {
+      "duration_ps": 100,
+      "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\te_readiness_20261007\\time_traces_2202\\time_components_100ps.mat",
+      "sha256": "a5b24d72873ffc21116da871c0e8c890df4186c96f57fb6e400a63e2c9bc4c4a",
+      "bytes": 11325260
+    },
+    {
+      "duration_ps": 150,
+      "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\te_readiness_20261007\\time_traces_2202\\time_components_150ps.mat",
+      "sha256": "954b1448ae8eddb38220ca6ab8713b83bba62f9c9199ba864d8f129387d96430",
+      "bytes": 16987996
+    },
+    {
+      "duration_ps": 200,
+      "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\results_from_athena\\te_readiness_20261007\\time_traces_2202\\time_components_200ps.mat",
+      "sha256": "c3a16030c313daff23e759ccf804a8c97768a27974f3d154d9f6fcad79e3a50a",
+      "bytes": 22346698
+    }
+  ]
+}

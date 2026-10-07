@@ -1,0 +1,111 @@
+{
+  "status": "EXPLORATORY_PHASE_FIT_NOT_CAUSAL_PROOF",
+  "measured": {
+    "time_input": {
+      "100_150": {
+        "fit_window_ps": [
+          1,
+          20
+        ],
+        "coeff_ref": 0.9715177845159216,
+        "coeff_quadrature": 0.23746002835876792,
+        "amplitude": 1.0001170285016008,
+        "phase_deg": 13.735038609589969,
+        "relative_residual_l2": 0.0066958842226800906
+      },
+      "150_200": {
+        "fit_window_ps": [
+          1,
+          20
+        ],
+        "coeff_ref": 0.9715233023306533,
+        "coeff_quadrature": 0.23746600321260153,
+        "amplitude": 1.0001238071625058,
+        "phase_deg": 13.735296058669634,
+        "relative_residual_l2": 0.006699681270531722
+      },
+      "100_200": {
+        "fit_window_ps": [
+          1,
+          20
+        ],
+        "coeff_ref": 0.8874213571629979,
+        "coeff_quadrature": 0.4613822296156698,
+        "amplitude": 1.0001950944461504,
+        "phase_deg": 27.47052448545543,
+        "relative_residual_l2": 0.013391275830702725
+      }
+    },
+    "time_cavity": {
+      "100_150": {
+        "fit_window_ps": [
+          1,
+          20
+        ],
+        "coeff_ref": 0.9713964162746499,
+        "coeff_quadrature": 0.2376746828083536,
+        "amplitude": 1.0000501249433873,
+        "phase_deg": 13.748636104323147,
+        "relative_residual_l2": 0.0020664491035826877
+      },
+      "150_200": {
+        "fit_window_ps": [
+          1,
+          20
+        ],
+        "coeff_ref": 0.9714020402559307,
+        "coeff_quadrature": 0.23767407533545434,
+        "amplitude": 1.000055443412988,
+        "phase_deg": 13.748525719903025,
+        "relative_residual_l2": 0.002072246286691033
+      },
+      "100_200": {
+        "fit_window_ps": [
+          1,
+          20
+        ],
+        "coeff_ref": 0.8871235420906404,
+        "coeff_quadrature": 0.4617502522664488,
+        "amplitude": 1.000100732126306,
+        "phase_deg": 27.49710173596802,
+        "relative_residual_l2": 0.004141523237301098
+      }
+    },
+    "time_output": {
+      "100_150": {
+        "fit_window_ps": [
+          1,
+          20
+        ],
+        "coeff_ref": 0.9717277697831517,
+        "coeff_quadrature": 0.23787995764314843,
+        "amplitude": 1.0004207778810095,
+        "phase_deg": 13.755545523235751,
+        "relative_residual_l2": 0.003081251970016925
+      },
+      "150_200": {
+        "fit_window_ps": [
+          1,
+          20
+        ],
+        "coeff_ref": 0.971735538800696,
+        "coeff_quadrature": 0.23788053976721868,
+        "amplitude": 1.0004284624940567,
+        "phase_deg": 13.755472107916406,
+        "relative_residual_l2": 0.0030808155791439123
+      },
+      "100_200": {
+        "fit_window_ps": [
+          1,
+          20
+        ],
+        "coeff_ref": 0.8876677587979764,
+        "coeff_quadrature": 0.462305741222122,
+        "amplitude": 1.0008399714121923,
+        "phase_deg": 27.510925382589498,
+        "relative_residual_l2": 0.006161606234570596
+      }
+    }
+  },
+  "qualification": "Same-prefix real Ey fitted to reference and Hilbert quadrature over1..20ps. Hilbert endpoint effects and dispersion remain; no power/gradient correction authorized."
+}

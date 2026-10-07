@@ -1,0 +1,15 @@
+{
+  "archive": "saved_data_review_and_readers_2220.zip",
+  "archive_sha256": "6b2ee2520006bd147203970c8d949ba619be118301be8b381a31579d3fd775cf",
+  "model_reviews": {
+    "Q3db": "claude-opus-5-5",
+    "phase": "claude-opus-5-5"
+  },
+  "tests": {
+    "length_profile_offline": 10,
+    "q3db_regression": 6,
+    "Q3db_existing_matrix": "48/50; 2 preserved B2-E stress failures",
+    "skill_validation": "both modified skills valid"
+  },
+  "remaining_gates": "global gradient FAILED; no optimizer release"
+}

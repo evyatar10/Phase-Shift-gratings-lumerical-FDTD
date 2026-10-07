@@ -1,0 +1,28 @@
+{
+  "status": "READY_FOR_ROOT_REVIEW_OFFLINE_ONLY_NO_REMOTE",
+  "directory": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_length_profiles_final_101434",
+  "files_sha256": {
+    "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_length_profiles_final_101434\\extract_length_profiles.py": "bd5577e09d587ef3c921fa4da35de6526b3e60e5afab71dfc91f0c4e534b1eb5",
+    "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_length_profiles_final_101434\\spatial_support.py": "994c3e9757a10b5bd8ea211aaee8425c5d3540203a4da04b0439684163baf6ca",
+    "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_length_profiles_final_101434\\test_length_profiles.py": "4d4c6b2ed35495a92adb7b0422677c2e55ea831fc5bfe832e92b5977075b2022"
+  },
+  "tests": {
+    "count": 10,
+    "exit_code": 0,
+    "coverage": [
+      "fake positive profile extraction allcomponent y integral and both crops",
+      "actual pinned local CP schema and termination",
+      "hash/path/grid/Eshape/status/selection/crop/mutation refusals",
+      "bad canonical API and termination refusal"
+    ]
+  },
+  "root_review_fixes": [
+    "canonical API taken from actual CP scope research path; passed home alias must resolve to canonical",
+    "dt tolerance completion",
+    "17 source/vendor/helper/self snapshots before and after",
+    "preservation exceptions report failed closed",
+    "FDTD class and constructor change fail closed",
+    "MAT exclusive xb writer"
+  ],
+  "limitations": "Fake CPU tests only; no CAD or remote access; no physical width claim. Root owns dispatch."
+}

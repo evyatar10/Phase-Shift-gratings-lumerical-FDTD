@@ -23,8 +23,9 @@ Noise floors used for weights: T mesh jitter 0.0018 (tm_span_conv_c325);
 lnQ_L 1% below Q=5e4, 20% above (grid/ring-down adequacy, memory
 project_highq_measurement_adequacy).
 
-Usage:  python calibrate_q3db.py            # full backtest report to stdout
-        python calibrate_q3db.py --csv out  # also write calibration table
+Usage: python calibrate_q3db.py prints the report AND replaces the adjacent
+q3db_calibration.csv. There is no --csv option. For read-only audits run an
+isolated copy with its own CSV; preserve the production calibration.
 """
 
 import glob
@@ -88,12 +89,20 @@ def parse_name(fname):
     d["pol"] = "TM" if "_TM_" in fname else "TE"
     return d
 
-def load_mat_row(path):
-    m = loadmat(path, squeeze_me=True)
+def load_mat_row(path, *, require_tcmt=True):
+    # Stored files also contain large field arrays. Only these observables are
+    # used by calibration; loading every field made the offline audit time out.
+    m = loadmat(path, squeeze_me=True, variable_names=[
+        "resonance_transmission", "resonance_wavelength_nm", "spectral_fwhm_nm",
+        "fwhm_m", "pitch_m", "corrugation_depth_m", "wl_nm", "T", "R"])
     row = parse_name(os.path.basename(path))
     T = float(m["resonance_transmission"])
     lam = float(m["resonance_wavelength_nm"])
     fw = abs(float(m["spectral_fwhm_nm"]))
+    if not (np.isfinite([T, lam, fw]).all() and T > 0 and lam > 0 and fw > 0):
+        raise ValueError(f"Invalid saved observables: {path}")
+    if require_tcmt and T >= 1:
+        raise ValueError(f"Invalid observables for finite positive TCMT Q inference: {path}")
     row.update(
         file=os.path.basename(path), T=T, lam=lam, QL=lam / fw,
         fwhm_um=float(m["fwhm_m"]) * 1e6,
@@ -101,7 +110,11 @@ def load_mat_row(path):
         wl_nm=np.asarray(m["wl_nm"], float), Tspec=np.asarray(m["T"], float),
         Rspec=np.asarray(m["R"], float),
     )
-    row["Qc"], row["Qi"], row["A_cond"] = qc_of(T, row["QL"]), qi_of(T, row["QL"]), cond_A(T)
+    # Width-only comparisons can use saved profiles with T>=1; these rows
+    # must not silently acquire a negative intrinsic Q or enter a TCMT fit.
+    row["Qc"], row["Qi"], row["A_cond"] = (
+        (qc_of(T, row["QL"]), qi_of(T, row["QL"]), cond_A(T))
+        if T < 1 else (np.nan, np.nan, np.nan))
     row["sig_lnQL"] = SIG_LNQ_LO if row["QL"] < Q_ADEQ else SIG_LNQ_HI
     row["sig_lnQi"] = row["sig_lnQL"] + row["A_cond"] * SIG_T / T
     row["sig_lnQc"] = row["sig_lnQL"] + SIG_T / (2 * T)
@@ -110,8 +123,9 @@ def load_mat_row(path):
     assert T > 0.02, f"dead device: {path}"
     return row
 
-def load_family(dirkey, pred):
-    rows = [load_mat_row(p) for p in sorted(glob.glob(os.path.join(DIRS[dirkey], "*.mat")))]
+def load_family(dirkey, pred, *, require_tcmt=True):
+    rows = [load_mat_row(p, require_tcmt=require_tcmt)
+            for p in sorted(glob.glob(os.path.join(DIRS[dirkey], "*.mat")))]
     return sorted([r for r in rows if pred(r)], key=lambda r: r["N"])
 
 def load_itai(pol):
@@ -498,7 +512,8 @@ def b11_apodized():
     results_from_athena/tm_te_apod/graphs/apod_summary.csv (rows "TM,0"/"TE,0")."""
     for pol, test, A0_WIDTH, A0_LAM in (("TM", "B11", 17.8992, 1523.57),
                                         ("TE", "B11-TE", 15.2164, 1570.74)):
-        rows = load_family("apod", lambda r, pol=pol: r["pol"] == pol)
+        rows = load_family("apod", lambda r, pol=pol: r["pol"] == pol,
+                           require_tcmt=False)  # B11 checks spatial width only
         pitch = rows[0]["pitch"]
         n_eff = A0_LAM * 1e-9 / (2 * pitch)
         kap0 = engine_calibrate_kappa_width(A0_WIDTH, 80, n_eff, pitch, 0.039e6)
