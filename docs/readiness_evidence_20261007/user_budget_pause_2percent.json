@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-07T22:39:05.129203+03:00",
+  "account_remaining_percent": 2,
+  "window_minutes": 10080,
+  "other_pools": "unknown",
+  "automation_id": "s2-overnight-inverse-design-readiness",
+  "automation_status": "PAUSED",
+  "reason": "User requested pause at2percent or below",
+  "last_commit": "60cc47e",
+  "next_action": "Prepare bounded current-code S1 N98/free60 restart smoke from pinned historical vector; not yet prepared or submitted. S2 gradient failure remains separate.",
+  "server_changes": "No new solve or cancellation this heartbeat",
+  "resume": "Requires user direction"
+}

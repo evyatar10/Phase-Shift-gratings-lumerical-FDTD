@@ -1,5 +1,9 @@
 # S2 calibration and restart correction continuation
 
+## PAUSED at user-requested2% account reserve
+
+Actual allowance reached2% remaining; existing heartbeat status confirmed PAUSED. Autonomous work stopped as requested. Server jobs/artifacts untouched;40 verified solves unchanged. Last validated checkpoint60cc47e. Next action: prepare the bounded current-code S1 N98/free60 restart smoke described below; not yet prepared/submitted. S2 calibration remains failed and separate. Resume only on user direction. Evidence: readiness_evidence_20261007/user_budget_pause_2percent.json.
+
 ## Main-goal checkpoint and S1 directional evidence — latest heartbeat
 
 Main outcome: working TE transmission optimization with maintained spatial FWHM. Critical next route is a bounded current-code S1 restart test, independently of S2; length/Q3dB side investigations are deferred. User requested periodic goal alignment; added to AGENTS.md and work-alone skill, validated skill format. Latest account query3%weekly remaining; pause only at<=2% as requested, not3%. No new jobs in this heartbeat. No full campaign release.

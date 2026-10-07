@@ -1,5 +1,10 @@
 # Pi-shift Bragg grating project
 
+New-chat entry point: read `docs/TE_NEW_CHAT_HANDOFF_2026-10-07.md` first.
+Autonomous work and the existing heartbeat are PAUSED at the user-requested
+2% account reserve. Resume only on user direction; the handoff records the
+shortest next route through S1, separately from S2's failed calibration.
+
 ## Main-goal checkpoint (user instruction, October 7)
 
 At meaningful milestones, changes of direction, and before another expensive
