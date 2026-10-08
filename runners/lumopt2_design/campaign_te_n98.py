@@ -28,7 +28,7 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 from runners.lumopt2_design import campaign_te_s1 as s1
 from runners.lumopt2_design import campaign_te_s2 as s2
-from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3
+from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3, TE_S1_N98_T9711
 
 MAX_FEVAL = 8        # persistent forward budget per lane; raise + redeploy to extend
 
@@ -71,6 +71,17 @@ LANES = [
          scan=s2.SCAN_CENTER_NM, two_kl_floor=None,
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True),
+    # task 5 (2026-10-08 ~14:00): S1 from its converging best (0.97112) with the
+    # innermost-corrugation floor lifted 100 -> 0 nm (tooth 1 sat ON the 100 nm
+    # bound with gT pushing down; offline QP on the 172603_0 it0 gradient:
+    # predicted dFOM/step 0.00048 -> 0.0039, i.e. the optimizer wants the
+    # cavity-side taper S2 already has) + moderate shift weighting with a 3 nm
+    # per-step shift trust (172159 showed big shift steps break the width model).
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98_c0", start=TE_S1_N98_T9711,
+         scan=1561.04, two_kl_floor=3.0, corr_min=0.0, trust={"shift": 3.0},
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, metric={"shift": 175.0},
+         max_feval=20),
 ]
 N_TASKS = len(LANES)
 
@@ -86,6 +97,10 @@ def lane_spec(task_idx):
         adj_fix_re=ln["port"][0], adj_fix_im=ln["port"][1],
         wgp_d_halfrange_nm=ln.get("metric"),
         wgp_v3_perp_glam=ln.get("perp", False))
+    if "corr_min" in ln:
+        spec.corr_min_nm = ln["corr_min"]
+    if "trust" in ln:
+        spec.trust_nm = dict(ln["trust"])
     spec.adj_fix_field_re, spec.adj_fix_field_im = ln["field"]
     assert spec.n_periods_side == 98
     return spec
