@@ -937,6 +937,24 @@ check("V23 nonfinite gLambda: degraded step logged with diagnostic indices, no r
       r23nan["exc"] is None and "NO gLambda" in r23nan["out"]
       and len(r23nan["pr"][0].get("nonfinite_glambda_indices", [])) == NP_, str(r23nan["exc"]))
 
+# -- V26 PERP-GLAMBDA (claude-te 2026-10-08, S2 phase-leak fix): with the flag on,
+# a gT that is mostly ALONG gλ is projected so the logged |gT| collapses to the
+# perpendicular part and the run still steps; flag off logs nothing.
+rng25 = np.random.default_rng(25)
+perp25 = rng25.standard_normal(NP_)
+perp25 -= (perp25 @ gLamv) / (gLamv @ gLamv) * gLamv
+gT25 = 50.0 * gLamv / np.linalg.norm(gLamv) + 0.02 * perp25 / np.linalg.norm(perp25)
+s25 = [dict(fom=F0, W=W0), dict(fom=F0 + .001, W=W0)]
+r25 = drive(s25, gT25, max_iter=2, wgp_v3_perp_glam=True)
+q25 = r25["pr"][0]
+check("V26 perp-gλ: |cos(gT,gλ)| ~ 1 logged, |gT| projected 50 -> ~0.02, run steps",
+      r25["exc"] is None and abs(abs(q25.get("perp_cos_T", 0)) - 1) < 1e-3
+      and q25.get("perp_gT_n", 1) < 0.05 and q25.get("perp_gT_n0", 0) > 40 and len(r25["ev"]) == 2,
+      f"exc {r25['exc']} cos {q25.get('perp_cos_T')} |gT| {q25.get('perp_gT_n0')} -> {q25.get('perp_gT_n')}")
+r25off = drive(s25, gT25, max_iter=2)
+check("  tooth: flag off -> no projection logged",
+      "perp_cos_T" not in r25off["pr"][0], str(r25off["pr"][0].get("perp_cos_T")))
+
 # -- V24 shared hard width: even sub-tolerance violations cannot buy transmission.
 strict24 = (eng.RHO_DN*W0, W0)
 for excess24 in (0.03, 1e-7):

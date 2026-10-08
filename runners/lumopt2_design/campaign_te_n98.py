@@ -62,6 +62,14 @@ LANES = [
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM,
          metric={"shift": 375.0}),
+    # task 4 (2026-10-08 ~09:40): S2 with gλ projected out of gT/gW. MEASURED on
+    # 172063_1 it0/it1: cos(gT, gλ) = +1.0000, |gT| 1.5 (S1: 0.0012) -> predicted
+    # gains 0.058/0.116 vs measured 3e-4: a narrow-line phase leak. After the
+    # projection |gT| = 0.00097/0.00093 (stable, S1-sized). Legacy metric.
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_perp", start=s2.SEED,
+         scan=s2.SCAN_CENTER_NM, two_kl_floor=None,
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True),
 ]
 N_TASKS = len(LANES)
 
@@ -75,7 +83,8 @@ def lane_spec(task_idx):
         fwhm0_um=ln["fwhm0"], wgp_target_um=ln["fwhm0"],
         wg_anchor={"softw": ln["softw0"], "fwhm": ln["fwhm0"]},
         adj_fix_re=ln["port"][0], adj_fix_im=ln["port"][1],
-        wgp_d_halfrange_nm=ln.get("metric"))
+        wgp_d_halfrange_nm=ln.get("metric"),
+        wgp_v3_perp_glam=ln.get("perp", False))
     spec.adj_fix_field_re, spec.adj_fix_field_im = ln["field"]
     assert spec.n_periods_side == 98
     return spec
