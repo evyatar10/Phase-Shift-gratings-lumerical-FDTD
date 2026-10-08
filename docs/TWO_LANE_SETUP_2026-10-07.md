@@ -150,6 +150,24 @@ Codex should not run a second copy of the same N98 v3 lanes.
 | Seat rule: each solve takes ceil(SMs/16) seats | Correct; matches our 2026-10-04 measurement. |
 | N98 → N80 IGUM length pair | Good measurement (S2 width −0.9 %); the user then fixed N = 98. |
 
+### 6a′. CORRECTION 2026-10-08 (MEASURED on hardware, Claude lane)
+
+Codex was **right about the symptom**: S2's transmission gradient is wrong.
+Claude's claim that the S2 failure "is not evidence the adjoint is wrong" was
+itself wrong, and Claude's uncalibrated-port S2 runs failed: measured/predicted
+gain ≈ 0.005 (172063_1).
+**Mechanism (found 2026-10-08):** cos(gT, gλ) = +1.0000 and |gT| = 1.5 on S2
+versus 0.0012 on S1. At a narrow resonance (S2 Q ≈ 7700, 5× S1's), a few-degree
+adjoint phase error leaks the quadrature (phase) sensitivity into the transmission
+gradient. At the peak that leak points exactly along the resonance-shift direction
+gλ and is ~1000× the true signal. S1's broader line keeps the leak small, which is
+why S1 works (gain ratios 0.87–0.91).
+**Fix:** `wgp_v3_perp_glam` projects gλ out of gT and the fixed-λ gW. The
+residual is 0.00097, stable across iterates and S1-sized. It is being tested on
+hardware in task `lumopt2_te_s2_n98_perp`.
+The §6b items below remain: a day of forensics without finding the mechanism,
+and blocking S1.
+
 ### 6b. Mistakes
 
 | Mistake | Cost |
