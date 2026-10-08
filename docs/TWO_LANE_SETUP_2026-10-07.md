@@ -228,6 +228,7 @@ Neither lane edits the other's branch.
 | 2026-10-07 | both | 9a8d440 | shared baseline at the split | — |
 | 2026-10-07 | claude | 0a27c0e | engine reverts of §6c | — |
 | 2026-10-08 | claude | (this branch) | N = 98 constant for both seeds; `campaign_te_n98.py`, job 172063 | — |
+| 2026-10-08 | claude | see `git log` (wgp_v3_perp_glam) | **S2 narrow-line phase-leak fix VALIDATED on hardware**: first step t_pk 0.9691 → 0.9724, ratio 0.64 (old S2 runs: ~+0.0004 per step). Codex: cherry-pick this before any S2 work. | — |
 
 ## 10. Open items for the user
 
