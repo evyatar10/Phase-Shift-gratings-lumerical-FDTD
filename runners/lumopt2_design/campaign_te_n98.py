@@ -28,7 +28,7 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 from runners.lumopt2_design import campaign_te_s1 as s1
 from runners.lumopt2_design import campaign_te_s2 as s2
-from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3, TE_S1_N98_T9711
+from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3, TE_S1_N98_T9711, TE_S2_N98_T9739
 
 MAX_FEVAL = 8        # persistent forward budget per lane; raise + redeploy to extend
 
@@ -83,6 +83,25 @@ LANES = [
          port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, metric={"shift": 175.0},
          max_feval=20),
+    # task 6 (2026-10-09 ~02:00): S2 A/B — perp fix + shifts weighted like S2's
+    # corrugations (half-range 375) with a 3 nm per-step shift trust (the S1 c0
+    # setting: ratios 0.67/0.94; 15 nm broke the width model on 172159). Starts
+    # from the perp lane's best (ev4, 0.97386) so no steps are repeated.
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_perp_sw", start=TE_S2_N98_T9739,
+         scan=1560.42, two_kl_floor=None, trust={"shift": 3.0, "avg": 25.0},
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True,
+         metric={"shift": 375.0}, max_feval=24),
+    # task 7 (2026-10-09 ~02:10, user: "do the tooth shifts play the main
+    # role?"): S2 SHIFTS ONLY — corr/avg/cavity frozen (trust 1e-3 nm = sliver),
+    # shifts free within a 3 nm per-step trust, perp fix on. Isolates the shift
+    # contribution to T at fixed width, from the same start as task 6.
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_shiftonly", start=TE_S2_N98_T9739,
+         scan=1560.42, two_kl_floor=None,
+         trust={"shift": 3.0, "corr": 1e-3, "avg": 1e-3, "wcav": 1e-3},
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True,
+         metric={"shift": 375.0}, max_feval=16),
 ]
 N_TASKS = len(LANES)
 
