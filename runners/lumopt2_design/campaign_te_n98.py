@@ -35,6 +35,7 @@ MAX_FEVAL = 8        # persistent forward budget per lane; raise + redeploy to e
 LANES = [
     # windows/recenter/λ-trust/2κL floor are the seed specs' own N98 values
     dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98", start=TE_S1_N98_EVAL3,
+         max_feval=20,                 # extended 2026-10-08: 6/6 accepted, 0.9533->0.9701
          scan=1561.04,                 # the start design's MEASURED λ_pk
          two_kl_floor=3.0,             # 2κL 3.325 at start (spec 3.3 left no room)
          port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
