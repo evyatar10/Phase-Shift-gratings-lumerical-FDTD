@@ -71,7 +71,7 @@ def lane_spec(task_idx):
     spec = dataclasses.replace(
         ln["base"], label=ln["label"], seed_override=tuple(ln["start"]),
         scan_center_nm=ln["scan"], two_kl_floor=ln["two_kl_floor"],
-        max_feval=MAX_FEVAL,
+        max_feval=ln.get("max_feval", MAX_FEVAL),   # per-lane extension
         fwhm0_um=ln["fwhm0"], wgp_target_um=ln["fwhm0"],
         wg_anchor={"softw": ln["softw0"], "fwhm": ln["fwhm0"]},
         adj_fix_re=ln["port"][0], adj_fix_im=ln["port"][1],
