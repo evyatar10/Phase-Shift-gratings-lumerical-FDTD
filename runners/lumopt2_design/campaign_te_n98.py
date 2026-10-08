@@ -68,6 +68,7 @@ LANES = [
     # gains 0.058/0.116 vs measured 3e-4: a narrow-line phase leak. After the
     # projection |gT| = 0.00097/0.00093 (stable, S1-sized). Legacy metric.
     dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_perp", start=s2.SEED,
+         max_feval=24,                 # extended 2026-10-08 22:15: fix validated (ratios 0.64, 0.37)
          scan=s2.SCAN_CENTER_NM, two_kl_floor=None,
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True),
