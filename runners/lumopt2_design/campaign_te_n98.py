@@ -108,10 +108,17 @@ LANES = [
     # Itai's 60 teeth are a local optimum; the outer 38 bulk periods are the
     # untouched lever. Start = perp best padded with bulk (corr 494.2/avg 1000).
     # Region x_half 30.6 -> 49.2 um (x1.61 DFT memory, EXPECTED ~39 GB) -> H200.
+    # 173622_8 SEGFAULTED (exit 139) in "Computing gradient fields" after both
+    # solves: the 98-free region x1.61 puts the per-lambda field arrays past
+    # ~2^31 elements / ~80 GB of live field sets (60-free fits). Second try:
+    # region y half 1250 -> 800 nm (widest tooth (1100+375)/2 = 738 nm still
+    # inside) and 501 -> 401 points (5 pm grid, ~41 pts per 0.2 nm line):
+    # ~0.5x the array. Mesh/box unchanged; within-lane deltas are the metric.
     dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_free98", start="free98",
          n_free=98, scan=1560.42, two_kl_floor=None,
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
-         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True, max_feval=12),
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True, max_feval=6,
+         region_y_half=800.0, n_wl=401),
 ]
 
 
@@ -142,6 +149,10 @@ def lane_spec(task_idx):
         adj_fix_re=ln["port"][0], adj_fix_im=ln["port"][1],
         wgp_d_halfrange_nm=ln.get("metric"),
         wgp_v3_perp_glam=ln.get("perp", False))
+    if "region_y_half" in ln:
+        spec.region_y_half_nm = ln["region_y_half"]
+    if "n_wl" in ln:
+        spec.n_wl_points = ln["n_wl"]
     if "corr_min" in ln:
         spec.corr_min_nm = ln["corr_min"]
     if "trust" in ln:
