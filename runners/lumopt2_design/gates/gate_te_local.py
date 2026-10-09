@@ -99,6 +99,10 @@ def gate(spec, workdir):
     objs = [n for q in names.values() for n in q] + [cavity]
     func = eng.make_func(spec)
     p0 = eng.seed_params(spec)
+    # _builder_ref draws per-tooth widths only (no shifts): compare at zero shift,
+    # else a non-zero seed (an optimizer best) reports 2*sum(shifts) as a mismatch
+    # (2026-10-09: S1 best 1.5387 nm, S2 best 0.6848 nm — both exactly 2*sum).
+    p0 = p0.copy(); p0[L.SL_SHIFT] = 0.0
     rng = np.random.default_rng(1)
     p1 = p0.copy()
     p1[L.SL_CORR] = np.clip(p1[L.SL_CORR] + rng.uniform(-40, 80, spec.n_free),

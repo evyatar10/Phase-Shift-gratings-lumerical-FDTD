@@ -102,14 +102,39 @@ LANES = [
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True,
          metric={"shift": 375.0}, max_feval=16),
+    # task 8 (2026-10-09 ~09:00): S2 with ALL 98 periods free (n_free 98, zero
+    # frozen). MEASURED: the 60-tooth S2 landscape is flat at 0.974 (perp lane
+    # ratios 0.02/-0.01; the best moved only inner corr, nothing at a bound) —
+    # Itai's 60 teeth are a local optimum; the outer 38 bulk periods are the
+    # untouched lever. Start = perp best padded with bulk (corr 494.2/avg 1000).
+    # Region x_half 30.6 -> 49.2 um (x1.61 DFT memory, EXPECTED ~39 GB) -> H200.
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_free98", start="free98",
+         n_free=98, scan=1560.42, two_kl_floor=None,
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True, max_feval=12),
 ]
+
+
+def free98_start():
+    """TE_S2_N98_T9739 (60 inner teeth) embedded in the 98-free layout; outer 38
+    teeth at S2's bulk (corr 494.2 / avg 1000 / shift 0), cavity from the best."""
+    base = dataclasses.replace(s2.SPEC_V3, n_free=98, seed_override=None,
+                               corr_seed_nm=None, avg_seed_nm=None)
+    p = eng.seed_params(base)
+    L, L60 = eng.layout(98), eng.layout(60)
+    for sl, sl60 in ((L.SL_CORR, L60.SL_CORR), (L.SL_AVG, L60.SL_AVG), (L.SL_SHIFT, L60.SL_SHIFT)):
+        p[sl.start:sl.start + 60] = TE_S2_N98_T9739[sl60]
+    p[L.I_CAV] = TE_S2_N98_T9739[L60.I_CAV]
+    return p
 N_TASKS = len(LANES)
 
 
 def lane_spec(task_idx):
     ln = LANES[task_idx]
+    start = free98_start() if isinstance(ln["start"], str) else ln["start"]
     spec = dataclasses.replace(
-        ln["base"], label=ln["label"], seed_override=tuple(ln["start"]),
+        ln["base"], label=ln["label"], seed_override=tuple(float(v) for v in start),
+        n_free=ln.get("n_free", ln["base"].n_free),
         scan_center_nm=ln["scan"], two_kl_floor=ln["two_kl_floor"],
         max_feval=ln.get("max_feval", MAX_FEVAL),   # per-lane extension
         fwhm0_um=ln["fwhm0"], wgp_target_um=ln["fwhm0"],
