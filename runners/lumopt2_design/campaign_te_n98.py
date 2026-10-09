@@ -117,7 +117,7 @@ LANES = [
     dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_free98", start="free98",
          n_free=98, scan=1560.42, two_kl_floor=None,
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
-         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True, max_feval=6,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True, max_feval=12,   # ledger from 173622_8 is 12; never reduce
          region_y_half=800.0, n_wl=401),
 ]
 
