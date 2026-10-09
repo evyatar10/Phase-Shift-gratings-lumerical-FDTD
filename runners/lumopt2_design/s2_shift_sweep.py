@@ -41,6 +41,12 @@ ROWS = [
     ("t2-4_5",    {2: 5.0, 3: 5.0, 4: 5.0}),
     ("t2-6_5",    {d: 5.0 for d in range(2, 7)}),
     ("t2-6_10",   {d: 10.0 for d in range(2, 7)}),
+    # rows 7-10 (2026-10-09 23:30, after row 5 MEASURED +0.0024 fom at W -0.06 %):
+    # extend the graded stretch outward and in amplitude
+    ("t2-10_5",   {d: 5.0 for d in range(2, 11)}),
+    ("t2-15_5",   {d: 5.0 for d in range(2, 16)}),
+    ("t2-6_15",   {d: 15.0 for d in range(2, 7)}),
+    ("t2-10_10",  {d: 10.0 for d in range(2, 11)}),
 ]
 N_TASKS = len(ROWS)
 
