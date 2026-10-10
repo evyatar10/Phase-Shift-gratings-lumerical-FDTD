@@ -31,6 +31,7 @@ from runners.lumopt2_design import campaign_te_s2 as s2
 from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3, TE_S1_N98_T9711, TE_S2_N98_T9725, TE_S2_N98_T9739
 
 MAX_FEVAL = 8        # persistent forward budget per lane; raise + redeploy to extend
+S1_SIM_TIME_PS = 50.0   # task 15: ladder 174823_6 MEASURED S1 best 50 ps 0.974332 vs 150 ps 0.974395 (6e-5)
 S2_SIM_TIME_PS = 150.0  # task 12: s2time ladder 174406 MEASURED |T250-T150| = 7e-5, windows 1e-4 (2026-10-10)
 
 LANES = [
@@ -191,6 +192,16 @@ LANES = [
          port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, perp=True,
          metric={"shift": 375.0}, max_feval=8),
+    # task 15 (2026-10-10 20:00): task 14 at a FIXED 50 ps (auto-shutoff off):
+    # the production shutoff biases S1's peak T by +0.0033 (174645_3), larger
+    # than the per-step gains this lane must resolve. Fresh label, fresh ev0.
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98_shiftfix50", start=TE_S1_N98_T9711,
+         scan=1561.04, two_kl_floor=3.0,
+         trust={"shift": 25.0, "avg": 25.0}, dlam=0.1,
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, perp=True,
+         metric={"shift": 375.0}, max_feval=8,
+         sim_time_ps=S1_SIM_TIME_PS, auto_shutoff_min=1e-12),
 ]
 
 
