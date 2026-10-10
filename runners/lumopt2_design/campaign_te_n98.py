@@ -214,6 +214,17 @@ LANES = [
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True,
          metric={"shift": 375.0}, gw_shift=-0.0004, max_feval=8,
          sim_time_ps=S2_SIM_TIME_PS, auto_shutoff_min=1e-12),
+    # task 17 (2026-10-10 evening, user: "sum the FAR field and minimise it"):
+    # S1 from 0.97439 (50 ps) with objective = -log(radiated power through the
+    # cladding plane) = angular spectrum, propagating waves, cos(theta)-weighted
+    # (rad_farfield). lambda projected out + 0.02 nm trust as in task 13.
+    # EXPECTED: same direction as T (1-T-R is the radiated power); the lane
+    # measures whether this gradient is better conditioned than T's.
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98_ffpow", start=TE_S1_N98_T9711,
+         scan=1561.04, two_kl_floor=3.0,
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, rad=True, ff=True, perp=True, dlam=0.02,
+         max_feval=8, sim_time_ps=S1_SIM_TIME_PS, auto_shutoff_min=1e-12),
 ]
 
 
@@ -246,6 +257,8 @@ def lane_spec(task_idx):
         wgp_v3_perp_glam=ln.get("perp", False))
     if ln.get("rad"):
         spec.rad_fom = True
+    if ln.get("ff"):
+        spec.rad_farfield = True
     if "band" in ln:
         spec.fwhm_bounds_um = tuple(ln["band"])
     if "dlam" in ln:

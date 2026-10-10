@@ -18,7 +18,7 @@ GATES = ["gate_projection_local.py", "gate_lam_chain.py",
          "gate_v3_local.py",
          "gate_persistence.py", "gate_width_contract.py",
          "gate_evaluation_budget.py", "gate_campaign_budget.py",
-         "gate_modal_guard.py", "gate_rad_fom_weights.py"]
+         "gate_modal_guard.py", "gate_rad_fom_weights.py", "gate_rad_farfield.py"]
 
 env = dict(os.environ, PYTHONIOENCODING="utf-8")   # the lam-chain gate prints λ
 for g in GATES:

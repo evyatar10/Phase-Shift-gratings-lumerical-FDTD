@@ -548,6 +548,15 @@ class CampaignSpec:
     rad_plane_y_half_um: float = 2.4  # inside the 6.8 um box, clear of the PML
     adj_fix_rad_re: float = 0.9667    # = S1's measured C_field (campaign_te_s1.py): same
     adj_fix_rad_im: float = 0.0366    # FieldRegion-source mechanism; EXPECTED to transfer
+    # rad_farfield (2026-10-10 evening, user: "sum the FAR field, not |E|^2 on a
+    # plane"): value = radiated POWER through the plane = angular spectrum of the
+    # plane field, propagating waves only, flux-weighted by cos(theta) = kz/k0.
+    # Same adjoint plumbing; source = conj(dV/dE*) = the same k-filter applied
+    # to the field (farfield_source). The plain |E|^2 plane sum (rad_farfield
+    # False) over-weights grazing/evanescent content and lost T by redirecting
+    # radiation (lanes 174543_10 / 174648_13).
+    rad_farfield: bool = False
+    rad_ff_n_clad: float = 1.444      # cladding index (project constant, CLAUDE.md section 4)
     best_metric: str = "fom"     # "fom" or measured "modal_peak3"
     # ★wgp_noise_freeze / wgp_noise_stop (2026-10-04, noise-aware trust cap —
     # Cao/Berahas/Scheinberg arXiv 2205.03667; Sun & Nocedal 2023): a filter
@@ -2398,6 +2407,55 @@ def rad_adjoint_source(E, W):
     return np.conj(E) * W[..., None]
 
 
+def _ff_resample_matrix(y, n_u):
+    """Linear-interpolation matrix A (n_u x len(y)) from the monitor's y grid
+    (non-uniform inside the mesh override) onto a uniform grid of n_u points
+    spanning the same range. Explicit so its transpose is exact."""
+    y = np.asarray(y, float)
+    yu = np.linspace(y[0], y[-1], n_u)
+    A = np.zeros((n_u, y.size))
+    j = np.clip(np.searchsorted(y, yu, side="right") - 1, 0, y.size - 2)
+    t = (yu - y[j]) / (y[j + 1] - y[j])
+    A[np.arange(n_u), j] = 1.0 - t
+    A[np.arange(n_u), j + 1] = t
+    return A, yu
+
+
+def farfield_power(E, x, y, lam_m, n_clad):
+    """(V, G) for the far-field objective on a Z-normal plane.
+    E is (nx, ny, 1, 1, 3) on the monitor grid (x uniform, y may not be).
+    V = sum_k w(k) |FFT2(A E)|^2 over the three components, with w = kz/k0 for
+    |k_par| < k0 (propagating, flux-weighted) and 0 otherwise: the radiated
+    power through the plane up to a constant (what a far-field monitor sums).
+    G = dV/dE* on the MONITOR grid = A^T F^H (w F A E); the adjoint source is
+    conj(G) (lumopt2 convention: plain sum <-> conj(E))."""
+    x = np.squeeze(np.asarray(x, float))
+    y = np.squeeze(np.asarray(y, float))
+    nx, ny = E.shape[0], E.shape[1]
+    dx = float(np.mean(np.diff(x)))
+    assert np.allclose(np.diff(x), dx, rtol=1e-3), "rad plane x grid must be uniform"
+    dy_u = float(np.min(np.diff(y)))
+    n_u = int(round((y[-1] - y[0]) / dy_u)) + 1
+    A, yu = _ff_resample_matrix(y, n_u)
+    Em = E.reshape(nx, ny, -1)                       # (x, y, z*lam*comp)
+    Eu = np.einsum("uj,xjc->xuc", A, Em)             # (x, yu, c)
+    k0 = 2.0 * np.pi * n_clad / float(lam_m)
+    kx = 2.0 * np.pi * np.fft.fftfreq(nx, d=dx)
+    ky = 2.0 * np.pi * np.fft.fftfreq(n_u, d=dy_u)
+    kpar2 = kx[:, None] ** 2 + ky[None, :] ** 2
+    w = np.where(kpar2 < k0 ** 2, np.sqrt(np.clip(1.0 - kpar2 / k0 ** 2, 0.0, None)), 0.0)
+    Ek = np.fft.fft2(Eu, axes=(0, 1))
+    V = float(np.sum(w[..., None] * np.abs(Ek) ** 2))
+    Gu = nx * n_u * np.fft.ifft2(w[..., None] * Ek, axes=(0, 1))     # F^H (w F E)
+    Gm = np.einsum("uj,xuc->xjc", A, Gu).reshape(E.shape)             # A^T
+    return V, Gm
+
+
+def farfield_source(G):
+    """Adjoint source for farfield_power: conj(dV/dE*)."""
+    return np.conj(G)
+
+
 def import_tiled_source(fdtd, prof, n_tiles, lam_m, monitor_name):
     """Inject the weighted adjoint source as n_tiles narrow FieldRegion
     sources instead of one full-width one (CampaignSpec.wg_src_tiles).
@@ -2516,11 +2574,16 @@ def make_width_classes(lmpt, spec):
         def get_results(self, fdtd_session):
             res = fdtd_session.fdtd.getresult(self.monitor_name, "E")
             E = np.asarray(res["E"])
-            W = rad_plane_weights(E, res["x"], res["y"])
-            val = float(np.sum(W * np.sum(np.abs(E) ** 2, axis=-1)))
+            lam = float(np.squeeze(res["lambda"]))
+            if getattr(spec, "rad_farfield", False):
+                val, G = farfield_power(E, res["x"], res["y"], lam, spec.rad_ff_n_clad)
+                self.aux = {"src": farfield_source(G)}
+            else:
+                W = rad_plane_weights(E, res["x"], res["y"])
+                val = float(np.sum(W * np.sum(np.abs(E) ** 2, axis=-1)))
+                self.aux = {"src": rad_adjoint_source(E, W)}
             self.values = anp.array([val])
-            self.wavelengths = [float(np.squeeze(res["lambda"]))]
-            self.aux = {"W": W}
+            self.wavelengths = [lam]
 
     class MixedFom(PortFom):
         supports_concurrent_adjoint = False     # field source needs fwd results
@@ -2572,7 +2635,7 @@ def make_width_classes(lmpt, spec):
                 prof = fdtd_session.fdtd.getresult(sim_result.monitor_name, "E")
                 if sim_result.aux is None:
                     sim_result.get_results(fdtd_session)
-                prof["E"] = rad_adjoint_source(np.asarray(prof["E"]), sim_result.aux["W"])
+                prof["E"] = sim_result.aux["src"]
                 fdtd_session.fdtd.switchtolayout()
                 for s_ in sources:
                     try:
