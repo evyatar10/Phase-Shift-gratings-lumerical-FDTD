@@ -33,6 +33,9 @@ you will PARK for the user. Then stop asking — everything after this is action
 - **Gate failures:** a failed §2 sanity check or a dead stage stops THAT branch —
   report it first (§9), continue independent branches if any, don't improvise a
   replacement study.
+- **Plan check (skill `plan-check`, user 2026-10-10): run its protocol at every
+  milestone and once per wake-up block; it supersedes the 3-line form below when
+  the block touched more than one lane.**
 - **Main-goal checkpoint (CLAUDE.md §9, user rule 2026-10-07):** at every milestone,
   before any new diagnostic, and at least once per wake-up block, write the 3 lines
   — main goal in the user's words / what actually blocks it now / does my next

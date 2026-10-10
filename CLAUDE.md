@@ -560,6 +560,9 @@ them; when a convergence study finishes, state where the files live.
   goal in their words (TE inverse design now: raise peak T while holding the
   spatial envelope FWHM ≈ 20 µm), (2) what ACTUALLY blocks it right now, (3) does
   the next action remove that blocker or change a decision — if not, drop it.
+  ★The full protocol (plan inventory table, drift/waste audit, decisions with
+  rules, "waiting for you" list) is the **`plan-check` skill** (2026-10-10) —
+  invoke it when the user asks "are we on plan?" and at every milestone.
   INCIDENT that created this rule: 2026-10-07 a whole day (~40 solves) went into
   S2 FD-calibration forensics (source phases, time traces, step ladders) while no
   optimizer iterate ran on either seed. Diagnostics of an OPTIONAL check must not
