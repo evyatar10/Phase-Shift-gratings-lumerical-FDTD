@@ -179,6 +179,18 @@ LANES = [
          port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, rad=True, perp=True, dlam=0.02,
          max_feval=8),
+    # task 14 (2026-10-10, user: "why has S1 not improved from shifts?"): S1
+    # from 0.97112 with the COMPLETE shift machinery that S2 validated (shift
+    # metric h375, +-25 nm shift/avg box, lambda projection, 0.1 nm lambda
+    # trust). S1 so far only had the metric fix (tasks 2, 5). No width-row
+    # override: the -0.0004 um/nm was MEASURED on S2 only; acceptance is on
+    # measured W anyway.
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98_shiftfix", start=TE_S1_N98_T9711,
+         scan=1561.04, two_kl_floor=3.0,
+         trust={"shift": 25.0, "avg": 25.0}, dlam=0.1,
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, perp=True,
+         metric={"shift": 375.0}, max_feval=8),
 ]
 
 
