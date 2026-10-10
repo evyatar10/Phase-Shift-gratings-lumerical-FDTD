@@ -226,6 +226,15 @@ LANES = [
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, rad=True, ff=True, perp=True, dlam=0.02,
          metric=None, trust=None,     # dispatched before LANE_DEFAULTS: legacy step geometry, keep
          max_feval=8, sim_time_ps=S1_SIM_TIME_PS, auto_shutoff_min=1e-12),
+    # task 18 (2026-10-11 02:20): task 17's far-field-power objective WITH the
+    # standing shift machinery (LANE_DEFAULTS), i.e. the same step geometry as
+    # the T lane 15 from the same start -> a fair FOM comparison. Task 17 step 1
+    # (legacy geometry, shift share 0): radiated power -2.4 %, t_pk +0.0002,
+    # ratio ~1.0 (MEASURED 175109_17); lane 15 step 1 +0.00076 via shifts.
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98_ffpow_sh", start=TE_S1_N98_T9711,
+         scan=1561.04, two_kl_floor=3.0,
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, rad=True, ff=True, max_feval=8),
 ]
 
 
