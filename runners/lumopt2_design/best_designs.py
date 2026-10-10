@@ -549,6 +549,11 @@ TE_S2_N98_T9739 = np.array([
     1900.000000, 951.441129,
 ])
 MEASURED["TE_S2_N98_T9739"] = dict(t_pk=0.97386, fwhm_env_um=19.6198, lam_pk_nm=1560.423, q_loaded=7670, job="172603_4", mesher="PVA")
+# 2026-10-10: the auto-shutoff (1e-7, S2 cut at 63 ps) biased every TE peak T LOW. Fixed 150 ps, shutoff off
+# (s2_simtime_ladder 174406/174645, 150 vs 250 ps agree to 7e-5): S2 seed 0.98069, S2 best 0.98605 (+0.0054 real
+# optimizer gain), S1 best 0.97439 (+0.0033 bias). Quote THESE for any seed comparison.
+MEASURED["TE_S2_N98_T9739"]["t_pk_150ps"] = 0.98605
+MEASURED["TE_S1_N98_T9711"]["t_pk_150ps"] = 0.97439
 
 
 # S2 shift-fix lane best (claude-te 174284_9 eval 3, 2026-10-10): Itai's seed +

@@ -45,6 +45,11 @@ ROWS = [
     ("s1_t9711_150ps", s1.SPEC_V3, TE_S1_N98_T9711, 1561.04, 150.0),
     ("s2_t9739_150ps", s2.SPEC_V3, TE_S2_N98_T9739, 1560.42, 150.0),
     ("s2_t9725_150ps", s2.SPEC_V3, TE_S2_N98_T9725, 1560.46, 150.0),
+    # rows 6-7 (2026-10-10 18:45): S1 best at 150 ps MEASURED 0.97439 vs 0.97112
+    # stored (+0.0033, row 3) -> S1 lanes need a fixed time too; Q_L 1529 ->
+    # 20 ring-down constants ~ 50 ps. Cheapest converged time for S1 lanes.
+    ("s1_t9711_50ps", s1.SPEC_V3, TE_S1_N98_T9711, 1561.04, 50.0),
+    ("s1_t9711_100ps", s1.SPEC_V3, TE_S1_N98_T9711, 1561.04, 100.0),
 ]
 N_TASKS = len(ROWS)
 
