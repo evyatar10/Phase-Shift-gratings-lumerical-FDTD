@@ -28,9 +28,10 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 from runners.lumopt2_design import campaign_te_s1 as s1
 from runners.lumopt2_design import campaign_te_s2 as s2
-from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3, TE_S1_N98_T9711, TE_S2_N98_T9739
+from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3, TE_S1_N98_T9711, TE_S2_N98_T9725, TE_S2_N98_T9739
 
 MAX_FEVAL = 8        # persistent forward budget per lane; raise + redeploy to extend
+S2_SIM_TIME_PS = None   # task 12: set from the s2time ladder (174406) before dispatch
 
 LANES = [
     # windows/recenter/λ-trust/2κL floor are the seed specs' own N98 values
@@ -154,6 +155,19 @@ LANES = [
          scan=1561.04, two_kl_floor=3.0,
          port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, band=(15.0, 25.0), max_feval=8),
+    # task 12 (2026-10-10, after the cancels): S2 at a FIXED simulation time
+    # (auto-shutoff off) from the shift-fix best. The 63 ps auto-shutoff cut
+    # gives S2 a ~0.004 T scatter (window ladder 174370: 0.969-0.973 for the
+    # same device), the size of every S2 gain; S2_SIM_TIME_PS is set from the
+    # sim-time ladder 174406 (150 if |T250-T150| < 1e-3, else 250). Same step
+    # machinery as task 9; solves ~2.5-4x slower.
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_fixt", start=TE_S2_N98_T9725,
+         scan=1560.46, two_kl_floor=None,
+         trust={"shift": 25.0, "avg": 25.0}, dlam=0.1,
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True,
+         metric={"shift": 375.0}, gw_shift=-0.0004, max_feval=8,
+         sim_time_ps=S2_SIM_TIME_PS, auto_shutoff_min=1e-12),
 ]
 
 
@@ -200,6 +214,10 @@ def lane_spec(task_idx):
         spec.corr_min_nm = ln["corr_min"]
     if "trust" in ln:
         spec.trust_nm = dict(ln["trust"])
+    if "sim_time_ps" in ln:
+        assert ln["sim_time_ps"] is not None, "set S2_SIM_TIME_PS from the s2time ladder before dispatch"
+        spec.sim_time_ps = float(ln["sim_time_ps"])
+        spec.auto_shutoff_min = float(ln["auto_shutoff_min"])
     spec.adj_fix_field_re, spec.adj_fix_field_im = ln["field"]
     assert spec.n_periods_side == 98
     return spec
