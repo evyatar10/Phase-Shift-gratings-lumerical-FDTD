@@ -144,6 +144,16 @@ LANES = [
          scan=1561.04, two_kl_floor=3.0,
          port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, rad=True, max_feval=8),
+    # task 11 (2026-10-10, user: "is holding the width constant the right
+    # constraint?"): S1 from 0.9711 with the width band opened to 15-25 um so
+    # it never binds (the width adjoint still runs: gW is logged, gradient
+    # row inactive). Shows which way W wants to move and how much T gains;
+    # a corrugation retrim back to 19.4 um afterwards decides "optimize free,
+    # then retrim" vs "hold the width".
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98_freew", start=TE_S1_N98_T9711,
+         scan=1561.04, two_kl_floor=3.0,
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, band=(15.0, 25.0), max_feval=8),
 ]
 
 
@@ -176,6 +186,8 @@ def lane_spec(task_idx):
         wgp_v3_perp_glam=ln.get("perp", False))
     if ln.get("rad"):
         spec.rad_fom = True
+    if "band" in ln:
+        spec.fwhm_bounds_um = tuple(ln["band"])
     if "dlam" in ln:
         spec.wgp_v3_dlam_nm = ln["dlam"]
     if "gw_shift" in ln:
