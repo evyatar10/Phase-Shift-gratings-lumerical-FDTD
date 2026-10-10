@@ -26,6 +26,13 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
 > lane's files/jobs; learning crosses lanes only by deliberate merge. Read
 > `docs/TWO_LANE_SETUP_2026-10-07.md` first. Live TE work: `campaign_te_n98.py`
 > (Athena 172063; LENGTH IS CONSTANT N=98/side for both seeds, user 2026-10-08). Current TE method: `runners/lumopt2_design/THEORY.md` §13.
+> ★STANDING TE DEFAULTS (user 2026-10-11, "use the rule everywhere"): every new
+> lane inherits `LANE_DEFAULTS`/`SEED_DEFAULTS` in `campaign_te_n98.py` — the
+> tooth-shift machinery (step metric shift h375, ±25 nm box, λ projection, 0.1 nm
+> λ trust; S2 also the measured width row −0.0004 µm/nm) and FIXED simulation
+> time with auto-shutoff off (S1 50 ps, S2 150 ps). Numbers measured at the
+> production auto-shutoff are biased low by 0.003–0.012 and are NOT comparable
+> to fixed-time numbers; the FOM (peak T at fixed W) was never the blocker.
 > The August handoffs below are historical TM state.
 > **`runners/lumopt2_design/HANDOFF.md`** is the live, self-contained state of the
 > lumopt2 inverse-design programme (2026-08-18). Read it before touching that

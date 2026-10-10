@@ -874,3 +874,18 @@ every measured lane (Q_c constant), so the two objectives should agree in
 direction; the lane tells whether the far-field gradient is the better-
 conditioned one (fewer rejected steps per gain), not whether it finds a
 different optimum.
+
+### 13c. Standing defaults after the shift fix (2026-10-11)
+
+What blocked tooth shifts was the optimizer's step geometry, not the objective:
+(i) the QP metric D = (bound half-range)² weighted shifts ~2500× less than
+corrugations, (ii) the field-adjoint width row for shifts had the wrong sign
+(S2: predicted +0.086 µm, measured −0.0125), (iii) the λ-phase leak in gT at
+S2's narrow line. With metric h375, a ±25 nm shift/avg box, gλ projected out
+and 0.1 nm λ trust, the same peak-T objective proposes shifts first and gains:
+S2 +0.0035 from the seed (174284_9, confirmed at 150 ps = 0.98422), S1 +0.00076
+in one step at ratio 0.83 (174861_15, 50 ps). These are now the defaults of
+every lane (`LANE_DEFAULTS`, `SEED_DEFAULTS` in `campaign_te_n98.py`), together
+with fixed simulation times (S1 50 ps, S2 150 ps, auto-shutoff off): the
+production shutoff cut the ring-down early and biased every peak T low
+(S1 +0.0033, S2 +0.0076 to +0.0122 when corrected; 150 vs 250 ps agree to 7e-5).

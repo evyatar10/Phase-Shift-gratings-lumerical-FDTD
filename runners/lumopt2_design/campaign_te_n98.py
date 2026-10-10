@@ -224,6 +224,7 @@ LANES = [
          scan=1561.04, two_kl_floor=3.0,
          port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, rad=True, ff=True, perp=True, dlam=0.02,
+         metric=None, trust=None,     # dispatched before LANE_DEFAULTS: legacy step geometry, keep
          max_feval=8, sim_time_ps=S1_SIM_TIME_PS, auto_shutoff_min=1e-12),
 ]
 
@@ -242,8 +243,26 @@ def free98_start():
 N_TASKS = len(LANES)
 
 
+# ★STANDING DEFAULTS (user 2026-10-11, "make sure the rule is used in all
+# places"). Every lane gets these unless its dict overrides the key explicitly
+# (a value of None = the engine's legacy behaviour). MEASURED basis:
+#   metric h375 / ±25 nm box / perp / dlam 0.1  — the tooth-shift fix; without
+#   it shifts were suppressed ~2500x (S2 174284_9, S1 174861_15: +0.0035 /
+#   +0.00076 first steps at ratio 0.3-0.9).
+#   gw_shift -0.0004 um/nm (S2 only: measured there; S1 keeps the adjoint row).
+#   fixed sim time, auto-shutoff off: S1 50 ps / S2 150 ps (ladders 174406,
+#   174645, 174823: the production shutoff biased T low by 0.003-0.012).
+LANE_DEFAULTS = dict(metric={"shift": 375.0}, trust={"shift": 25.0, "avg": 25.0},
+                     perp=True, dlam=0.1)
+SEED_DEFAULTS = {id(s1.SPEC_V3): dict(sim_time_ps=S1_SIM_TIME_PS, auto_shutoff_min=1e-12),
+                 id(s2.SPEC_V3): dict(sim_time_ps=S2_SIM_TIME_PS, auto_shutoff_min=1e-12,
+                                      gw_shift=-0.0004)}
+
+
 def lane_spec(task_idx):
-    ln = LANES[task_idx]
+    ln = dict(LANE_DEFAULTS)
+    ln.update(SEED_DEFAULTS.get(id(LANES[task_idx]["base"]), {}))
+    ln.update(LANES[task_idx])                      # explicit lane keys win
     start = free98_start() if isinstance(ln["start"], str) else ln["start"]
     spec = dataclasses.replace(
         ln["base"], label=ln["label"], seed_override=tuple(float(v) for v in start),
@@ -254,16 +273,16 @@ def lane_spec(task_idx):
         wg_anchor={"softw": ln["softw0"], "fwhm": ln["fwhm0"]},
         adj_fix_re=ln["port"][0], adj_fix_im=ln["port"][1],
         wgp_d_halfrange_nm=ln.get("metric"),
-        wgp_v3_perp_glam=ln.get("perp", False))
+        wgp_v3_perp_glam=bool(ln.get("perp")))
     if ln.get("rad"):
         spec.rad_fom = True
     if ln.get("ff"):
         spec.rad_farfield = True
     if "band" in ln:
         spec.fwhm_bounds_um = tuple(ln["band"])
-    if "dlam" in ln:
+    if ln.get("dlam") is not None:
         spec.wgp_v3_dlam_nm = ln["dlam"]
-    if "gw_shift" in ln:
+    if ln.get("gw_shift") is not None:
         spec.wgp_gw_shift_um_per_nm = ln["gw_shift"]
     if "region_y_half" in ln:
         spec.region_y_half_nm = ln["region_y_half"]
@@ -271,10 +290,9 @@ def lane_spec(task_idx):
         spec.n_wl_points = ln["n_wl"]
     if "corr_min" in ln:
         spec.corr_min_nm = ln["corr_min"]
-    if "trust" in ln:
+    if ln.get("trust") is not None:
         spec.trust_nm = dict(ln["trust"])
-    if "sim_time_ps" in ln:
-        assert ln["sim_time_ps"] is not None, "set S2_SIM_TIME_PS from the s2time ladder before dispatch"
+    if ln.get("sim_time_ps") is not None:
         spec.sim_time_ps = float(ln["sim_time_ps"])
         spec.auto_shutoff_min = float(ln["auto_shutoff_min"])
     spec.adj_fix_field_re, spec.adj_fix_field_im = ln["field"]

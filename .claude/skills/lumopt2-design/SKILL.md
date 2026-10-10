@@ -5,6 +5,16 @@ description: Run, debug, resume, and extend the lumopt2 adjoint inverse-design p
 
 # lumopt2-design — the inverse-design program runbook
 
+> ★STANDING TE DEFAULTS (2026-10-11). Any new TE lane in `campaign_te_n98.py`
+> inherits: shift step metric h375 + ±25 nm shift/avg box + λ projection
+> (perp) + 0.1 nm λ trust — the fix that let tooth shifts move at all (MEASURED
+> first steps +0.0035 S2 / +0.00076 S1 at ratios 0.3–0.9); S2 also the measured
+> shift width row −0.0004 µm/nm; and FIXED sim time, shutoff off (S1 50 ps, S2
+> 150 ps). A lane opts out only with an explicit `key=None`. Never compare a
+> fixed-time T with an auto-shutoff T (bias 0.003–0.012). The step geometry,
+> not the peak-T FOM, was what blocked shifts — do not change the FOM for that.
+
+
 > ## ★★★READ THIS FIRST, BEFORE ANYTHING ELSE IN THIS FILE
 > **`runners/lumopt2_design/HANDOFF.md`** (full path:
 > `c:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\runners\lumopt2_design\HANDOFF.md`)
