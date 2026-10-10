@@ -31,7 +31,7 @@ from runners.lumopt2_design import campaign_te_s2 as s2
 from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3, TE_S1_N98_T9711, TE_S2_N98_T9725, TE_S2_N98_T9739
 
 MAX_FEVAL = 8        # persistent forward budget per lane; raise + redeploy to extend
-S2_SIM_TIME_PS = None   # task 12: set from the s2time ladder (174406) before dispatch
+S2_SIM_TIME_PS = 150.0  # task 12: s2time ladder 174406 MEASURED |T250-T150| = 7e-5, windows 1e-4 (2026-10-10)
 
 LANES = [
     # windows/recenter/λ-trust/2κL floor are the seed specs' own N98 values
