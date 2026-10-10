@@ -555,7 +555,6 @@ MEASURED["TE_S2_N98_T9739"] = dict(t_pk=0.97386, fwhm_env_um=19.6198, lam_pk_nm=
 MEASURED["TE_S2_N98_T9739"]["t_pk_150ps"] = 0.98605
 MEASURED["TE_S1_N98_T9711"]["t_pk_150ps"] = 0.97439
 MEASURED["TE_S1_N98_T9711"]["t_pk_50ps"] = 0.974332     # 174823_6: S1 converged at 50 ps
-MEASURED["TE_S2_N98_T9725"]["t_pk_150ps"] = 0.98422     # 174645_5: +0.0035 vs seed 0.98069 at equal numerics
 
 
 # S2 shift-fix lane best (claude-te 174284_9 eval 3, 2026-10-10): Itai's seed +
@@ -617,3 +616,4 @@ TE_S2_N98_T9725 = np.array([
     1900.000000, 950.759616,
 ])
 MEASURED["TE_S2_N98_T9725"] = dict(t_pk=0.972467, fwhm_env_um=19.5944, lam_pk_nm=1560.595, job="174284_9 ev3", mesher="PVA", window_nm=1560.46, sim="auto-shutoff 63 ps")
+MEASURED["TE_S2_N98_T9725"]["t_pk_150ps"] = 0.98422     # 174645_5: +0.0035 vs seed 0.98069 at equal numerics
