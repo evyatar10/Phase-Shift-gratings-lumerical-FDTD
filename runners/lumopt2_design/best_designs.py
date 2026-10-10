@@ -554,6 +554,8 @@ MEASURED["TE_S2_N98_T9739"] = dict(t_pk=0.97386, fwhm_env_um=19.6198, lam_pk_nm=
 # optimizer gain), S1 best 0.97439 (+0.0033 bias). Quote THESE for any seed comparison.
 MEASURED["TE_S2_N98_T9739"]["t_pk_150ps"] = 0.98605
 MEASURED["TE_S1_N98_T9711"]["t_pk_150ps"] = 0.97439
+MEASURED["TE_S1_N98_T9711"]["t_pk_50ps"] = 0.974332     # 174823_6: S1 converged at 50 ps
+MEASURED["TE_S2_N98_T9725"]["t_pk_150ps"] = 0.98422     # 174645_5: +0.0035 vs seed 0.98069 at equal numerics
 
 
 # S2 shift-fix lane best (claude-te 174284_9 eval 3, 2026-10-10): Itai's seed +
