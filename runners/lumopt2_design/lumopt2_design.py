@@ -530,6 +530,12 @@ class CampaignSpec:
     # for the 5-tooth +5 nm stretch, measured -0.0125 (wrong sign, 7x) -> the QP
     # "paid width" for shifts and never moved them. None = adjoint row as is.
     wgp_gw_shift_um_per_nm: float = None
+    # ★sim_time_ps / auto_shutoff_min (claude-te 2026-10-10): FDTD run-length
+    # controls on the base scene. MEASURED: the S2 forward auto-shuts at 63 ps
+    # (1e-7) with the resonance still ringing at ~0.7 % -> T scatter ~0.004.
+    # None = builder defaults (2000 ps cap, shutoff 1e-7): every existing spec unchanged.
+    sim_time_ps: float = None
+    auto_shutoff_min: float = None
     best_metric: str = "fom"     # "fom" or measured "modal_peak3"
     # ★wgp_noise_freeze / wgp_noise_stop (2026-10-04, noise-aware trust cap —
     # Cao/Berahas/Scheinberg arXiv 2205.03667; Sun & Nocedal 2023): a filter
@@ -1369,6 +1375,10 @@ def build_base_fsp(spec, out_path):
                         width_nm=cfg.spectral.scan_width_nm,
                         n_points=cfg.spectral.n_wl_points)
         apply_monitor_overrides(sim, cfg)
+        if getattr(spec, "sim_time_ps", None) is not None:
+            sim.fdtd.setnamed("FDTD", "simulation time", float(spec.sim_time_ps) * 1e-12)
+        if getattr(spec, "auto_shutoff_min", None) is not None:
+            sim.fdtd.setnamed("FDTD", "auto shutoff min", float(spec.auto_shutoff_min))
         if getattr(spec, "width_grad", False):
             # Single-λ twin of field_profile for the width-FOM entry. lumopt2's
             # generate() REJECTS broadband FieldRegion monitors outright
