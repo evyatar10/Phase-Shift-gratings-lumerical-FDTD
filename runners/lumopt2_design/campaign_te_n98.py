@@ -202,6 +202,18 @@ LANES = [
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, perp=True,
          metric={"shift": 375.0}, max_feval=8,
          sim_time_ps=S1_SIM_TIME_PS, auto_shutoff_min=1e-12),
+    # task 16 (2026-10-10, user: "fix the shifts in S2 so it is both the
+    # corrugation improvement AND the shifts"): S2 from the corrugation optimum
+    # TE_S2_N98_T9739 (0.98605 at 150 ps) with the shift machinery open, at
+    # 150 ps. Task 12 runs the same from the shift-fix point (0.98422); the two
+    # together say whether the corrugation and shift gains add.
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_fixt_best", start=TE_S2_N98_T9739,
+         scan=1560.42, two_kl_floor=None,
+         trust={"shift": 25.0, "avg": 25.0}, dlam=0.1,
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True,
+         metric={"shift": 375.0}, gw_shift=-0.0004, max_feval=8,
+         sim_time_ps=S2_SIM_TIME_PS, auto_shutoff_min=1e-12),
 ]
 
 
