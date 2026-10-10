@@ -530,6 +530,20 @@ class CampaignSpec:
     # for the 5-tooth +5 nm stretch, measured -0.0125 (wrong sign, 7x) -> the QP
     # "paid width" for shifts and never moved them. None = adjoint row as is.
     wgp_gw_shift_um_per_nm: float = None
+    # ★Per-tooth form (claude-te 2026-10-11, Fable review): a tuple of n_free
+    # values (um per nm of tooth d's shift, d = 1 innermost); NaN entries keep
+    # the adjoint row. MEASURED (fixed-time sweeps): S2 teeth 2-6 ~ -0.0005,
+    # teeth 7-10 ~ +0.0008 (the response flips sign outward, so one scalar made
+    # outer shifts look width-free); S1 tooth 1 -0.0029, teeth 1-5 -0.0042.
+    # If set it replaces wgp_gw_shift_um_per_nm. None = unchanged behaviour.
+    wgp_gw_shift_profile: tuple = None
+    # ★cw noise floor (claude-te 2026-10-11, Fable review): the cw "curved"
+    # test compares tiny slopes on S2's 0.2 nm line (dW/dlam ~ 0 by symmetry)
+    # and fires on noise, halving the lambda trust - which is what capped S2
+    # lane 12's shift share. If set, a curved flag with |cw| below this value
+    # (um/nm) is treated as ok: the unpriced cross term |cw|*dlam is then
+    # negligible. None = unchanged behaviour.
+    wgp_cw_noise_um_per_nm: float = None
     # ★sim_time_ps / auto_shutoff_min (claude-te 2026-10-10): FDTD run-length
     # controls on the base scene. MEASURED: the S2 forward auto-shuts at 63 ps
     # (1e-7) with the resonance still ringing at ~0.7 % -> T scatter ~0.004.
@@ -2378,6 +2392,41 @@ def split_dataset_x(prof, bounds):
     return parts
 
 
+def shift_width_override(spec, gW, lo, hi, L):
+    """Measured width-row entries for the live SHIFT parameters (see
+    CampaignSpec.wgp_gw_shift_profile / wgp_gw_shift_um_per_nm). Returns
+    (gW, tag); tag None = untouched."""
+    prof = getattr(spec, "wgp_gw_shift_profile", None)
+    scal = getattr(spec, "wgp_gw_shift_um_per_nm", None)
+    if prof is None and scal is None:
+        return gW, None
+    live = (hi[L.SL_SHIFT] - lo[L.SL_SHIFT]) > 0.01
+    n = L.SL_SHIFT.stop - L.SL_SHIFT.start
+    if prof is not None:
+        val = np.asarray(prof, dtype=float)
+        assert val.shape == (n,), "shift profile length != n_free"
+        live = live & np.isfinite(val)
+        tag = "profile"
+    else:
+        val, tag = np.full(n, float(scal)), float(scal)
+    gW = np.asarray(gW, dtype=float).copy()
+    gW[L.SL_SHIFT] = np.where(live, val, gW[L.SL_SHIFT])
+    return gW, tag
+
+
+def cw_is_bad(spec, row, v3, lam_pk_row, dlam_b):
+    """Degraded-width-row test (halves the lambda trust). A 'curved' flag on a
+    negligible |cw| is noise when spec.wgp_cw_noise_um_per_nm is set."""
+    curved = bool(row.get("cw_curved"))
+    floor = getattr(spec, "wgp_cw_noise_um_per_nm", None)
+    cw = row.get("cw_um_per_nm")
+    if curved and floor is not None and cw is not None and abs(float(cw)) < float(floor):
+        curved = False
+    twin_off = bool(v3 and row.get("twin_lam_nm") is not None and lam_pk_row is not None
+                    and abs(row["twin_lam_nm"] - lam_pk_row) > dlam_b)
+    return curved or twin_off
+
+
 def trapz_weights(v):
     """dI/dI_j of np.trapz(I, v): edges half a gap, interior the mean gap."""
     v = np.atleast_1d(np.squeeze(np.asarray(v, dtype=float)))
@@ -3825,22 +3874,16 @@ def run_projected(spec, project, cb, out_dir, p0):
                            perp_gT_n=float(np.linalg.norm(gT)))
                 print(f"[proj {it}] ⊥gλ: cos(gT,gλ) {cT_:+.4f} cos(gW,gλ) {cW_:+.4f} "
                       f"|gT| {nT0_:.3g} -> {np.linalg.norm(gT):.3g}", flush=True)
-            if getattr(spec, "wgp_gw_shift_um_per_nm", None) is not None:
-                live_ = (hi[L.SL_SHIFT] - lo[L.SL_SHIFT]) > 0.01
-                gW_eff = gW_eff.copy()
-                gW_eff[L.SL_SHIFT] = np.where(live_, float(spec.wgp_gw_shift_um_per_nm),
-                                              gW_eff[L.SL_SHIFT])
-                rec["gw_shift_override"] = float(spec.wgp_gw_shift_um_per_nm)
+            gW_eff, tag_ = shift_width_override(spec, gW_eff, lo, hi, L)
+            if tag_ is not None:
+                rec["gw_shift_override"] = tag_
             acc = {"p": p.copy(), "fom": fom, "W": W, "h": h, "hv": hv,
                    "gT": gT, "gW": gW_eff, "gW_raw": gW, "gLam": gLam_vec,
                    "lam_pk": lam_pk_row, "eval_num": int(it),
                    "profile_path": persistence.profile_path(out_dir, spec.label, row, int(it)),
                    "eval_id": row.get("eval_id"),
                    "cw": (row.get("cw_um_per_nm") if v3 else None),
-                   "cw_bad": bool(row.get("cw_curved")) or bool(
-                       v3 and row.get("twin_lam_nm") is not None
-                       and lam_pk_row is not None
-                       and abs(row["twin_lam_nm"] - lam_pk_row) > dlam_b),
+                   "cw_bad": cw_is_bad(spec, row, v3, lam_pk_row, (dlam_b if v3 else None)),   # dlam_b exists only on the v3 path
                    "twin_lam": row.get("twin_lam_nm"),
                    "softw": (float(row.get("softw_adj_um") or row["softw_um"])
                              if (row.get("softw_adj_um") or row.get("softw_um"))
