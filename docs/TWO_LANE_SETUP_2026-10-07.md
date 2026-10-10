@@ -229,6 +229,7 @@ Neither lane edits the other's branch.
 | 2026-10-07 | claude | 0a27c0e | engine reverts of §6c | — |
 | 2026-10-08 | claude | (this branch) | N = 98 constant for both seeds; `campaign_te_n98.py`, job 172063 | — |
 | 2026-10-08 | claude | see `git log` (wgp_v3_perp_glam) | **S2 narrow-line phase-leak fix VALIDATED on hardware**: first step t_pk 0.9691 → 0.9724, ratio 0.64 (old S2 runs: ~+0.0004 per step). Codex: cherry-pick this before any S2 work. | — |
+| 2026-10-10 | claude | `wgp_gw_shift_um_per_nm`, `wgp_d_halfrange_nm` (git log) | **Why the optimizer never moved tooth shifts** (S2, MEASURED): (1) phase leak in gT (fixed by the projection); (2) legacy QP metric D_corr/D_shift = 2500 under the ±15 nm trust box; (3) the field-adjoint WIDTH row for shifts has the wrong sign (pred +0.086 µm, measured −0.0125). Fix = shift metric h375 + measured width row −0.0004 µm/nm + ±25 nm box; validated: lane 174284_9 found a graded 5-tooth stretch by itself, +0.0028 in one accepted step (ratio 0.31), matching a 10-row forward sweep (best +0.0025 at teeth 2–6 × 10 nm). Codex: do not trust the adjoint width gradient for shifts; measure it. | — |
 
 ## 10. Open items for the user
 
