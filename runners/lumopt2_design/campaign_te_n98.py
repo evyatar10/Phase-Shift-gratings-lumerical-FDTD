@@ -119,6 +119,20 @@ LANES = [
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True, max_feval=12,   # ledger from 173622_8 is 12; never reduce
          region_y_half=800.0, n_wl=401),
+    # task 9 (2026-10-10 ~06:30): S2 "shift fix" from the SEED — the three measured
+    # reasons the optimizer never moved shifts (sweep 173624 vs stored gradient):
+    # (1) phase leak -> perp; (2) legacy metric D_corr/D_shift = 2500 -> h375;
+    # (3) adjoint width row for shifts has the WRONG SIGN (pred +0.086 um, meas
+    # -0.0125 for the 5-tooth +5 nm stretch) -> measured -0.0004 um/nm installed.
+    # Shift box +-25 nm (the stretches live at 5-15 nm/tooth), lambda trust 0.1
+    # (the stretch moved lambda +0.06 nm). Validation: iterate 1 must propose a
+    # graded multi-tooth stretch and gain ~+0.002-0.004 (sweep) at ratio ~0.5-1.
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_shiftfix", start=s2.SEED,
+         scan=s2.SCAN_CENTER_NM, two_kl_floor=None,
+         trust={"shift": 25.0, "avg": 25.0}, dlam=0.1,
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True,
+         metric={"shift": 375.0}, gw_shift=-0.0004, max_feval=8),
 ]
 
 
@@ -149,6 +163,10 @@ def lane_spec(task_idx):
         adj_fix_re=ln["port"][0], adj_fix_im=ln["port"][1],
         wgp_d_halfrange_nm=ln.get("metric"),
         wgp_v3_perp_glam=ln.get("perp", False))
+    if "dlam" in ln:
+        spec.wgp_v3_dlam_nm = ln["dlam"]
+    if "gw_shift" in ln:
+        spec.wgp_gw_shift_um_per_nm = ln["gw_shift"]
     if "region_y_half" in ln:
         spec.region_y_half_nm = ln["region_y_half"]
     if "n_wl" in ln:

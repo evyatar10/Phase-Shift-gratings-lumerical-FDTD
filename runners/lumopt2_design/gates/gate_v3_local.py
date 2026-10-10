@@ -955,6 +955,18 @@ r25off = drive(s25, gT25, max_iter=2)
 check("  tooth: flag off -> no projection logged",
       "perp_cos_T" not in r25off["pr"][0], str(r25off["pr"][0].get("perp_cos_T")))
 
+# -- V27 MEASURED SHIFT WIDTH ROW (claude-te 2026-10-10): with the knob set, the
+# proj row carries the override marker and the width prediction of a pure shift
+# step equals override * sum(shift step); knob off -> no marker.
+r27 = drive([dict(fom=F0, W=W0), dict(fom=F0 + .001, W=W0)], gT10, max_iter=2,
+            wgp_gw_shift_um_per_nm=-0.0004)
+q27 = r27["pr"][0]
+check("V27 shift width-row override: marker logged, run steps",
+      r27["exc"] is None and q27.get("gw_shift_override") == -0.0004 and len(r27["ev"]) == 2,
+      f"exc {r27['exc']} marker {q27.get('gw_shift_override')}")
+r27off = drive([dict(fom=F0, W=W0), dict(fom=F0 + .001, W=W0)], gT10, max_iter=2)
+check("  tooth: knob off -> no marker", "gw_shift_override" not in r27off["pr"][0], "")
+
 # -- V24 shared hard width: even sub-tolerance violations cannot buy transmission.
 strict24 = (eng.RHO_DN*W0, W0)
 for excess24 in (0.03, 1e-7):

@@ -524,6 +524,12 @@ class CampaignSpec:
     # ★wgp_v3_perp_glam (claude-te 2026-10-08): project gλ out of gT and the
     # fixed-λ gW before each v3 step (narrow-line phase-leak fix, S2). Default off.
     wgp_v3_perp_glam: bool = False
+    # ★wgp_gw_shift_um_per_nm (claude-te 2026-10-10): replace the field-adjoint
+    # width-gradient entries of the live SHIFT parameters by this MEASURED value
+    # (um per nm of shift). S2 sweep 173624: the adjoint row predicted +0.086 um
+    # for the 5-tooth +5 nm stretch, measured -0.0125 (wrong sign, 7x) -> the QP
+    # "paid width" for shifts and never moved them. None = adjoint row as is.
+    wgp_gw_shift_um_per_nm: float = None
     best_metric: str = "fom"     # "fom" or measured "modal_peak3"
     # ★wgp_noise_freeze / wgp_noise_stop (2026-10-04, noise-aware trust cap —
     # Cao/Berahas/Scheinberg arXiv 2205.03667; Sun & Nocedal 2023): a filter
@@ -3605,6 +3611,12 @@ def run_projected(spec, project, cb, out_dir, p0):
                            perp_gT_n=float(np.linalg.norm(gT)))
                 print(f"[proj {it}] ⊥gλ: cos(gT,gλ) {cT_:+.4f} cos(gW,gλ) {cW_:+.4f} "
                       f"|gT| {nT0_:.3g} -> {np.linalg.norm(gT):.3g}", flush=True)
+            if getattr(spec, "wgp_gw_shift_um_per_nm", None) is not None:
+                live_ = (hi[L.SL_SHIFT] - lo[L.SL_SHIFT]) > 0.01
+                gW_eff = gW_eff.copy()
+                gW_eff[L.SL_SHIFT] = np.where(live_, float(spec.wgp_gw_shift_um_per_nm),
+                                              gW_eff[L.SL_SHIFT])
+                rec["gw_shift_override"] = float(spec.wgp_gw_shift_um_per_nm)
             acc = {"p": p.copy(), "fom": fom, "W": W, "h": h, "hv": hv,
                    "gT": gT, "gW": gW_eff, "gW_raw": gW, "gLam": gLam_vec,
                    "lam_pk": lam_pk_row, "eval_num": int(it),
