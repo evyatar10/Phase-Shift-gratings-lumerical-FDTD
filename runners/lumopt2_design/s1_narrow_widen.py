@@ -38,7 +38,7 @@ N_TASKS = len(ROWS)
 def spec_of(idx):
     name, corr, c = ROWS[idx]
     return dataclasses.replace(
-        s1.SPEC_V3, label=f"s1narrow_{name}", seed_override=None, corr_seed_nm=corr,
+        s1.SPEC_V3, label=f"s1narrow_{name}", seed_override=None, corr0_nm=corr,   # corr0_nm = bulk AND uniform free-tooth seed
         scan_center_nm=c, sim_time_ps=SIM_TIME_PS, auto_shutoff_min=1e-12,
         fwhm0_um=None, wg_anchor={"softw": 17.0, "fwhm": 17.0}, two_kl_floor=1.0)
 
