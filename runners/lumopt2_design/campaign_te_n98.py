@@ -168,6 +168,17 @@ LANES = [
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True,
          metric={"shift": 375.0}, gw_shift=-0.0004, max_feval=8,
          sim_time_ps=S2_SIM_TIME_PS, auto_shutoff_min=1e-12),
+    # task 13 (2026-10-10, after task 10 step 1 MEASURED: plane energy -18 %
+    # while t_pk -0.0003 and lambda +0.24 nm): the rad plane samples at the
+    # LATCHED target lambda, so detuning the resonance lowers the plane field
+    # for free -> the raw rad gradient rewards detuning. Project g_lambda out of
+    # the objective gradient (perp) and hold lambda to 0.02 nm per step; what
+    # remains is radiation at fixed resonance = the loss/pattern direction.
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98_radfom_perp", start=TE_S1_N98_T9711,
+         scan=1561.04, two_kl_floor=3.0,
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, rad=True, perp=True, dlam=0.02,
+         max_feval=8),
 ]
 
 
