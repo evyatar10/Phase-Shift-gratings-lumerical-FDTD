@@ -33,9 +33,21 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 from runners.lumopt2_design import campaign_te_s1 as s1
 from runners.lumopt2_design import campaign_te_s2 as s2
-from runners.lumopt2_design.best_designs import TE_S1_N98_T9711
+from runners.lumopt2_design.best_designs import TE_S1_N98_T9711, TE_S2_N98_T9725, TE_S2_N98_T9739
 
 SIM_TIME_PS = 150.0
+_L = eng.layout(60)
+
+
+def _with(base, corr=None, shifts=None):
+    """Copy of a design vector with some corrugations set and/or the whole
+    shift block replaced (rows 8-10: corrugation vs shift decomposition)."""
+    p = np.asarray(base, dtype=float).copy()
+    for d, c in (corr or {}).items():
+        p[_L.SL_CORR.start + d - 1] = c
+    if shifts is not None:
+        p[_L.SL_SHIFT] = np.asarray(shifts, dtype=float)[_L.SL_SHIFT]
+    return p
 
 # (label, base spec, design vector, scan centre nm, {tooth d: shift nm})
 ROWS = [
@@ -47,16 +59,25 @@ ROWS = [
     ("s1_t1_20",   s1.SPEC_V3, TE_S1_N98_T9711, 1561.04,  {1: 20.0}),
     ("s1_t1-5_5",  s1.SPEC_V3, TE_S1_N98_T9711, 1561.04,  {d: 5.0 for d in range(1, 6)}),
     ("s1_t1-5_10", s1.SPEC_V3, TE_S1_N98_T9711, 1561.04,  {d: 10.0 for d in range(1, 6)}),
+    # rows 8-10 (2026-10-11, user: "is the corrugation optimal, how much do the
+    # shifts give, do they combine?"). References (150 ps, MEASURED): seed
+    # 0.98069, corrugation best T9739 0.98605, seed + teeth 2-6 x10 nm 0.98364.
+    # 8: seed + ONLY tooth 1 corrugation 0 -> T9739's 23.85 nm (is the corr gain
+    #    just "the inner tooth should not start at zero"?)
+    # 9: corrugation best + the hand stretch (additive => ~0.989)
+    # 10: corrugation best + the shift block the shift-fix optimizer found (T9725)
+    ("s2_c1only",         s2.SPEC_V3, _with(s2.SEED, corr={1: float(TE_S2_N98_T9739[_L.SL_CORR.start])}), 1560.464, {}),
+    ("s2_best_t2-6_10",   s2.SPEC_V3, TE_S2_N98_T9739, 1560.42, {d: 10.0 for d in range(2, 7)}),
+    ("s2_best_shiftlane", s2.SPEC_V3, _with(TE_S2_N98_T9739, shifts=TE_S2_N98_T9725), 1560.42, {}),
 ]
 N_TASKS = len(ROWS)
 
 
 def spec_of(idx):
     name, base, seed, c, shifts = ROWS[idx]
-    L = eng.layout(60)
     p = np.asarray(seed, dtype=float).copy()
     for d, s_nm in shifts.items():
-        p[L.SL_SHIFT.start + d - 1] += s_nm
+        p[_L.SL_SHIFT.start + d - 1] += s_nm
     return dataclasses.replace(
         base, label=f"shiftfixt_{name}", seed_override=tuple(float(v) for v in p),
         scan_center_nm=c, sim_time_ps=SIM_TIME_PS, auto_shutoff_min=1e-12,
