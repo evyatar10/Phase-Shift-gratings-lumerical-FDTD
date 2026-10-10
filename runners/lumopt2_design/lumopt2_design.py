@@ -546,8 +546,8 @@ class CampaignSpec:
     rad_fom: bool = False
     rad_plane_z_um: float = 2.5       # guided tail ~10x below the radiated |E|^2 there (EXPECTED)
     rad_plane_y_half_um: float = 2.4  # inside the 6.8 um box, clear of the PML
-    adj_fix_rad_re: float = 1.0       # uncalibrated; the live gain ratio is the gate
-    adj_fix_rad_im: float = 0.0
+    adj_fix_rad_re: float = 0.9667    # = S1's measured C_field (campaign_te_s1.py): same
+    adj_fix_rad_im: float = 0.0366    # FieldRegion-source mechanism; EXPECTED to transfer
     best_metric: str = "fom"     # "fom" or measured "modal_peak3"
     # ★wgp_noise_freeze / wgp_noise_stop (2026-10-04, noise-aware trust cap —
     # Cao/Berahas/Scheinberg arXiv 2205.03667; Sun & Nocedal 2023): a filter
@@ -2248,6 +2248,9 @@ def make_fct_v2(wl_nm, spec):
     penalty. The softW jacobian entry drives the weighted field adjoint."""
     base = make_fct(wl_nm)
     n_wl = len(wl_nm)
+    if getattr(spec, "rad_fom", False) and not getattr(spec, "wg_project", False):
+        raise ValueError("rad_fom requires wg_project (x[n_wl] is rad, not softW, "
+                         "in the wg_pure / penalty fct branches)")
 
     if getattr(spec, "wg_pure", False):
         # W3 calibration fct: J = −softW. The port slice is untouched (its
@@ -2366,6 +2369,35 @@ def split_dataset_x(prof, bounds):
     return parts
 
 
+def trapz_weights(v):
+    """dI/dI_j of np.trapz(I, v): edges half a gap, interior the mean gap."""
+    v = np.atleast_1d(np.squeeze(np.asarray(v, dtype=float)))
+    if v.size < 2:
+        return np.ones(1)
+    w = np.empty_like(v)
+    w[0], w[-1] = (v[1] - v[0]) / 2.0, (v[-1] - v[-2]) / 2.0
+    w[1:-1] = (v[2:] - v[:-2]) / 2.0
+    return w
+
+
+def rad_plane_weights(E, x, y):
+    """Trapz area weights W (shape = E's spatial dims, singleton z kept) for the
+    rad_plane value sum_i W_i |E_i|^2 == integral |E|^2 dx dy. E is
+    (x, y[, z], lam, comp); broadcast over lam/comp is the caller's job."""
+    n_spatial = E.ndim - 2
+    W = trapz_weights(x)
+    if n_spatial >= 2:
+        W = W[:, None] * trapz_weights(y)[None, :]
+    if n_spatial == 3:
+        W = W[:, :, None]
+    return W[..., None]               # (spatial..., lam=1)
+
+
+def rad_adjoint_source(E, W):
+    """FieldFom-consistent adjoint source for the weighted value: W*conj(E)."""
+    return np.conj(E) * W[..., None]
+
+
 def import_tiled_source(fdtd, prof, n_tiles, lam_m, monitor_name):
     """Inject the weighted adjoint source as n_tiles narrow FieldRegion
     sources instead of one full-width one (CampaignSpec.wg_src_tiles).
@@ -2470,22 +2502,25 @@ def make_width_classes(lmpt, spec):
             self.aux = aux
 
     class RadResults(FieldResults):
-        # Single-lambda cladding plane; value = sum |E|^2 dA (radiated energy
-        # proxy at the pinned resonance). Stock FieldFom adjoint = conj(E).
+        # Single-lambda cladding plane; value = sum_i W_i |E_i|^2 with W the
+        # x,y trapz weights (= integral |E|^2 dA, the radiated-energy proxy at
+        # the pinned resonance). ★The adjoint source must carry the SAME
+        # weights, W*conj(E): the stock FieldFom pairs a PLAIN sample sum with a
+        # plain conj(E) (simulation_results.py:338), so an unweighted source
+        # under a dA-weighted value is 1/dA ~ 4e14 too large (reviewer finding
+        # 2026-10-10; direction unaffected under the v3 QP, trust radius not).
         def __init__(self, wavelength_m):
             super().__init__("rad_plane", "intensity", [wavelength_m])
+            self.aux = None
 
         def get_results(self, fdtd_session):
             res = fdtd_session.fdtd.getresult(self.monitor_name, "E")
             E = np.asarray(res["E"])
-            x = np.squeeze(np.asarray(res["x"])).astype(float)
-            y = np.squeeze(np.asarray(res["y"])).astype(float)
-            I = np.squeeze(np.sum(np.abs(E) ** 2, axis=-1))     # (x, y[, z, lam])
-            while I.ndim > 2:
-                I = I[..., 0] if I.shape[-1] == 1 else I.sum(axis=-1)
-            val = float(np.trapz(np.trapz(I, y, axis=1), x)) if I.ndim == 2 else float(np.trapz(I, x))
+            W = rad_plane_weights(E, res["x"], res["y"])
+            val = float(np.sum(W * np.sum(np.abs(E) ** 2, axis=-1)))
             self.values = anp.array([val])
             self.wavelengths = [float(np.squeeze(res["lambda"]))]
+            self.aux = {"W": W}
 
     class MixedFom(PortFom):
         supports_concurrent_adjoint = False     # field source needs fwd results
@@ -2535,7 +2570,9 @@ def make_width_classes(lmpt, spec):
                 # but with this project's source-disable path (full port paths)
                 # and the tiled GPU injection used by the width twin.
                 prof = fdtd_session.fdtd.getresult(sim_result.monitor_name, "E")
-                prof["E"] = np.conj(np.asarray(prof["E"]))
+                if sim_result.aux is None:
+                    sim_result.get_results(fdtd_session)
+                prof["E"] = rad_adjoint_source(np.asarray(prof["E"]), sim_result.aux["W"])
                 fdtd_session.fdtd.switchtolayout()
                 for s_ in sources:
                     try:
