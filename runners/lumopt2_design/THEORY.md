@@ -852,3 +852,25 @@ Branch `claude-te` only (Codex's `codex-te` keeps its own §13 text).
   longer share the width measurement's try block; budget exhaustion is a clean
   stop that writes `_best.json`; NaN diagnostics in journal rows become null.
   Gates V23 (`gate_v3_local`) and `gate_campaign_budget` assert the new forms.
+
+### 13b. Far-field (radiated-energy) FOM — `rad_fom` (2026-10-10, claude-te)
+
+Alternative objective tested on S1 at the user's request: minimise the upward
+radiated energy instead of maximising peak T. Third `MixedFom` entry
+`RadResults` on a single-λ FieldRegion `rad_plane` in the cladding (z = 2.5 µm,
+|y| ≤ 2.4 µm, x = device, 4 source tiles), value V = Σ_i W_i |E_i|² with W the
+x,y trapz area weights (= ∫|E|² dA), objective −log V; the port entry stays for
+the λ row and t_pk logging, the width entry stays last. Adjoint source =
+∂V/∂E* = W·conj(E), tiled like the width twin, phase factor = S1's C_field.
+★The first version paired the weighted value with the stock plain conj(E)
+source: lumopt2's own `FieldFom` uses a PLAIN sample sum, so that mismatch
+made the gradient ~1/dA ≈ 4e14 too large (MEASURED 2.6e14 in
+`gates/gate_rad_fom_weights.py`). Under the scale-free QP the step direction
+was still right, so the error surfaced only as a collapsing trust radius and
+meaningless gain ratios. Rule: a custom `FieldResults` value and its adjoint
+source are one object — weight for weight.
+EXPECTED relation to the T objective: at fixed W, ΔT = −Δ(radiated loss) along
+every measured lane (Q_c constant), so the two objectives should agree in
+direction; the lane tells whether the far-field gradient is the better-
+conditioned one (fewer rejected steps per gain), not whether it finds a
+different optimum.
