@@ -133,6 +133,17 @@ LANES = [
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, perp=True,
          metric={"shift": 375.0}, gw_shift=-0.0004, max_feval=8),
+    # task 10 (2026-10-10, user: "use the far field as the FOM, as a separate
+    # experiment"): S1 from its 0.9711 best with objective = -log(sum|E|^2) on
+    # a cladding plane at z = 2.5 um (rad_fom); width band and lambda row as
+    # before; port entry kept for the lambda row and t_pk logging. Measured T
+    # along every lane tracked 1-T-R one-for-one, so EXPECTED: same direction
+    # as the T objective; this lane measures whether the far-field adjoint
+    # steers differently (gain ratios, step pattern, t_pk trend).
+    dict(base=s1.SPEC_V3, label="lumopt2_te_s1_n98_radfom", start=TE_S1_N98_T9711,
+         scan=1561.04, two_kl_floor=3.0,
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, rad=True, max_feval=8),
 ]
 
 
@@ -163,6 +174,8 @@ def lane_spec(task_idx):
         adj_fix_re=ln["port"][0], adj_fix_im=ln["port"][1],
         wgp_d_halfrange_nm=ln.get("metric"),
         wgp_v3_perp_glam=ln.get("perp", False))
+    if ln.get("rad"):
+        spec.rad_fom = True
     if "dlam" in ln:
         spec.wgp_v3_dlam_nm = ln["dlam"]
     if "gw_shift" in ln:

@@ -536,6 +536,18 @@ class CampaignSpec:
     # None = builder defaults (2000 ps cap, shutoff 1e-7): every existing spec unchanged.
     sim_time_ps: float = None
     auto_shutoff_min: float = None
+    # ★rad_fom (claude-te 2026-10-10, user: "use the far field as the FOM"):
+    # objective = -log(sum |E|^2) on a single-lambda FieldRegion plane in the
+    # cladding ABOVE the device ("rad_plane", z = rad_plane_z_um), i.e. minimise
+    # the upward radiated energy at the pinned resonance. Stock FieldFom
+    # semantics (plain conj(E) adjoint source, tiled like the width twin).
+    # The port entry stays (lambda row + t_pk logging); width entry unchanged.
+    # Default False: every existing spec is byte-identical.
+    rad_fom: bool = False
+    rad_plane_z_um: float = 2.5       # guided tail ~10x below the radiated |E|^2 there (EXPECTED)
+    rad_plane_y_half_um: float = 2.4  # inside the 6.8 um box, clear of the PML
+    adj_fix_rad_re: float = 1.0       # uncalibrated; the live gain ratio is the gate
+    adj_fix_rad_im: float = 0.0
     best_metric: str = "fom"     # "fom" or measured "modal_peak3"
     # ★wgp_noise_freeze / wgp_noise_stop (2026-10-04, noise-aware trust cap —
     # Cao/Berahas/Scheinberg arXiv 2205.03667; Sun & Nocedal 2023): a filter
@@ -806,6 +818,8 @@ def make_func(spec):
             props["field_profile_adj::wavelength center"] = float(
                 getattr(spec, "_wg_lam_track", 0.0)
                 or spec.scan_center_nm) * NM
+            if getattr(spec, "rad_fom", False):
+                props["rad_plane::wavelength center"] = props["field_profile_adj::wavelength center"]
         return props
 
     return func
@@ -1379,6 +1393,34 @@ def build_base_fsp(spec, out_path):
             sim.fdtd.setnamed("FDTD", "simulation time", float(spec.sim_time_ps) * 1e-12)
         if getattr(spec, "auto_shutoff_min", None) is not None:
             sim.fdtd.setnamed("FDTD", "auto shutoff min", float(spec.auto_shutoff_min))
+        if getattr(spec, "rad_fom", False):
+            # radiated-energy plane (see CampaignSpec.rad_fom) + adjoint-source
+            # tiles, same single-lambda FieldRegion pattern as the width twin
+            f = sim.fdtd
+            geo = {k: float(np.squeeze(f.getnamed("field_profile", k)))
+                   for k in ("x", "x span")}
+            lam_c = cfg.spectral.center_wavelength_m
+            n_tiles = int(getattr(spec, "wg_src_tiles", 1) or 1)
+            edges = np.linspace(geo["x"] - geo["x span"] / 2.0,
+                                geo["x"] + geo["x span"] / 2.0, n_tiles + 1)
+            tiles = [("rad_plane", geo["x"], geo["x span"])] + [
+                (f"rad_plane_t{t}", 0.5 * (edges[t] + edges[t + 1]), edges[t + 1] - edges[t])
+                for t in range(n_tiles if n_tiles > 1 else 0)]
+            for name, xc, xs in tiles:
+                f.addfieldregion()
+                f.set("name", name)
+                f.set("monitor type", "2D Z-normal")
+                f.set("x", xc)
+                f.set("x span", xs)
+                f.set("y", 0.0)
+                f.set("y span", 2.0 * float(spec.rad_plane_y_half_um) * 1e-6)
+                f.set("z", float(spec.rad_plane_z_um) * 1e-6)
+                f.set("override global monitor settings", 1)
+                f.set("use source limits", 0)
+                f.set("frequency points", 1)
+                f.set("wavelength center", lam_c)
+                f.set("wavelength span", 0.0)
+                f.set("source mode", 0)
         if getattr(spec, "width_grad", False):
             # Single-λ twin of field_profile for the width-FOM entry. lumopt2's
             # generate() REJECTS broadband FieldRegion monitors outright
@@ -1677,10 +1719,12 @@ def make_project(spec, out_dir, lmpt=None):
         # V2 (skill item 28): second FOM entry = softW with a weighted
         # monitor-source adjoint; fct = softmax T − AL width-band penalty.
         # (spec validity asserted at the top of make_project, pre-build.)
-        WidthResults, MixedFom = make_width_classes(lmpt, spec)
-        fom = MixedFom([port_res,
-                        WidthResults(spec.scan_center_nm * NM)],
-                       fct=make_fct_v2(wl_nm, spec))
+        WidthResults, MixedFom, RadResults = make_width_classes(lmpt, spec)
+        entries = [port_res]
+        if getattr(spec, "rad_fom", False):
+            entries.append(RadResults(spec.scan_center_nm * NM))   # BEFORE width (width must stay last)
+        entries.append(WidthResults(spec.scan_center_nm * NM))
+        fom = MixedFom(entries, fct=make_fct_v2(wl_nm, spec))
         # port-entry C is applied inside MixedFom per entry — do NOT also
         # wrap _compute_adjoint_fields_phased below (would double-apply).
     else:
@@ -2225,6 +2269,16 @@ def make_fct_v2(wl_nm, spec):
         # deadband, and cap the run below BEST_T9636's own e=132.6, i.e. it
         # would structurally forbid the campaign from reaching the basin it is
         # meant to test. The projection prices elongation exactly, via grad-W.
+        if getattr(spec, "rad_fom", False):
+            # x = [T(lambda grid), rad, softW]: objective = -log(rad) (scale-free,
+            # relative radiation reduction); the T slice is only read for the
+            # dead-device guard (zero jacobian), softW's jacobian is 0 as before.
+            peak = make_fct_peak(wl_nm)
+
+            def fct_rad(x):
+                peak(x[:n_wl])                      # raises on a dead device
+                return -anp.log(x[n_wl])
+            return fct_rad
         if getattr(spec, "wgp_v3_peak", False):
             peak = make_fct_peak(wl_nm)
             return lambda x: peak(x[:n_wl])
@@ -2415,8 +2469,29 @@ def make_width_classes(lmpt, spec):
             aux.update(w_x=w_x, softw=sw, x_um=x, I=I, lam_pk_nm=lam_nm)
             self.aux = aux
 
+    class RadResults(FieldResults):
+        # Single-lambda cladding plane; value = sum |E|^2 dA (radiated energy
+        # proxy at the pinned resonance). Stock FieldFom adjoint = conj(E).
+        def __init__(self, wavelength_m):
+            super().__init__("rad_plane", "intensity", [wavelength_m])
+
+        def get_results(self, fdtd_session):
+            res = fdtd_session.fdtd.getresult(self.monitor_name, "E")
+            E = np.asarray(res["E"])
+            x = np.squeeze(np.asarray(res["x"])).astype(float)
+            y = np.squeeze(np.asarray(res["y"])).astype(float)
+            I = np.squeeze(np.sum(np.abs(E) ** 2, axis=-1))     # (x, y[, z, lam])
+            while I.ndim > 2:
+                I = I[..., 0] if I.shape[-1] == 1 else I.sum(axis=-1)
+            val = float(np.trapz(np.trapz(I, y, axis=1), x)) if I.ndim == 2 else float(np.trapz(I, x))
+            self.values = anp.array([val])
+            self.wavelengths = [float(np.squeeze(res["lambda"]))]
+
     class MixedFom(PortFom):
         supports_concurrent_adjoint = False     # field source needs fwd results
+
+        def _is_rad(self, sim_result):
+            return isinstance(sim_result, RadResults)
         # FieldFom helper needed by its get_scaling_factor when called unbound
         # for width entries (measured: task 11 died on this AFTER its 8.7 h
         # adjoint completed — the least-tested-code lesson, item 23, again).
@@ -2436,7 +2511,7 @@ def make_width_classes(lmpt, spec):
             for config_info in self.config_map.config_map.values():
                 for adj in config_info["adjoints"]:
                     sr = adj["sim_result"]
-                    if self._is_width(sr):
+                    if self._is_width(sr) or self._is_rad(sr):
                         continue
                     port_path = f"FDTD::ports::{sr.monitor_name}"
                     raw_axis = fdtd_session.fdtd.getnamed(port_path, "injection axis")
@@ -2450,10 +2525,36 @@ def make_width_classes(lmpt, spec):
         def _update_port_positions(self, fdtd_session, config_info, step):
             ports_only = dict(config_info)
             ports_only["adjoints"] = [a for a in config_info["adjoints"]
-                                      if not self._is_width(a["sim_result"])]
+                                      if not (self._is_width(a["sim_result"])
+                                              or self._is_rad(a["sim_result"]))]
             return super()._update_port_positions(fdtd_session, ports_only, step)
 
         def setup_adjoint_simulation(self, fdtd_session, sources, sim_result):
+            if self._is_rad(sim_result):
+                # stock FieldFom semantics (conj(E) at the plane's single lambda),
+                # but with this project's source-disable path (full port paths)
+                # and the tiled GPU injection used by the width twin.
+                prof = fdtd_session.fdtd.getresult(sim_result.monitor_name, "E")
+                prof["E"] = np.conj(np.asarray(prof["E"]))
+                fdtd_session.fdtd.switchtolayout()
+                for s_ in sources:
+                    try:
+                        if s_[0] == "port":
+                            fdtd_session.fdtd.setnamed(f"FDTD::ports::{s_[1]}", "enabled", False)
+                        elif s_[0] == "source":
+                            fdtd_session.fdtd.setnamed(s_[1], "enabled", False)
+                    except Exception as e:
+                        raise RuntimeError(f"disable forward source {s_}: {e}")
+                n_tiles = int(getattr(spec, "wg_src_tiles", 1) or 1)
+                if n_tiles > 1:
+                    import_tiled_source(fdtd_session.fdtd, prof, n_tiles,
+                                        float(sim_result.wavelengths[0]),
+                                        sim_result.monitor_name)
+                else:
+                    fdtd_session.fdtd.setnamed(sim_result.monitor_name, "source mode", True)
+                    fdtd_session.fdtd.select(sim_result.monitor_name)
+                    fdtd_session.fdtd.importdataset(prof)
+                return
             if not self._is_width(sim_result):
                 return super().setup_adjoint_simulation(
                     fdtd_session, sources, sim_result)
@@ -2517,18 +2618,21 @@ def make_width_classes(lmpt, spec):
                 fdtd_session.fdtd.importdataset(prof)
 
         def get_scaling_factor(self, fdtd_session, parametrization, sim_result):
-            if self._is_width(sim_result):
+            if self._is_width(sim_result) or self._is_rad(sim_result):
                 return FieldFom.get_scaling_factor(
                     self, fdtd_session, parametrization, sim_result)
             return super().get_scaling_factor(fdtd_session, parametrization,
                                               sim_result)
 
         def _collect_fwd_side_aux(self, fdtd_session, entry):
-            if self._is_width(entry["sim_result"]):
+            if self._is_width(entry["sim_result"]) or self._is_rad(entry["sim_result"]):
                 return None
             return super()._collect_fwd_side_aux(fdtd_session, entry)
 
         def _compute_adjoint_fields_phased(self, fdtd_session, entry, fwd_aux):
+            if self._is_rad(entry["sim_result"]):
+                fac = complex(spec.adj_fix_rad_re, spec.adj_fix_rad_im)
+                return [ei * fac for ei in FieldFom.get_adjoint_fields(self, fdtd_session, entry)]
             if self._is_width(entry["sim_result"]):
                 if getattr(spec, "_wg_reuse", False):
                     # ★wgp_reuse_k: no width-adjoint solve ran this iterate —
@@ -2602,7 +2706,7 @@ def make_width_classes(lmpt, spec):
                 self.fct = keep
             return gT          # combined == ∇T fields here (width jac was 0)
 
-    return WidthResults, MixedFom
+    return WidthResults, MixedFom, RadResults
 
 
 # ═══════════════════════════════════════════════════════════════════════════
