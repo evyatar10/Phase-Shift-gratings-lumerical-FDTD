@@ -32,6 +32,11 @@ from runners.lumopt2_design.best_designs import TE_S1_N98_EVAL3, TE_S1_N98_T9711
 
 MAX_FEVAL = 8        # persistent forward budget per lane; raise + redeploy to extend
 S1_SIM_TIME_PS = 50.0   # task 15: ladder 174823_6 MEASURED S1 best 50 ps 0.974332 vs 150 ps 0.974395 (6e-5)
+# Measured per-tooth width response to tooth shifts (um per nm; NaN = keep the
+# adjoint row). S2: fixed-time sweeps 174828/173624 (teeth 2-6 -0.0005, 7-10
+# +0.0008). S1: 174828 rows 3/6/7 (teeth 1-5 -0.003 to -0.004).
+S2_SHIFT_W_PROFILE = tuple([float("nan")] + [-0.0005] * 5 + [0.0008] * 4 + [float("nan")] * 50)
+S1_SHIFT_W_PROFILE = tuple([-0.0035] * 5 + [float("nan")] * 55)
 S2_SIM_TIME_PS = 150.0  # task 12: s2time ladder 174406 MEASURED |T250-T150| = 7e-5, windows 1e-4 (2026-10-10)
 
 LANES = [
@@ -200,7 +205,7 @@ LANES = [
          trust={"shift": 25.0, "avg": 25.0}, dlam=0.1,
          port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, perp=True,
-         metric={"shift": 375.0}, max_feval=8,
+         metric={"shift": 375.0}, max_feval=16,   # 8 -> 16 (2026-10-11: 5/5 accepted, ratio ~0.97)
          sim_time_ps=S1_SIM_TIME_PS, auto_shutoff_min=1e-12),
     # task 16 (2026-10-10, user: "fix the shifts in S2 so it is both the
     # corrugation improvement AND the shifts"): S2 from the corrugation optimum
@@ -235,6 +240,17 @@ LANES = [
          scan=1561.04, two_kl_floor=3.0,
          port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
          fwhm0=s1.FWHM0_UM, softw0=s1.SOFTW0_UM, rad=True, ff=True, max_feval=8),
+    # task 19 (2026-10-11 09:50): S2 from the corrugation best T9739 with the
+    # Fable-review width-row fixes. Lane 16 (same start, scalar -0.0004 row,
+    # cw-curved halving) lost T on both steps (ratios -0.22, -0.03), and the
+    # fixed-geometry rows say shifts on top of T9739 lose T (hand stretch
+    # -0.0014, optimizer's pattern -0.0008). Last test of "do shifts add at the
+    # S2 corrugation optimum": per-tooth measured width row + cw noise floor.
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_fixt_prof", start=TE_S2_N98_T9739,
+         scan=1560.42, two_kl_floor=None,
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, max_feval=8,
+         gw_profile=S2_SHIFT_W_PROFILE, cw_noise=0.2),
 ]
 
 
@@ -293,6 +309,10 @@ def lane_spec(task_idx):
         spec.wgp_v3_dlam_nm = ln["dlam"]
     if ln.get("gw_shift") is not None:
         spec.wgp_gw_shift_um_per_nm = ln["gw_shift"]
+    if ln.get("gw_profile") is not None:
+        spec.wgp_gw_shift_profile = tuple(ln["gw_profile"])
+    if ln.get("cw_noise") is not None:
+        spec.wgp_cw_noise_um_per_nm = float(ln["cw_noise"])
     if "region_y_half" in ln:
         spec.region_y_half_nm = ln["region_y_half"]
     if "n_wl" in ln:
