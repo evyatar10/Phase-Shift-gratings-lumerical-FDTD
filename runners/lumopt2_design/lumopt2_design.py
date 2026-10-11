@@ -570,6 +570,12 @@ class CampaignSpec:
     # False) over-weights grazing/evanescent content and lost T by redirecting
     # radiation (lanes 174543_10 / 174648_13).
     rad_farfield: bool = False
+    # ★rad_norm_T (claude-te 2026-10-11): objective -log(V / T(lambda_rad)), i.e.
+    # far-field power over transmitted power at the SAME wavelength. The plane
+    # records at a pinned lambda; on S2's 0.2 nm line a 0.05 nm resonance move
+    # lowers V by ~20 % with no loss change (rewards detuning). V and T share
+    # the cavity's Lorentzian, so the ratio (~ Q_c/Q_i) is detuning-free.
+    rad_norm_T: bool = False
     rad_ff_n_clad: float = 1.444      # cladding index (project constant, CLAUDE.md section 4)
     best_metric: str = "fom"     # "fom" or measured "modal_peak3"
     # ★wgp_noise_freeze / wgp_noise_stop (2026-10-04, noise-aware trust cap —
@@ -922,6 +928,22 @@ def make_fct(wl_nm):
         return anp.mean(anp.abs(T)[idx] ** P_SOFTMAX) ** (1.0 / P_SOFTMAX)
 
     return fct
+
+
+def t_at_rad_lam(T, wl_nm, spec):
+    """|T| linearly interpolated at the rad plane's recorded wavelength
+    (spec._rad_lam_nm, set by RadResults.get_results). Autograd-safe: the
+    bracket indices are constants, the two weights carry the gradient."""
+    wl = np.asarray(wl_nm, dtype=float)
+    lam = float(getattr(spec, "_rad_lam_nm", np.nan))
+    order = np.argsort(wl)
+    ws = wl[order]
+    if not (ws[0] <= lam <= ws[-1]):
+        raise RuntimeError(f"rad_norm_T: plane lambda {lam} nm outside the T grid")
+    k = int(np.clip(np.searchsorted(ws, lam) - 1, 0, ws.size - 2))
+    i0, i1 = int(order[k]), int(order[k + 1])
+    w = (lam - wl[i0]) / (wl[i1] - wl[i0])
+    return (1.0 - w) * anp.abs(T[i0]) + w * anp.abs(T[i1])
 
 
 def make_fct_peak(wl_nm):
@@ -2303,6 +2325,8 @@ def make_fct_v2(wl_nm, spec):
 
             def fct_rad(x):
                 peak(x[:n_wl])                      # raises on a dead device
+                if getattr(spec, "rad_norm_T", False):
+                    return -anp.log(x[n_wl]) + anp.log(t_at_rad_lam(x[:n_wl], wl_nm, spec))
                 return -anp.log(x[n_wl])
             return fct_rad
         if getattr(spec, "wgp_v3_peak", False):
@@ -2633,6 +2657,7 @@ def make_width_classes(lmpt, spec):
                 self.aux = {"src": rad_adjoint_source(E, W)}
             self.values = anp.array([val])
             self.wavelengths = [lam]
+            spec._rad_lam_nm = lam / NM          # read by the rad_norm_T fct
 
     class MixedFom(PortFom):
         supports_concurrent_adjoint = False     # field source needs fwd results

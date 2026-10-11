@@ -251,6 +251,15 @@ LANES = [
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, max_feval=8,
          gw_profile=S2_SHIFT_W_PROFILE, cw_noise=0.2),
+    # task 20 (2026-10-11, user: "the far field needs to be explored on S2
+    # too"): lane 19 with the objective swapped to the detuning-free far field
+    # -log(V/T(lambda_rad)) (rad_farfield + rad_norm_T). Same start, step
+    # geometry, width row and sim time as lane 19 -> direct FOM comparison.
+    dict(base=s2.SPEC_V3, label="lumopt2_te_s2_n98_ffnorm", start=TE_S2_N98_T9739,
+         scan=1560.42, two_kl_floor=None,
+         port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
+         fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, max_feval=8,
+         gw_profile=S2_SHIFT_W_PROFILE, cw_noise=0.2, rad=True, ff=True, normT=True),
 ]
 
 
@@ -303,6 +312,8 @@ def lane_spec(task_idx):
         spec.rad_fom = True
     if ln.get("ff"):
         spec.rad_farfield = True
+    if ln.get("normT"):
+        spec.rad_norm_T = True
     if "band" in ln:
         spec.fwhm_bounds_um = tuple(ln["band"])
     if ln.get("dlam") is not None:
