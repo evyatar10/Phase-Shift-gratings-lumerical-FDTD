@@ -69,6 +69,17 @@ ROWS = [
     ("s2_c1only",         s2.SPEC_V3, _with(s2.SEED, corr={1: float(TE_S2_N98_T9739[_L.SL_CORR.start])}), 1560.464, {}),
     ("s2_best_t2-6_10",   s2.SPEC_V3, TE_S2_N98_T9739, 1560.42, {d: 10.0 for d in range(2, 7)}),
     ("s2_best_shiftlane", s2.SPEC_V3, _with(TE_S2_N98_T9739, shifts=TE_S2_N98_T9725), 1560.42, {}),
+    # rows 11-16 (2026-10-11 10:00, user: "explore whether S2 shifts add in ANY
+    # way"). Rows 9/10 MEASURED that 6-10 nm shifts on top of the corrugation
+    # best LOSE T (-0.0014 / -0.0008). Map the rest: smaller stretch, tooth 1
+    # (visible now: T9739 gives it 23.85 nm corrugation), the outer lobe, and the
+    # reverse composition (corrugation added to the shift solution).
+    ("s2_best_t2-6_2",  s2.SPEC_V3, TE_S2_N98_T9739, 1560.42, {d: 2.0 for d in range(2, 7)}),
+    ("s2_best_t2-6_4",  s2.SPEC_V3, TE_S2_N98_T9739, 1560.42, {d: 4.0 for d in range(2, 7)}),
+    ("s2_best_t1_5",    s2.SPEC_V3, TE_S2_N98_T9739, 1560.42, {1: 5.0}),
+    ("s2_best_t1_10",   s2.SPEC_V3, TE_S2_N98_T9739, 1560.42, {1: 10.0}),
+    ("s2_best_t7-11_3", s2.SPEC_V3, TE_S2_N98_T9739, 1560.42, {d: 3.0 for d in range(7, 12)}),
+    ("s2_shift_plus_c1", s2.SPEC_V3, _with(TE_S2_N98_T9725, corr={1: float(TE_S2_N98_T9739[_L.SL_CORR.start])}), 1560.46, {}),
 ]
 N_TASKS = len(ROWS)
 
