@@ -260,6 +260,17 @@ LANES = [
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, max_feval=8,
          gw_profile=S2_SHIFT_W_PROFILE, cw_noise=0.2, rad=True, ff=True, normT=True),
+    # task 21 (2026-10-11, user: "optimise at a narrower mode, then widen" —
+    # low priority): S1 plain grating with uniform corrugation 283 nm, bulk too
+    # (s1_narrow_widen 175625_0 MEASURED: W 16.995 um, softW 14.394, T 0.828,
+    # lambda 1560.444, Q_L 2299). Optimise at THAT width with the standing
+    # machinery; afterwards a corrugation retrim back to 19.4 um decides.
+    dict(base=dataclasses.replace(s1.SPEC_V3, corr0_nm=283.0), label="lumopt2_te_s1_n98_narrow",
+         start=eng.seed_params(dataclasses.replace(s1.SPEC_V3, corr0_nm=283.0, seed_override=None)),
+         scan=1560.44, two_kl_floor=3.0,
+         port=s1.ADJ_FIX_PORT, field=s1.ADJ_FIX_FIELD,
+         fwhm0=16.995, softw0=14.394, max_feval=8,
+         sim_time_ps=S1_SIM_TIME_PS, auto_shutoff_min=1e-12),
 ]
 
 
