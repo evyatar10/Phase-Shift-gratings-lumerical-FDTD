@@ -30,7 +30,8 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 from runners.lumopt2_design import campaign_te_s1 as s1
 from runners.lumopt2_design import campaign_te_s2 as s2
-from runners.lumopt2_design.best_designs import TE_S1_N98_T9711, TE_S2_N98_T9739
+from runners.lumopt2_design.best_designs import (TE_S1_N98_T9711, TE_S2_N98_T9739, TE_S1_N98_T9775,
+                                                 TE_S2_N98_STEP19)
 
 MESH = "conformal variant 0"
 
@@ -39,15 +40,28 @@ ROWS = [
     ("s2_seed", s2.SPEC_V3, s2.SEED,        1559.9, 4.0, 1001, "PVA 0.96909 / 19.636; conformal stored 0.97498 / 1559.860"),
     ("s2_best", s2.SPEC_V3, TE_S2_N98_T9739, 1559.9, 4.0, 1001, "PVA 0.97386 / 19.620 / 1560.423"),
     ("s1_best", s1.SPEC_V3, TE_S1_N98_T9711, 1560.1, 10.0, 501, "PVA 0.97112 / 19.395 / 1561.04"),
+    # rows 3-7 (2026-10-12): the FINAL tooth-space devices at conformal AND fixed
+    # sim time (S1 50 ps, S2 150 ps, shutoff off; rows 0-2 ran at the 63 ps
+    # auto-shutoff, so they are NOT comparable). Each seed has its own control.
+    ("s1_seed_fixt",   s1.SPEC_V3, None,            1560.1, 10.0, 501, "PVA 50 ps: seed not re-run at PVA fixed time (T9711 0.97434)"),
+    ("s1_t9775_fixt",  s1.SPEC_V3, TE_S1_N98_T9775, 1560.6, 10.0, 501, "PVA 50 ps 0.97752 / 19.468 / 1561.964"),
+    ("s2_seed_fixt",   s2.SPEC_V3, s2.SEED,         1559.9, 4.0, 1001, "PVA 150 ps 0.98069 / 19.636"),
+    ("s2_t9739_fixt",  s2.SPEC_V3, TE_S2_N98_T9739, 1559.9, 4.0, 1001, "PVA 150 ps 0.98605 / 19.620"),
+    ("s2_dir025_fixt", s2.SPEC_V3, TE_S2_N98_T9739 + 0.25 * (TE_S2_N98_STEP19 - TE_S2_N98_T9739),
+                                                    1559.9, 4.0, 1001, "PVA 150 ps 0.98635 / 19.613"),
 ]
+SIM_TIME_PS = {"s1": 50.0, "s2": 150.0}      # converged (s2_simtime_ladder 174406 / 174823)
 N_TASKS = len(ROWS)
 
 
 def spec_of(idx):
     name, base, p, lam, width, npts, _ = ROWS[idx]
+    extra = {}
+    if name.endswith("_fixt"):
+        extra = dict(sim_time_ps=SIM_TIME_PS[name[:2]], auto_shutoff_min=1e-12)
     spec = dataclasses.replace(
         base, label=f"prodconf_te_{name}", mesh_refinement=MESH,
-        seed_override=tuple(float(v) for v in p),
+        seed_override=(None if p is None else tuple(float(v) for v in p)), **extra,
         scan_center_nm=lam, scan_width_nm=width, n_wl_points=npts,
         fwhm0_um=None, wg_anchor={"softw": 19.0, "fwhm": 19.0},   # forward only; no band
         two_kl_floor=1.0)
@@ -62,9 +76,8 @@ def main(task_idx=0):
     spec = spec_of(int(task_idx))
     out_dir = os.path.join(config.RESULTS_DIR, spec.label)
     log = os.path.join(out_dir, f"{spec.label}_evals.jsonl")
-    if os.path.exists(log):           # preemption resume: one forward, never twice
-        row = json.loads(open(log).readlines()[-1])
-    else:
+    row = eng.last_logged_row(log)    # preemption resume: one forward, never twice
+    if row is None:
         row = eng.run_canary(spec, out_dir)
     print(f"[prodconf_te {task_idx} {spec.label}] conformal N=98: "
           f"T {row.get('t_pk')}  λ {row.get('lam_pk_nm')}  Q {row.get('q_loaded')}  "
