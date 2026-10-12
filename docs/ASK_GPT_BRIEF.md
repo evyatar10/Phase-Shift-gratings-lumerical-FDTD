@@ -217,3 +217,21 @@ Campaign pass bands for the first 3 iterates: width error <= 0.02 um, dT ratio 0
 25 %). Claude's actions (same hour): newest-row lookup (+ local test), time-stamped gradient files, status=="ok"
 for growth, softened the "voided" comment; did NOT stop 170253 (iterate-0 effect bounded: same geometry, W differs
 by 8e-5 um, the stale c_W was flagged so the lambda bound was halved = conservative); new code takes effect on restart.
+
+Turn 6 (new session 01a11855, 2026-10-08 ~00:46): FAILED — ChatGPT usage limit hit mid-review ("try again at
+Oct 14th, 2026 6:40 AM"). Question was a bug review of claude-te engine reverts 0a27c0e (degraded 1/4-radius step on
+missing gLambda, budget clean stop, NaN->null journal, diag try split) + S2 port C=(1,0). Re-ask after Oct 14 if still
+relevant. Context since turn 5: two-lane split (docs/TWO_LANE_SETUP_2026-10-07.md); live run Athena 172063, N=98 both seeds.
+
+### 2026-10-12 — review of claude-te f5c049f..39fc2b7 (far-field objectives, width-row knobs, lane defaults, forward-row runners)
+GPT (FROM-CODE): legacy lanes inherit new defaults on requeue (High); cw noise floor clears curvature on
+slope size alone, counterexample W0+20dλ² (High); runners crash on a truncated last log line (Medium);
+"fixed time" still has a 1e-12 shutoff (Medium). No gradient/indexing bug; _rad_lam_nm safe.
+INFERENCE: repeated S2 failed step = same accepted-point gradient re-used; changing an inactive width row
+cannot help; test the delivered direction with forwards along it. Objective: maximise Q_i at fixed width.
+Claude: adopted all four code findings (698c49d; the first cw fix was itself fooled by GPT's quadratic —
+fixed with a second-difference term, gated through the real cw_stats helper). Verified the shutoff point
+directly: fixed-time runs complete 150 ps (shutoff level stays ~6.5e-8). Direction test dispatched
+(178266, a = 0.1/0.25/0.5; one-sided because shifts are bounded at 0). Parallel Fable review agreed on
+the legacy-lane defect and added: S2 rad lanes used S1's C_field (fixed), 1 % ky spacing (fixed), lane-20
+OOM = 4 full 501-λ field sets cached (open: slice single-λ adjoint DFTs).
