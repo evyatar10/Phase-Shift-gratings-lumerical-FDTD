@@ -33,7 +33,7 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 from runners.lumopt2_design import campaign_te_s1 as s1
 from runners.lumopt2_design import campaign_te_s2 as s2
-from runners.lumopt2_design.best_designs import TE_S1_N98_T9711, TE_S2_N98_T9725, TE_S2_N98_T9739
+from runners.lumopt2_design.best_designs import TE_S1_N98_T9711, TE_S2_N98_T9725, TE_S2_N98_T9739, TE_S2_N98_STEP19
 
 SIM_TIME_PS = 150.0
 _L = eng.layout(60)
@@ -80,6 +80,15 @@ ROWS = [
     ("s2_best_t1_10",   s2.SPEC_V3, TE_S2_N98_T9739, 1560.42, {1: 10.0}),
     ("s2_best_t7-11_3", s2.SPEC_V3, TE_S2_N98_T9739, 1560.42, {d: 3.0 for d in range(7, 12)}),
     ("s2_shift_plus_c1", s2.SPEC_V3, _with(TE_S2_N98_T9725, corr={1: float(TE_S2_N98_T9739[_L.SL_CORR.start])}), 1560.46, {}),
+    # rows 17-19 (2026-10-12, GPT review): direction test of the S2 step that
+    # lanes 16 and 19 both proposed from T9739 (pred +0.00216 at a = 1,
+    # MEASURED a=0: 0.98603, a=1: 0.98509). Shifts are bounded at 0, so the test
+    # is one-sided: a = 0.1 / 0.25 / 0.5. Small-a slope ~ +0.0022/unit -> the
+    # gradient is right and the step is too long; negative -> the direction
+    # itself is wrong (fix the objective gradient, not the width row).
+    ("s2_dir_a010", s2.SPEC_V3, TE_S2_N98_T9739 + 0.10 * (TE_S2_N98_STEP19 - TE_S2_N98_T9739), 1560.42, {}),
+    ("s2_dir_a025", s2.SPEC_V3, TE_S2_N98_T9739 + 0.25 * (TE_S2_N98_STEP19 - TE_S2_N98_T9739), 1560.42, {}),
+    ("s2_dir_a050", s2.SPEC_V3, TE_S2_N98_T9739 + 0.50 * (TE_S2_N98_STEP19 - TE_S2_N98_T9739), 1560.42, {}),
 ]
 N_TASKS = len(ROWS)
 
