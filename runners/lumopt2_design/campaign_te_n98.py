@@ -250,7 +250,7 @@ LANES = [
          scan=1560.42, two_kl_floor=None,
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, max_feval=8,
-         gw_profile=S2_SHIFT_W_PROFILE, cw_noise=0.2),
+         gw_profile=S2_SHIFT_W_PROFILE, cw_remainder=0.02),
     # task 20 (2026-10-11, user: "the far field needs to be explored on S2
     # too"): lane 19 with the objective swapped to the detuning-free far field
     # -log(V/T(lambda_rad)) (rad_farfield + rad_norm_T). Same start, step
@@ -259,7 +259,7 @@ LANES = [
          scan=1560.42, two_kl_floor=None,
          port=(1.0, 0.0), field=s2.ADJ_FIX_FIELD,
          fwhm0=s2.FWHM0_UM, softw0=s2.SOFTW0_UM, max_feval=8,
-         gw_profile=S2_SHIFT_W_PROFILE, cw_noise=0.2, rad=True, ff=True, normT=True),
+         gw_profile=S2_SHIFT_W_PROFILE, cw_remainder=0.02, rad=True, ff=True, normT=True),
     # task 21 (2026-10-11, user: "optimise at a narrower mode, then widen" —
     # low priority): S1 plain grating with uniform corrugation 283 nm, bulk too
     # (s1_narrow_widen 175625_0 MEASURED: W 16.995 um, softW 14.394, T 0.828,
@@ -299,14 +299,23 @@ N_TASKS = len(LANES)
 #   174645, 174823: the production shutoff biased T low by 0.003-0.012).
 LANE_DEFAULTS = dict(metric={"shift": 375.0}, trust={"shift": 25.0, "avg": 25.0},
                      perp=True, dlam=0.1)
-SEED_DEFAULTS = {id(s1.SPEC_V3): dict(sim_time_ps=S1_SIM_TIME_PS, auto_shutoff_min=1e-12),
-                 id(s2.SPEC_V3): dict(sim_time_ps=S2_SIM_TIME_PS, auto_shutoff_min=1e-12,
+# Lanes dispatched BEFORE these defaults existed (d40fd88) keep exactly the
+# settings their ledgers ran with (GPT + Fable reviews 2026-10-12: a requeue or
+# budget extension must not change step geometry or numerics mid-lane).
+LEGACY_LANES = set(range(0, 12)) | {13, 14, 17}
+# Seed identity by pitch, not object id (a dataclasses.replace() base would miss an id key).
+SEED_DEFAULTS = {"s1": dict(sim_time_ps=S1_SIM_TIME_PS, auto_shutoff_min=1e-12),
+                 "s2": dict(sim_time_ps=S2_SIM_TIME_PS, auto_shutoff_min=1e-12,
+                            adj_fix_rad=s2.ADJ_FIX_FIELD,
                                       gw_shift=-0.0004)}
 
 
 def lane_spec(task_idx):
-    ln = dict(LANE_DEFAULTS)
-    ln.update(SEED_DEFAULTS.get(id(LANES[task_idx]["base"]), {}))
+    ln = {}
+    if task_idx not in LEGACY_LANES:
+        ln.update(LANE_DEFAULTS)
+        seed = "s2" if abs(LANES[task_idx]["base"].pitch_nm - s2.SPEC_V3.pitch_nm) < 1e-6 else "s1"
+        ln.update(SEED_DEFAULTS[seed])
     ln.update(LANES[task_idx])                      # explicit lane keys win
     start = free98_start() if isinstance(ln["start"], str) else ln["start"]
     spec = dataclasses.replace(
@@ -333,8 +342,10 @@ def lane_spec(task_idx):
         spec.wgp_gw_shift_um_per_nm = ln["gw_shift"]
     if ln.get("gw_profile") is not None:
         spec.wgp_gw_shift_profile = tuple(ln["gw_profile"])
-    if ln.get("cw_noise") is not None:
-        spec.wgp_cw_noise_um_per_nm = float(ln["cw_noise"])
+    if ln.get("cw_remainder") is not None:
+        spec.wgp_cw_remainder_um = float(ln["cw_remainder"])
+    if ln.get("adj_fix_rad") is not None:
+        spec.adj_fix_rad_re, spec.adj_fix_rad_im = (float(v) for v in ln["adj_fix_rad"])
     if "region_y_half" in ln:
         spec.region_y_half_nm = ln["region_y_half"]
     if "n_wl" in ln:

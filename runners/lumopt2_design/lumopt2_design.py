@@ -537,13 +537,13 @@ class CampaignSpec:
     # outer shifts look width-free); S1 tooth 1 -0.0029, teeth 1-5 -0.0042.
     # If set it replaces wgp_gw_shift_um_per_nm. None = unchanged behaviour.
     wgp_gw_shift_profile: tuple = None
-    # ★cw noise floor (claude-te 2026-10-11, Fable review): the cw "curved"
-    # test compares tiny slopes on S2's 0.2 nm line (dW/dlam ~ 0 by symmetry)
-    # and fires on noise, halving the lambda trust - which is what capped S2
-    # lane 12's shift share. If set, a curved flag with |cw| below this value
-    # (um/nm) is treated as ok: the unpriced cross term |cw|*dlam is then
-    # negligible. None = unchanged behaviour.
-    wgp_cw_noise_um_per_nm: float = None
+    # ★cw curvature remainder (claude-te 2026-10-12, GPT + Fable reviews): the
+    # cw "curved" test fires on S2's 0.2 nm line and halves the lambda trust.
+    # If set (um), a curved flag is cleared only when the MEASURED spread of the
+    # finite-difference slopes times the lambda trust is below this width:
+    # (max-min slope) * dlam bounds the unpriced nonlinear width change.
+    # Rows without a recorded spread stay degraded. None = unchanged behaviour.
+    wgp_cw_remainder_um: float = None
     # ★sim_time_ps / auto_shutoff_min (claude-te 2026-10-10): FDTD run-length
     # controls on the base scene. MEASURED: the S2 forward auto-shuts at 63 ps
     # (1e-7) with the resonance still ringing at ~0.7 % -> T scatter ~0.004.
@@ -936,6 +936,8 @@ def t_at_rad_lam(T, wl_nm, spec):
     bracket indices are constants, the two weights carry the gradient."""
     wl = np.asarray(wl_nm, dtype=float)
     lam = float(getattr(spec, "_rad_lam_nm", np.nan))
+    if not np.isfinite(lam):
+        raise RuntimeError("rad_norm_T: rad plane wavelength not recorded (get_results not run)")
     order = np.argsort(wl)
     ws = wl[order]
     if not (ws[0] <= lam <= ws[-1]):
@@ -2021,23 +2023,9 @@ def make_log_callback(spec, out_dir, sigma0_um=None, lmpt=None, fwhm0_um=None):
                                 return float(soft_width_of_line(
                                     x_, I_, spec.pitch_nm / 2000.0))
 
-                            spans_ = sorted({m_, max(1, m_ // 2), max(1, m_ // 4)},
-                                            reverse=True)
-                            slopes_ = [(_w_at(i_pk + h_) - _w_at(i_pk - h_))
-                                       / float(wl[i_pk + h_] - wl[i_pk - h_])
-                                       for h_ in spans_]
-                            cw_, curved_ = slopes_[-1], True
-                            for k_ in range(len(slopes_) - 1, 0, -1):
-                                ref_ = max(abs(slopes_[k_]), abs(slopes_[k_ - 1]), 1e-12)
-                                if abs(slopes_[k_] - slopes_[k_ - 1]) <= 0.2 * ref_:
-                                    cw_, curved_ = slopes_[k_], False
-                                    break
-                            if len(slopes_) == 1:
-                                curved_ = False
-                            row["cw_um_per_nm"] = round(float(cw_), 6)
-                            row["cw_curved"] = bool(curved_)
-                            row["cw_slopes"] = [round(float(v_), 6) for v_ in slopes_]
-                            row["cw_spans_nm"] = [round(h_ * dl_, 5) for h_ in spans_]
+                            st_ = cw_stats(_w_at, wl, i_pk, m_)
+                            row["cw_spans_nm"] = [round(h_ * dl_, 5) for h_ in st_.pop("spans")]
+                            row.update(st_)
                     except Exception as e_:
                         row["cw_error"] = str(e_)[:120]
                 if getattr(spec, "width_grad", False):
@@ -2438,17 +2426,61 @@ def shift_width_override(spec, gW, lo, hi, L):
     return gW, tag
 
 
-def cw_is_bad(spec, row, v3, lam_pk_row, dlam_b):
-    """Degraded-width-row test (halves the lambda trust). A 'curved' flag on a
-    negligible |cw| is noise when spec.wgp_cw_noise_um_per_nm is set."""
-    curved = bool(row.get("cw_curved"))
-    floor = getattr(spec, "wgp_cw_noise_um_per_nm", None)
-    cw = row.get("cw_um_per_nm")
-    if curved and floor is not None and cw is not None and abs(float(cw)) < float(floor):
+def cw_stats(w_at, wl, i_pk, m):
+    """dW/dlam at the peak from central differences at spans m, m/2, m/4 (keep
+    the narrowest span that agrees with the next wider one to 20 %, else
+    'curved'), plus the slope spread and the second difference at the widest
+    span. w_at(j) = width (um) at wavelength index j. Pure: no solver access."""
+    spans = sorted({m, max(1, m // 2), max(1, m // 4)}, reverse=True)
+    slopes = [(w_at(i_pk + h) - w_at(i_pk - h)) / float(wl[i_pk + h] - wl[i_pk - h])
+              for h in spans]
+    cw, curved = slopes[-1], True
+    for k in range(len(slopes) - 1, 0, -1):
+        ref = max(abs(slopes[k]), abs(slopes[k - 1]), 1e-12)
+        if abs(slopes[k] - slopes[k - 1]) <= 0.2 * ref:
+            cw, curved = slopes[k], False
+            break
+    if len(slopes) == 1:
         curved = False
+    h = spans[0]
+    dl = 0.5 * float(wl[i_pk + h] - wl[i_pk - h])
+    curv = (w_at(i_pk + h) + w_at(i_pk - h) - 2.0 * w_at(i_pk)) / (dl * dl)
+    return {"cw_um_per_nm": round(float(cw), 6), "cw_curved": bool(curved),
+            "cw_spread_um_per_nm": round(float(max(slopes) - min(slopes)), 6),
+            "cw_curv_um_per_nm2": round(float(curv), 6),
+            "cw_slopes": [round(float(v), 6) for v in slopes], "spans": spans}
+
+
+def cw_is_bad(spec, row, v3, lam_pk_row, dlam_b):
+    """Degraded-width-row test (halves the lambda trust). A 'curved' flag is
+    cleared when the bounded nonlinear width change over the lambda trust,
+    |slope spread|*dlam + 0.5*|second difference|*dlam^2, is below
+    spec.wgp_cw_remainder_um. Rows without both statistics stay degraded."""
+    curved = bool(row.get("cw_curved"))
+    rem = getattr(spec, "wgp_cw_remainder_um", None)
+    spread, curv = row.get("cw_spread_um_per_nm"), row.get("cw_curv_um_per_nm2")
+    if (curved and rem is not None and spread is not None and curv is not None
+            and dlam_b is not None):
+        dl = float(dlam_b)
+        if abs(float(spread)) * dl + 0.5 * abs(float(curv)) * dl * dl < float(rem):
+            curved = False
     twin_off = bool(v3 and row.get("twin_lam_nm") is not None and lam_pk_row is not None
                     and abs(row["twin_lam_nm"] - lam_pk_row) > dlam_b)
     return curved or twin_off
+
+
+def last_logged_row(log):
+    """Last COMPLETE json row of an eval log, or None (missing file, empty
+    file, or a truncated last line after a preemption mid-write)."""
+    import json
+    if not os.path.exists(log):
+        return None
+    for line in reversed(open(log, encoding="utf-8").read().splitlines()):
+        try:
+            return json.loads(line)
+        except ValueError:
+            continue
+    return None
 
 
 def trapz_weights(v):
@@ -2514,7 +2546,7 @@ def farfield_power(E, x, y, lam_m, n_clad):
     Eu = np.einsum("uj,xjc->xuc", A, Em)             # (x, yu, c)
     k0 = 2.0 * np.pi * n_clad / float(lam_m)
     kx = 2.0 * np.pi * np.fft.fftfreq(nx, d=dx)
-    ky = 2.0 * np.pi * np.fft.fftfreq(n_u, d=dy_u)
+    ky = 2.0 * np.pi * np.fft.fftfreq(n_u, d=float(yu[1] - yu[0]))
     kpar2 = kx[:, None] ** 2 + ky[None, :] ** 2
     w = np.where(kpar2 < k0 ** 2, np.sqrt(np.clip(1.0 - kpar2 / k0 ** 2, 0.0, None)), 0.0)
     Ek = np.fft.fft2(Eu, axes=(0, 1))

@@ -67,9 +67,8 @@ def main(task_idx=0):
     spec = spec_of(int(task_idx))
     out_dir = os.path.join(config.RESULTS_DIR, spec.label)
     log = os.path.join(out_dir, f"{spec.label}_evals.jsonl")
-    if os.path.exists(log):           # preemption resume: one forward, never twice
-        row = json.loads(open(log).readlines()[-1])
-    else:
+    row = eng.last_logged_row(log)    # preemption resume: one forward, never twice
+    if row is None:
         row = eng.run_canary(spec, out_dir)
     print(f"[s1narrow {task_idx} {spec.label}] bulk corr {ROWS[int(task_idx)][1]:.1f} nm, {SIM_TIME_PS} ps: "
           f"T {row.get('t_pk')}  λ {row.get('lam_pk_nm')}  Q {row.get('q_loaded')}  "

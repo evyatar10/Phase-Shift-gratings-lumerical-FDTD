@@ -5,8 +5,8 @@ Study dir: runners/lumopt2_design/ | Created 2026-10-11 | Fable review of the sh
   K2  scalar knob reproduces the old inline override on live shifts only
   K3  profile knob writes per-tooth values, NaN keeps the adjoint entry, frozen teeth untouched
   K4  profile wins over the scalar
-  K5  cw floor: curved with |cw| < floor -> ok; curved with |cw| >= floor -> still bad;
-      a twin-lambda offset still degrades regardless (the floor cannot hide it)
+  K5  cw remainder: curved cleared only if slope spread x dlam < remainder; a flat slope with
+      strong curvature (GPT counterexample, built through cw_stats) stays bad; no stats -> bad
 """
 import dataclasses
 import os
@@ -52,8 +52,28 @@ assert np.array_equal(np.delete(g, np.r_[L.SL_SHIFT]), np.delete(gW, np.r_[L.SL_
 both = dataclasses.replace(pr, wgp_gw_shift_um_per_nm=-0.0004)
 assert np.array_equal(eng.shift_width_override(both, gW, lo, hi, L)[0], g), "K4"
 
-fl = dataclasses.replace(base, wgp_cw_noise_um_per_nm=0.01)
-assert eng.cw_is_bad(fl, row_curved, True, None, 0.1) is False, "K5 noise"
-assert eng.cw_is_bad(fl, {"cw_curved": True, "cw_um_per_nm": 0.05}, True, None, 0.1) is True, "K5 real"
+fl = dataclasses.replace(base, wgp_cw_remainder_um=0.02)
+wl = np.linspace(1559.464, 1561.464, 501)
+i_pk, m = 240, 12
+
+
+def stats(f):
+    st = eng.cw_stats(lambda j: f(wl[j] - wl[i_pk]), wl, i_pk, m)
+    st.pop("spans")
+    return st
+
+
+# GPT counterexample: W = W0 + 20 dl^2 -> every central slope is 0, yet 0.2 um at 0.1 nm
+quad = stats(lambda d: 19.6 + 20.0 * d * d)
+assert abs(quad["cw_um_per_nm"]) < 1e-9 and quad["cw_spread_um_per_nm"] < 1e-9, "K5 quad slopes vanish"
+quad["cw_curved"] = True                       # force the flag: the remainder must still refuse
+assert eng.cw_is_bad(fl, quad, True, None, 0.1) is True, "K5 symmetric quadratic stays bad"
+# nearly linear, small curvature: remainder 0.5*0.2*0.01 = 0.001 um -> cleared
+lin = stats(lambda d: 19.6 + 0.3 * d + 0.2 * d * d)
+lin["cw_curved"] = True
+assert eng.cw_is_bad(fl, lin, True, None, 0.1) is False, "K5 small remainder -> ok"
+assert eng.cw_is_bad(fl, {"cw_curved": True, "cw_um_per_nm": 0.0}, True, None, 0.1) is True, "K5 no stats -> bad"
 assert eng.cw_is_bad(fl, {"cw_curved": False, "twin_lam_nm": 1560.0}, True, 1560.5, 0.1) is True, "K5 twin"
+assert eng.cw_is_bad(fl, lin, False, None, None) is True, "K5 non-v3 (no dlam) stays as flagged"
+assert eng.cw_is_bad(base, lin, True, None, 0.1) is True, "K5 knob off -> legacy (flag kept)"
 print("GATE width_row_knobs PASS  K1-K5")

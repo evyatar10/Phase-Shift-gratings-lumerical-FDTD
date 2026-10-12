@@ -70,9 +70,8 @@ def main(task_idx=0):
     spec = spec_of(int(task_idx))
     out_dir = os.path.join(config.RESULTS_DIR, spec.label)
     log = os.path.join(out_dir, f"{spec.label}_evals.jsonl")
-    if os.path.exists(log):           # preemption resume: one forward, never twice
-        row = json.loads(open(log).readlines()[-1])
-    else:
+    row = eng.last_logged_row(log)    # preemption resume: one forward, never twice
+    if row is None:
         row = eng.run_canary(spec, out_dir)
     print(f"[s2time {task_idx} {spec.label}] {spec.sim_time_ps} ps @ {spec.scan_center_nm}: "
           f"T {row.get('t_pk')}  fom {row.get('fom')}  λ {row.get('lam_pk_nm')}  "
