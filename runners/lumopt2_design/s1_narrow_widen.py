@@ -22,23 +22,40 @@ import dataclasses
 import json
 import os
 
+import numpy as np
+
 import config
 from runners.lumopt2_design import lumopt2_design as eng
 from runners.lumopt2_design import campaign_te_s1 as s1
+from runners.lumopt2_design.best_designs import TE_S1_N98_NARROW_T8973
 
 SIM_TIME_PS = 50.0        # s2_simtime_ladder 174823_6/7: S1 converged at 50 ps (6e-5 vs 150 ps)
 
-# (label, uniform corrugation nm, scan centre nm)
+# (label, uniform corrugation nm, scan centre nm, corrugation scale of the
+# narrow-lane best or None)
 ROWS = [
-    ("c283", 283.0, 1561.04),
+    ("c283", 283.0, 1561.04, None),
+    # rows 1-2 (2026-10-12): RETRIM the narrow-lane best (0.8973 at W 16.91) back
+    # to the S1 width by scaling EVERY corrugation (free teeth and bulk) by f.
+    # Measured dW/dcorr = (16.995-19.13)/33 = -0.065 um/nm (rows c283 vs c250),
+    # so f ~ 0.862 for 19.43 um; bracket 0.86 / 0.88. Compare with the S1 best
+    # 0.97766 at W 19.44 (174861/175624_15, 50 ps).
+    ("retrim_f0860", 283.0 * 0.86, 1561.0, 0.86),
+    ("retrim_f0880", 283.0 * 0.88, 1561.0, 0.88),
 ]
 N_TASKS = len(ROWS)
 
 
 def spec_of(idx):
-    name, corr, c = ROWS[idx]
+    name, corr, c, f = ROWS[idx]
+    seed = None
+    if f is not None:
+        L = eng.layout(s1.SPEC_V3.n_free)
+        p = np.asarray(TE_S1_N98_NARROW_T8973, dtype=float).copy()
+        p[L.SL_CORR] *= f
+        seed = tuple(float(v) for v in p)
     return dataclasses.replace(
-        s1.SPEC_V3, label=f"s1narrow_{name}", seed_override=None, corr0_nm=corr,   # corr0_nm = bulk AND uniform free-tooth seed
+        s1.SPEC_V3, label=f"s1narrow_{name}", seed_override=seed, corr0_nm=corr,   # corr0_nm = bulk AND uniform free-tooth seed
         scan_center_nm=c, sim_time_ps=SIM_TIME_PS, auto_shutoff_min=1e-12,
         fwhm0_um=None, wg_anchor={"softw": 17.0, "fwhm": 17.0}, two_kl_floor=1.0)
 
@@ -54,6 +71,6 @@ def main(task_idx=0):
         row = json.loads(open(log).readlines()[-1])
     else:
         row = eng.run_canary(spec, out_dir)
-    print(f"[s1narrow {task_idx} {spec.label}] corr {ROWS[int(task_idx)][1]} nm, {SIM_TIME_PS} ps: "
+    print(f"[s1narrow {task_idx} {spec.label}] bulk corr {ROWS[int(task_idx)][1]:.1f} nm, {SIM_TIME_PS} ps: "
           f"T {row.get('t_pk')}  λ {row.get('lam_pk_nm')}  Q {row.get('q_loaded')}  "
           f"FWHM {row.get('fwhm_env_um')} µm  softW {row.get('softw_adj_um')}")
