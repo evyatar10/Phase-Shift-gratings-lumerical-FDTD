@@ -5,6 +5,10 @@ description: Run, debug, resume, and extend the lumopt2 adjoint inverse-design p
 
 # lumopt2-design — the inverse-design program runbook
 
+> ★THROTTLE TRAP (2026-10-12): never put `%N` inside `--array-tasks` — `deploy_athena.sh`
+> appends its own `%K` (line ~1252), so `--array-tasks=3-7%3` reaches sbatch as `3-7%3%8`
+> (seen as "%1 parsed as 2/8"). Use `--array-tasks=3-7 --max-concurrent=3`.
+>
 > ★STANDING TE DEFAULTS (2026-10-11). Any new TE lane in `campaign_te_n98.py`
 > inherits: shift step metric h375 + ±25 nm shift/avg box + λ projection
 > (perp) + 0.1 nm λ trust — the fix that let tooth shifts move at all (MEASURED
