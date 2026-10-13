@@ -80,7 +80,16 @@ SMOKE = False                     # True = one tiny end-to-end row (see docstrin
 # Run on IGUM (round A was Athena): results/ dir is keyed by this module's name, so the same file
 # names land in results_from_igum/farfield_sph_20um/ and round A's Athena files are not touched.
 # Jobs: IGUM 100029 (smoke, PASS: far/tube power 0.99, tube loss 1.33 % vs ports 1.36 %).
-ROUND = "B"
+ROUND = os.environ.get("FF_SPH_ROUND", "B")
+# ROUND C (2026-10-13, user: "alpha/beta table for the >0.99 design vs the regular overshoot"):
+# Itai's S2 seed vs the inverse-design best TE_S2_N98_T9739 at the CONVERGED numerics
+# (conformal, fixed 150 ps, shutoff off; rounds A/B ran at the 1e-7 auto-shutoff, which biased
+# S2's T low by ~0.015 on conformal). Dispatched through the thin module
+# runners.sweeps.farfield_sph_20um_c (sets FF_SPH_ROUND=C), so its results/ dir is separate and
+# the seed row cannot overwrite round A's identically-tagged file. The seed row is an identity
+# gate: prod_confirm_te 179082_5 measured it at 0.98939 on the optimizer's path, same mesher,
+# time and box. Design -> per-tooth widths: narrow = avg - corr/2, wide = avg + corr/2 (inverse of
+# campaign_te_s2.seed_vector); its tooth shifts (<= 0.017 nm) are below the mesh, not drawn.
 
 N_SIDE        = 98
 FF_X_SPAN_UM  = 80.0
@@ -99,6 +108,16 @@ def zmult(z_um, lam_nm):
 
 # (pol, pitch_nm, corr_nm, avg_w_nm, cavity_w_nm, teeth, centre_nm, window_nm, y_um, z_um)
 HH_TEETH = hh.teeth(N_SIDE)
+
+
+def design_teeth(p, n_side=N_SIDE, n_free=60):
+    """Per-tooth (narrow, wide) nm of a 296-param S2 design: free teeth from p,
+    outer teeth = Itai's bulk (the optimizer's frozen teeth)."""
+    nar, wid = (list(v) for v in hh.teeth(n_side))
+    for d in range(n_free):
+        c, a = float(p[d]), float(p[n_free + d])
+        nar[d], wid[d] = a - c / 2.0, a + c / 2.0
+    return nar, wid
 ROWS = [
     ("TE", 500.0,   250.0, 800.0,  None,           None,     LAM_A_NM, WIN_A_NM,  6.8,  6.81),
     ("TE", 500.0,   250.0, 800.0,  None,           None,     LAM_A_NM, WIN_A_NM,  8.0,  8.80),
@@ -110,6 +129,12 @@ ROWS = [
 ]
 if ROUND == "B":
     ROWS = [ROWS[0], ROWS[4], ROWS[5]]
+if ROUND == "C":
+    from runners.lumopt2_design.best_designs import TE_S2_N98_T9739
+    ROWS = [ROWS[4][:6] + (1559.77, 4.0, 6.8, 6.81),
+            ROWS[4][:4] + (round(float(TE_S2_N98_T9739[295]), 3), design_teeth(TE_S2_N98_T9739),
+                           1559.77, 4.0, 6.8, 6.81)]
+    os.environ["TM_SIM_TIME_PS"] = "150"   # opt-in run length, read by bragg_device at build
 if SMOKE:
     ROWS = [("TE", 500.0, 250.0, 800.0, None, None, 1560.0, 20.0, 6.8, 6.81)]
 
@@ -122,7 +147,9 @@ BASE.monitors.record_2d_fields = False   # 2D planes were 350 MB at N=10 (smoke 
 BASE.farfield.enabled = True
 BASE.farfield.save_complex = True
 BASE.farfield.save_nearfield = False
-BASE.farfield.save_surface_eh = (ROUND == "B")
+BASE.farfield.save_surface_eh = (ROUND in ("B", "C"))
+if ROUND == "C":
+    BASE.mesh.auto_shutoff_min = 1e-12
 BASE.farfield.farfield_x_span_m = (30.0 if SMOKE else FF_X_SPAN_UM) * 1e-6
 BASE.farfield.ff_resolution = 101 if SMOKE else FF_RES
 BASE.farfield.farfield_freq_points = 11 if SMOKE else FF_FREQ_PTS

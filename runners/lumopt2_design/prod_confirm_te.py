@@ -49,8 +49,19 @@ ROWS = [
     ("s2_t9739_fixt",  s2.SPEC_V3, TE_S2_N98_T9739, 1559.9, 4.0, 1001, "PVA 150 ps 0.98605 / 19.620"),
     ("s2_dir025_fixt", s2.SPEC_V3, TE_S2_N98_T9739 + 0.25 * (TE_S2_N98_STEP19 - TE_S2_N98_T9739),
                                                     1559.9, 4.0, 1001, "PVA 150 ps 0.98635 / 19.613"),
+    ("s2_seed_n110",  s2.SPEC_V3, s2.SEED,         1559.8, 4.0, 1001, "conformal N98 150 ps 0.98939"),
+    ("s2_seed_n124",  s2.SPEC_V3, s2.SEED,         1559.8, 4.0, 1001, "conformal N98 150 ps 0.98939"),
+    ("s2_t9739_n110", s2.SPEC_V3, TE_S2_N98_T9739, 1559.7, 4.0, 1001, "conformal N98 150 ps 0.98995"),
+    ("s2_t9739_n124", s2.SPEC_V3, TE_S2_N98_T9739, 1559.7, 4.0, 1001, "conformal N98 150 ps 0.98995"),
 ]
 SIM_TIME_PS = {"s1": 50.0, "s2": 150.0}      # converged (s2_simtime_ladder 174406 / 174823)
+# rows 8-11 (2026-10-13, user: "confirm the overshoot is really ~2e5 at -3 dB"): LENGTH LADDER.
+# Q3dB = 0.293 Q_i assumes Q_i does not change with length; a direct -3 dB device (N~165,
+# Q~4e5) needs ~8 ns of ring-down. N = 110 / 124 test the assumption at affordable cost.
+# Run length = ~12 amplitude decay times 2Q_L/omega (EXPECTED Q_L ~15k / ~33k from the bulk
+# kappa 0.0572/um; 150 ps = 12 tau at N=98 was converged to 7e-5).
+LADDER = {"s2_seed_n110": (110, 300.0), "s2_seed_n124": (124, 700.0),
+          "s2_t9739_n110": (110, 300.0), "s2_t9739_n124": (124, 700.0)}
 N_TASKS = len(ROWS)
 
 
@@ -59,13 +70,16 @@ def spec_of(idx):
     extra = {}
     if name.endswith("_fixt"):
         extra = dict(sim_time_ps=SIM_TIME_PS[name[:2]], auto_shutoff_min=1e-12)
+    if name in LADDER:
+        n_side, t_ps = LADDER[name]
+        extra = dict(n_periods_side=n_side, sim_time_ps=t_ps, auto_shutoff_min=1e-12)
     spec = dataclasses.replace(
         base, label=f"prodconf_te_{name}", mesh_refinement=MESH,
         seed_override=(None if p is None else tuple(float(v) for v in p)), **extra,
         scan_center_nm=lam, scan_width_nm=width, n_wl_points=npts,
         fwhm0_um=None, wg_anchor={"softw": 19.0, "fwhm": 19.0},   # forward only; no band
         two_kl_floor=1.0)
-    assert spec.n_periods_side == 98
+    assert spec.n_periods_side == LADDER.get(name, (98,))[0]
     return spec
 
 
