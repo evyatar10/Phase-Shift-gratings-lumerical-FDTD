@@ -35,6 +35,13 @@ from runners.lumopt2_design.best_designs import (TE_S1_N98_T9711, TE_S2_N98_T973
 
 MESH = "conformal variant 0"
 
+
+def _seed_t2(shift_nm):
+    """Itai's S2 seed with tooth 2 (innermost visible) shifted outward by shift_nm."""
+    p = list(s2.SEED)
+    p[eng.layout(60).SL_SHIFT.start + 1] = float(shift_nm)
+    return tuple(p)
+
 # (label, base spec, design vector, scan centre nm, width nm, points, PVA reference)
 ROWS = [
     ("s2_seed", s2.SPEC_V3, s2.SEED,        1559.9, 4.0, 1001, "PVA 0.96909 / 19.636; conformal stored 0.97498 / 1559.860"),
@@ -53,6 +60,13 @@ ROWS = [
     ("s2_seed_n124",  s2.SPEC_V3, s2.SEED,         1559.8, 4.0, 1001, "conformal N98 150 ps 0.98939"),
     ("s2_t9739_n110", s2.SPEC_V3, TE_S2_N98_T9739, 1559.7, 4.0, 1001, "conformal N98 150 ps 0.98995"),
     ("s2_t9739_n124", s2.SPEC_V3, TE_S2_N98_T9739, 1559.7, 4.0, 1001, "conformal N98 150 ps 0.98995"),
+    # rows 12-15 (2026-10-14, user): LARGE innermost shifts on Itai's seed, conformal 150 ps.
+    # Tooth 2 = innermost visible tooth (tooth 1 has zero corrugation on the seed, so shifting it
+    # is geometrically the same). A shift moves teeth 2..N outward. Control = row 5 (0.98939).
+    ("s2_seed_t2s050_fixt", s2.SPEC_V3, _seed_t2(50.0),  1559.9, 4.0, 1001, "control s2_seed_fixt 0.98939"),
+    ("s2_seed_t2s100_fixt", s2.SPEC_V3, _seed_t2(100.0), 1559.9, 4.0, 1001, "control s2_seed_fixt 0.98939"),
+    ("s2_seed_t2s150_fixt", s2.SPEC_V3, _seed_t2(150.0), 1559.9, 4.0, 1001, "control s2_seed_fixt 0.98939"),
+    ("s2_seed_t2s200_fixt", s2.SPEC_V3, _seed_t2(200.0), 1559.9, 4.0, 1001, "control s2_seed_fixt 0.98939"),
 ]
 SIM_TIME_PS = {"s1": 50.0, "s2": 150.0}      # converged (s2_simtime_ladder 174406 / 174823)
 # rows 8-11 (2026-10-13, user: "confirm the overshoot is really ~2e5 at -3 dB"): LENGTH LADDER.
