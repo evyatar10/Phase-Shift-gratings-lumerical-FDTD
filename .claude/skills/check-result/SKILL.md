@@ -37,6 +37,12 @@ right the first time.
      so use a low floor, not a TE-tuned one)? If not → flag "dead / off-resonance device".
    - If a check fails, **lead with the failure** — do not present derived numbers as if
      the result were valid.
+   - **Stored T/R are |S21|²/|S11|² — biased by the port's −22 dB forward/backward leak**
+     (CLAUDE.md §2, 2026-10-19): typically +0.004..+0.008 in T. Fine for λ, Q_L, mode width
+     and T≈0.5 work; NOT fine for a T+R≈1 judgment, Q_i from T near 1, or 1e-3 comparisons.
+     For those, say "uncalibrated" and apply the straight-guide calibration of the same scene
+     type (`runners/lumopt2_design/port_norm_ref.py`; stored refs in
+     `results_from_athena/port_norm_ref/`) — never run a second simulation per device.
 
 5. End with the full absolute local path(s) of the file(s) inspected.
 

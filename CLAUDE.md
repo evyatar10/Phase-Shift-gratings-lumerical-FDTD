@@ -129,7 +129,12 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
   `runners/lumopt2_design/port_norm_ref.py` (`ref_spec`, `dump_ports`, `corrected_spectrum`,
   `corrected_row`); files in `results_from_athena/port_norm_ref/` (keep forever) and on Athena
   `results/port_norm_ref/`. R needs the complex spectrum → dump a solved run's ports before the
-  roll-cleaner deletes its .h5. The optimizer FOM (Port_2 T_out) was never affected.
+  roll-cleaner deletes its .h5. The optimizer FOM (Port_2 T_out) was never affected. The SWEEP
+  pipeline is equally affected (`bragg_device.get_s_and_t_matrix` → `result_*.mat` T/R are
+  |S21|²/|S11|² with phase corrections only) and needs its own calibration per scene type (the
+  engine's optimization-region mesh changes the port grid). Where it matters: T+R checks, Q_i
+  from T near 1 (bias ×A = √T/(2(1−√T))), and any comparison at the 1e-3 level. Near T ≈ 0.5
+  (direct −3 dB anchors) the bias on Q_i is only ~1.5 %.
 - **Absolute T/loss are numerics-sensitive; compare only within identical numerics.**
   For strongly-radiating variants (e.g. TM corr-400, 16–19% resonant loss) the
   transverse box size alone moves absolute T by ~3 points (3.8→4.8 µm: 0.828→0.799),

@@ -82,6 +82,11 @@ optimizer/width-wall.
   garbage exponents. Q_i is the failure surface — distrust it below/at onset.
 - kappa is linear in corr (coherent channel, 0.1-1.3% over 276-400);
   Q_i(corr) is a SEPARATE radiative law (~corr^-2.9 at fixed N, TM).
+- ★Stored T is |S21|², biased +0.004..+0.008 by the port leak (CLAUDE.md §2, 2026-10-19).
+  Direct −3 dB anchors (T≈0.5) move Q_i only ~1.5 % — the calibration stands. Rows near
+  T≈0.98-0.999 (N≈98 overshoot/inverse-design rows) are NOT usable for Q_i without the
+  straight-guide calibration (port_norm_ref.py): corrected Q_i dropped ~1.6x there
+  (e.g. S2 seed 1.48e6 → 9.3e5; Nt80 5.0e6 → 7.7e5).
 - Never calibrate kappa on a Q level (ill-conditioned, A = sqrt(T)/(2(1-sqrt(T)));
   use widths (box-independent) or the Qc GROWTH between two rows.
 - The CMT engine is the fixed-N SHAPE tool (apodized widths <1%, spectra,

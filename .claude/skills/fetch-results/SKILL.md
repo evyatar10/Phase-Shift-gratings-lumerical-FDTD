@@ -28,7 +28,9 @@ loads garbage — if a file loads oddly, re-download it before debugging physics
 Apply the check-result conventions on at least one file (stored
 `resonance_wavelength_nm` in-window, peak T above the dead-device floor ≈0.0008,
 Q = λ/|spectral_fwhm_nm|). If the check fails, lead with that — don't hand the user a
-plot of a dead device.
+plot of a dead device. Plotted T/R are |S21|²/|S11|² (port-leak biased, CLAUDE.md §2): a
+T+R slightly above 1 near a high-T resonance is that bias, not physics — label the curve
+"uncalibrated" or apply `port_norm_ref.py` with the stored reference of the same scene type.
 
 ## 3. Plot (headless MATLAB)
 

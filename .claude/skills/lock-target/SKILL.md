@@ -59,6 +59,9 @@ pair, dispatch a bracket PAIR at the estimate (same wall-clock as one sim at
 - **Calibrate ONLY from in-study points at identical numerics.** Legacy anchors
   mislead: corr 300 = 19.1 µm in old data but 21.5 µm in-study → an 8-sim hedge
   ladder ran at the wrong corrugation.
+- **Peak T is |S21|²** (+0.004..+0.008 biased by the port leak, CLAUDE.md §2 2026-10-19).
+  For a −3 dB lock this is inside the ±0.03 tolerance; for a T target near 1 or a Q_i
+  derived from T near 1, apply the straight-guide calibration (port_norm_ref.py) first.
 - **Measure near the operating point.** The ideal cavity model is approximate —
   derived Q_i drifts with N (58k→76k over N 110→165). Don't extrapolate the
   decomposition far from where you'll operate.

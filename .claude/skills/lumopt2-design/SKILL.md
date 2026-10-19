@@ -38,6 +38,20 @@ program learns something — new gates, new lumopt2 bugs, campaign results,
 new device families. It exists so a future session (or a new device) can
 rebuild the whole workflow without re-deriving it.
 
+## ★Reported T vs the FOM (2026-10-19, CLAUDE.md §2)
+
+The logged `t_pk` / `modal_peak3` / `q_i` come from |S21|² = T_out2/T_in1, and Port_1's T_in
+is biased by the port's −22 dB forward/backward leak: t_pk reads +0.004..+0.008 high (the
+Itai Nt80 seed read T+R 1.00097). The FOM (`fom`, `tout_peak3` = Port_2 T_out) is clean, so
+optimizer steps, gradients and fom-based acceptance were never affected — but
+`best_metric="modal_peak3"`, Q_i and any 1e-3 cross-device comparison are. Corrected T =
+`tout_pk / launched` from the straight-guide calibration of the same numerics family
+(`port_norm_ref.py`, ONE ~25 min run per family, stored in `results_from_athena/port_norm_ref/`).
+Calibrated so far: S1 (pitch 500), S2 (491.06), s2idx (490.98), nt80 (489.65), TM prodconf.
+Corrected (conformal fixed-time N98): S1 seed 0.9152, T9775 0.9825, S2 seed 0.9832, T9739
+0.9836, Nt80 0.9945; TM bare 0.9108, BEST_T9636 0.9725. Dump a run's ports (`dump_ports`)
+before the roll-cleaner deletes its .h5 if R or the spectrum must be re-derived.
+
 ## ★Main-goal checkpoint (user rule 2026-10-07, CLAUDE.md §9)
 
 At every iterate verdict / gate result / before any new diagnostic: one line each —
