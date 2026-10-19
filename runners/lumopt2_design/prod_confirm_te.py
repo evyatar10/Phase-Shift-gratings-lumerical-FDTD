@@ -30,6 +30,7 @@ import config
 from runners.lumopt2_design import lumopt2_design as eng
 from runners.lumopt2_design import campaign_te_s1 as s1
 from runners.lumopt2_design import campaign_te_s2 as s2
+from runners.lumopt2_design import itai_nt80_seed as nt80
 from runners.lumopt2_design.best_designs import (TE_S1_N98_T9711, TE_S2_N98_T9739, TE_S1_N98_T9775,
                                                  TE_S2_N98_STEP19)
 
@@ -67,8 +68,20 @@ ROWS = [
     ("s2_seed_t2s100_fixt", s2.SPEC_V3, _seed_t2(100.0), 1559.9, 4.0, 1001, "control s2_seed_fixt 0.98939"),
     ("s2_seed_t2s150_fixt", s2.SPEC_V3, _seed_t2(150.0), 1559.9, 4.0, 1001, "control s2_seed_fixt 0.98939"),
     ("s2_seed_t2s200_fixt", s2.SPEC_V3, _seed_t2(200.0), 1559.9, 4.0, 1001, "control s2_seed_fixt 0.98939"),
+    # row 16 (2026-10-18, user): Itai's NEW Nt80 FWHM-20 overshoot, his index correction only
+    # (geometry + gates: itai_nt80_seed.py). Compare against row 5 (S2 seed, 0.98939 / Q_L 7871).
+    # EXPECTED (TMM contrast-calibrated on row 5): Q_L ~3.9e3 -> linewidth 0.40 nm, mode ~20.1 um,
+    # lambda 1559.86 -0.6/+1.6 nm (pitch-method spread) -> 8 nm window, 8 pm grid = 50 pts per line.
+    ("nt80_seed_fixt", nt80.SPEC, nt80.SEED, 1559.9, 8.0, 1001, "S2 seed conformal 150 ps 0.98939 / Q_L 7871"),
+    # row 17 (2026-10-19, user): the OLD overshoot (S2 seed) redrawn with the index correction
+    # ONLY (fab dw correction removed; itai_nt80_seed.S2IDX_*). Row 16 MEASURED 250781_16:
+    # T 0.99911 / lambda 1559.922 / Q_L 2212 / 19.87 um. EXPECTED Q_L ~7e3 (dw 2 % below row 5),
+    # so S2's converged 150 ps and 4 nm / 1001-pt window carry over unchanged.
+    ("s2idx_seed_fixt", nt80.S2IDX_SPEC, nt80.S2IDX_SEED, 1559.9, 4.0, 1001, "S2 seed conformal 150 ps 0.98939 / Q_L 7871"),
 ]
-SIM_TIME_PS = {"s1": 50.0, "s2": 150.0}      # converged (s2_simtime_ladder 174406 / 174823)
+# converged (s2_simtime_ladder 174406 / 174823). nt80: EXPECTED Q_L ~3.9e3 -> amplitude decay
+# 2Q/omega = 6.4 ps, so 150 ps = 23 decay times (S2's converged setting was 12 at Q_L 7871).
+SIM_TIME_PS = {"s1": 50.0, "s2": 150.0, "nt": 150.0}
 # rows 8-11 (2026-10-13, user: "confirm the overshoot is really ~2e5 at -3 dB"): LENGTH LADDER.
 # Q3dB = 0.293 Q_i assumes Q_i does not change with length; a direct -3 dB device (N~165,
 # Q~4e5) needs ~8 ns of ring-down. N = 110 / 124 test the assumption at affordable cost.
