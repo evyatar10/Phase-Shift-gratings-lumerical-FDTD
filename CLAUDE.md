@@ -117,6 +117,19 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
   recorded band) — never "1 frequency point + use source limits", which records at the
   band-center *frequency* (≈1546.4 nm here), not the resonance. Far-field got plotted at
   the wrong λ twice this way.
+- **★Port T/R need a straight-guide CALIBRATION, not |S21|² (2026-10-19).** The port's
+  forward/backward mode split leaks ~8 % amplitude (-22 dB directivity: a straight guide reads
+  |S11|² = 0.0063), so Port_1's measured incident power rides the device's reflection phase and
+  |S21|² = T_out2/T_in1 is biased (+0.004..+0.008 on every device here; the Itai Nt80 overshoot
+  read T+R = 1.00097). Correct: T = |T_out2(device)| / |T_out2(straight guide)|,
+  R = |(S11 - eps)/(1 - conj(eps)·S11)|² with eps = the straight guide's complex S11.
+  The straight guide is a CALIBRATION: ONE short run (~20 ps, ~25 min) per numerics family
+  (pitch, corr0/avg → mesh override, window/points, box, polarization), reused for every device
+  in that family — never a second simulation per device. Tool + stored calibrations:
+  `runners/lumopt2_design/port_norm_ref.py` (`ref_spec`, `dump_ports`, `corrected_spectrum`,
+  `corrected_row`); files in `results_from_athena/port_norm_ref/` (keep forever) and on Athena
+  `results/port_norm_ref/`. R needs the complex spectrum → dump a solved run's ports before the
+  roll-cleaner deletes its .h5. The optimizer FOM (Port_2 T_out) was never affected.
 - **Absolute T/loss are numerics-sensitive; compare only within identical numerics.**
   For strongly-radiating variants (e.g. TM corr-400, 16–19% resonant loss) the
   transverse box size alone moves absolute T by ~3 points (3.8→4.8 µm: 0.828→0.799),
