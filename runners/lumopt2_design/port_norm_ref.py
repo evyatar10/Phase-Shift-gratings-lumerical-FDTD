@@ -63,7 +63,11 @@ def ref_spec(key):
         corr_seed_nm=(0.0,) * n, avg_seed_nm=(FEED_NM,) * n,
         corr_min_nm=0.0, corr_max_nm=750.0,              # bounds only; S1's floor is >0
         avg_bounds_nm=(900.0, 1100.0), wcav_bounds_nm=(850.0, 1250.0), trust_nm=None,
-        sim_time_ps=REF_SIM_TIME_PS, auto_shutoff_min=1e-12, two_kl_floor=-1.0)
+        sim_time_ps=REF_SIM_TIME_PS, auto_shutoff_min=1e-12, two_kl_floor=-1.0,
+        # TM rows record 4001 points: with the n_free=100 region that is 223 GB of GPU memory
+        # (258000_7 died on a 40 GB A100). A straight guide's launched power and leak are flat
+        # in lambda (TE refs: launched constant to 3e-5), so 401 points + interpolation suffice.
+        n_wl_points=401 if key == "tm" else row.n_wl_points)
     p = eng.seed_params(base)
     p[eng.layout(n).I_CAV] = FEED_NM
     return dataclasses.replace(base, seed_override=tuple(float(v) for v in p))
@@ -144,8 +148,11 @@ def corrected_spectrum(dev_npz, ref_npz):
     (stop-band T+R 0.73-1.36). T needs no such term: Port_2 sees no backward wave, so its
     T_out is clean; only its denominator (the launched power) comes from the reference."""
     d, r = np.load(dev_npz), np.load(ref_npz)
-    assert np.allclose(d["lam_nm"], r["lam_nm"]), "device and reference must share the lambda grid"
-    eps = r["p1_S"]
+    lam_r = r["lam_nm"]
+    assert d["lam_nm"].min() >= lam_r.min() - 1e-9 and d["lam_nm"].max() <= lam_r.max() + 1e-9,         "device window outside the reference window"
+    o = np.argsort(lam_r)                          # eps is smooth in lambda (straight guide)
+    eps = (np.interp(d["lam_nm"], lam_r[o], r["p1_S"].real[o])
+           + 1j * np.interp(d["lam_nm"], lam_r[o], r["p1_S"].imag[o]))
     s11 = d["p1_S"]
     R = np.abs((s11 - eps) / (1.0 - np.conj(eps) * s11)) ** 2
     return d["lam_nm"], np.abs(d["p2_T_out"]) / incident(ref_npz, d["lam_nm"]), R
