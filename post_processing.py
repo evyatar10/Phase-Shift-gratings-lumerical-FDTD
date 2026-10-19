@@ -320,6 +320,21 @@ def extract_farfield_data(sim, cfg, lam_res_m=None) -> dict:
             eh = extract_monitor_surface_eh(sim.fdtd, monitor_name, lam_res_m)
             result[f"surface_{key}"] = eh if eh is not None else {}
 
+    # High-Q short-run mode: the two end caps (same frequency point as the tube) and the three
+    # point time traces (cavity decay -> Q_L). Analysis: python_tools/ringdown_budget.py
+    if getattr(sim, "short_run", False):
+        for name in ("cap_left", "cap_right"):
+            eh = extract_monitor_surface_eh(sim.fdtd, name, lam_res_m)
+            result[f"surface_{name}"] = eh if eh is not None else {}
+        for name in ("time_input", "time_cavity", "time_output"):
+            try:
+                r = sim.fdtd.getresult(name, "E")
+                result[f"trace_{name}"] = {"t": np.squeeze(r["t"]).astype(float),
+                                           "E": np.squeeze(r["E"]).astype(np.float32)}
+            except Exception as e:
+                print(f"    ERROR: time trace {name} not extracted [{e}]")
+                result[f"trace_{name}"] = {}
+
     return result
 
 

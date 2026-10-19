@@ -4,6 +4,7 @@ Shared helper functions for FDTD simulation post-processing.
 Extracted from run_simulation.py and run_sweep.py to eliminate duplication.
 """
 
+import os
 import numpy as np
 import scipy.integrate
 import scipy.signal
@@ -103,7 +104,7 @@ def extract_monitor_surface_eh(fdtd, monitor_name, lam_target_m=None):
         x, y, z = (np.atleast_1d(np.squeeze(fdtd.getv(v))).astype(float) for v in ("sEH_x", "sEH_y", "sEH_z"))
         if E.ndim != 3 or E.shape[-1] != 3 or H.shape != E.shape:
             raise ValueError(f"unexpected field shapes E{E.shape} H{H.shape}")
-        pos = float(y[0]) if y.size == 1 else float(z[0])
+        pos = float(x[0]) if x.size == 1 else float(y[0]) if y.size == 1 else float(z[0])
         print(f"    lam = {lam_arr[idx - 1] * 1e9:.3f} nm (point {idx}/{lam_arr.size}), E{E.shape}, normal position {pos * 1e6:.3f} um")
         return {"x": x, "y": y, "z": z, "E": E, "H": H, "pos": pos,
                 "lam": float(lam_arr[idx - 1]), "source_power": float(np.squeeze(fdtd.getv("sEH_p")))}
@@ -502,6 +503,12 @@ def generate_file_tag(sim):
             ptw_tag += (f"_ptn{len(_ptn)}W{_n0}" if _n0 == _n1
                         else f"_ptn{len(_ptn)}W{_n0}to{_n1}")
 
+    # ── High-Q short-run mode: appended only when active, so all other names are unchanged.
+    #    The run length is part of the identity ("_RD0ps" kept so stored 2026-10-20 names reproduce).
+    rd_tag = ""
+    if getattr(sim, 'short_run', False):
+        rd_tag = f"_RD0ps_T{float(os.environ.get('TM_SIM_TIME_PS') or 2000):g}ps".replace(".", "p")
+
     # ── Sidewall-corrugation phase offset (null-steering study): appended only
     #    when nonzero, so every aligned-wall file name is unchanged.
     wp_tag = ""
@@ -616,9 +623,9 @@ def generate_file_tag(sim):
         # historical default (100 nm) — keeps pre-sweep filenames stable.
         mod_depth_nm = float(getattr(sim, 'center_mod_depth', 100e-9)) * 1e9
         mod_tag = f"_M{round(mod_depth_nm):.0f}" if abs(mod_depth_nm - 100.0) > 0.5 else ""
-        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{prof_tag}{ish_tag}{dsh_tag}{ptw_tag}{wp_tag}{nosym_tag}{dom_tag}{scat_tag}"
+        return f"N{N}_A{Napod}{tanh_tag}{mod_tag}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{prof_tag}{ish_tag}{dsh_tag}{ptw_tag}{wp_tag}{nosym_tag}{dom_tag}{scat_tag}{rd_tag}"
     else:
-        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{prof_tag}{ish_tag}{dsh_tag}{ptw_tag}{wp_tag}{nosym_tag}{dom_tag}{scat_tag}"
+        return f"N{N}{cav_tag}{shift_tag}{fc_tag}{pol_tag}{mat_tag}{wgd_tag}{two_dev_tag}{wc_tag}{prof_tag}{ish_tag}{dsh_tag}{ptw_tag}{wp_tag}{nosym_tag}{dom_tag}{scat_tag}{rd_tag}"
 
 
 def apply_monitor_overrides(sim, cfg):
@@ -669,12 +676,18 @@ def apply_monitor_overrides(sim, cfg):
         n_ff = getattr(sim, "farfield_freq_points", 1)
         sim.fdtd.setnamed("side_monitor", "frequency points", n_ff)
         sim.fdtd.setnamed("top_monitor", "frequency points", n_ff)
+        if getattr(sim, "short_run", False):
+            sim.fdtd.setnamed("cap_left", "frequency points", n_ff)
+            sim.fdtd.setnamed("cap_right", "frequency points", n_ff)
         print(f"Override: Far-field monitors set to {n_ff} frequency point(s)"
               + (" (source band center)." if n_ff == 1 else " (projected at the found resonance)."))
         c_nm = cfg.monitors.monitor_2d_center_nm
         s_nm = cfg.monitors.monitor_2d_span_nm
         if getattr(cfg.farfield, "use_2d_window", False) and c_nm and s_nm:
-            for _m in ("side_monitor", "top_monitor"):
+            _mons = ["side_monitor", "top_monitor"]
+            if getattr(sim, "short_run", False):
+                _mons += ["cap_left", "cap_right"]          # same frequency grid as the tube
+            for _m in _mons:
                 sim.fdtd.setnamed(_m, "use source limits", 0)
                 sim.fdtd.setnamed(_m, "wavelength center", c_nm * 1e-9)
                 sim.fdtd.setnamed(_m, "wavelength span", s_nm * 1e-9)

@@ -63,6 +63,7 @@ class PiShiftBraggFDTD:
                  farfield_y_dist_m=None,
                  farfield_z_dist_m=None,
                  farfield_freq_points=1,
+                 short_run=False,
                  cavity_width_option="narrow",
                  cavity_width_m=None,
                  innermost_tooth_shift_m=0.0,
@@ -176,6 +177,7 @@ class PiShiftBraggFDTD:
         self.farfield_y_dist_m = farfield_y_dist_m
         self.farfield_z_dist_m = farfield_z_dist_m
         self.farfield_freq_points = int(farfield_freq_points)
+        self.short_run = bool(short_run)
 
         self.lambda_B = 2 * self.n_eff_guess * self.pitch
 
@@ -1498,6 +1500,22 @@ class PiShiftBraggFDTD:
             fdtd.set("override global monitor settings", 1)
             fdtd.set("use source limits", 1)
             fdtd.set("frequency points", self.farfield_freq_points)
+
+            # ---- High-Q short-run mode: end caps close the tube at x = +-span/2. (No monitor time
+            #      window: the GPU solver resets apodization to 'none' -- MEASURED Athena 265002.) ----
+            if self.short_run:
+                for name, sgn in (("cap_left", -1.0), ("cap_right", 1.0)):
+                    fdtd.addprofile()
+                    fdtd.set("name", name)
+                    fdtd.set("monitor type", "2D X-normal")
+                    fdtd.set("x", self.cavity_length / 2.0 + sgn * self.farfield_x_span_m / 2.0)
+                    fdtd.set("y", 0)
+                    fdtd.set("y span", 2.0 * y_pos)
+                    fdtd.set("z", 0)
+                    fdtd.set("z span", 2.0 * z_pos)
+                    fdtd.set("override global monitor settings", 1)
+                    fdtd.set("use source limits", 1)
+                    fdtd.set("frequency points", self.farfield_freq_points)
 
     def update_scan(self, center_lambda_m, width_nm, n_points):
         self.n_wl_points = n_points

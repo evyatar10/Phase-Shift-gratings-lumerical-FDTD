@@ -4,6 +4,10 @@ description: Load a result_*.mat FDTD result and report transmission, resonance 
 ---
 
 # check-result
+> **Short high-Q runs** (`_RD0ps_T<ps>` in the file name, `farfield.short_run`): read them with
+> `python_tools/ringdown_budget.py` — Q_L from the time trace, T/power × γ². The spectral FWHM and R of such a
+> file are NOT valid (skill `highq-short-run`).
+
 
 Inspect a `result_*.mat` (or any FDTD result `.mat`) and report the standard metrics
 the project cares about, applying the conventions from `CLAUDE.md` so the numbers are

@@ -148,6 +148,13 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
   +0.0020 T sat exactly at the dx=50 nm jitter floor 0.0018; at dx≈35 nm the jitter
   collapsed to 0.0001 and the effect survived — that two-step is the template).
 
+- **★HIGH-Q RUNS ARE SHORT RUNS (user rule 2026-10-20, "critical"): skill `highq-short-run`.** For Q_L ≳ 2e4
+  never run the full ~12-decay-time ring-down (~2 ns ≈ 6-7 GPU-h at Q 1e5). Run ~2 amplitude decay times
+  2Q_L/ω (`farfield.short_run=True`): Q_L from the time-trace decay (exact), harmonic table + mode width
+  directly (0.01-0.03 pt), radiated power and peak T × γ² (T ~0.006 low → quote ±0.01). Never take Q from a
+  short run's spectrum, never use R or flux ratios from it. **Never use monitor time apodization** — the GPU
+  solver silently drops it (Athena 265002). Gate: 265023 on the stored 20-um overshoot.
+
 ## 3. Mesh / accuracy
 
 - **`simulation_mode = "optimization"`** (dx=50nm) is the default and the right choice
@@ -558,6 +565,9 @@ them; when a convergence study finishes, state where the files live.
   No overlapping tick/exponent labels in stacked subplots. Envelope comparisons =
   envelopes only, overlaid in ONE figure, FWHM in the legend. Final deliverables are
   editable MATLAB `.fig` + PNG (not plotly/matplotlib).
+- **Replies are SHORT (user rule, reinforced 2026-10-19): a plan/report is ≤ ~15 lines** — verdict, one
+  compact table or ≤6 bullets, ≤3 asks, file paths. No history recaps, no re-explaining physics, no
+  restating subagent reports; details only on request.
 - If the user writes in Hebrew, answer in Hebrew (right-to-left, and avoid em-dashes
   in Hebrew text).
 

@@ -235,3 +235,53 @@ directly: fixed-time runs complete 150 ps (shutoff level stays ~6.5e-8). Directi
 (178266, a = 0.1/0.25/0.5; one-sided because shifts are bounded at 0). Parallel Fable review agreed on
 the legacy-lane defect and added: S2 rad lanes used S1's C_field (fixed), 1 % ky spacing (fixed), lane-20
 OOM = 4 full 501-λ field sets cached (open: slice single-λ adjoint DFTs).
+
+### 2026-10-19 — strategy: cheap radiation measurement for 15.5-um overshoots (session 01a154f6)
+Q: port-driven steady state at Q_L~1e5 (lab 120k, N=96) needs ~2 ns = 16 GPU-h/device; is a ring-down
+(time-gated DFT + harminv) at ~100-300 ps sound, and does a shorter-N result transfer?
+GPT: pursue ring-down at N=96 (N=88 saves only ~8% cells; time is the lever). Keep all 81 apod periods;
+min N unmeasured, transfer must be tested on energy-normalized COMPLEX far fields. FROM-CODE (Claude
+verified): tube is open at x ends with a 15 um taper (farfield_surface.py:37) -> with +-40 um aperture the
+taper suppresses currents from +-25 um = an overshoot lobe; sphere_field powers are SOURCE-normalized, not
+per stored energy. Use identical windows on all monitors (common apodization factor cancels in U/P); fit
+the unapodized post-source trace; Q_c from guided outgoing powers both sides; general
+T=4gLgR/(gi+gL+gR)^2. Optimize P_rad/U (harmonic fractions can just redistribute). Q_other unknown
+(radiation only ~27-42 % of intrinsic loss) must be resolved first. Plan A-E ~3.2-4.9 GPU-h.
+Claude: adopting ring-down-at-N96 + offline taper/aperture check; plan pending user approval.
+
+### 2026-10-19 — follow-ups (sessions 01a154fc best-solution, 01a1554c final plan review)
+Best solution: ring-down/decay at N=96 is established practice (Ansys high-Q, MEEP harminv); lower-Q proxy and
+Born model only as screens, weaker with 3D side structures (symmetry break ~4x cost; projector rebuilds faces by parity).
+Final review found: draft runner stale (rows 2-3 window 1559.86 vs ~1618 at pitch 514; still locator config);
+gate band ERROR — 0.70 % is source-normalized steady-state radiation, decay branching P_rad/P_tot = Q_L/Q_rad = 0.35 %;
+T_pk = 4gLgR/g^2 (needs both guided channels); need stored energy U + closure; +-50 um tube with 15 um taper
+still clips the +-41.6 um Nt80 section; export time traces, U, end caps, port amplitudes, several freq slices
+(current export keeps only nearest-frequency surfaces). Order: B -> one Nt80 -> one cancellation-direction test; A alongside.
+Claude: adopting all; runner to be rewritten for phase B/C.
+2026-10-19 decay-mode bug review (gate 265002 running): GPT: caps at +-40 um cut THROUGH the mirrors (grating to
++-48 um) -> cap flux != port transmission, T derivation invalid in this gate (Q_L / tube branching / harmonics still
+fine); component chosen over whole trace (transient) -> fixed to late-time energy; tool had no PASS logic -> added
+--gate-ql/--gate-branch/0.5-pt harmonic check; use_2d_window skipped caps -> fixed. Fable (parallel): no gate bug;
+'Start' = Gaussian ramp, source = default short pulse (offset 29 fs) -> leak 0.7 % at t0 30, 0.02 % at 45 (EXPECTED).
+Phase C: caps beyond the grating ends (tube span > device).
+
+### 2026-10-20 — feasibility review of the 12.10 meeting directions (session 01a1563a, analysis only)
+Q: per-direction DOABLE/NOT for multipole cancellation on the overshoot; the user's tooth-PAIR antenna idea;
+what transfers to 15.5 um; can cancellation reach x2 at -3 dB. GPT: all five directions doable, gains small
+unless radiation share rises; a 2-element pair gives cos/sin(k u_x a) array factors, never one harmonic, and
+sub-um pairs cannot directly reach l~10-25 (need R~l/k = 1.7-4.3 um or the delta-E route); x2 impossible at
+f=0.42 (max 1.72x; needs 8 % of the other loss removed too); test linearity at h AND h/2 (cubic passes +-h);
+2K+2 knobs is a generic count, not a guarantee; verify equal L/R coupling before Q_c=Q_L/sqrt(T) (no x mirror);
+"closed surface" wording vs open tube ends. Claude: agrees on every verdict and the arithmetic; adopted the h/2
+test, the L/R coupling check and the rank-based choice of K. Claude added (GPT lacked it): the 191-param
+tooth-knob inverse design already gained only +0.0006 T on this family and only moved radiation to high l
+(round C) -> cancellation needs a feature class outside the optimizer's family. Decision waits on the 15.5-um
+overshoot loss budget (Athena 265046/265047 running).
+
+### 2026-10-20 (cont.) — best added structure for overshoot radiation cancellation (session 01a1563a resumed)
+GPT: ripple is #1 but "same pattern" and "unchanged kappa" are not exact (transverse coupling, carrier swap F+/F-,
+delta-E term); delta_w ∝ -a(x) is not a rule; amplitude unidentifiable from 0.7 % alone; run a +-10 nm, 2-um-period
+probe on one arm as a RESPONSE measurement. Claude: adopted the response-measurement framing and the whole-field
+(not per-harmonic) overlap; chose period 4.7 um (grazing 43 % of the leak, from the u_x marginal), 20 nm, both arms
+(builder applies one list to both), three phases 0/180/90 -> Athena 265078-265080. Two web agents: no literature
+precedent for cancelling total radiation of an apodized Bragg cavity; displaced secondaries cap at 63 % (dz 0.2 um).

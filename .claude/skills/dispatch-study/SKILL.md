@@ -49,6 +49,9 @@ expensive mistake class in this project's history.
 6. **Unique outputs**: new/parallel studies need distinct `generate_file_tag()` names
    and their own `STUDY_DIR` — shared `.h5`/`.mat` filenames have raced before.
 
+**High-Q devices (Q_L ≳ 2e4): size the run with the `highq-short-run` skill** — ~2 amplitude decay times, not a
+full ring-down (user rule 2026-10-20); never request monitor time apodization (dropped on GPU).
+
 ## 2. Pick the dispatch form (from runners/README.md)
 
 | Study type | Command |

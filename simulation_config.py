@@ -399,6 +399,12 @@ class FarFieldConfig:
                                                 # closed tube, python_tools/farfield_surface.py. The
                                                 # planar projections are only right within ~40 deg of
                                                 # each monitor's normal (aperture; 2026-10-05).
+    short_run: bool = False                     # HIGH-Q SHORT-RUN mode (2026-10-20, skill highq-short-run):
+                                                # adds two x-normal END CAPS closing the far-field tube
+                                                # and exports the 3 time-monitor traces (Q_L from the
+                                                # decay, python_tools/ringdown_budget.py); the run length
+                                                # (TM_SIM_TIME_PS) goes into the file tag. No monitor
+                                                # time window: the GPU solver drops apodization.
     save_complex: bool = False                  # Also store the complex far-field vectors
                                                 # Ex_c/Ey_c/Ez_c per monitor (~1.9 MB each) —
                                                 # needed by the response-matrix (Green's) study,
@@ -668,6 +674,7 @@ class SimulationConfig:
             farfield_y_dist_m=calc_farfield_y,
             farfield_z_dist_m=calc_farfield_z,
             farfield_freq_points=ff.farfield_freq_points,
+            short_run=ff.short_run,
             # Domain-size overrides active → file tag carries the box size
             # (keeps default-box filenames unchanged; prevents same-tag clobber
             # when sweeping the domain itself)
