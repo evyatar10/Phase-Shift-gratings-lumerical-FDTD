@@ -49,8 +49,9 @@ rule edits (10-20..10-23) awaiting the user's OK to commit. Summary page for the
   converged), so the old array cannot be 'fixed' back to it. But the converged 3-row ceiling is 41 % removable = x1.70 in the model; the
   realistic design (r <= 100, gaps >= 100) predicts x1.50 (269488 tests it). The gap x1.50 -> x1.70 is constraints + optimizer, not physics:
   close it with single-factor tests (r <= 110 / gaps >= 80; free (x,y) placement incl. near-cavity pockets with a direct field;
-  coupled-dipole model). 4/5-row converged designs (c5x30, r <= 100, gaps >= 100) were still computing at handoff -> rerun
-  `postarray_design.py` with PA_WORK=postarray_work_dy29 TAG=_c5x30 R_MAX=100 GAP_NM=100 X_LIM_UM=30 ROW_IDX=0,1,2,3 (and 0,1,2,3,4).
+  coupled-dipole model). Converged 4/5-row designs (c5x30, r <= 100, gaps >= 100, |x| <= 30; plain Born x0.7 leak): 3 rows 0.756
+  (175 posts), 4 rows 0.723 (230), 5 rows 0.763 (241, worse = the under-populating design step, not physics; its ceiling is 43 %).
+  Files `postarray_work_dy29/design_c5x30_R100_rows0123_x30.npz` / `rows01234_x30.npz`. Fix the design step before trusting row trends.
 
 ## 4. Running on Athena at handoff (the old chat's watchers die with it: re-arm a queue watcher; seats ~42/50)
 | Job | What | Score against | Pre-registered |
