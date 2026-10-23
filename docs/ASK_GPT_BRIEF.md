@@ -471,3 +471,17 @@ pessimistic). Compare row/length dictionaries on IDENTICAL grids (15-row scan us
 aperture (tube untapered only to +-35 um). Best next: bounded shrink/grow residual correction around pa3 (approximate Jacobian, half then
 full step), then -3 dB devices for reference + winner with refined mesh over all posts and >= 1.5 um post-to-PML clearance. Keep varied
 radii; harmonics = diagnostics only (Parseval). Six-run plan ~15-21 A100-h.
+
+### 2026-10-23 17:14 — session 01a1691c: deep review after the dy29 correction (pa3 +63 % prod -> +33 % dy29)
+GPT reproduced both ratios (1.633 / 1.334). x2 vs dy29 control = Q_i 1.134e6 -> pa3 needs +50 % more. pa4/pa5 changed radius (205/270
+posts > 100 nm), gaps (46/74 pairs < 100 nm), length and placement at once -> cause not identifiable; no proof of a 100/120 nm threshold.
+Mesh: dx period-aligned OK; "dy29" refines only the core (post rows ~49 nm); no fully refined pair exists; fine variant lacked core
+refinement (FIXED). Bug: X_LIM bounded only the seed (FIXED). Plan: common refined control+pa3 (2) -> local bounded correction of pa3
+(shrink/grow/shift, half+full, 2) -> finer validation (2); build a post-only adjoint (objective 1/Q_i, width upper bound only).
+
+### 2026-10-23 18:12 — session 01a16951: array architecture (rows, distances, lengths)
+GPT: let row count/spacing/length emerge from a 2-D allowed region with LOCAL tooth clearance; unbounded-model ceiling is unchanged by
+drive decay (positive column rescaling) - only pattern diversity (k u_y dy, longitudinal phase) moves it; decay matters under size/count
+bounds. Near-core posts need a DIRECT stored control field (current back-propagation invalid inside the 0.9 um envelope). Compare
+straight rows vs free placement at matched post budgets. Claude: adopted; user adds the effective-cavity concern (near posts may just
+perturb the mode) -> proposed a no-post cavity-change control with the same +0.24 nm shift.

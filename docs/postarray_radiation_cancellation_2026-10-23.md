@@ -1,3 +1,9 @@
+> **CORRECTION 2026-10-23 (Athena 269410, MEASURED):** on the converged core mesh (dy 29 nm) the same pa3 array gives Q_i 5.67e5 ->
+> 7.56e5 = **+33 %** (not +63 %). The array was designed against the production-mesh leak pattern, which is not mesh-converged, so part
+> of the production-mesh gain cancelled a numerical artefact. Redesign on the dy29 control and test at dy29 before quoting a final number.
+> Larger/denser arrays (4/5 rows, r <= 120, 60 nm gaps) measured x1.55 / x1.42 at the production mesh (below pa3). Plain TE 3-row array:
+> Q_i +50 % with a 4 % narrower mode (user 2026-10-23: a narrower mode is fine; only widening counts against a device).
+
 # Radiation cancellation on the TE overshoot by designed SiN post arrays (2026-10-22/23)
 
 **Result (MEASURED, production mesh, short-run method):** an array of 238 full-height SiN posts per side, placed by a Born dipole model

@@ -1,8 +1,8 @@
 % plot_postarray_overshoot.m -- top view of the TE overshoot (Nt80x) with the Born-designed SiN post arrays (pa3: 3 rows, pa2: 2 rows).
 % Study dir: runners/sweeps/ (farfield_sph_15um_postarray_overshoot) | Jobs: Athena (see memory project_radcancel_overnight_2026-10-22) | 2026-10-23
 % Input: results_from_athena/comb_overshoot/postarray_devices.json (written by the build check). Output: postarray_devices.{fig,png} there.
-out = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), 'results_from_athena', 'comb_overshoot');
-D = jsondecode(fileread(fullfile(out, 'postarray_devices.json')));
+if ~exist('jsonfile', 'var'), jsonfile = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), 'results_from_athena', 'comb_overshoot', 'postarray_devices.json'); end
+out = fileparts(jsonfile); D = jsondecode(fileread(jsonfile));   % caller may preset jsonfile (e.g. the plain-TE device file)
 P = D.pitch * 1e-3; nar = D.nar(:)' * 1e-3; wid = D.wid(:)' * 1e-3; cav = D.cav * 1e-3;
 SiN = [0.75 0.82 0.95]; POST = [0.85 0.3 0.15];
 f = figure('Color', 'w', 'Position', [40 40 1500 1100]);
@@ -22,8 +22,9 @@ xlabel(ax, 'x along the waveguide (\mum); \pi-shift cavity at x = 0');
 d = D.designs.(names{1}); ax = nexttile(tl); hold(ax, 'on');
 draw_device(ax, nar, wid, cav, P, [10 16], SiN); draw_posts(ax, d.x_nm(:)' * 1e-3, d.y_nm(:)' * 1e-3, d.r_nm(:)' * 1e-3, POST);
 axis(ax, 'equal'); xlim(ax, [10 16]); ylim(ax, [-0.2 max(d.y_nm) / 1e3 + 0.25]); set(ax, 'FontSize', 10); xlabel(ax, 'x (\mum)'); ylabel(ax, 'y (\mum)');
-title(ax, [names{1} ' at x = 10-16 um, where the widest teeth reach |y| = 0.9 um (posts: full 350 nm SiN)'], 'Interpreter', 'none', 'FontSize', 11);
-title(tl, sprintf('TE overshoot Nt80x (pitch %.0f nm, %d periods/side, cavity %.1f nm, resonance %.1f nm) + designed side-post arrays', D.pitch, D.n_side, D.cav, D.lam), 'FontSize', 12);
+title(ax, sprintf('%s, zoom x = 10-16 um (posts: full 350 nm SiN, n 1.97)', names{1}), 'Interpreter', 'none', 'FontSize', 11);
+if isfield(D, 'title'), ttl = D.title; else, ttl = sprintf('TE overshoot Nt80x (pitch %.0f nm, %d periods/side, cavity %.1f nm, resonance %.1f nm) + designed side-post arrays', D.pitch, D.n_side, D.cav, D.lam); end
+title(tl, ttl, 'FontSize', 12);
 tag = strjoin(names, '_'); exportgraphics(f, fullfile(out, ['devices_' tag '.png']), 'Resolution', 150); savefig(f, fullfile(out, ['devices_' tag '.fig']));
 
 function draw_device(ax, nar, wid, cav, P, XL, col)

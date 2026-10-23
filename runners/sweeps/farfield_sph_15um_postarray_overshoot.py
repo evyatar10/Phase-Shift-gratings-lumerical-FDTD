@@ -43,6 +43,14 @@ elif PA_SET == "dy29":
 #           refined numerics: dx = pitch/20 = 25.7 nm (mode fine_x10, period-aligned) + a y-only 25 nm override over |y| 1.05-1.95 um.
 elif PA_SET in ("fine", "finectrl"):
     NAMES = ["pa3_r100"]
+#   "c29": an array DESIGNED on the converged dy29 control (rows 1.2/1.5/1.8, |x| <= 30, r <= 100, gaps >= 100; calibrated prediction x1.50)
+#          run at dy29 (y_mesh_cells 26, box 6.8) = identical to the stored control 267605_0 (Q_i 5.67e5); pa3 there measured x1.33.
+elif PA_SET == "c29":
+    NAMES = ["c29_pa3_r100_x30"]
+#   "c29r12": the best ONE-row (y 1.2, 36 posts, calibrated x1.30) and TWO-row (1.2/1.5, 90 posts, x1.46) designs on the same converged
+#             control, run at dy29 (user 2026-10-23: is there meaning to 3 rows vs a better 1 row?). Control 267605_0.
+elif PA_SET == "c29r12":
+    NAMES = ["c29_r1_x30", "c29_r2_x30"]
 #   "r7": 7 rows (y 1.2-2.7 um, 0.25 um pitch, |x| <= 30 um, r 50-120 / outer row <= 100, all-pairs gap >= 50 nm) in the LARGER box
 #         8.8/8.8 um at dy 28.8 nm (y_mesh_cells 26) = identical numerics to the stored control 267605_1 (dy29_box8p8, Q_i 5.70e5): no control
 #         re-run; posts 1.6 um from the PML (box 6.8 would leave 0.6 um). Tube side face moves out with the box (check in __main__).
@@ -57,7 +65,7 @@ BASE = copy.deepcopy(BASE_FF)
 BASE.scatterer.enabled = True
 BASE.scatterer.shape = "cylinder"
 BASE.scatterer.mirrored_y = True
-if PA_SET in ("dy29", "r7"):
+if PA_SET in ("dy29", "r7", "fine", "finectrl", "c29", "c29r12"):   # fine/finectrl also refine the core (GPT 01a1691c: otherwise only x + post band)
     BASE.mesh.y_mesh_cells = 26
 if FINE:
     BASE.mesh.simulation_mode = "fine_x10"
@@ -109,7 +117,7 @@ if __name__ == "__main__":
         kw = cfg.to_device_kwargs()
         xb = [v * 1e9 for v in kw["scatterer_x_list_m"]]; yb = [v * 1e9 for v in kw["scatterer_y_list_m"]]; rb = [v * 1e9 for v in kw["scatterer_r_list_m"]]
         # property asserts: per-site lists carried through intact, radii 50-100, wall clearance >= 150 nm, in-row edge gap >= 99 nm, box/ff span
-        assert len(xb) == len(d["x_nm"]) > 50 and all(abs(a - b) < 0.01 for a, b in zip(rb, d["r_nm"])), ("lists", name)
+        assert len(xb) == len(d["x_nm"]) > 20 and all(abs(a - b) < 0.01 for a, b in zip(rb, d["r_nm"])), ("lists", name)
         assert 49.9 <= min(rb) and max(rb) <= (120.1 if PA_SET in ("big", "r7") else 100.1), ("radius", name)
         assert min(y - r for y, r in zip(yb, rb)) - wall >= 150, ("wall clearance", name)
         assert max(y + r for y, r in zip(yb, rb)) <= cfg.y_span * 1e9 / 2 - 600, ("box edge", name)

@@ -8,9 +8,18 @@ SC, R_REF, R_MAX, R_MIN, GAP = 0.70, 63.0, float(os.environ.get("R_MAX", "100"))
 d = np.load(os.path.join(S, f"ceiling_G{TAG}.npz")); G, b, cc, xs, ys = d["G"], d["b"], float(d["cc"]), d["xs"] * 1e9, d["ys"] * 1e9
 nx = len(xs); DX = xs[1] - xs[0]; A_MAX = (R_MAX / R_REF) ** 2; A_MIN = (R_MIN / R_REF) ** 2
 R_MAX_LAST = float(os.environ.get("R_MAX_LAST", R_MAX))   # cap for the outermost allowed row (box edge: y + r <= 2.8 um)
-a0 = np.load(os.path.join(S, f"ceiling_a{TAG}_inf.npy"))
+a0 = np.load(os.path.join(S, f"ceiling_a{TAG}_inf.npy")) if os.path.exists(os.path.join(S, f"ceiling_a{TAG}_inf.npy")) else None
 rows_allowed = [int(v) for v in os.environ.get("ROW_IDX", ",".join(str(i) for i in range(len(ys)))).split(",")]
-if len(rows_allowed) < len(ys):   # re-seed from the NNLS optimum of the allowed rows only (the full-row seed is a different basin)
+X_LIM = float(os.environ.get("X_LIM_UM", "0")) * 1e3      # >0: only sites with |x| <= X_LIM (nm) (length scan, 2026-10-23)
+if len(rows_allowed) < len(ys) or X_LIM > 0 or not os.path.exists(os.path.join(S, f"ceiling_a{TAG}_inf.npy")):
+    # re-seed from the non-negative optimum of the allowed sites only (FISTA on the Gram form: fast, no NNLS on thousands of sites)
+    sel = np.concatenate([np.arange(i * nx, (i + 1) * nx) for i in rows_allowed])
+    if X_LIM > 0: sel = sel[np.abs(xs[sel % nx]) <= X_LIM + 1e-6]
+    Gs, bs = G[np.ix_(sel, sel)], b[sel]; Lf = 2 * np.linalg.eigvalsh(Gs)[-1]; aa = np.zeros(len(sel)); zz = aa.copy(); tt = 1.0
+    for _ in range(3000):
+        an = np.maximum(zz - (2 * Gs @ zz + 2 * bs) / Lf, 0.0); tn = 0.5 * (1 + np.sqrt(1 + 4 * tt * tt)); zz = an + (tt - 1) / tn * (an - aa); aa, tt = an, tn
+    a0 = np.zeros(len(ys) * nx); a0[sel] = aa
+elif False:
     from scipy.optimize import nnls
     sel = np.concatenate([np.arange(i * nx, (i + 1) * nx) for i in rows_allowed]); Gs, bs = G[np.ix_(sel, sel)], b[sel]
     Rc = np.linalg.cholesky(Gs + 1e-12 * np.trace(Gs) / len(sel) * np.eye(len(sel))).T; t = -np.linalg.solve(Rc.T, bs)
@@ -43,13 +52,14 @@ def obj(v, lam):
     gpa = np.sum(W, 1) * R_REF / (2 * np.sqrt(np.maximum(a, 1e-9)))
     return P + pen, np.concatenate([gx + gpx, ga + gpa])
 outer_row = max(rows_allowed)
+XB = (max(xs[0], -X_LIM), min(xs[-2], X_LIM)) if X_LIM > 0 else (xs[0], xs[-2])   # length limit binds the final positions too (GPT 01a1691c)
 amax_of = lambda rw: ((R_MAX_LAST if rw == outer_row else R_MAX) / R_REF) ** 2
-v = np.concatenate([px, np.minimum(pa, [amax_of(rw) for rw in prow])]); bnds = [(xs[0], xs[-2])] * N + [(0, amax_of(rw)) for rw in prow]
+v = np.concatenate([px, np.minimum(pa, [amax_of(rw) for rw in prow])]); bnds = [XB] * N + [(0, amax_of(rw)) for rw in prow]
 for lam in (1e-6, 1e-5, 1e-4, 1e-3):
     v = minimize(obj, v, args=(lam,), jac=True, method="L-BFGS-B", bounds=bnds, options={"maxiter": 3000}).x
 for it in range(3):   # drop sub-minimum posts and re-optimise
     keep = v[N:] >= A_MIN; px, pa, prow = v[:N][keep], v[N:][keep], prow[keep]; N = len(px); v = np.concatenate([px, pa])
-    bnds = [(xs[0], xs[-2])] * N + [(A_MIN, amax_of(rw)) for rw in prow]
+    bnds = [XB] * N + [(A_MIN, amax_of(rw)) for rw in prow]
     v = minimize(obj, v, args=(1e-3,), jac=True, method="L-BFGS-B", bounds=bnds, options={"maxiter": 3000}).x
 x, a = v[:N], v[N:]; A, _, _ = grid_amp(x, a); P = (cc + 2 * SC * b @ A + SC**2 * A @ G @ A) / cc
 yv = ys[prow]; gap = np.hypot(x[:, None] - x[None], yv[:, None] - yv[None]) - radius(a)[:, None] - radius(a)[None]; np.fill_diagonal(gap, 1e9)
@@ -57,4 +67,4 @@ viol = int(np.sum(gap < GAP - 1.0) // 2)
 print(f"{TAG} rows {[int(ys[i]) for i in sorted(set(prow))]} R_MAX {R_MAX:.0f}: posts {N} (per row {[int((prow==i).sum()) for i in sorted(set(prow))]}), "
       f"P/Pc {P:.3f} (removed {1-P:.3f}), all-pairs gap violations {viol} (min gap {gap.min():.0f} nm), r {radius(a).min():.0f}-{radius(a).max():.0f} nm, x {x.min()/1e3:.1f}..{x.max()/1e3:.1f} um")
 assert viol == 0, f"design violates the {GAP:.0f} nm gap ({viol} pairs, min {gap.min():.0f} nm): not saved"
-np.savez(os.path.join(S, f"design{TAG}_R{int(R_MAX)}_rows{''.join(str(i) for i in rows_allowed)}.npz"), x=x, a=a, r=radius(a), y=ys[prow], P=P)
+np.savez(os.path.join(S, f"design{TAG}_R{int(R_MAX)}_rows{''.join(str(i) for i in rows_allowed)}" + (f"_x{int(X_LIM/1e3)}" if X_LIM > 0 else "") + ".npz"), x=x, a=a, r=radius(a), y=ys[prow], P=P)

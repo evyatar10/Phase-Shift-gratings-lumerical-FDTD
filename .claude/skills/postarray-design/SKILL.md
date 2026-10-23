@@ -1,6 +1,6 @@
 ---
 name: postarray-design
-description: Design, check and launch a Born-model SiN post array (side scatterers) that cancels the radiated leak of a pi-shift Bragg grating at fixed mode width — model gate, ceilings, discrete design, calibrated prediction, FDTD runner asserts, scoring. Use for any "posts / comb / scatterer array / radiation cancellation" device, for predicting how many rows or how long an array should be, and before dispatching any post-array FDTD run.
+description: Design, check and launch a Born-model SiN post array (side scatterers) that cancels the radiated leak of a pi-shift Bragg grating without widening the mode (narrowing is fine, user 2026-10-23) — model gate, ceilings, discrete design, calibrated prediction, FDTD runner asserts, scoring. Use for any "posts / comb / scatterer array / radiation cancellation" device, for predicting how many rows or how long an array should be, and before dispatching any post-array FDTD run.
 ---
 
 # postarray-design — validated 2026-10-23 (TE overshoot Nt80x: 3-row array Q_i +63 %, reproduced by 3 independent checks)
@@ -16,6 +16,10 @@ MEASURED on 13 overshoot devices: Q_i gain = 1 / (measured far-field leak) (corr
 leak is the right objective. A single periodic comb radiates TWO mirror lobes (standing wave) and the two arms of an apodized device are
 NOT mirror images (one arm starts narrow, the other wide): every arm needs its own phase (same-phase pair -1 %, independent pair +16.8 %).
 
+## ★Converged mesh first (2026-10-23, the false +63 %)
+Design against the dy29 control field (`results_from_athena/budget_overshoot/dy29_box6p8.mat`) and judge at dy29. pa3, designed on
+the production-mesh leak: +63 % at dy 57.7, **+33 % at dy 28.8** (269410). Production-mesh gains are screening only.
+
 ## Recipe
 1. **Control** with the far-field tube surfaces (`farfield.save_surface_eh`): short run (overshoot) or steady run (plain) — the model
    picks the normalisation automatically (`postarray_born.SHORT`). Copy it under `results_from_athena/<study>/` (keep).
@@ -23,8 +27,9 @@ NOT mirror images (one arm starts narrow, the other wide): every arm needs its o
    ~10 %, overlap ~0.6). Calibrated model (13 devices): E = C (1 + kappa s x1) + s Bp, s 1.01, kappa 0.30, x1 = Re<C,Bp>/|C|^2
    (`postarray_work/calib_s_kappa.npy`); leave-one-out rms gain error 0.05. Plain Born x0.70 under-predicts gains ~1.6x but ranks right.
 3. **Ceilings first (zero GPU)**: `postarray_ceiling.py` (env ROWS_UM, X_MAX_UM, KCUT_PER_UM 7.5, TAG, PA_WORK, CTRL_MAT). Measured
-   ceilings on Nt80x: rows to 1.8 / 2.4 / 2.7 um = 33 / 42.5 / 44.4 %; |x| <= 24 / 30 / 45 um = 37 / 40 / 45 % -> LENGTH beats ROWS, rows
-   plateau ~5; posts within |x| < 4 um matter most. Positivity is the binding limit (signed amplitudes = air voids = not allowed).
+   ceilings on Nt80x: rows to 1.8 / 2.4 / 2.7 um = 33 / 42.5 / 44.4 %; |x| <= 24 / 30 / 45 um = 37 / 40 / 45 % -> in the MODEL length
+   beats rows (UNTESTED; TM evidence: posts along the whole grating did not help beyond a few um). Ceilings and optimizer plateaus are
+   CONDITIONAL on the model and its constraints, never physical limits (user 2026-10-23) — test one factor per FDTD run; posts within |x| < 4 um matter most. Positivity is the binding limit (signed amplitudes = air voids = not allowed).
 4. **Design**: `postarray_design.py` (env TAG, R_MAX, R_MAX_LAST, GAP_NM, ROW_IDX). All-pairs edge gap (any two posts, any rows) is a
    penalty and the save is REFUSED if violated. GAP is a fab number (user: neighbouring-row gap is not physics; 50 nm = one mesh cell).
 5. **Predict + pre-register** the calibrated gain for every design BEFORE its FDTD result (memory file of the study).
@@ -46,6 +51,12 @@ NOT mirror images (one arm starts narrow, the other wide): every arm needs its o
   25 nm y band; needs SBATCH_MEM <= the 4d_1g cap — 400G is rejected).
 - **-3 dB**: Q_3dB = 0.293 Q_i is derived; measure it directly at the -3 dB length (calibration runner
   `farfield_sph_15um_m3db_overshoot.py`: coupling Q vs periods, reusable for any winner).
+
+- **Calibration regime (MEASURED 269408):** the calibrated model holds for r <= 100 nm and edge gaps >= 100 nm (pa2/pa3). Denser /
+  larger arrays (r <= 120, 60 nm cross-row gaps, 4-5 rows) measured x1.55 / x1.42 vs pre-registered x1.81 / x1.83 — worse than the
+  3-row pa3. Do not extrapolate the model outside its calibration set; change one factor at a time (length vs density) and recalibrate.
+- **Far-field window**: the 2D far-field monitors record only +-0.25 nm around the control resonance; arrays that shift lambda by more
+  (pa4/pa5 +0.28/+0.31 nm) give invalid P/Pc. Widen `monitor_2d_span_nm` or re-centre for strong arrays (Q_i unaffected).
 
 ## Fab tolerance (model, pa3)
 Uniform radius +-5 nm: negligible; random r sigma 6 nm: loses ~1/5 of the gain; random x sigma 20 nm: ~1/6; whole-array x shift 50 nm:
