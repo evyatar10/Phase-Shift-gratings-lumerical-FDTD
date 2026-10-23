@@ -46,7 +46,13 @@ expensive mistake class in this project's history.
 5. **Smoke-test rule (§5)**: if the change touches geometry, a new builder/scaffold,
    gradients, or source/BC setup → smoke first. For the four optimization families
    that means dispatching `smoke_test.py` (~15–30 min) before `optimize_transmission.py`.
-6. **Unique outputs**: new/parallel studies need distinct `generate_file_tag()` names
+6. **Unique outputs**: new/parallel studies need distinct `generate_file_tag()` names.
+   ★Per-tooth width lists are NOT hashed (`sim_helpers.generate_file_tag`: list length + first/last
+   tooth only) — rows that differ only in interior teeth (ripples, lobe edits) collide on the same
+   file name. Rule: one such row per MODULE (results dir = module name), thin wrappers that set an
+   env var before importing the base SPEC (pattern `farfield_sph_20um_ripple{,180,90}.py`, 2026-10-20).
+   The y box is fixed by `y_span_um` (override) in these studies, so widening interior teeth does not
+   change the domain or mesh (checked `simulation_config.y_span`)
    and their own `STUDY_DIR` — shared `.h5`/`.mat` filenames have raced before.
 
 **High-Q devices (Q_L ≳ 2e4): size the run with the `highq-short-run` skill** — ~2 amplitude decay times, not a
@@ -75,6 +81,7 @@ full ring-down (user rule 2026-10-20); never request monitor time apodization (d
 
 - Capture the job/array ID from the sbatch output and state it, plus the expected
   number of tasks (= sweep-list length) and rough walltime.
+- `--qos=4d_1g` rejects `SBATCH_MEM=400G` (QOSMaxMemoryPerJob, 2026-10-23); 250G passes. Post-array runs: skill `postarray-design`.
 - Field-profile-monitor runs need `SBATCH_MEM` far above the 64 G default (monitors,
   not domain size, drive RAM — see memory `project_athena_job_memory_footprint.md`).
 - Don't poll in a loop; check on demand with the `athena-status` skill. If the job

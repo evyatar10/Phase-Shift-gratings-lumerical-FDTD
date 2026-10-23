@@ -9,11 +9,18 @@ S = os.path.dirname(os.path.abspath(__file__)); ctrl = os.environ.get("CTRL_MAT"
 WORK = os.environ.get("PA_WORK", r"C:/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes/results_from_athena/comb_overshoot/postarray_work"); os.makedirs(WORK, exist_ok=True)
 C0 = 299792458.0; N_OX, N_P = 1.444, 1.97; EO, EP = N_OX**2, N_P**2; H_POST = 350e-9
 src = open(r"C:/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes/python_tools/radcancel/solve_v4.py", encoding="utf-8").read()
-sys.argv = ["x", "--short", "--energy", ctrl]; g = {"__name__": "x"}; exec(src.split("rows = [load(p)")[0], g)
 m = sio.loadmat(ctrl, squeeze_me=True, struct_as_record=False)
+SHORT = "trace_time_cavity" in m          # short ring-down run (overshoot) vs full steady run (plain TE controls, 2026-10-23)
+sys.argv = ["x"] + (["--short"] if SHORT else []) + ["--energy", ctrl]; g = {"__name__": "x"}; exec(src.split("rows = [load(p)")[0], g)
 lam = float(np.ravel(m["surface_top"].lam)[0]); w_ff = 2 * np.pi * C0 / lam; k = 2 * np.pi * N_OX / lam
-om, kap, t, Ec, comp = g["trace_fit"](m["trace_time_cavity"]); D = np.trapz(Ec * np.exp(1j * w_ff * t), t)
-U = np.trapezoid(np.ravel(m["field_energy_density_1D"]), np.ravel(m["field_x"])); NORM = np.conj(D) / abs(D) / np.sqrt(U)
+U = np.trapezoid(np.ravel(m["field_energy_density_1D"]), np.ravel(m["field_x"]))
+if SHORT:
+    om, kap, t, Ec, comp = g["trace_fit"](m["trace_time_cavity"]); D = np.trapz(Ec * np.exp(1j * w_ff * t), t)
+    NORM = np.conj(D) / abs(D) / np.sqrt(U)
+else:   # same factor solve_v4.load applies to the steady far field: (1 + i det) / sqrt(U (1 + det_fp^2))
+    lam0 = float(m["resonance_wavelength_nm"]) * 1e-9; Qs = lam0 / abs(float(m["spectral_fwhm_nm"]) * 1e-9); det = 2 * Qs * (lam - lam0) / lam0
+    wl = np.ravel(m["wl_m"]); f_fp = np.linspace(C0 / wl.max(), C0 / wl.min(), 501); f_fp = f_fp[np.argmin(np.abs(f_fp - C0 / lam0))]
+    det_fp = 2 * Qs * (C0 / f_fp - lam0) / lam0; NORM = (1 + 1j * det) / np.sqrt(U * (1 + det_fp ** 2))
 side = m["surface_side"]; xs0 = np.ravel(side.x); zs0 = np.ravel(side.z); y0 = float(side.pos); Es0 = np.asarray(side.E)   # (nx, nz, 3)
 # resample onto a UNIFORM (x, z) grid before the FFT (GPT 01a165e7: stored grids are non-uniform; 0.5-0.8 % drive error)
 xs = np.linspace(xs0[0], xs0[-1], xs0.size); zs = np.linspace(zs0[0], zs0[-1], zs0.size)
