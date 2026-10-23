@@ -70,6 +70,11 @@ rule edits (10-20..10-23) awaiting the user's OK to commit. Summary page for the
   x grid) and a GPT method review were launched at handoff time; if their results are not in this file, re-run that task: continuous
   (x, y, r) posts, all-pairs gaps, greedy packing from the NNLS density + insertion/removal + multi-start, monotone warm starts,
   compared with straight rows at matched post budgets.
+  INTERIM RESULTS (Fable 2-D agent, arch14 Gram, plain Born x0.7, gaps >= 100 nm, fixed design step = greedy packing + insert/remove +
+  monotone warm starts): rows 3/4/5 at |x| <= 30 = 0.720 (326 posts) / 0.704 (435) / 0.698 (517) -> MONOTONE (the old 0.763 was the
+  design step); free 2-D at |x| <= 24 = 0.673 (545 posts), better than any row design but with more material (matched-budget
+  comparison was still running). Agent scratch: `scratchpad/twod/` of the old session (temporary) - its final npz must be copied to
+  `results_from_athena/comb_overshoot/postarray_work_dy29/` before use.
 
 ## 4. Running on Athena at handoff (snapshot 2026-10-23 ~19:00; check `squeue` fresh before acting; the old chat's watchers die with it)
 | Job | What | Score against | Pre-registered |
