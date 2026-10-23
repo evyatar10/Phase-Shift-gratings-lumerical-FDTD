@@ -26,7 +26,9 @@ rule edits (10-20..10-23) awaiting the user's OK to commit. Summary page for the
 | same pa3 | **core-refined dy 28.8** | **x1.33** | best honest number so far (post/full-mesh convergence still pending); T 0.671->0.735, width held |
 | 2-row pa2 / 4-row pa4 / 5-row pa5 | production | x1.40 / x1.55 / x1.42 | pa4/pa5 r<=120 + 60 nm gaps: model failed out of regime |
 | comb pair (independent phases) / single comb | production | x1.17 / x1.075 (x1.083 dy29) | arms are NOT mirror images -> own phases |
-| Plain TE 3-row array (162 posts/side, y 0.8/1.1/1.4) | production | x1.50, width -4 %, lambda +0.49 nm | converged-mesh check running (269500/269501) |
+| Plain TE 3-row array (162 posts/side, y 0.8/1.1/1.4) | production | x1.50, width -4 %, lambda +0.49 nm | see next row |
+| Plain TE 3-row array, CONVERGED (269500/269501, dy 24.7) | core-refined | **x1.50** (2.14e4 -> 3.20e4), T 0.703->0.784, width -0.63 um | robust to mesh |
+| Overshoot 7-row pa7 (r<=120, 50-nm gaps, box 8.8; 269442) | core-refined | **x1.36** (5.70e5 -> 7.76e5), T 0.672->0.736 | best converged overshoot so far; calibrated pre-reg x1.81 FAILED |
 - Stored controls: overshoot production `results_from_athena/comb_overshoot/control_nt80x_T340.mat`, dy37 `control_nt80x_dy37.mat` (for the harmonics
   mesh-stability check, step 7),
   dy29 `results_from_athena/budget_overshoot/dy29_box6p8.mat` (267605_0) and `dy29_box8p8.mat` (267605_1); plain TE production
@@ -70,6 +72,10 @@ rule edits (10-20..10-23) awaiting the user's OK to commit. Summary page for the
   x grid) and a GPT method review were launched at handoff time; if their results are not in this file, re-run that task: continuous
   (x, y, r) posts, all-pairs gaps, greedy packing from the NNLS density + insertion/removal + multi-start, monotone warm starts,
   compared with straight rows at matched post budgets.
+  ROW SCAN (greedy, arch14, model ceilings, any size): best rows pack near the guide - 1 row 1.2 (30 %); 1.1+1.2 (40 %); +1.6 (43 %);
+  1.1/1.2/1.3/1.6/1.9 (46 %); +2.4 (47 %); 90 % of each row's strength within |x| ~24-32 um. 47 % is a CEILING (~x1.9), not measured.
+  2-D extra: |x| <= 30/35 = 0.654/0.638; tube-valid (y <= 2.0, |x| <= 30) 0.656 with 504 posts = the FDTD candidate; 2-D ceilings
+  0.553/0.524/0.507 (|x| 24/30/35); rows 1.1/1.4/1.7/2.0 = 0.695 (408); multi-start spread ~0.01; gap 80 vs 100 only -0.006.
   INTERIM RESULTS (Fable 2-D agent, arch14 Gram, plain Born x0.7, gaps >= 100 nm, fixed design step = greedy packing + insert/remove +
   monotone warm starts): rows 3/4/5 at |x| <= 30 = 0.720 (326 posts) / 0.704 (435) / 0.698 (517) -> MONOTONE (the old 0.763 was the
   design step); free 2-D at |x| <= 24 = 0.673 (545 posts), better than any row design but with more material (matched-budget
