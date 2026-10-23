@@ -28,6 +28,7 @@ rule edits (10-20..10-23) awaiting the user's OK to commit. Summary page for the
 | comb pair (independent phases) / single comb | production | x1.17 / x1.075 (x1.083 dy29) | arms are NOT mirror images -> own phases |
 | Plain TE 3-row array (162 posts/side, y 0.8/1.1/1.4) | production | x1.50, width -4 %, lambda +0.49 nm | see next row |
 | Plain TE 3-row array, CONVERGED (269500/269501, dy 24.7) | core-refined | **x1.50** (2.14e4 -> 3.20e4), T 0.703->0.784, width -0.63 um | robust to mesh |
+| ★**Overshoot c29: 3-row array DESIGNED on the converged control (175 posts; 269488)** | core-refined | **x1.42** (5.67e5 -> 8.04e5), T 0.671->0.748, width +0.015 um, lambda +0.06 nm, P/Pc 0.699 | BEST so far; beats plain Born x1.32 and Fable band x1.33-1.40; calibrated x1.50 too high; tiny lambda shift with larger gain = cancellation, NOT cavity enlargement |
 | Overshoot 7-row pa7 (r<=120, 50-nm gaps, box 8.8; 269442) | core-refined | **x1.36** (5.70e5 -> 7.76e5), T 0.672->0.736 | best converged overshoot so far; calibrated pre-reg x1.81 FAILED |
 - Stored controls: overshoot production `results_from_athena/comb_overshoot/control_nt80x_T340.mat`, dy37 `control_nt80x_dy37.mat` (for the harmonics
   mesh-stability check, step 7),
@@ -67,6 +68,12 @@ rule edits (10-20..10-23) awaiting the user's OK to commit. Summary page for the
   element-pattern correction; NOT coupled dipoles, see section 7). Converged 4/5-row designs (c5x30, r <= 100, gaps >= 100, |x| <= 30; plain Born x0.7 leak): 3 rows 0.756
   (175 posts), 4 rows 0.723 (230), 5 rows 0.763 (241, worse = the under-populating design step, not physics; its ceiling is 43 %).
   Files `postarray_work_dy29/design_c5x30_R100_rows0123_x30.npz` / `rows01234_x30.npz`. Fix the design step before trusting row trends.
+- ★**X/Y CONVERGENCE (model ceilings, any size, converged control, `postarray_work_dy29/converge_xy.py`):** |x| <= 5/10/15/20/25/30/35 um ->
+  26/31/37/42/44/47/48 % removable (still rising slowly at 35; beyond needs a longer far-field tube); outer y <= 1.1/1.2/1.4/1.6/1.8/2.0 ->
+  29/40/43/45/46/47 % (converged by ~1.6 um). The binding limit is the INNER y = 1.1 um (model validity), not the outer one.
+- **175-post 2-D design** (`twod/des_2D_x30_g100_N175.npz`, model 0.692 vs 0.666 for 504 posts): posts cluster within |x| <~ 17 um as an
+  inner layer y 1.1-1.25 um + scattered outer posts -> the value is in the inner +-15 um. Figure
+  `results_from_athena/comb_overshoot/devices_twod_x30_N175.png` (504-post: devices_twod_x30_y2000.png).
 - ★**2-D PLACEMENT VERDICT (Fable agent, finished; files `postarray_work_dy29/twod/`: engine pa2d.py, direct_eval.py, all designs
   des_*.npz, FINAL_2D_x30_y2000_g100.npz = recommended FDTD candidate):** free 2-D beats straight rows at MATCHED post budgets
   (direct Born re-score, plain x0.7): 2-D 175 posts 0.692 vs stored rows 0.755; 3 rows fixed optimizer 0.720 (326 posts); 2-D |x| <= 24/
@@ -93,11 +100,11 @@ rule edits (10-20..10-23) awaiting the user's OK to commit. Summary page for the
 ## 4. Running on Athena at handoff (snapshot 2026-10-23 ~19:00; check `squeue` fresh before acting; the old chat's watchers die with it)
 | Job | What | Score against | Pre-registered |
 |---|---|---|---|
-| 269442 | 7-row pa7 (r<=120, 50 nm gaps), box 8.8, dy29 | stored 267605_1 (dy29 box 8.8, Q_i 5.70e5) | x1.81 (calibrated, suspect); box 8.8 puts the tube side face at y 3.104 um (outside all posts) -> P/Pc may be valid; check the far-field lambda vs the resonance |
-| 269488 | c29 3-row designed ON the converged control (175 posts) | 267605_0 (`budget_overshoot/dy29_box6p8.mat`) | Claude calibrated **x1.50**; Fable x1.33-1.40 (plain Born x1.32) |
+| 269442 DONE (x1.36) | 7-row pa7 (r<=120, 50 nm gaps), box 8.8, dy29 | stored 267605_1 (dy29 box 8.8, Q_i 5.70e5) | x1.81 (calibrated, suspect); box 8.8 puts the tube side face at y 3.104 um (outside all posts) -> P/Pc may be valid; check the far-field lambda vs the resonance |
+| 269488 DONE | c29 3-row designed ON the converged control (175 posts) | 267605_0 | MEASURED x1.42 (calibrated x1.50 / Fable x1.33-1.40) |
 | 269505 (afterok 269442; if 269442 dies, resubmit without --after) | c29_r1_x30 (1 row, 36 posts) / c29_r2_x30 (2 rows, 90) | 267605_0 | calibrated x1.30 / x1.46; Fable x1.19-1.26 / x1.30-1.38 |
-| 269500 / 269501 | plain TE control / plain 3-row array, y_mesh_cells 26 (dy 24.7 nm on the plain device) | each other | plain +50 % at production; P/Pc likely invalid (lambda +0.49 nm leaves the 2D window) |
-| 269448 (2 tasks) | bare Nt80x at 108 / 116 periods (-3 dB length calibration) | Q_c(N) = 1/(1/Q_L - 1/Q_i) vs the PRODUCTION control control_nt80x_T340.mat | production mesh: an initial estimate of N for any winner; verify T ~ 0.5 at the winner's own numerics |
+| 269500 / 269501 DONE (plain x1.50 converged) | plain TE control / plain 3-row array, y_mesh_cells 26 (dy 24.7 nm on the plain device) | each other | plain +50 % at production; P/Pc likely invalid (lambda +0.49 nm leaves the 2D window) |
+| 269448 (task 0 = N108 DONE, file on Athena `..._m3db_overshoot/results/`; task 1 = N116 running) | bare Nt80x at 108 / 116 periods (-3 dB length calibration) | Q_c(N) = 1/(1/Q_L - 1/Q_i) vs the PRODUCTION control control_nt80x_T340.mat | production mesh: an initial estimate of N for any winner; verify T ~ 0.5 at the winner's own numerics |
 Scoring: `python python_tools/radcancel/solve_v4.py --short --energy <control.mat> <device.mat>` (plain: drop --short, keep --energy;
 Q_i is flag-independent). Side effect: solve_v4 also fits combinations and OVERWRITES <control.mat>.alpha_v4.npy; ignore that alpha for
   single-device scoring. Decision rule for 269488: <= x1.40 -> the kappa*x1 calibration is falsified (use plain Born); >= x1.48 -> it holds. Results dirs on

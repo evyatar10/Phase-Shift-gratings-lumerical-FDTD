@@ -15,15 +15,15 @@ for k = 1:numel(names)
     draw_device(ax, nar, wid, cav, P, [-XL XL], SiN); draw_posts(ax, d.x_nm(:)' * 1e-3, d.y_nm(:)' * 1e-3, d.r_nm(:)' * 1e-3, POST);
     xlim(ax, [-XL XL]); ylim(ax, [-YL YL]); set(ax, 'FontSize', 10); ylabel(ax, 'y (\mum)');
     rows = unique(d.y_nm);
-    title(ax, sprintf('%s: %d posts per side on rows y = %s um, r %.0f-%.0f nm, model-predicted leak %.3f x control %s', names{k}, numel(d.x_nm), ...
-        strjoin(arrayfun(@(v) sprintf('%.1f', v / 1e3), rows, 'UniformOutput', false), '/'), min(d.r_nm), max(d.r_nm), d.born_P_over_Pc, meas{k}), 'Interpreter', 'none', 'FontSize', 11);
+    if numel(rows) > 8, rowtxt = sprintf('free 2-D, y %.1f-%.1f', min(rows) / 1e3, max(rows) / 1e3); else, rowtxt = ['rows y ' strjoin(arrayfun(@(v) sprintf('%.1f', v / 1e3), rows, 'UniformOutput', false), '/')]; end
+    title(ax, sprintf('%d posts/side, %s um, r %.0f-%.0f nm, model leak %.2f %s', numel(d.x_nm), rowtxt, min(d.r_nm), max(d.r_nm), d.born_P_over_Pc, meas{k}), 'Interpreter', 'none', 'FontSize', 11);
 end
 xlabel(ax, 'x along the waveguide (\mum); \pi-shift cavity at x = 0');
 d = D.designs.(names{1}); ax = nexttile(tl); hold(ax, 'on');
 draw_device(ax, nar, wid, cav, P, [10 16], SiN); draw_posts(ax, d.x_nm(:)' * 1e-3, d.y_nm(:)' * 1e-3, d.r_nm(:)' * 1e-3, POST);
 axis(ax, 'equal'); xlim(ax, [10 16]); ylim(ax, [-0.2 max(d.y_nm) / 1e3 + 0.25]); set(ax, 'FontSize', 10); xlabel(ax, 'x (\mum)'); ylabel(ax, 'y (\mum)');
-title(ax, sprintf('%s, zoom x = 10-16 um (posts: full 350 nm SiN, n 1.97)', names{1}), 'Interpreter', 'none', 'FontSize', 11);
-if isfield(D, 'title'), ttl = D.title; else, ttl = sprintf('TE overshoot Nt80x (pitch %.0f nm, %d periods/side, cavity %.1f nm, resonance %.1f nm) + designed side-post arrays', D.pitch, D.n_side, D.cav, D.lam); end
+title(ax, 'Zoom x 10-16 um (SiN posts, 350 nm)', 'Interpreter', 'none', 'FontSize', 11);
+if isfield(D, 'title'), ttl = D.title; else, ttl = sprintf('TE overshoot Nt80x + SiN posts (pitch %.0f nm, %d periods/side, %.1f nm)', D.pitch, D.n_side, D.lam); end
 title(tl, ttl, 'FontSize', 12);
 tag = strjoin(names, '_'); exportgraphics(f, fullfile(out, ['devices_' tag '.png']), 'Resolution', 150); savefig(f, fullfile(out, ['devices_' tag '.fig']));
 
