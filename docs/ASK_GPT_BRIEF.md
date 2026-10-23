@@ -485,3 +485,10 @@ drive decay (positive column rescaling) - only pattern diversity (k u_y dy, long
 bounds. Near-core posts need a DIRECT stored control field (current back-propagation invalid inside the 0.9 um envelope). Compare
 straight rows vs free placement at matched post budgets. Claude: adopted; user adds the effective-cavity concern (near posts may just
 perturb the mode) -> proposed a no-post cavity-change control with the same +0.24 nm shift.
+
+### 2026-10-23 18:38 — session 01a1696a: rows vs free 2D placement (non-monotone 3/4/5-row designs 0.756/0.723/0.763)
+GPT: 2D placement yes, but the discrete search is the defect (one post per NNLS cluster, delete-only). Formulation: min ||C + s sum
+(r_i/63)^2 B(p_i)||^2 with radius bounds and all-pairs spacing (non-convex). Use incumbent-preserving insertion/removal/exchange +
+continuous polish; exact insertion score 2 s a Re<B,e> + s^2 a^2 ||B||^2 vs absence; monotone by keeping the incumbent; certifiable MIQP
+benchmark on a reduced lattice; interpolate columns consistently (G_new = T^T G T); strict gap tolerance; compare at matched budgets.
+Claude: forwarded to the Fable 2D prototype agent.
