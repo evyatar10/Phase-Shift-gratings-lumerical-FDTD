@@ -3,7 +3,10 @@ name: postarray-design
 description: Design, check and launch a Born-model SiN post array (side scatterers) that cancels the radiated leak of a pi-shift Bragg grating without widening the mode (narrowing is fine, user 2026-10-23) — model gate, ceilings, discrete design, calibrated prediction, FDTD runner asserts, scoring. Use for any "posts / comb / scatterer array / radiation cancellation" device, for predicting how many rows or how long an array should be, and before dispatching any post-array FDTD run.
 ---
 
-# postarray-design — validated 2026-10-23 (TE overshoot Nt80x: 3-row array Q_i +63 %, reproduced by 3 independent checks)
+# postarray-design — 2026-10-23 (TE overshoot Nt80x: 3-row array Q_i +33 % at dy29; +63 % at the production mesh was partly artefact)
+
+START with `docs/HANDOFF_postarray_2026-10-23.md` (state, running jobs, Fable R1-R6 plan). Step 2's calibrated form is SUSPECT (Fable
+review: the kappa*x1 term failed out of regime; plain Born predicted pa4/pa5); refit on converged devices before pre-registering with it.
 
 Doc with all numbers: `docs/postarray_radiation_cancellation_2026-10-23.md`. Code: `python_tools/radcancel/postarray_{born,ceiling,design}.py`.
 Work files (control far field, Gram matrices, designs, 13-device dataset): `results_from_athena/comb_overshoot/postarray_work/`.
