@@ -66,8 +66,7 @@ P/Pc invalid (posts outside the tube / lambda outside the +-0.25 nm 2D window); 
    ~14 h/run) and a direct -3 dB device using 269448's Q_c(N).
 6. Later: post-only adjoint (objective 1/Q_i, width upper bound only) starting from the best model design.
 7. Harmonics (user 2026-10-23: "could they still help?") - not as the objective (Parseval), but: (a) **mesh-stable target**: compare the
-   control's harmonic tables at production / dy37 / dy29 (stored: comb_overshoot/control_nt80x_T340.mat, scratch plain/nt80x_dy37.mat ->
-   copy, budget_overshoot/dy29_box6p8.mat; tool python_tools/farfield_multipole.py) and design only against mesh-stable harmonics so the
+   control's harmonic tables at production / dy37 / dy29 (stored: comb_overshoot/control_nt80x_T340.mat, comb_overshoot/control_nt80x_dy37.mat, budget_overshoot/dy29_box6p8.mat; tool python_tools/farfield_multipole.py) and design only against mesh-stable harmonics so the
    optimizer cannot chase staircase-mesh radiation (the cause of +63 % -> +33 %); (b) per-harmonic model-vs-FDTD response to find where
    the Born model is wrong and weight/correct those components; (c) harmonic content of pa3's residual leak -> which transverse patterns
    (row distances) are still uncancelled.
