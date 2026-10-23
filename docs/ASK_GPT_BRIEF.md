@@ -285,3 +285,174 @@ probe on one arm as a RESPONSE measurement. Claude: adopted the response-measure
 (not per-harmonic) overlap; chose period 4.7 um (grazing 43 % of the leak, from the u_x marginal), 20 nm, both arms
 (builder applies one list to both), three phases 0/180/90 -> Athena 265078-265080. Two web agents: no literature
 precedent for cancelling total radiation of an apodized Bragg cavity; displaced secondaries cap at 63 % (dz 0.2 um).
+
+### 2026-10-20 night — ripple probe review + bump plan (sessions 01a15663 x2)
+Q1 (bug review): ripple module + scratch analysis. GPT: np.interp on descending wl_m (|S21| 0.05 vs 0.987), S21_complex is
+de-embedded + phase-aligned (no phase reference for surface fields), the 90-deg row is a second REAL knob (c90 = c + b90).
+Claude: all three adopted (Lorentzian-at-lam_ff normalisation, two real knobs). Q2 (verdict + plan): MEASURED 20-nm ripple
+radiates 3.3-4x the leak, eta^2 2.4 %, linearity 0.265. GPT: 2.4 % is not a certified ceiling (nonlinearity 48 % of |c|),
+localisation is a hypothesis, reject the last-tooth tag trick (use labelled ExperimentCards -> <module>/<label> dirs),
+add a +2.5 nm half-step, constrained/regularised solve, validate at full+half amplitude, one independent-arm probe later.
+Claude: adopted cards, half-step, constrained solve; kept the compact-bump screen (265089). Not adopted yet: independent-arm
+probe (builder applies one list to both arms; needs a code change).
+Physics review (fresh session 01a1567c, no brief): (1) reach rule l <~ k x is NOT an exclusion (j_l(kr) keeps low l accessible
+at large r) -> central bumps are an experiment, not a theorem; (2) E_z is odd-y AND odd-z (my p_z class was wrong) and the
+ring basis is redundant (u_y u_z p_z = -u_x u_y p_x - u_y^2 p_y) -> "P_z adds 0" is not physical; (3) boundary-vs-volume source
+not identifiable from angular fits; (4) "Bloch suppression" = label, not established; (5) localisation claim must be stated as
+"of the band-limited reconstruction" and with the full class; (6) equal-power ripple amplitude is 10-11 nm, not "a few nm".
+Claude: all adopted in the write-up; localisation recomputed with the full class.
+Night results (MEASURED): mean-width bump basis 265089 -> single eta^2 <= 15 %, pair linearity 0.36, constrained 6-knob solve
+eta^2 0.20 (validation 265103 pending); direction validation 265098 along seed->T9739: leak 0.897 / 0.862 at alpha 0.25 / 0.49
+(linear prediction 0.875 / 0.834), Q_i +6 %, optimum alpha ~0.5 -> the optimizer overshot; linear far-field response WORKS
+in the tooth-shift/corrugation family. Incident: 265100 ran a zero profile (npy overwritten) -> rule added (CLAUDE.md §5).
+Final overnight numbers (MEASURED, 20-um overshoot, round-C numerics): bump-solve validation 265103 leak 0.842 (pred 0.796);
+combination 265105: 0.49 A + 1.0 B -> leak 0.711, Q_i 1.044e6 (+13 %), T 0.98523, lambda +0.02 nm, W +0.005 um (routes multiply);
+cards path = SweepSpec path exactly (265100). Handoff: docs/radiation_cancellation_overnight_2026-10-20.md. Open for GPT next:
+Newton round from the combo point; a radiation-aware FOM for the adjoint campaign; 15.5-um route A direction.
+
+### 2026-10-20 morning — two-family Jacobian design review (session 01a15758)
+GPT: (1) 15.5-um short-run rows need the COMPLEX truncation correction Gamma = [1 - exp(-(kappa - i Delta) T)]^-1 on the field
+(gamma^2 is the on-resonance power version), omega0/Q_L from the time-trace fit, nearest point per row's own resonance; never
+double-count gamma and the Lorentzian; (2) trust region: |alpha|_inf <= 0.5 and |dw per tooth| <= 2.5 nm initially, lambda/W as
+hard bands, halve when rho < 0.5, grow 1.5x only when rho > 0.75; do not calibrate rho from the combo rows (different geometry);
+(3) mean/contrast span the two width coordinates; shifts and per-arm knobs are extra coordinates, not required by l > 10;
+(4) harmonic-targeting experiment: zero top-K with the same bounds, report total and l > 10 power, K <= 2 (6 knobs) / 7 (16);
+plain whole-field LS already minimises power, extra weighting only for a different objective; (5) validate full+half at every
+new seed. Claude: adopting (1), (2), (4), (5); (3) noted for a later probe.
+
+### 2026-10-20 — routes to x2 (55 % cancellation on the Nt80x), session 01a15763
+GPT ranking: (1) full radiation adjoint with P_rad/U FOM (the engine's rad_fom branch reads ONE cladding plane and normalises by
+T, lumopt2_design.py:2675-2689 / 2314-2318 -> not the right functional); (2) large-amplitude pi-shift-region redesign (retrieve
+prod_confirm_te rows 12-15 first); (3) iterated Gauss-Newton with growing bases (29 % twice -> 0.51, short of 0.44); (4) move the
+apodization profile; (5) tooth shifts; (6) duty/shape; (7) per-arm; (8) partial etch. Blunt failure hypothesis: the grazing tail
+is tied to the field distribution the short mode needs; controllability, not opportunity, is the limit. Claude: retrieving the
+stored shift rows now; Plan agent on the adjoint; Jacobian 265111 running.
+Fable bug-hunt (agent, 2026-10-20 midday) on the analysis chain: (1) Lorentzian sign must be s=-1 (L = 1/(1+i det); group delay
++116 ps => e^{-iwt}); the no-pair fallback to +1 would inflate eta^2 0.21->0.27 and fake |b| up to 0.9|c|; (2) spectral Q on
+truncated runs is row-dependent (0.59-0.75 of true) => 16 % fake overlap; (3) lam_res grid-quantised 2 pm => +-7 deg per row at
+Q 1e5; (4) truncation factor missing. Fix adopted (scratch solve_v4.py): reference each short-run row to the DFT of its OWN cavity
+trace at lam_ff (cancels source/truncation/Lorentz/lam_res; |D|^2 ∝ U), s=-1 Lorentzian for steady rows, bounded weighted LS
+(lsq_linear, lambda 0.02 nm / W 0.1 um rows), eta^2 reported at the chosen alpha; half-step row excluded from the basis.
+Per-row noise floor ~0.11 |c| at 20 um (mesh jitter) ~ the expected 15.5-um responses -> the pair/half-step rows decide usability.
+
+### 2026-10-20 — moire hypothesis critique (session 01a15782)
+GPT: credible mesh-error hypothesis, but (1) l-band does not separate numerical from physical radiation (interference; do not
+subtract 51 %); (2) a two-coherent-source competitor at +-4 um gives the SAME 0.135 fringe spacing; (3) Ansys conformal (variant 0)
+still has residual geometric error that can be cell-periodic in edge offset -> moire with the ramp is plausible, amplitude
+unmeasured; (4) gradient error can be large while forward error is small (h^(p-1)); (5) use the REALIZED grid (surface_top.y,
+origin), compare absolute P/U and destination bands, resonance per row; a physical comb is not exactly dy-invariant on an
+unconverged mesh (compare in k_x = n k0 u_x); (6) stored results stay valid at their stated numerics; the optimizer uses PVA so this
+test does not diagnose its gradients; (7) zero-GPU check: held-out COMPLEX-field comparison of the moire model vs a two-compact-
+source model through the same pipeline. Claude: adopted (5)-(7); kill-test verdict will be conditional as GPT frames it.
+
+### 2026-10-20 — mesh-convergence conclusion critique (session 01a157fa)
+GPT rejected "the l>10 half is numerical / physical leak = l<=10 only": angular order != physical origin (interference), the l<=10
+part itself fell 10.8 % from dy 37 to 29, an l<=10 FOM rewards pushing power into l>10 (we SAW that: +24 % new high-l power in
+combo_sum). Keep: "high-order radiation substantially unconverged; physical remainder unknown"; FOM = total P_rad/U (mesh-robust:
+require improvement on a finer mesh too); extend the refinement (dy 20, then x at fine y, then z; PVA corroboration); dy 37 is a
+screening mesh, not certified; lab Q_L 120k > sim 99k (my sign slip); the lab x2 ceiling is unmeasured; validate any adjoint step
+by seed/half/full on the PVA grid AND a finer grid. Claude: adopted all; dy-20 row dispatched; --lcut kept as diagnostic only.
+
+### 2026-10-20 — Nt80x contrast knob review (session 01a1586c)
+GPT: (1) loaded-Q arithmetic: Q_c ~120k, Q_i 535k -> Q_L 98k; Q_i +15/+30 % -> Q_L +2.4/+4.4 % only; lab Q_L 240k needs Q_i >= 819k
+AND Q_c ~339k; doubling the seed's own -3 dB Q (0.293 Q_i) needs Q_i 1.07e6; lab 120k/120k/5-6e5 are mutually inconsistent ->
+measure lab T and L/R coupling; (2) the +5-nm contrast gain (0.862) is not certified above a 0.1|c| field error (~20 % power);
+demanded check = control vs the same card on the finer mesh (ratio R_h); (3) a dy-37 +10 row would not certify the +5 result;
+(4) stronger local kappa plausible, "cusp smoothing" unproved; enforce W 15.88-16.52 um at every amplitude; (5) adjoint: evaluate
+seed/half/full on PVA, recenter per family, never subtract a universal 0.6 nm. Claude: adopted; matched dy-37 +5-nm card chained
+after the dy-37 control; the loaded-Q point goes into the user report.
+
+### 2026-10-20 — best ADDED structure (session 01a158c6) + first-order antenna model (Fable agent, scratch subteeth_model.py)
+GPT ranking: (1) attached sidewall sub-teeth/tabs (same P_y-even/P_x-odd class as the leak), (2) paired segmented top ridges,
+(3) thin patterned SiN overlay, (4) segmented loading strips, (5) resonant pillars/dimers; design target = complex far field,
+harmonics explain; >= 2K real depth knobs per K complex coefficients; periodic arrays select u_x bands, not harmonics; the queued
+rows were not a controlled basis (half-period != negative depth; quarter != quadrature; 1000 nm near-commensurate); first row =
+one array at two protrusions (depth linearity); accept on total P/U at two meshes. Antenna model (first order, calibrated on the
+20-um ripple, hindcast on the bump rows: powers within 25 % for 4/6, phases +53 deg systematic, eta^2 NOT reproduced): 55-nm
+sub-teeth radiate 2-4x the leak with dlam +1.3 nm (outside the far-field window) -> protrusion must be ~5 nm; same-sign added
+material cancels only 5-8 % (16 % with removal) in first order; aperiodic 10-pair design predicted P/Pc 0.948 (direction test).
+Claude: rows rebuilt = A 578/5 nm, B 578/2.5 nm, C aperiodic x1, D aperiodic x0.5; model predictions pre-registered.
+
+### 2026-10-20 (session 14) — plain-language summary for the owner
+Asked GPT to write the owner-facing summary (≤25 lines, no jargon) from the overnight doc + overview page.
+GPT: re-shaping (inner-pair contrast) = the success, R 0.684 / Q_i +40 %; periodic tabs weak (0.971); dy-37 check 0.887 at +5;
+harmonic-targeting dropped because zeroing one component raises the total; ×2 unproven, path = more central shaping + matched
+added teeth + re-coupling. Claude verified all four numbers against the measured table; added the missing target (R ≈ 0.45 for ×2).
+Adopted verbatim as the user-facing summary. Lesson: owner wants prose paragraphs per family with ONE number each, not tables.
+
+### 2026-10-20 (session 15, 01a15a66) — rethink: added features beyond inverse design, symmetry, phase
+Claude found that sub-teeth rows A-F were snapped onto the 514-nm lattice (= tooth reshaping); x-parity of the Nt80x leak
+computed from the stored far field: 43 % x-even / 57 % x-odd, 76 % toward +x. GPT: y/z mirrors exact -> identical-sidewall
+features stay in the leak's class, one-sided/top waste >= half; no x mirror, no hidden sector; m even <-> x-odd (matches 60/40).
+Corrections accepted: a finite nonuniform lattice array is not exactly dark; a 120-nm tab != half-tooth width change.
+GPT plan: 4 rows on the +20 nm parent = one irregular OFF-lattice tab set (|x|<=5 um, arms independent) at registrations
+0 and +257 nm, depths 5/2.5 nm; pass = sign flip of <c,b> and r<=0.90; replace C-F. Claude adopted as the proposal; user decides.
+
+### 2026-10-20 (session 16, resumed 01a15a66) — critique of the off-lattice phase test before dispatch
+GPT fixes adopted: 6 gaps L_i = lam/(n_eff + n_clad(0.85 - 0.05 i)) (578..663 nm Nt80x); registration = signed global
+translation (commutes with the clamp on the uniform half grid, verified per site); plain device = mechanism check only
+(no transfer of coefficients), add a 5-nm plain row; "family dead" wording replaced by "this basis fails at these depths";
+afterok is not a seat reservation. Dispatched: plain 265799 (3 rows, default GPUs), Nt80x 265802 (3 rows, A100, after 265174).
+Runner: runners/sweeps/farfield_sph_15um_phase.py (+ _plain wrapper).
+
+### 2026-10-21 (sessions 17-19, 01a15a66) — night plan, parity rows, matched design
+17: verified the 10-h plan (hold C-F, completion-driven readouts, last start 07:00, drop cavity fallback, gradient job may not stop).
+18: x-parity rows 3-4 (right arm only) adopted; b_L = b_both - b_R first order only. 19: phase rows MEASURED (r0 5 nm 1.131, rh 1.260,
+r0 2.5 nm 1.056 vs the +20 parent; tabs 76-91 % x-odd about x0 = +0.195 um where the leak is 87 % even). GPT: the mirror prediction
+2 even(b_R) is not a valid gate; run matched r0 at 2.5 + 1.25 nm as a direct test (dispatched 266004). Fable reviewers found the
+x0 plane (origin artefact in the 43/57 split) and verified the parity code.
+
+### 2026-10-21 evening (Claude Opus session after the radcancel handoff) - three blind --no-brief calls
+- Audit (01a15fc1): R for short runs = P/|E_point|^2, not P/U (verified solve_v4.py:33-37) -> added `--energy` (∫|E|^2 dx from
+  field_energy_density_1D); multi-knob solve uses soft lambda/W rows; gain table ignores loading (L'/L=(1-f)/(1-fQ_L/Q_rad)^2).
+  Loss-budget formulas confirmed. ADOPTED all.
+- Ideation (01a15fc0): reciprocity response model b ∝ ∫δε E0·E_rec (same as Claude's); stacked dark supermode and reflective
+  cladding REJECTED (owner: planar single-layer only; reflectors closed earlier).
+- Planar long-device design (01a15fef): (1) long sidewall hologram, q band 0.46-12.1/um radiates, ~0 and ~2beta change mode;
+  (2) compensated internal-slot + attached-pad lattice; (3) gapped satellite rails (owner dislikes oxide gaps). (1) ADOPTED as
+  the first design; (2) kept as extension.
+- Claude finding same evening (MEASURED rows, DERIVED fit): 7 plain-TE shoulder responses at 5 x positions are rank-2 after
+  removing exp(-i k u_x x_j) (held-out 0.88-0.99) = forward/backward carrier kernels; per-ring span of the two kernels holds
+  0.973 of the plain-TE leak -> sidewall patterns can reach it in principle (first order, unconstrained).
+- 2026-10-22 (01a16059): paper review (Kazarinov-Henry 1985, Henry 1985, Noll-Macomber 1990, Avrutskii 1987/1989, Hardy 1989,
+  Lalanne-Hugonin 2003, Avrutsky BSG 1998, Greiner HBR 2004, Wang 2014). GPT + Claude agree: every exact null in these papers
+  cancels ONE diffraction order / one medium (single channel); none transfers to our broadband first-order leak. Transferable:
+  K-H coherent |A+B| picture (= our two-kernel result; bright/dark repeat every 500 nm), Lalanne segment-PERIOD taper + recycling,
+  BSG/HBR single-depth synthesis of a long aperiodic component. GPT: 97 % per-ring reach is representability, not controllability.
+- 2026-10-22 night (01a1607e, 2 turns): GPT proposed in-plane dark pair / 1:-sqrt2:1 trimer -> killed on data (C(D) <= 0.17);
+  critiqued the in-plane SiN mirror (p-pol weak reflection, vertical escape; expected 1.1-1.4x). MEASURED 267135/267138: mirror
+  RAISES loss (Nt80x g600 Q_i -32 %, R 1.34; closer = worse; plain g600 R 1.09, g400 1.29). Environment class closed.
+
+### 2026-10-23 01:33 — session 01a165bf: can multi-channel combs reach x2 Q_i on the TE overshoot?
+Q: radiation-share bound, concept for x2 under planar rules, zero-GPU bound test, cheapest discriminating run.
+GPT: x2 needs 56-63 % of radiation removed (f 0.8-0.9); even perfect cancellation of |u_x|>0.8 gives only x1.7-1.9, so less-grazing
+radiation must be reached too. One comb channel removes ~7 %; ~8-9 independent comparable channels needed (optimistic). Concept: aperiodic
+side-post array on BOTH arms, 33 posts/arm, y +-1.6, x 3..24 um, r 35-80, spacings 0.54-0.75 um (u_x 0.98..0.40), optimised on the full complex
+field; no "local leakage" chirp (x and u_x are Fourier conjugate). Zero-GPU: SVD projection of c onto span{B_j} = optimistic ceiling; then
+realisable fit B(phi) = b0 + bc cos + bs sin per arm; held-out tests = r63 winner + same-phase pair. Cheapest run: independently phased pair
+R51/L147 with a pre-registered c+B_R+B_L prediction (~x1.18).
+Claude: adopted the pair run as next (needs user go) and the span-ceiling test; aperiodic array = candidate after the pair verdict.
+
+### 2026-10-23 02:17 — session 01a165e7: adversarial review of the Born dipole post model + NNLS ceiling (scratchpad comb/)
+GPT: constants, mirror parity, back-propagation sign, normalisation and NNLS algebra all PASS (re-derived P/Pc 0.6773, KKT ok). One bug:
+FFT on non-uniform stored grids (0.5-0.8 % drive error) -> FIXED (uniform resampling). Main caveat: pattern overlap 0.58-0.66 = 58-65 %
+residual field error; model omits core rescattering / cavity change; L-ph120 sign wrong (pred P/Pc 1.009 vs meas 0.980). Relaxing a>=0
+allows 49-64 % removal -> ceiling 32 % is model-conditional, not certified. Claude: KCUT 7.5 vs 9 changes ceiling 32.3 -> 32.7 % (stable);
+testing the model against the converged dy29 single-comb measurement (production-mesh far-field pattern is itself unconverged).
+
+### 2026-10-23 02:48 — session 01a16603: concepts beyond the displaced-post ceiling
+GPT: 32.7 % bounds the post dictionary with NONNEGATIVE weights, not all passive SiN; resonant side structures only rescale ONE pattern
+(cannot beat projection ceiling); length alone adds little; best new concept = disconnected SiN islands BETWEEN the wide teeth (source at
+the leak's own transverse location; distinct from tooth widths geometrically but changes the cavity field) and later a patterned/resonant
+rail; acceptance must be on radiation per stored energy + width spec + energy staying in the grating. Zero-GPU test: nonnegative vs signed vs
+complex projections. Claude ran it: signed-real ceiling 48-66 % (rcond 1e-6..1e-12) vs 33 % nonnegative -> POSITIVITY limits, not the
+pattern set; negative polarisability = sub-oxide index (air voids) = excluded by fab rules. Islands between teeth: parked for user decision.
+
+### 2026-10-23 05:45 — session 01a166a6: second-tooth POSITION RAMP on the plain TE device (other Claude chat, second-tooth study)
+Result reviewed: tooth ramp 5 um (DELTA 0 -> 250 nm over 5 um) Q_i 4.07e4 at W 14.26 vs contrast-only control 3.33e4 at 14.14 (+20 %);
+long ramps (20/40 um) no gain; fixed-position second tooth = coupling knob only (267575, 267814 + control 268447: -8 %).
+GPT: +20 % is real in the numbers but NOT attributable — the control changes the DC (mean width 807-864 nm vs the ramp's constant
+847.4 nm) = a local detuning profile; Q_i formula needs symmetric coupling; 2.4x vs plain needs the width-normalisation caveat.
+Claude: decay fits identical from 10/20/30 ps, spectral Q within 2 %; port R at resonance = (1-sqrt T)^2 (0.074 vs 0.072) -> coupling
+symmetric. ADOPTED: DC-and-fundamental-matched control (mean 847.4 nm, contrast S_j*316) dispatched as Athena 269181; round 2 (ramp 2.5,
+mirrored ramp, steps 3/5/10) = 269175.
