@@ -52,6 +52,11 @@ rule edits (10-20..10-23) awaiting the user's OK to commit. Summary page for the
   coupled-dipole model). Converged 4/5-row designs (c5x30, r <= 100, gaps >= 100, |x| <= 30; plain Born x0.7 leak): 3 rows 0.756
   (175 posts), 4 rows 0.723 (230), 5 rows 0.763 (241, worse = the under-populating design step, not physics; its ceiling is 43 %).
   Files `postarray_work_dy29/design_c5x30_R100_rows0123_x30.npz` / `rows01234_x30.npz`. Fix the design step before trusting row trends.
+- **Rows may be the wrong abstraction (user, critical):** 5 rows < 4 rows is impossible for a correct optimizer (it can leave a row
+  empty). A free 2-D placement prototype (Fable agent, Gram `ceiling_G_arch14.npz`: rows every 0.1 um from 1.1 to 2.4, |x| <= 35, 100 nm
+  x grid) and a GPT method review were launched at handoff time; if their results are not in this file, re-run that task: continuous
+  (x, y, r) posts, all-pairs gaps, greedy packing from the NNLS density + insertion/removal + multi-start, monotone warm starts,
+  compared with straight rows at matched post budgets.
 
 ## 4. Running on Athena at handoff (the old chat's watchers die with it: re-arm a queue watcher; seats ~42/50)
 | Job | What | Score against | Pre-registered |
