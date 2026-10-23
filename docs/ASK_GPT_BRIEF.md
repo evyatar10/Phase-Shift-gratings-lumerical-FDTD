@@ -456,3 +456,18 @@ GPT: +20 % is real in the numbers but NOT attributable — the control changes t
 Claude: decay fits identical from 10/20/30 ps, spectral Q within 2 %; port R at resonance = (1-sqrt T)^2 (0.074 vs 0.072) -> coupling
 symmetric. ADOPTED: DC-and-fundamental-matched control (mean 847.4 nm, contrast S_j*316) dispatched as Athena 269181; round 2 (ramp 2.5,
 mirrored ramp, steps 3/5/10) = 269175.
+
+### 2026-10-23 13:15 — session 01a16842: adversarial review of the post-array +63 % Q_i result
+GPT reproduced Q_i 535,401 -> 874,203 (+63.3 %), width 16.152 -> 16.106. T bias cannot explain it (common -0.008 leaves +62 %); decay fits
+stable 15-100 ps. OPEN: posts lie outside the fine override (|y| <= 1.08 um) on the 50 nm background -> decisive test = matched control/pa3
+with a ~25 nm override over the post region; symmetric-coupling assumption of Q_i = Q_L/(1-sqrt T); P/Pc is per a core-field proxy
+(loss budget does not close: 0.62 radiation with share 0.8-0.9 predicts +44..+52 %). design.py gradients pass (1e-9); exported arrays
+keep >= 99.9 nm gaps; "no fitted parameter" wording corrected (design uses empirical scale 0.70). Claude: adopted the matched refined-mesh test.
+
+### 2026-10-23 14:25 — session 01a16881: planning review (rows/length/x2/validation)
+GPT: keep pa3 as incumbent; finish 4/5/7-row runs; no 8/10/15-row FDTD sweep. x2 needs another 18.4 % of pa3's remaining intrinsic loss.
+Model R 0.646/0.655 -> x1.38-1.47 if radiation share 0.8-0.9 (Claude: measured pa3 gain 1.633 ~ 1/0.620, i.e. share ~1, so that bound is
+pessimistic). Compare row/length dictionaries on IDENTICAL grids (15-row scan used 100 nm sites). Longer arrays need a longer far-field
+aperture (tube untapered only to +-35 um). Best next: bounded shrink/grow residual correction around pa3 (approximate Jacobian, half then
+full step), then -3 dB devices for reference + winner with refined mesh over all posts and >= 1.5 um post-to-PML clearance. Keep varied
+radii; harmonics = diagnostics only (Parseval). Six-run plan ~15-21 A100-h.

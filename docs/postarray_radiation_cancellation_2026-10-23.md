@@ -15,7 +15,8 @@ grating's leak over the whole sphere. Measured far-field power per stored energy
 - Fab rules (user): planar only, same SiN layer, full 350 nm height, oxide elsewhere; nothing reachable by apodization / tooth widths /
   tooth shifts / cavity changes counts. Spec = Q at -3 dB at fixed mode width.
 - Posts: cylinders r 50-100 nm (pa3/pa2) or 50-120 nm (pa4/pa5), mirrored at +-y, edge gap >= 100 nm within a row, rows 300 nm apart,
-  first row y = 1.2 um (>= 0.2 um from the widest tooth). Background mesh 50 nm at the posts (conformal variant 0).
+  first row y = 1.2 um (>= 0.2 um from the widest tooth). Posts sit OUTSIDE the fine mesh override (|y| <= 1.08 um) on the 50 nm
+  background mesh (conformal variant 0); the dy29 variant refines only the core, not the posts.
 
 ## Results (all MEASURED; control = stored Nt80x T340, Q_i 5.35e5; scored with python_tools/radcancel/solve_v4.py --short --energy)
 | Device | Athena job | Posts / side | Q_i | dQ_i | T | width (um) | far-field P/Pc (model) |
@@ -39,14 +40,18 @@ Negative/closed this round: in-plane SiN mirror strips, wider cores, a second co
 2. **Born dipole model** (`python_tools/radcancel/postarray_born.py`): drive = the control's complex E on the far-field tube side plane
    (y 2.104 um) back-propagated by angular spectrum to the post plane (valid for y > 0.9 um only: pure oxide between); post = point
    dipole with cylinder polarisability; far field = free-oxide dipole radiation, same energy normalisation as the control far field C.
-   No CMT. No fitted parameter: |B|^2 within ~10 % on 8 FDTD comb rows, pattern overlap ~0.6, direction right in 6/6 checks; it
+   No CMT. The model has no fitted parameter (the design step uses an empirical response scale 0.70): |B|^2 within ~10 % on 8 FDTD comb rows, pattern overlap ~0.6, direction right in 6/6 checks; it
    under-predicted single-comb/pair gains ~3x but was close on the arrays (0.693 vs 0.620, 0.813 vs 0.797).
 3. **Design** (`postarray_ceiling.py`, `postarray_design.py`): response matrix on a 50 nm site grid per row; post amplitude a = (r/63)^2
    >= 0 makes min |C + sum a_n f_n|^2 convex (NNLS ceiling), then discrete posts (free x, radius bounds, spacing penalty, L-BFGS-B,
    gradients FD-checked, measured scale 0.70). Ceiling for rows y 1.3-1.9: 33 % of the leak (positivity-limited; signed amplitudes
    would allow 48-66 % but need sub-oxide index = air voids, excluded).
 
-## Uncertainty (DERIVED)
+## Uncertainty (DERIVED) and GPT adversarial review (session 01a16842)
+GPT reproduced +63.3 %; a common 0.008 T bias leaves +62 %; erasing the gain needs T 0.64 vs 0.77. OPEN: (1) post-region mesh (posts on the
+50 nm background; decisive test = matched control/pa3 with a ~25 nm override over the posts); (2) Q_i = Q_L/(1-sqrt T) assumes symmetric
+port coupling (left/right arrays differ; a direct -3 dB device settles it); (3) P/Pc is radiation per a z=0 core-field proxy (monitor
+|y| <= 0.94 um), not total stored energy; with radiation share 0.8-0.9 it implies only +44..+52 %, so the loss budget does not close yet.
 Short-run T correction +-0.01 -> about +-6 points on +63 %; port-calibration bias < 1 point (same method both); mesh unknown (single comb
 moved +7.5 -> +8.3 % at dy 29); Q_3dB = 0.293 Q_i assumes Q_i holds when periods are added to reach T = 0.5. Best estimate +55..+70 %.
 

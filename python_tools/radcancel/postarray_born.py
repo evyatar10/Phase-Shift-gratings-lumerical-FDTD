@@ -56,7 +56,7 @@ def posts_ff(xn, yn, rn, scale=1.0):
     return np.stack([Eth, Eph]) * NORM
 def control_C():
     """Energy-normalised control far field C and its quadrature weights dW (cached in WORK)."""
-    f = os.path.join(WORK, "control_C.npz")
+    f = os.path.join(WORK, "control_C_" + os.path.splitext(os.path.basename(ctrl))[0] + ".npz")   # keyed by the control file (GPT 01a1688x)
     if not os.path.exists(f):
         c = g["load"](ctrl); np.savez(f, C=c["E"], dW=c["dW"])
     d = np.load(f); return d["C"], d["dW"]

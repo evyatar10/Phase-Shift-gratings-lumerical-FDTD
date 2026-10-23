@@ -4,9 +4,10 @@
 import os, sys, numpy as np
 from scipy.optimize import minimize
 S = os.environ.get("PA_WORK", r"C:/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes/results_from_athena/comb_overshoot/postarray_work"); TAG = os.environ.get("TAG", "_r4")
-SC, R_REF, R_MAX, R_MIN, GAP = 0.70, 63.0, float(os.environ.get("R_MAX", "100")), 50.0, 100.0
+SC, R_REF, R_MAX, R_MIN, GAP = 0.70, 63.0, float(os.environ.get("R_MAX", "100")), 50.0, float(os.environ.get("GAP_NM", "100"))   # GAP = min post edge gap (any two posts)
 d = np.load(os.path.join(S, f"ceiling_G{TAG}.npz")); G, b, cc, xs, ys = d["G"], d["b"], float(d["cc"]), d["xs"] * 1e9, d["ys"] * 1e9
 nx = len(xs); DX = xs[1] - xs[0]; A_MAX = (R_MAX / R_REF) ** 2; A_MIN = (R_MIN / R_REF) ** 2
+R_MAX_LAST = float(os.environ.get("R_MAX_LAST", R_MAX))   # cap for the outermost allowed row (box edge: y + r <= 2.8 um)
 a0 = np.load(os.path.join(S, f"ceiling_a{TAG}_inf.npy"))
 rows_allowed = [int(v) for v in os.environ.get("ROW_IDX", ",".join(str(i) for i in range(len(ys)))).split(",")]
 if len(rows_allowed) < len(ys):   # re-seed from the NNLS optimum of the allowed rows only (the full-row seed is a different basin)
@@ -33,27 +34,27 @@ def obj(v, lam):
     A, idx, f = grid_amp(x, a); gA = 2 * SC * b + 2 * SC**2 * (G @ A)
     P = (cc + 2 * SC * b @ A + SC**2 * A @ G @ A) / cc
     ga = (gA[idx] * (1 - f) + gA[idx + 1] * f) / cc; gx = a * (gA[idx + 1] - gA[idx]) / DX / cc
-    pen = 0.0; gpx = np.zeros(N); gpa = np.zeros(N)
-    for i in set(prow):
-        j = np.flatnonzero(prow == i); j = j[np.argsort(x[j])]
-        for p, q in zip(j[:-1], j[1:]):
-            need = radius(a[p]) + radius(a[q]) + GAP; viol = need - (x[q] - x[p])
-            if viol > 0:
-                pen += lam * viol**2; gpx[q] -= 2 * lam * viol; gpx[p] += 2 * lam * viol
-                for s in (p, q): gpa[s] += 2 * lam * viol * R_REF / (2 * np.sqrt(max(a[s], 1e-9)))
+    # all-pairs edge gap (same row AND neighbouring rows): need |r_p - r_q| distance >= r_p + r_q + GAP
+    yv = ys[prow]; dxm = x[:, None] - x[None]; dym = yv[:, None] - yv[None]; dist = np.hypot(dxm, dym) + 1e-9
+    rr = radius(a); need = rr[:, None] + rr[None] + GAP; viol = np.triu(np.maximum(need - dist, 0.0), 1)
+    pen = lam * np.sum(viol**2)
+    W = 2 * lam * (viol + viol.T)                                   # d pen / d(need - dist), symmetric
+    gpx = -np.sum(W * dxm / dist, 1)                               # d dist/dx_p = dx/dist
+    gpa = np.sum(W, 1) * R_REF / (2 * np.sqrt(np.maximum(a, 1e-9)))
     return P + pen, np.concatenate([gx + gpx, ga + gpa])
-v = np.concatenate([px, pa]); bnds = [(xs[0], xs[-2])] * N + [(0, A_MAX)] * N
+outer_row = max(rows_allowed)
+amax_of = lambda rw: ((R_MAX_LAST if rw == outer_row else R_MAX) / R_REF) ** 2
+v = np.concatenate([px, np.minimum(pa, [amax_of(rw) for rw in prow])]); bnds = [(xs[0], xs[-2])] * N + [(0, amax_of(rw)) for rw in prow]
 for lam in (1e-6, 1e-5, 1e-4, 1e-3):
     v = minimize(obj, v, args=(lam,), jac=True, method="L-BFGS-B", bounds=bnds, options={"maxiter": 3000}).x
 for it in range(3):   # drop sub-minimum posts and re-optimise
     keep = v[N:] >= A_MIN; px, pa, prow = v[:N][keep], v[N:][keep], prow[keep]; N = len(px); v = np.concatenate([px, pa])
-    bnds = [(xs[0], xs[-2])] * N + [(A_MIN, A_MAX)] * N
+    bnds = [(xs[0], xs[-2])] * N + [(A_MIN, amax_of(rw)) for rw in prow]
     v = minimize(obj, v, args=(1e-3,), jac=True, method="L-BFGS-B", bounds=bnds, options={"maxiter": 3000}).x
 x, a = v[:N], v[N:]; A, _, _ = grid_amp(x, a); P = (cc + 2 * SC * b @ A + SC**2 * A @ G @ A) / cc
-viol = 0
-for i in set(prow):
-    j = np.flatnonzero(prow == i); j = j[np.argsort(x[j])]
-    viol += sum((radius(a[p]) + radius(a[q]) + GAP) - (x[q] - x[p]) > 1.0 for p, q in zip(j[:-1], j[1:]))
+yv = ys[prow]; gap = np.hypot(x[:, None] - x[None], yv[:, None] - yv[None]) - radius(a)[:, None] - radius(a)[None]; np.fill_diagonal(gap, 1e9)
+viol = int(np.sum(gap < GAP - 1.0) // 2)
 print(f"{TAG} rows {[int(ys[i]) for i in sorted(set(prow))]} R_MAX {R_MAX:.0f}: posts {N} (per row {[int((prow==i).sum()) for i in sorted(set(prow))]}), "
-      f"P/Pc {P:.3f} (removed {1-P:.3f}), spacing violations {viol}, r {radius(a).min():.0f}-{radius(a).max():.0f} nm, x {x.min()/1e3:.1f}..{x.max()/1e3:.1f} um")
+      f"P/Pc {P:.3f} (removed {1-P:.3f}), all-pairs gap violations {viol} (min gap {gap.min():.0f} nm), r {radius(a).min():.0f}-{radius(a).max():.0f} nm, x {x.min()/1e3:.1f}..{x.max()/1e3:.1f} um")
+assert viol == 0, f"design violates the {GAP:.0f} nm gap ({viol} pairs, min {gap.min():.0f} nm): not saved"
 np.savez(os.path.join(S, f"design{TAG}_R{int(R_MAX)}_rows{''.join(str(i) for i in rows_allowed)}.npz"), x=x, a=a, r=radius(a), y=ys[prow], P=P)

@@ -219,6 +219,7 @@ class SpectralConfig:
 _MESH_MODE_CELLS = {
     "accurate":     7,   # pitch/(2*7) ≈ 35.7 nm dx (at pitch=500 nm) — final/accurate
     "optimization": 5,   # pitch/(2*5) = 50 nm dx   (at pitch=500 nm) — sweeps/optimization
+    "fine_x10":     10,  # pitch/(2*10) = 25.7 nm dx at pitch 514 — post-array mesh check (2026-10-23)
 }
 
 
@@ -228,7 +229,10 @@ class MeshConfig:
     n_periods_dist_to_port: int = 20            # Distance from grating edge to port (in periods)
     n_wls_dist_port_to_pml: float = 5.0         # Distance from port to PML (in wavelengths)
     simulation_mode: str = "optimization"            # "accurate" (dx≈35nm) or "optimization" (dx=50nm)
+    y_mesh_cells: int = 13                      # override-region dy = width_narrow / this (13 -> ~58 nm); 2026-10-20 staircase-moire test knob
     auto_shutoff_min: Optional[float] = None    # None = builder default 1e-7; convergence knob
+    scatterer_mesh_dy_m: float = 0.0            # >0: extra y-only mesh override over |y| in scatterer_mesh_y_band_m (both +-y), dy = this; 0 = off (2026-10-23)
+    scatterer_mesh_y_band_m: Optional[tuple] = None   # (y_lo, y_hi) m; applied with or without scatterers so a no-post control gets the same mesh
 
     @property
     def cells_per_half_period(self) -> int:
@@ -650,6 +654,9 @@ class SimulationConfig:
             apod_method=ap.method if ap.enabled else 'linear',
             tanh_steepness=ap.tanh_steepness,
             cells_per_half_period=me.cells_per_half_period,
+            y_mesh_cells=me.y_mesh_cells,
+            scatterer_mesh_dy_m=me.scatterer_mesh_dy_m,
+            scatterer_mesh_y_band_m=me.scatterer_mesh_y_band_m,
             simulation_mode=me.simulation_mode,
             auto_shutoff_min=me.auto_shutoff_min,
             use_symmetry=sy.use_y_symmetry,
@@ -728,6 +735,9 @@ class SimulationConfig:
             n_eff_guess=ma.n_eff_guess,
             n_wl_points=sp.n_wl_points,
             cells_per_half_period=self.mesh.cells_per_half_period,
+            y_mesh_cells=self.mesh.y_mesh_cells,
+            scatterer_mesh_dy_m=self.mesh.scatterer_mesh_dy_m,
+            scatterer_mesh_y_band_m=self.mesh.scatterer_mesh_y_band_m,
             simulation_mode=self.mesh.simulation_mode,
             use_symmetry=sy.use_y_symmetry,
             use_z_symmetry=sy.use_z_symmetry,

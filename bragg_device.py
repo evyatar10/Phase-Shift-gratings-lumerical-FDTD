@@ -40,6 +40,9 @@ class PiShiftBraggFDTD:
                  apod_method='linear',
                  tanh_steepness=2.0,
                  cells_per_half_period=5,
+                 y_mesh_cells=13,
+                 scatterer_mesh_dy_m=0.0,
+                 scatterer_mesh_y_band_m=None,
                  simulation_mode="accurate",
                  use_symmetry=True,
                  use_z_symmetry=True,
@@ -158,6 +161,9 @@ class PiShiftBraggFDTD:
         self.tanh_steepness = tanh_steepness
 
         self.cells_per_half_period = max(1, int(cells_per_half_period))
+        self.y_mesh_cells = max(1, int(y_mesh_cells))   # override-region dy divisor (2026-10-20 moire test)
+        self.scatterer_mesh_dy_m = float(scatterer_mesh_dy_m or 0.0)   # >0: y-only override over |y| in the band below (2026-10-23)
+        self.scatterer_mesh_y_band_m = scatterer_mesh_y_band_m          # (y_lo, y_hi) m, required when dy > 0
         self.dx_override = (pitch / 2.0) / float(self.cells_per_half_period)
         self.simulation_mode = simulation_mode
 
@@ -820,14 +826,14 @@ class PiShiftBraggFDTD:
             s = self.y_dev1 - self.y_dev2  # center-to-center separation
             margin = 0.5 * max(self.width_wide, self.width_wide_2)
             y_span_override = s + 0.5 * self.width_wide + 0.5 * self.width_wide_2 + 2.0 * margin
-            dy_global = min(self.width_narrow, self.width_narrow_2) / 13.0
+            dy_global = min(self.width_narrow, self.width_narrow_2) / float(self.y_mesh_cells)
         else:
             # Per-tooth studies draw teeth wider than the scalar width_wide; the
             # fine-mesh override must still cover their sidewalls (2026-08-26).
             max_device_width = max(self.width_port, self.width_wide, self.width_narrow,
                                    max(self.width_wide_per_tooth_m or [0.0]))
             y_span_override = max_device_width * 1.2
-            dy_global = self.width_narrow / 13.0
+            dy_global = self.width_narrow / float(self.y_mesh_cells)
         z_span_override = self.core_height
         dz_global = self.core_height / 7.0
 
@@ -845,6 +851,25 @@ class PiShiftBraggFDTD:
         fdtd.set("dx", dx)
         fdtd.set("dy", dy_global)
         fdtd.set("dz", dz_global)
+
+        if self.scatterer_mesh_dy_m > 0.0:
+            # Opt-in (2026-10-23): posts beside the guide sit outside the core override on the 50 nm background; refine dy over an
+            # explicit |y| band (both +-y), applied with or without posts so a no-post control has the identical mesh. y only, so the
+            # period-aligned x grid and the core z grid are untouched.
+            y_lo, y_hi = self.scatterer_mesh_y_band_m
+            for sgn, tag in ((1, "pos"), (-1, "neg")):
+                fdtd.addmesh()
+                fdtd.set("name", f"mesh_override_scatterers_{tag}")
+                fdtd.set("x", 0.0)
+                fdtd.set("x span", box_span)
+                fdtd.set("y", sgn * 0.5 * (y_lo + y_hi))
+                fdtd.set("y span", y_hi - y_lo)
+                fdtd.set("z", 0.0)
+                fdtd.set("z span", z_span_override)
+                fdtd.set("override x mesh", 0)
+                fdtd.set("override y mesh", 1)
+                fdtd.set("override z mesh", 0)
+                fdtd.set("dy", self.scatterer_mesh_dy_m)
 
     def _add_bragg_core(self):
         fdtd = self.fdtd
