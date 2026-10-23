@@ -67,6 +67,14 @@ rule edits (10-20..10-23) awaiting the user's OK to commit. Summary page for the
   element-pattern correction; NOT coupled dipoles, see section 7). Converged 4/5-row designs (c5x30, r <= 100, gaps >= 100, |x| <= 30; plain Born x0.7 leak): 3 rows 0.756
   (175 posts), 4 rows 0.723 (230), 5 rows 0.763 (241, worse = the under-populating design step, not physics; its ceiling is 43 %).
   Files `postarray_work_dy29/design_c5x30_R100_rows0123_x30.npz` / `rows01234_x30.npz`. Fix the design step before trusting row trends.
+- ★**2-D PLACEMENT VERDICT (Fable agent, finished; files `postarray_work_dy29/twod/`: engine pa2d.py, direct_eval.py, all designs
+  des_*.npz, FINAL_2D_x30_y2000_g100.npz = recommended FDTD candidate):** free 2-D beats straight rows at MATCHED post budgets
+  (direct Born re-score, plain x0.7): 2-D 175 posts 0.692 vs stored rows 0.755; 3 rows fixed optimizer 0.720 (326 posts); 2-D |x| <= 24/
+  30/35 = 0.677/0.661/0.647 (545/632/719); recommended tube-valid 2-D (y 1.1-2.0, |x| <= 30, 504 posts) 0.666 -> model x1.50 vs x1.32
+  for 269488's design. Gaps 80/60 nm worth only 0.004-0.007 (not a lever); multi-start spread ~0.007. The optimum is a dense cloud that
+  first fills a layer along the guide near the cavity (58 % of a 175-post budget within y 1.1-1.4, |x| < 12 um) -> also the user's
+  cavity-enlargement risk zone (untested). Gates: y-interpolation -0.2 %, x-midpoint columns -11 % in |B|^2 (all designs re-scored
+  with direct Born). Next FDTD candidate = FINAL_2D_x30_y2000_g100 at dy29 vs 267605_0 (needs a runner variant + user go).
 - **Rows may be the wrong abstraction (user, critical):** 5 rows < 4 rows is impossible for a correct optimizer (it can leave a row
   empty). A free 2-D placement prototype (Fable agent, Gram `ceiling_G_arch14.npz`: rows every 0.1 um from 1.1 to 2.4, |x| <= 35, 100 nm
   x grid) and a GPT method review were launched at handoff time; if their results are not in this file, re-run that task: continuous
