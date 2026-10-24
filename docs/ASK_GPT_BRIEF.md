@@ -523,3 +523,21 @@ Claude: forwarded to the Fable 2D prototype agent.
   weighting non-PSD (don't optimise it); m4 feasibility enforced post hoc; recipe = bounded free-2-D correction on nw_r2pack (incumbent kept),
   J = |E|^2 + 0.02 F_cell + 1e-4 N, dlam <= 0.18 nm, |dW| <= 0.02; diagnostic = twod replay with in-post volume fields (not run).
 - Claude forwarded all to the Fable design agent (w8).
+
+### 2026-10-24 — session 01a16f1b (antisymmetric TWIN cavities, docs/TWIN_ANTISYMMETRIC_BRIEF_2026-10-24.md)
+- Claude zero-GPU: frozen-source array factor on stored tube far fields: per-cavity radiation anti <2 sin^2(k s u_y/2)>: plain TE best 0.80
+  at s 1.5 um (Q_i x1.21), Nt80x 0.88 at s 2.0 (x1.05); stored TE300 pair data (supermode two-Lorentzian loss fit) null at s 1.95-2.35;
+  TM400 pair: dark supermode Q_i 2-3x single, not predicted by the model.
+- GPT: array factor + vector parity correct; L_pk = 4 eta x(1-x) (2x(1-x) needs L/R symmetry); TM fit not reliable (baseline 0.06, port
+  calibration); Q_c change cannot change a correct Q_i; test = matched control + both parities at s 1.5 (plain), then Nt80x s 2.0, bands
+  R- 0.75-0.85 / R+ 1.15-1.25 (plain), 0.83-0.93 / 1.07-1.17 (Nt80x); separate cross term from incoherent power.
+- Fable (same day): TM gain hinges on baseline subtraction (without it no gain); Nt80x 5 % is a lower bound (58 % of internal loss outside
+  the tube = grazing, where TM shows a mutual term). Claude: plan = plain TE 2 parities then one Nt80x anti short run; NOT dispatched.
+- Follow-up (same session) on the plain twin FDTD readout (Athena 270539): GPT: Q_i unchanged for anti = no NET gain at that spacing (R vs
+  (1-sqrtT)^2 consistent); per-cavity radiation numbers (P/Pc/2) unreliable — field_profile window 1.44 um overlaps the mirror image at s 1.25
+  and misses a 0.16 um strip at s 1.6; sym "-28 % radiation" unestablished; Nt80x neither validated nor killed. Claude: headline = Q_i only.
+
+### 2026-10-25 — session 01a16fec (handoff validation)
+- GPT reproduced nw_r2pack x1.887 exactly; flagged: gate threshold inconsistency, radius map = hypothesis (probe uniform vs fine2
+  anisotropic mesh), missing g-correction note, ext42 tube caveat, fine2 lacked the XY map, number/registry staleness, provenance.
+- Claude applied all fixes to docs/HANDOFF_postarray_2026-10-24.md, enabled the XY map in fine2/fine2ctrl, regenerated the registry.
