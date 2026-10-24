@@ -1,0 +1,140 @@
+{
+  "date_utc": "2026-10-07T02:43:04.039110+00:00",
+  "command": [
+    "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+    "-X",
+    "utf8",
+    "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\run_all_gates.py"
+  ],
+  "aggregate_exit_code": 1,
+  "log": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\integration_20261007_705c8ab2\\integrated_all13.log",
+  "gate_count": 13,
+  "gates": [
+    {
+      "gate": "gate_projection_local.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_projection_local.py"
+      ],
+      "exit_code": null,
+      "sha256": "36c6fe8b520b72882162e8142cf1d4e144bf990c078d2cf0409ef859fdab5cf4"
+    },
+    {
+      "gate": "gate_lam_chain.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_lam_chain.py"
+      ],
+      "exit_code": null,
+      "sha256": "f5134251e44c9002dd86c94dacd177b40a675871bc9d166584e6529d50e15a4f"
+    },
+    {
+      "gate": "gate_lam_chain_plumbing.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_lam_chain_plumbing.py"
+      ],
+      "exit_code": null,
+      "sha256": "c1e307138cf7ee4736ce9ff2d95c448d602e42ed2469d74826c55661a767730e"
+    },
+    {
+      "gate": "predispatch_check.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\predispatch_check.py"
+      ],
+      "exit_code": null,
+      "sha256": "16783b2c7de3c553abcc4d4b4ce5fe31e64657d82d2934bb00c7a5b35032b2b5"
+    },
+    {
+      "gate": "gate_tm_identity.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_tm_identity.py"
+      ],
+      "exit_code": null,
+      "sha256": "8ebc08bca265d7e8073d658e60b761e82138544a36637c9df061d59d3812f906"
+    },
+    {
+      "gate": "gate_v3_local.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_v3_local.py"
+      ],
+      "exit_code": null,
+      "sha256": "1d76af190376fcd1d7157ff9ab3fb67d50b31219d14b33b662402b476a362ac2"
+    },
+    {
+      "gate": "gate_recovery.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_recovery.py"
+      ],
+      "exit_code": null,
+      "sha256": "429835b2eb911f1f23571897be498067e24c64704ffbcd0ac15542c5d3b06502"
+    },
+    {
+      "gate": "gate_persistence.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_persistence.py"
+      ],
+      "exit_code": null,
+      "sha256": "9abef8e0da93a62285e8750fee465b44a958d408d0d95fa2473cc49be8eefd25"
+    },
+    {
+      "gate": "gate_s2_smoke.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_s2_smoke.py"
+      ],
+      "exit_code": null,
+      "sha256": "9ff3b02696d979f992006008dd304ff9726f7de8719bf64f9978b24c2259e561"
+    },
+    {
+      "gate": "gate_width_contract.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_width_contract.py"
+      ],
+      "exit_code": null,
+      "sha256": "390167da504bcc35d2c2ef7c7366b49e56404cc5d94a7409f4005dd447f072bb"
+    },
+    {
+      "gate": "gate_evaluation_budget.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_evaluation_budget.py"
+      ],
+      "exit_code": null,
+      "sha256": "8bf06d28a423ef6030fcbaca2bbabfaaa01cffa290baf99da4f7ee401024c22f"
+    },
+    {
+      "gate": "gate_campaign_budget.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_campaign_budget.py"
+      ],
+      "exit_code": null,
+      "sha256": "9f52ead7cb2561ee1dbe23b42cb86e209e03648cbf3416e296446f1cf94beb1e"
+    },
+    {
+      "gate": "gate_modal_guard.py",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_modal_guard.py"
+      ],
+      "exit_code": null,
+      "sha256": "681cddc0eda40319612a61a725fd93a1e81095b775caaa9074c54d611df290d0"
+    }
+  ],
+  "exit_code_basis": "Aggregate fails immediately on any child nonzero; exit0 establishes each child exit0",
+  "defaults": {
+    "wgp_modal_guard": false,
+    "best_metric": "fom"
+  },
+  "s1_s2_flags_unchanged": true,
+  "calibration_unset": true,
+  "hardware_blocked": true,
+  "integrated_engine_sha256": "53108bbd368dd699179ab65029628aa4c4b2d8ad687777f88b82f404a0952569"
+}

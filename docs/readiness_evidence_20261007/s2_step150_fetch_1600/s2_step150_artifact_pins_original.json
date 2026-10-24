@@ -1,0 +1,26 @@
+{
+  "0:checkpoint": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_step150_fetch_1600\\s2_step150_task00_original.json",
+    "path": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_00.json",
+    "sha256": "8d49988494fd09323821029a9e88adc96b06dec9e586da032278cb2e8c7dd5e6",
+    "bytes": 733432
+  },
+  "0:ports": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_step150_fetch_1600\\s2_step150_task00_ports.npz",
+    "path": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_00_4f0zrw97/ports.npz",
+    "sha256": "4a3b52f5906eba2d8a8b7231df0caf5e2b1694f065d360fb8c55bdb40ad492f8",
+    "bytes": 134142
+  },
+  "1:checkpoint": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_step150_fetch_1600\\s2_step150_task01_original.json",
+    "path": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_01.json",
+    "sha256": "5d88d683852591d48d0a06b62ba763d3483c035be42d4f2467dbde591e5f692f",
+    "bytes": 733116
+  },
+  "1:ports": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_step150_fetch_1600\\s2_step150_task01_ports.npz",
+    "path": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_01_6mkxcbum/ports.npz",
+    "sha256": "fcc4e8d2d2b2d0921fab0b2f4d2ae16667cd504ac1b869d29ee3bf813ca7ff48",
+    "bytes": 134142
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "athena": {
+    "accounting": {
+      "exit_code": 0,
+      "out": "170906_1|COMPLETED|0:0|00:31:52\n170906_2|COMPLETED|0:0|00:31:41\n",
+      "err": ""
+    },
+    "queue": {
+      "exit_code": 0,
+      "out": "",
+      "err": ""
+    },
+    "tasks": {
+      "1": {
+        "checkpoint_sha256": "021ce215c64ccc13020f74af8d775f65ab97f73290e4b06f1f159297f8c7b04e",
+        "artifact_exists": {
+          "source": true,
+          "h5": true,
+          "ports_npz": true
+        },
+        "ports_sha256": "9f6d80043881877926d40a17f18e5c0e3863d8c93a6279a2a65277b96c626613"
+      },
+      "2": {
+        "checkpoint_sha256": "9e72cdc72197254594688dc0102d8a4b10155435244b545719ec4fd3fda4e808",
+        "artifact_exists": {
+          "source": true,
+          "h5": true,
+          "ports_npz": true
+        },
+        "ports_sha256": "eb140dc60e401b9472e942833437eebb74ac60f6f2641a7cd2a55c94fe1e5fe7"
+      }
+    }
+  },
+  "igum": {
+    "exit_code": 0,
+    "out": "      101155_[0%1] part-pree lum_pipe evyatarr PD       0:00      1 (Resources)\nJobId=101155 ArrayJobId=101155 ArrayTaskId=0%1 ArrayTaskThrottle=1 JobName=lum_pipeline_array\n   UserId=evyatarrubin(1686581898) GroupId=domain users(1686400513) MCS_label=N/A\n   Priority=10375 Nice=0 Account=acct-lumerical QOS=qos-preempt\n   JobState=PENDING Reason=Resources Dependency=(null)\n   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0\n   RunTime=00:00:00 TimeLimit=02:00:00 TimeMin=N/A\n   SubmitTime=2026-10-07T07:41:30 EligibleTime=2026-10-07T07:41:30\n   AccrueTime=2026-10-07T07:41:30\n   StartTime=2026-10-07T15:46:55 EndTime=2026-10-07T17:46:55 Deadline=N/A\n   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-07T07:47:10 Scheduler=Main\n   Partition=part-preempt AllocNode:Sid=igum-login1.staff.technion.ac.il:268483\n   ReqNodeList=(null) ExcNodeList=(null)\n   NodeList= SchedNodeList=ece-efrats2\n   NumNodes=1-1 NumCPUs=8 NumTasks=1 CPUs/Task=8 ReqB:S:C:T=0:0:*:*\n   ReqTRES=cpu=8,mem=256G,node=1,billing=88,gres/gpu=1\n   AllocTRES=(null)\n   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*\n   MinCPUsNode=8 MinMemoryNode=256G MinTmpDiskNode=0\n   Features=(null) DelayBoot=00:00:00\n   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)\n   Command=jobs/run_python_array.sh\n   WorkDir=/home/evyatarrubin/research/bragg_sim_igum/jobs\n   StdErr=/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101155_4294967294.out\n   StdIn=/dev/null\n   StdOut=/home/evyatarrubin/research/bragg_sim_igum/jobs/logs/lum_array-101155_4294967294.out\n   Power=\n   TresPerNode=gres/gpu:A100:1\n   TresPerTask=cpu:8\n   MailUser=evyatar10.rubin@gmail.com MailType=ARRAY_TASKS,END,FAIL\n   \n\n",
+    "err": ""
+  },
+  "checked_at": "2026-10-07T07:47:12.826855+03:00"
+}

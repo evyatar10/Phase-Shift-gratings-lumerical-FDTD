@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-07T12:12:41.085361+03:00",
+  "queue": {
+    "rc": 0,
+    "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n          171162_3 a100-publ lum_pipe evyatarr  R      31:09      1 n307\n          171162_2 a100-publ lum_pipe evyatarr  R      31:09      1 n306\n          171162_1 a100-publ lum_pipe evyatarr  R      31:09      1 n306\n          171162_0 a100-publ lum_pipe evyatarr  R      31:10      1 n307\n",
+    "err": ""
+  },
+  "account": {
+    "rc": 0,
+    "out": "JobID|State|ExitCode|Elapsed\n171162_0|RUNNING|0:0|00:31:10\n171162_1|RUNNING|0:0|00:31:09\n171162_2|RUNNING|0:0|00:31:09\n171162_3|RUNNING|0:0|00:31:09\n",
+    "err": ""
+  },
+  "checkpoints": [],
+  "solver_tail": {
+    "/home/evyatarrubin/bragg_sim_athena/results/diagnose_te_s2_shift30_convergence/results/s2_shift30_convergence_20261007/task_01_olcs8tb2/s2_shift30_convergence_20261007_files/fwd_default_p0.log": "hrs, 56 mins, 21 secs. Auto Shutoff: 4.72966e-07\n2.96472% complete. Elapsed simulation time: 5.92944e-11 secs. Max time remaining: 10 hrs, 55 mins, 22 secs. Auto Shutoff: 2.60076e-07\n3.11295% complete. Elapsed simulation time: 6.2259e-11 secs. Max time remaining: 10 hrs, 54 mins, 23 secs. Auto Shutoff: 1.90022e-07\n3.26118% complete. Elapsed simulation time: 6.52236e-11 secs. Max time remaining: 10 hrs, 53 mins, 23 secs. Auto Shutoff: 1.56364e-07\n",
+    "/home/evyatarrubin/bragg_sim_athena/results/diagnose_te_s2_shift30_convergence/results/s2_shift30_convergence_20261007/task_02_llupxevh/s2_shift30_convergence_20261007_files/fwd_default_p0.log": "rs, 59 mins, 14 secs. Auto Shutoff: 6.38218e-07\n2.81009% complete. Elapsed simulation time: 5.62018e-11 secs. Max time remaining: 10 hrs, 58 mins, 14 secs. Auto Shutoff: 4.37941e-07\n2.95798% complete. Elapsed simulation time: 5.91597e-11 secs. Max time remaining: 10 hrs, 57 mins, 15 secs. Auto Shutoff: 2.56817e-07\n3.10588% complete. Elapsed simulation time: 6.21175e-11 secs. Max time remaining: 10 hrs, 56 mins, 15 secs. Auto Shutoff: 2.26225e-07\n",
+    "/home/evyatarrubin/bragg_sim_athena/results/diagnose_te_s2_shift30_convergence/results/s2_shift30_convergence_20261007/task_03_dt3jrx65/s2_shift30_convergence_20261007_files/fwd_default_p0.log": "0 hrs, 59 mins, 22 secs. Auto Shutoff: 8.94135e-07\n2.66388% complete. Elapsed simulation time: 5.32776e-11 secs. Max time remaining: 10 hrs, 58 mins, 21 secs. Auto Shutoff: 7.17085e-07\n2.81177% complete. Elapsed simulation time: 5.62355e-11 secs. Max time remaining: 10 hrs, 57 mins, 20 secs. Auto Shutoff: 3.40867e-07\n2.96% complete. Elapsed simulation time: 5.92001e-11 secs. Max time remaining: 10 hrs, 56 mins, 19 secs. Auto Shutoff: 3.15992e-07\n",
+    "/home/evyatarrubin/bragg_sim_athena/results/diagnose_te_s2_shift30_convergence/results/s2_shift30_convergence_20261007/task_00_6_gti6x6/s2_shift30_convergence_20261007_files/fwd_default_p0.log": "rs, 57 mins, 35 secs. Auto Shutoff: 4.72369e-07\n2.95798% complete. Elapsed simulation time: 5.91597e-11 secs. Max time remaining: 10 hrs, 56 mins, 34 secs. Auto Shutoff: 2.07402e-07\n3.10588% complete. Elapsed simulation time: 6.21175e-11 secs. Max time remaining: 10 hrs, 55 mins, 34 secs. Auto Shutoff: 2.25466e-07\n3.25377% complete. Elapsed simulation time: 6.50754e-11 secs. Max time remaining: 10 hrs, 54 mins, 33 secs. Auto Shutoff: 1.44576e-07\n"
+  }
+}

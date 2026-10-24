@@ -1,0 +1,5 @@
+{
+  "exit_code": 0,
+  "out": "2h_2g|02:00:00||cpu=64,gres/gpu=2,mem=240G\n12h_4g|12:00:00||cpu=512,gres/gpu=4,mem=1792G\ncontrib|7-00:00:00||\n24h_4g|1-00:00:00||cpu=512,gres/gpu=4,mem=1792G\n72h_8g|3-00:00:00||cpu=512,gres/gpu=8,mem=1792G\n4d_1g|4-00:00:00|cpu=32,gres/gpu=1,mem=275G|\nadmin|||\n4h_0g|04:00:00|cpu=8,gres/gpu=0,mem=16G|\n24h_1g|1-00:00:00|cpu=32,gres/gpu=1,mem=275G|\n24h_16g|1-00:00:00||cpu=256,gres/gpu=16,mem=1664G\n",
+  "err": "...\r\n"
+}

@@ -3,7 +3,7 @@
 # dying with the session; that is why quota kept climbing unattended).
 #
 # PASS 1: within each STUDY (*_files dir) keep the newest FOUR *_output.h5
-# older than 4 h, so a running iteration's forward + BOTH adjoints always
+# older than 8 h (was 4 h until 2026-10-20), so a running iteration's forward + BOTH adjoints always
 # survive. ★2026-08-29: the original "keep 2, -mmin +30" KILLED campaign c1
 # twice (137985 incarnations 3+4): a slow resumed gradient holds its forward
 # h5 live for ~2.5 h, and with port-adj + width-adj outputs newer the forward
@@ -27,6 +27,8 @@ while read -r base; do
   fi
   # pass 1 - live study, keep the newest four (fwd + 2 adjoints + margin);
   # 4 h floor > the slowest measured resumed-iterate need-window (~2.5 h)
-  find "$base" -name '*_output.h5' -mmin +240 -printf '%T@ %p\n' 2>/dev/null |
+  # 2026-10-20: 240 -> 480 min: the Nt80x lane (340 ps fixed time) holds its
+  # forward h5 through two ~67-min adjoints plus assembly; 4 h left no margin.
+  find "$base" -name '*_output.h5' -mmin +480 -printf '%T@ %p\n' 2>/dev/null |
     sort -rn | tail -n +5 | cut -d' ' -f2- | xargs -r rm -f
 done

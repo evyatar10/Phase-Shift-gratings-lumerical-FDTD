@@ -1,0 +1,467 @@
+{
+  "exit_code": 0,
+  "err": "...\r\n",
+  "checked_at": "2026-10-07T11:25:22.980029+03:00",
+  "data": {
+    "accounting": {
+      "exit_code": 0,
+      "out": "JobID|State|Elapsed|ExitCode|MaxRSS\n171145_0|COMPLETED|00:05:34|0:0|\n171145_0.batch|COMPLETED|00:05:34|0:0|19740284K\n171145_0.extern|COMPLETED|00:05:34|0:0|0\n",
+      "err": ""
+    },
+    "queue": {
+      "exit_code": 0,
+      "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n",
+      "err": ""
+    },
+    "report_exists": true,
+    "log_tail": "============================================================\nArray:      171145[0]\nNode:       athena-post\nStarted:    Wed Oct  7 11:17:25 AM IDT 2026\nGPU:        none requested; no-solve CAD probe\nCPUs:       8\nSWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\nUsing CONSTANT Materials (object-defined dielectric): SiN=1.97, SiO2=1.444\n11:17:37 - INFO - Generating optimization project...\n11:17:41 - INFO - FDTD version '8.35.4572' meets the minimum requirement.\n/work/results/s2_other_classes_h1_re_20261007T0901/other_classes_h1.json\n[wrapper] python exit code: 0\nINFO:    Terminating fuse-overlayfs after timeout\nINFO:    Timeouts can be caused by a running background process\n============================================================\nFinished:  Wed Oct  7 11:22:55 AM IDT 2026\nExit code: 0\n============================================================\n",
+    "report_sha256": "98ddf3b319561b5a51f2a2f62f6bd868cf910c6ad6068be17af1f56e85ef59eb",
+    "review": {
+      "execution_error": null,
+      "original_file_identity_unchanged": true,
+      "selected_parameters": [
+        [
+          0,
+          "corr_1"
+        ],
+        [
+          60,
+          "avg_1"
+        ],
+        [
+          120,
+          "shift_1"
+        ],
+        [
+          149,
+          "shift_30"
+        ],
+        [
+          295,
+          "wcav"
+        ]
+      ],
+      "source_sha256": "0be8299d6607388f373876bf16b5f15e3d894220efcd770b9cccedd6f46d526d",
+      "raw_classes": [
+        {
+          "index": 0,
+          "label": "corr_1",
+          "reference_position": 0,
+          "step_nm": 1.0,
+          "raw_contraction": 0.00029327743576382616,
+          "original_1nm_raw_contraction": 0.00029327743576382313,
+          "signed_difference": 3.0357660829594124e-18,
+          "relative_difference": 1.03511750743897e-14,
+          "comparison_status": "REVIEW_REQUIRED_NO_AUTOMATIC_CALIBRATION_PASS",
+          "component_contractions_xyz": [
+            -0.00011927899185439794,
+            0.00039079543101626444,
+            2.1760996601959674e-05
+          ],
+          "affected_objects": [
+            "L_narrow_1_196",
+            "L_wide_1_197",
+            "R_narrow_1_199",
+            "R_wide_1_200"
+          ],
+          "index_wavelength_m": [
+            1.5608782189638006e-06
+          ],
+          "global_shape": [
+            1246,
+            51,
+            17,
+            1
+          ],
+          "sparse_stats": {
+            "eps_x": {
+              "nonzero_count": 432,
+              "data_l1": 2.52072097489781,
+              "data_l2": 0.1456454548726718,
+              "support_sha256": "f622b20cb53b5068fa935bc398fa638c56af2cde09f0ecd05d8f5954a28bcd71"
+            },
+            "eps_y": {
+              "nonzero_count": 396,
+              "data_l1": 2.343791382773351,
+              "data_l2": 0.13899721577703933,
+              "support_sha256": "002ddcf46f3bb87141603753fd5a7ded6e9b1fdfacf1134f7a8a9418352e6990"
+            },
+            "eps_z": {
+              "nonzero_count": 384,
+              "data_l1": 2.520741942404454,
+              "data_l2": 0.13836087552556942,
+              "support_sha256": "e9f35dd6c6abb244dc6eaac6e564a1b3151f29f985b8de289827fe3c4d3b644c"
+            }
+          },
+          "nominal_index_mesh_refinement_readback": {
+            "mesh refinement": {
+              "available": true,
+              "value": "precise volume average"
+            },
+            "meshing refinement": {
+              "available": true,
+              "value": 5.0
+            }
+          }
+        },
+        {
+          "index": 60,
+          "label": "avg_1",
+          "reference_position": 2,
+          "step_nm": 1.0,
+          "raw_contraction": 0.010743148444375187,
+          "original_1nm_raw_contraction": 0.010743148444374972,
+          "signed_difference": 2.1510571102112408e-16,
+          "relative_difference": 2.0022595064648088e-14,
+          "comparison_status": "REVIEW_REQUIRED_NO_AUTOMATIC_CALIBRATION_PASS",
+          "component_contractions_xyz": [
+            0.0033426513846419497,
+            0.007263341553173398,
+            0.00013715550655983837
+          ],
+          "affected_objects": [
+            "L_narrow_1_196",
+            "L_wide_1_197",
+            "R_narrow_1_199",
+            "R_wide_1_200"
+          ],
+          "index_wavelength_m": [
+            1.5608782189638006e-06
+          ],
+          "global_shape": [
+            1246,
+            51,
+            17,
+            1
+          ],
+          "sparse_stats": {
+            "eps_x": {
+              "nonzero_count": 432,
+              "data_l1": 5.041166235308097,
+              "data_l2": 0.29128054438737383,
+              "support_sha256": "f622b20cb53b5068fa935bc398fa638c56af2cde09f0ecd05d8f5954a28bcd71"
+            },
+            "eps_y": {
+              "nonzero_count": 396,
+              "data_l1": 5.0411181166021635,
+              "data_l2": 0.29219299218795575,
+              "support_sha256": "002ddcf46f3bb87141603753fd5a7ded6e9b1fdfacf1134f7a8a9418352e6990"
+            },
+            "eps_z": {
+              "nonzero_count": 384,
+              "data_l1": 5.041171635409249,
+              "data_l2": 0.2767161171368939,
+              "support_sha256": "e9f35dd6c6abb244dc6eaac6e564a1b3151f29f985b8de289827fe3c4d3b644c"
+            }
+          },
+          "nominal_index_mesh_refinement_readback": {
+            "mesh refinement": {
+              "available": true,
+              "value": "precise volume average"
+            },
+            "meshing refinement": {
+              "available": true,
+              "value": 5.0
+            }
+          }
+        },
+        {
+          "index": 120,
+          "label": "shift_1",
+          "reference_position": 3,
+          "step_nm": 1.0,
+          "raw_contraction": 0.0003035759342601648,
+          "original_1nm_raw_contraction": 0.00030357593426015865,
+          "signed_difference": 6.1257422745431e-18,
+          "relative_difference": 2.0178616231461413e-14,
+          "comparison_status": "REVIEW_REQUIRED_NO_AUTOMATIC_CALIBRATION_PASS",
+          "component_contractions_xyz": [
+            5.317256355302061e-05,
+            0.00024502707658619386,
+            5.376294120950335e-06
+          ],
+          "affected_objects": [
+            "L_narrow_1_196",
+            "L_wide_1_197",
+            "R_narrow_1_199",
+            "cavity_198"
+          ],
+          "index_wavelength_m": [
+            1.5608782189638006e-06
+          ],
+          "global_shape": [
+            1246,
+            51,
+            17,
+            1
+          ],
+          "sparse_stats": {
+            "eps_x": {
+              "nonzero_count": 226,
+              "data_l1": 0.12970842256927373,
+              "data_l2": 0.019542775911240127,
+              "support_sha256": "26db10cb2b87ab1ada3930e2918e25d5f56fa76c94720896e43991ee74db06cc"
+            },
+            "eps_y": {
+              "nonzero_count": 288,
+              "data_l1": 0.12974175315419423,
+              "data_l2": 0.021103989288792993,
+              "support_sha256": "e52d9e7229f53607860e36f2b1b47d41279d424e9e6365c684d22c838c95d0cd"
+            },
+            "eps_z": {
+              "nonzero_count": 324,
+              "data_l1": 0.12971879848436263,
+              "data_l2": 0.01896269643182273,
+              "support_sha256": "d393fdd9e15e3407cf1d028dcf54b9e0bf8d4883a01d03e18ee757d006237b36"
+            }
+          },
+          "nominal_index_mesh_refinement_readback": {
+            "mesh refinement": {
+              "available": true,
+              "value": "precise volume average"
+            },
+            "meshing refinement": {
+              "available": true,
+              "value": 5.0
+            }
+          }
+        },
+        {
+          "index": 149,
+          "label": "shift_30",
+          "reference_position": 4,
+          "step_nm": 1.0,
+          "raw_contraction": 0.20875441140950038,
+          "original_1nm_raw_contraction": 0.20875441140949622,
+          "signed_difference": 4.163336342344337e-15,
+          "relative_difference": 1.9943704730519277e-14,
+          "comparison_status": "REVIEW_REQUIRED_NO_AUTOMATIC_CALIBRATION_PASS",
+          "component_contractions_xyz": [
+            -0.034742757192664474,
+            0.24282902613909033,
+            0.0006681424630745265
+          ],
+          "affected_objects": [
+            "L_narrow_10_178",
+            "L_narrow_11_176",
+            "L_narrow_12_174",
+            "L_narrow_13_172",
+            "L_narrow_14_170",
+            "L_narrow_15_168",
+            "L_narrow_16_166",
+            "L_narrow_17_164",
+            "L_narrow_18_162",
+            "L_narrow_19_160",
+            "L_narrow_1_196",
+            "L_narrow_20_158",
+            "L_narrow_21_156",
+            "L_narrow_22_154",
+            "L_narrow_23_152",
+            "L_narrow_24_150",
+            "L_narrow_25_148",
+            "L_narrow_26_146",
+            "L_narrow_27_144",
+            "L_narrow_28_142",
+            "L_narrow_29_140",
+            "L_narrow_2_194",
+            "L_narrow_30_138",
+            "L_narrow_3_192",
+            "L_narrow_4_190",
+            "L_narrow_5_188",
+            "L_narrow_6_186",
+            "L_narrow_7_184",
+            "L_narrow_8_182",
+            "L_narrow_9_180",
+            "L_wide_10_179",
+            "L_wide_11_177",
+            "L_wide_12_175",
+            "L_wide_13_173",
+            "L_wide_14_171",
+            "L_wide_15_169",
+            "L_wide_16_167",
+            "L_wide_17_165",
+            "L_wide_18_163",
+            "L_wide_19_161",
+            "L_wide_1_197",
+            "L_wide_20_159",
+            "L_wide_21_157",
+            "L_wide_22_155",
+            "L_wide_23_153",
+            "L_wide_24_151",
+            "L_wide_25_149",
+            "L_wide_26_147",
+            "L_wide_27_145",
+            "L_wide_28_143",
+            "L_wide_29_141",
+            "L_wide_2_195",
+            "L_wide_30_139",
+            "L_wide_3_193",
+            "L_wide_4_191",
+            "L_wide_5_189",
+            "L_wide_6_187",
+            "L_wide_7_185",
+            "L_wide_8_183",
+            "L_wide_9_181",
+            "R_narrow_10_217",
+            "R_narrow_11_219",
+            "R_narrow_12_221",
+            "R_narrow_13_223",
+            "R_narrow_14_225",
+            "R_narrow_15_227",
+            "R_narrow_16_229",
+            "R_narrow_17_231",
+            "R_narrow_18_233",
+            "R_narrow_19_235",
+            "R_narrow_1_199",
+            "R_narrow_20_237",
+            "R_narrow_21_239",
+            "R_narrow_22_241",
+            "R_narrow_23_243",
+            "R_narrow_24_245",
+            "R_narrow_25_247",
+            "R_narrow_26_249",
+            "R_narrow_27_251",
+            "R_narrow_28_253",
+            "R_narrow_29_255",
+            "R_narrow_2_201",
+            "R_narrow_30_257",
+            "R_narrow_3_203",
+            "R_narrow_4_205",
+            "R_narrow_5_207",
+            "R_narrow_6_209",
+            "R_narrow_7_211",
+            "R_narrow_8_213",
+            "R_narrow_9_215",
+            "R_wide_10_218",
+            "R_wide_11_220",
+            "R_wide_12_222",
+            "R_wide_13_224",
+            "R_wide_14_226",
+            "R_wide_15_228",
+            "R_wide_16_230",
+            "R_wide_17_232",
+            "R_wide_18_234",
+            "R_wide_19_236",
+            "R_wide_1_200",
+            "R_wide_20_238",
+            "R_wide_21_240",
+            "R_wide_22_242",
+            "R_wide_23_244",
+            "R_wide_24_246",
+            "R_wide_25_248",
+            "R_wide_26_250",
+            "R_wide_27_252",
+            "R_wide_28_254",
+            "R_wide_29_256",
+            "R_wide_2_202",
+            "R_wide_3_204",
+            "R_wide_4_206",
+            "R_wide_5_208",
+            "R_wide_6_210",
+            "R_wide_7_212",
+            "R_wide_8_214",
+            "R_wide_9_216",
+            "cavity_198"
+          ],
+          "index_wavelength_m": [
+            1.5608782189638006e-06
+          ],
+          "global_shape": [
+            1246,
+            51,
+            17,
+            1
+          ],
+          "sparse_stats": {
+            "eps_x": {
+              "nonzero_count": 16781,
+              "data_l1": 257.0395788600191,
+              "data_l2": 2.9266457959835717,
+              "support_sha256": "40420524261f375f6a84c0b7555b59e573f5fede8ee7b5b1dd0d10551c774b60"
+            },
+            "eps_y": {
+              "nonzero_count": 19940,
+              "data_l1": 257.03962681436917,
+              "data_l2": 2.925445097609844,
+              "support_sha256": "1d417cb42fa89f8722cc6ffff90abb824fd7f0e4051d87a5a771508bc1e51bf7"
+            },
+            "eps_z": {
+              "nonzero_count": 17528,
+              "data_l1": 257.04009652319064,
+              "data_l2": 2.83977337764041,
+              "support_sha256": "e6d51a924ddd4c7d762ec072bdde26dc4e1fca55d5eff835f7c525a8d52f2eb2"
+            }
+          },
+          "nominal_index_mesh_refinement_readback": {
+            "mesh refinement": {
+              "available": true,
+              "value": "precise volume average"
+            },
+            "meshing refinement": {
+              "available": true,
+              "value": 5.0
+            }
+          }
+        },
+        {
+          "index": 295,
+          "label": "wcav",
+          "reference_position": 5,
+          "step_nm": 1.0,
+          "raw_contraction": 0.0027148273266758066,
+          "original_1nm_raw_contraction": 0.002714827326675751,
+          "signed_difference": 5.551115123125783e-17,
+          "relative_difference": 2.0447396667113287e-14,
+          "comparison_status": "REVIEW_REQUIRED_NO_AUTOMATIC_CALIBRATION_PASS",
+          "component_contractions_xyz": [
+            0.0008587372212419222,
+            0.001813095501751526,
+            4.2994603682358566e-05
+          ],
+          "affected_objects": [
+            "cavity_198"
+          ],
+          "index_wavelength_m": [
+            1.5608782189638006e-06
+          ],
+          "global_shape": [
+            1246,
+            51,
+            17,
+            1
+          ],
+          "sparse_stats": {
+            "eps_x": {
+              "nonzero_count": 126,
+              "data_l1": 1.376982214591267,
+              "data_l2": 0.15152958372692682,
+              "support_sha256": "a9f7da83f9ca8809ba4a636465cd0ffe75035c69781b4217dfb111d39efa188d"
+            },
+            "eps_y": {
+              "nonzero_count": 108,
+              "data_l1": 1.37698221459125,
+              "data_l2": 0.15014119918714722,
+              "support_sha256": "ee4655561db00b830d75681ec2bbf413adcf15bb8b024f52be71bbfe3438285d"
+            },
+            "eps_z": {
+              "nonzero_count": 96,
+              "data_l1": 1.3769822145912487,
+              "data_l2": 0.14568480047867838,
+              "support_sha256": "73c2b3de62a558b37841623ac0ae0a4dcdc014184247589e491054372070b322"
+            }
+          },
+          "nominal_index_mesh_refinement_readback": {
+            "mesh refinement": {
+              "available": true,
+              "value": "precise volume average"
+            },
+            "meshing refinement": {
+              "available": true,
+              "value": 5.0
+            }
+          }
+        }
+      ]
+    }
+  }
+}

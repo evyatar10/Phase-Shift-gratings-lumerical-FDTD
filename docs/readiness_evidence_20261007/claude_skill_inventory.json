@@ -1,0 +1,291 @@
+{
+  "project": [
+    {
+      "name": "add-study",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\add-study\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\add-study\\SKILL.md",
+      "source_sha256": "e14d5dbe7de4c1f387412f97ddf4887806b0956bb639a67c25e3648061d069af",
+      "destination_sha256": "7f0567a2351995e785f289cb7bec746b1543f6dc16d7167963430431eb9769cd",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "athena-preflight",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\athena-preflight\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\athena-preflight\\SKILL.md",
+      "source_sha256": "619b0f3ec87b32873d36a1f62f1cdf8c569ced6b344f599ec5979d4fc5c760bf",
+      "destination_sha256": "7f6217f2c6ebf6bf8c7196915d03be28f105625efb26678b30d77762903f11dc",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "athena-status",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\athena-status\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\athena-status\\SKILL.md",
+      "source_sha256": "962c7e0b4c7120191c4df5df4bbf21de71c5e287d990ff664a26f2a76ad87ece",
+      "destination_sha256": "8a47934df7c462578c037f378e13dc313ffa9b2384e2e1b4ab7ee94904a5c230",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "check-result",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\check-result\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\check-result\\SKILL.md",
+      "source_sha256": "03c375297630cdad5cf261024a5de4cfb4d98753f537af034ddf723e3029691f",
+      "destination_sha256": "0ca14984937456d6e4fda3edf978c702c1cfbd2daa039931c70eafa494acc557",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "dispatch-study",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\dispatch-study\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\dispatch-study\\SKILL.md",
+      "source_sha256": "2db43667d9d6cb461b0f77dc837d3655e0b8df7871dd3a570dc07c6da4c037e4",
+      "destination_sha256": "032deb5982398eeeec525336d499522446aa3346a26ba0e06a0bb7268008d4ad",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "fetch-results",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\fetch-results\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\fetch-results\\SKILL.md",
+      "source_sha256": "498a9f41360a88e5b46b5d4b3834ca7f5686271f4693bed44e8b846f335b7ec6",
+      "destination_sha256": "b30c67a7664656c53217468595bad960e756d71b94c5c6a25b8c0707969f9f86",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "lock-target",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\lock-target\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\lock-target\\SKILL.md",
+      "source_sha256": "b0d8fdd0f0200ca70b9db8e02225372be9d12792681f2788d218ee0e9b90197f",
+      "destination_sha256": "94a76d45d2ec26a33967aa9c360d9641d4245b3a99b8790853258b79d4113dd2",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "lumopt2-design",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\lumopt2-design\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\lumopt2-design\\SKILL.md",
+      "source_sha256": "66a65117aa6216b6bbfbad06d2e2013c6cc0216c5f720fa815c9ccfe5c689d6c",
+      "destination_sha256": "fdd4c5eee0d63e71f37fb6679dafb65561f81ff1329e65c27a526f75fa10cdaa",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "predict-q3db",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\predict-q3db\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\predict-q3db\\SKILL.md",
+      "source_sha256": "d8c06b206843aa86cc5407ba53efbe73924ae0f125c0d792790fa9f751a02d4d",
+      "destination_sha256": "022bed81358277fa667c44efec0c9f14743db931ac0b1b9d32fd0f2e3789572e",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "safe-compact",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\safe-compact\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\safe-compact\\SKILL.md",
+      "source_sha256": "6f72c64c541f80b46080ff776407e16e0bda2445a7168a6db773438021aaf905",
+      "destination_sha256": "96c777658e2373caa93a7a8589fb1e18568ff85120907d31fdc83088546e1aec",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "stop-runs",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\stop-runs\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\stop-runs\\SKILL.md",
+      "source_sha256": "1b44554cb8a6d22da5ddcef565f909015eb7de764863b2b70128f3c64aa6073a",
+      "destination_sha256": "d34280fc93ddfb8cef05cc563dde678ca0eba06ead9a86163ce692cd1ea30229",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "update-container",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\update-container\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\update-container\\SKILL.md",
+      "source_sha256": "83535a80c542f943ae07934b13697167071e5e873c86d361c763d05cd0f7569f",
+      "destination_sha256": "7a58a67e70ea0450b943cbcf087911a6fd6a19e9a700326fbda91b8228734554",
+      "action": "adapted_existing_codex_copy"
+    },
+    {
+      "name": "work-alone",
+      "source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.claude\\skills\\work-alone\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\.agents\\skills\\work-alone\\SKILL.md",
+      "source_sha256": "4aeb426339726e7df07a695ab356b1fcf6e67669f1b6f1556b75d1dc921e8cf1",
+      "destination_sha256": "b392d7d36de569eef7af593cf8a608bb1ecfd3c223d63a32b2968fc107b8d2c2",
+      "action": "adapted_existing_codex_copy"
+    }
+  ],
+  "personal": [
+    {
+      "name": "ask-gpt",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\ask-gpt\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\ask-gpt\\SKILL.md",
+      "source_sha256": "ca5de4c1ba08abbcc4d29056c86ca6a4728291a300f0dcdcd92a8fb78be46603",
+      "destination_sha256": "95b1af66ea54cd6e850677230f3bfa79dd010b7be7087f5dd3b05d91061c45bf",
+      "supporting_files": 2,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "research-deck",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\research-deck\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\research-deck\\SKILL.md",
+      "source_sha256": "bb4e389023eea3ce36a4218261e7bf375ac1dc9cf28aa3141e09585cea6a5cfe",
+      "destination_sha256": "2087797d864def43ba9ac9dfe2c25f4131256c5e38313f94b4170b42f24c4223",
+      "supporting_files": 31,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "study-narrator",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\study-narrator\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\study-narrator\\SKILL.md",
+      "source_sha256": "909c15f210c2465e697f050b64d0c2eb88287df5d80d00dd846f2db9f99e8334",
+      "destination_sha256": "4472b7cb55fb306d393deb659b3ea0ac4df9c7fa60edbec380359957b6ad17e8",
+      "supporting_files": 5,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\built-in-browser",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\built-in-browser\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\built-in-browser\\SKILL.md",
+      "source_sha256": "b5a720afbcde0d6a77c1bc1d34ab56f3d4b09d071b92129783b4faf7f2a3fe62",
+      "destination_sha256": "878ae449414042b04a5d18729523124173c710df1268a89da8685854edaadf38",
+      "supporting_files": 2,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\chrome-browser",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\chrome-browser\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\chrome-browser\\SKILL.md",
+      "source_sha256": "c8b0afeee246f333529be3c73c49efaf7d9d10a46d8948b4b736cc758cb4e885",
+      "destination_sha256": "00d5488dbb85e7237e07a4c25c497c533702c004bc523d53510c7dbf35d64d7f",
+      "supporting_files": 2,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\computer-use",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\computer-use\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\computer-use\\SKILL.md",
+      "source_sha256": "bc4b958fd640143d2738ffdf31b7af149cfb85165f6952224dc9e0e42118edb9",
+      "destination_sha256": "ef5968dcb537266d6a3e18dd953372e43d780dc5e20effed276cafd68d751276",
+      "supporting_files": 2,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\deep-research",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\deep-research\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\deep-research\\SKILL.md",
+      "source_sha256": "46ae8d5a0b95efad0329ac287ea5248c19fbbe195d8270231c4a78ba6217c024",
+      "destination_sha256": "46ae8d5a0b95efad0329ac287ea5248c19fbbe195d8270231c4a78ba6217c024",
+      "supporting_files": 3,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docs",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docs\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docs\\SKILL.md",
+      "source_sha256": "98e4fb5934042152d57bc9cb8c0736d5d8e31c6c0122b13ff5836f4c2411fa3e",
+      "destination_sha256": "d35db4eaeb32be04086884008fc07aa1c120fe2065fcf518e93eddd5c8776f39",
+      "supporting_files": 1,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docx",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docx\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\docx\\SKILL.md",
+      "source_sha256": "912cb15683a476a285033f9a40c5099248f9c6a06d581b106b95796f9d33d118",
+      "destination_sha256": "41373257a5b614ef482d9a56df681fdedc67f5d8c93794a7fe8881d0a6a7a807",
+      "supporting_files": 61,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\google-workspace",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\google-workspace\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\google-workspace\\SKILL.md",
+      "source_sha256": "f53b2d8c9bcb43365c8cb4118d24a47b0a018b7ca173aa47e680e8bc02ed869d",
+      "destination_sha256": "26f118315a2afb011abcdb75a7bc6db3417e50a7fc07c783c31d286c1de32309",
+      "supporting_files": 9,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\import-memory",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\import-memory\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\import-memory\\SKILL.md",
+      "source_sha256": "5179b0780b7025c93271c181636a23acc8d05cad3b20584639cbaf1cf9c3b07a",
+      "destination_sha256": "123a54cb83675df7c9ce73dd4fa091b3774379d69fc20024d05d6ad7838fcd14",
+      "supporting_files": 1,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\morning",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\morning\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\morning\\SKILL.md",
+      "source_sha256": "a7c4dbcb745799736991b027cceae39aae4880cc00ff43871ae5e87b38023bdd",
+      "destination_sha256": "9c7677b95f783e480c546f2d0621056adb57557442dcd72c2b406fbdf94ee9bb",
+      "supporting_files": 3,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pdf",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pdf\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pdf\\SKILL.md",
+      "source_sha256": "9f78b8359fbd4943ad260a7a1e436e5a96503406d6c34e99f69223d647d85b9c",
+      "destination_sha256": "9f78b8359fbd4943ad260a7a1e436e5a96503406d6c34e99f69223d647d85b9c",
+      "supporting_files": 12,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pptx",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pptx\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\pptx\\SKILL.md",
+      "source_sha256": "d8bf85f2ef187ce78cf1afa0eab0566d8760df158ea99815b84ac8bc813f04ab",
+      "destination_sha256": "d8bf85f2ef187ce78cf1afa0eab0566d8760df158ea99815b84ac8bc813f04ab",
+      "supporting_files": 57,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-beamer",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-beamer\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-beamer\\SKILL.md",
+      "source_sha256": "953d5a00724d082743b77a9d97a4e7651049be49fb4d01c1d905cad743c39a3f",
+      "destination_sha256": "872f57e6d5cceed945fb6fcad5013c777e13253507860f563b04083076883cea",
+      "supporting_files": 9,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-deck",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-deck\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\research-deck\\SKILL.md",
+      "source_sha256": "7fc3ee86811c15ab1e3552d741521cde184b157db78993af2317d1de4c322912",
+      "destination_sha256": "f6557a81d4e75b05fce0fafaeec7a08d54085317a2c4de95f9e1fd6fe75f0f0e",
+      "supporting_files": 31,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\skill-creator",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\skill-creator\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\skill-creator\\SKILL.md",
+      "source_sha256": "42765c880e446a83c85f7852fc77b43ecd46c76ca219d68051799ac7425e6943",
+      "destination_sha256": "614cc82a45173d04a481eb7e2a3c78d060a6c9ce13dfe4234212aeb23aae5b63",
+      "supporting_files": 18,
+      "missing": [],
+      "action": "already_available_preserved"
+    },
+    {
+      "name": "synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\xlsx",
+      "source": "C:\\Users\\evyat\\.claude\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\xlsx\\SKILL.md",
+      "destination": "C:\\Users\\evyat\\.agents\\skills\\synced\\75c12a2a-55dc-47b2-a210-4ab35b64953d_4b35354a-bd8c-49e6-a49d-93f4fe231e4c\\xlsx\\SKILL.md",
+      "source_sha256": "6712b39718fe815054abca9c3ee72f989613e6f771c8a5c58f30a65a6c905622",
+      "destination_sha256": "6712b39718fe815054abca9c3ee72f989613e6f771c8a5c58f30a65a6c905622",
+      "supporting_files": 53,
+      "missing": [],
+      "action": "already_available_preserved"
+    }
+  ],
+  "excluded": "Two .trash SKILL.md entries; not restored."
+}

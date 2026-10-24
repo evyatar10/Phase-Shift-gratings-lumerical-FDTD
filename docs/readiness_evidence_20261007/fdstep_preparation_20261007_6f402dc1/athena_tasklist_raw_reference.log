@@ -1,0 +1,3 @@
+Wrote 3 task lines to: C:\Users\evyat\Lumerical\phase_shift_grating_FTDT_codes\docs\readiness_evidence_20261007\fdstep_preparation_20261007_6f402dc1\athena_tasklist_raw_reference.txt
+SWEEP_META: kind=lumopt2_design
+SWEEP_META: spec_module=runners.lumopt2_design.diagnose_te_s2_fdstep

@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "job_id": "101434",
+  "receipt_sha256": "2f5e332ceec0ae1ea28f87384619e21141a405fba2251df976a7503c2d37cd55",
+  "files": [
+    {
+      "file": "task_00.json",
+      "source_path": "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00.json",
+      "sha256": "116fdc0be132d934626e5d776f4982b6cc628fdbb9d59d008591069ff34e0c83",
+      "bytes": 1712336
+    },
+    {
+      "file": "task_00_ports.npz",
+      "source_path": "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00_7dv32tut/ports.npz",
+      "sha256": "9493abdb1adedc8c0e03452c9a03119e5dd1a074f49e97d08c882330ca3a3335",
+      "bytes": 134142
+    },
+    {
+      "file": "task_01.json",
+      "source_path": "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01.json",
+      "sha256": "340325ffb42980b34eadbc224c2b9ce0aa6d6f1d8d6eb3ce4d3c58a8137ec0e9",
+      "bytes": 3170535
+    },
+    {
+      "file": "task_01_ports.npz",
+      "source_path": "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01_5ur74bqg/ports.npz",
+      "sha256": "405b88526789b708c77e9cf68b08f5a3e5c9bbaabde1ef463f1aace1a2c84e6d",
+      "bytes": 134142
+    }
+  ],
+  "qualification": "FINITE_DURATION_LENGTH_SENSITIVITY_ONLY_NO_TEMPORAL_MESH_OR_GRADIENT_PASS"
+}

@@ -1,0 +1,9 @@
+{
+  "accounting": {
+    "rc": 0,
+    "out": "JobID|State|ExitCode|Elapsed\n171739_0|RUNNING|0:0|00:02:37\n171739_0.batch|RUNNING|0:0|00:02:37\n171739_0.extern|RUNNING|0:0|00:02:37\n",
+    "err": ""
+  },
+  "report_exists": false,
+  "log_tail": "============================================================\nArray:      171739[0]\nNode:       athena-post\nStarted:    Wed Oct  7 09:53:49 PM IDT 2026\nGPU:        none requested; no-solve CAD probe\nCPUs:       8\nSWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\n"
+}

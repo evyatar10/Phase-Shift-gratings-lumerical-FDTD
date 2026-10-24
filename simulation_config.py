@@ -352,6 +352,8 @@ class ScattererConfig:
     # Optional per-site in-plane rotation (deg about z; rect strips only) —
     # corner-array (sawtooth retro) study. -y mirror copies auto-negate.
     rot_list_deg: Optional[list] = None
+    # Optional per-site ellipse 2nd semi-axis (m; None entry = circle); rot_list_deg then rotates the ellipse.
+    r2_list_m: Optional[list] = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -363,6 +365,8 @@ class MonitorConfig:
     """2D and 3D field monitor settings."""
     record_2d_fields: bool = True               # Record XY (top) and YZ (cross) field profiles
     field_2d_x_span_m: Optional[float] = None   # X span for 2D monitors (None = full device)
+    field_2d_xy_band_m: Optional[tuple] = None  # (y_lo, y_hi) m: record ONLY the z=0 XY plane over this y band (no YZ/XZ,
+                                                # no Poynting) = in-situ post drive map (post arrays, 2026-10-23). None = legacy.
     monitor_2d_center_nm: Optional[float] = None  # 2D-monitor own wavelength center (None = use source limits)
     monitor_2d_span_nm: Optional[float] = None    # 2D-monitor own wavelength span (with center above)
     downsample_yz: int = 1                      # Spatial downsampling factor for monitors
@@ -669,6 +673,7 @@ class SimulationConfig:
             # 2D monitors
             record_2d_fields_top_and_cross=mo.record_2d_fields,
             field_2d_x_span_m=mo.field_2d_x_span_m,
+            field_2d_xy_band_m=mo.field_2d_xy_band_m,
             monitor_y_span_m=monitor_y_span,
             monitor_z_span_m=monitor_z_span,
             downsample_yz=mo.downsample_yz,
@@ -703,6 +708,7 @@ class SimulationConfig:
             scatterer_y_list_m=self.scatterer.y_list_m,
             scatterer_r_list_m=self.scatterer.r_list_m,
             scatterer_rot_list_deg=self.scatterer.rot_list_deg,
+            scatterer_r2_list_m=self.scatterer.r2_list_m,
             scatterer_z_min=self.scatterer.z_min_m,
         )
 

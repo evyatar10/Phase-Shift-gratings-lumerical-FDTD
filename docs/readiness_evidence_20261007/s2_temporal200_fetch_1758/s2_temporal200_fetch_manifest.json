@@ -1,0 +1,27 @@
+{
+  "job_id": "171390",
+  "family": "s2_shift30_temporal200_20261007",
+  "verified_tasks": [
+    0,
+    1,
+    2
+  ],
+  "runner_sha256": "fa6a6528e34cb9c004604ec490543c3b0579d76224c936568c2e11e4f9996053",
+  "base_helper_sha256": "555f3d13b42c494171e7658cc4263c588ce418e5d937da1497d690824b41d44a",
+  "review_marker": "/work/data/s2_temporal200_review_20261007_1619.json",
+  "review_marker_sha256": "4fe3c0e7fc37cced733ac7cf7b2ee3de3536213ee938e23a1095dffc307cd44f",
+  "artifact_pins_sha256": "82b5a5df987e366b29523d1c2807399aca09cc025fe0f1a2e030007aa58afd26",
+  "receipt_sha256": "37ec223b13863dd9f6d5c289d20686367bf5e7ba9e07dace8b429aa5d385e7f8",
+  "fetch_helper_sha256": "0c6cb29becdcbdf20c37f71cf300f8d3181baeb997e6bb0e96f48596ca558975",
+  "published_files": {
+    "s2_temporal200_artifact_pins_original.json": "82b5a5df987e366b29523d1c2807399aca09cc025fe0f1a2e030007aa58afd26",
+    "s2_temporal200_completed_receipt.json": "37ec223b13863dd9f6d5c289d20686367bf5e7ba9e07dace8b429aa5d385e7f8",
+    "s2_temporal200_task00_original.json": "37fa4074d0dd5bfaa88bf6932b1ca1deed786620126b56f8a2d0c4cd44dbe029",
+    "s2_temporal200_task00_ports.npz": "1bd6d30fd486371f695be0a5b85d1a410b79d9392cd0c9e3e47f9006fd0f7e8f",
+    "s2_temporal200_task01_original.json": "e8d3bb65b7648be3957f0bfc510379ebbc0d7a796ea196c9edaa9f49940b82ed",
+    "s2_temporal200_task01_ports.npz": "20514434774966cf38251c230a111cd91212cd837d6f40395c4f308f2f167c45",
+    "s2_temporal200_task02_original.json": "d8a2c9b9705c8cd54c9a6d9329063207876eed4c44d168ead7ffd04721b60b56",
+    "s2_temporal200_task02_ports.npz": "eb0236eca164b48f5a86bf261244d4bb3fc218209786ac69349b494fc87cebc0"
+  },
+  "qualification": "Read-only cold verification and original-byte transfer; no physics pass"
+}

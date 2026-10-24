@@ -1,0 +1,18 @@
+{
+  "report.json": {
+    "path": "/home/evyatarrubin/bragg_sim_athena/results/s2_saved_spatial_profiles_20261007_1542/report.json",
+    "sha256": "01a6fe6540c7cf903de67cecc42a89c6318983301364b679b9da0870dede595a"
+  },
+  "profiles_100ps.npz": {
+    "path": "/home/evyatarrubin/bragg_sim_athena/results/s2_saved_spatial_profiles_20261007_1542/profiles_100ps.npz",
+    "sha256": "e23127424d3783442b14595fc054b479c8dfaa8161a7165b0e537068d6db8612"
+  },
+  "profiles_150ps.npz": {
+    "path": "/home/evyatarrubin/bragg_sim_athena/results/s2_saved_spatial_profiles_20261007_1542/profiles_150ps.npz",
+    "sha256": "bbf660c8d4d2d628bd4eae0a1aac4e9a9883bb12388ed51ee2aadf71dfcc3d27"
+  },
+  "lum_array-171300_0.out": {
+    "path": "/home/evyatarrubin/bragg_sim_athena/jobs/logs/lum_array-171300_0.out",
+    "sha256": "175e49241df8978c8ea703b8012fefdab2aea2912b1c0dfeed853078ee9981c5"
+  }
+}

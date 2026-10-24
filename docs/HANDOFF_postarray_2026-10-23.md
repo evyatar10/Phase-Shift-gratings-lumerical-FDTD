@@ -113,7 +113,7 @@ Athena: `~/bragg_sim_athena/results/farfield_sph_15um_postarray_overshoot_<varia
 P/Pc invalid (posts outside the tube / lambda outside the +-0.25 nm 2D window); Q_i, T, width valid.
 
 ## 5. Next steps (ordered; propose each run to the user first, CLAUDE.md 6)
-0. **Primary plan = Fable's R1-R6 in section 7** (measured-residual iteration, then length, then a wall-following inner layer with
+0. **Primary plan = Fable R1-R6, run ORDER per section 12 (re-anchored on c29)** (measured-residual iteration, then length, then a wall-following inner layer with
    in-situ drive monitors). Suggested FDTD order (each ~3 h EXPECTED at dy29, 7 seats; measured anchors production 2:23 h / 34 GB,
    dy29 3:33 h / 43 GB): R1 (+ x-line field monitors) -> cavity-shift control (2b) -> R2 -> R3 -> R4 -> R5/R6 on the winner only.
    Every run is proposed to the user first (CLAUDE.md 6). The items below are the supporting checks.
@@ -203,3 +203,56 @@ has a lumopt2 adjoint pipeline under runners/lumopt2_design)? (5) What would mos
 discriminating next FDTD set (Athena A100, ~2.5-3.5 h per run, 7 license seats each, 4d_1g memory < 400 GB)?
 Label MEASURED / DERIVED / INFERENCE / FROM-SOURCE; cite file:line or papers. Be adversarial about our reasoning.
 ```
+
+## 11. Open user questions at handoff (2026-10-23, late)
+- **Placement region shape.** The box (|x| <= 30, y 1.1-2.0 um) is a MODEL-validity box, not physics: inner y = drive back-propagation
+  valid only outside the widest tooth (0.9 um); outer y = tube face 2.104 um minus clearance; |x| = untapered tube range. Proposed
+  (zero GPU): inner boundary = fixed clearance from the LOCAL sidewall (0.48 um near the cavity -> 0.9 um at the widest teeth), which
+  needs a DIRECT in-situ field near the cavity (x-line monitors) instead of back-propagation; let NNLS pick the shape inside
+  {clearance from wall} AND {inside tube}, then read the amplitude map's contour (circle/ellipse emerges or not).
+- **Beyond the point dipole.** k*r in oxide 0.28-0.56 -> quadrupole terms ~10-30 %. Options, ranked: (1) embedded element pattern by
+  reciprocity (post radiation = overlap with the field a far-field plane wave makes on the BARE strip, not free oxide; Fable's leading
+  model-error suspect); (2) cylinder T-matrix / multipole (dipole + quadrupole); (3) FDTD adjoint Jacobian on post radii/positions as
+  the refinement step; also non-circular elements (x-bars/ellipses change the polarizability tensor).
+- FSP of the best measured device (c29, x1.42, dy29, build-only): `results_from_athena/comb_overshoot/fsp/c29_pa3_r100_x30_dy29_best_x1p42.fsp`.
+- **Clarification (user asked: is the box optimal?): NO.** The box is only where the model is valid; it is not an optimal limit. A
+  circle/ellipse should not be imposed either: inside a given allowed region the model already chooses where posts go, so a smaller
+  region (circle inside the box) can only do equal or worse. Right approach: make the allowed region as large as validity allows
+  (inner edge = clearance from the LOCAL wall, needs direct near-cavity field; outer edge = tube face, 3.1 um with box 8.8), let the
+  model place posts, and READ the shape from its amplitude map. A shape only matters under a post budget: then keep the contour that
+  holds most of the removal per post (175-post design ~ 504-post design suggests most value sits in a compact core region).
+- **Port normalization (CLAUDE.md 2) is NOT applied in post-array scoring.** solve_v4.py uses the raw result T (|S21|^2) in
+  Q_i = Q_L/(1-sqrt(T)). DERIVED effect (bias +0.006 on both): control Q_i +2.0 %, c29 +2.6 % -> ratio x1.42 -> ~x1.41; absolute Q_i
+  ~2-3 % high (partly offset by the short-run T ~0.006 low). Fix = ONE straight-guide calibration at the far-field-scene dy29 numerics
+  (~25 min), reused for every device; stored portref_nt80 is a different scene/mesh (identity not checked). User 2026-10-23: NOT needed now (effects matter, not the last digit); do it only for the final best-result validation.
+
+## 12. Late Fable planning review (2026-10-24) - SUPERSEDES the run ORDER of section 7 (same building blocks, re-anchored on c29)
+- Estimate (DERIVED by Fable): measured/model removed fraction on c29 = 0.301/0.244 = 1.23; applied to the tube-valid 2-D design
+  (model 0.666) -> P/Pc ~0.59 -> x1.7. x2 needs the inner wall-following layer near the cavity (|x| < 6 um, y 0.5-0.8 um: wall is
+  620 nm at |x| < 5 vs 900 nm beyond, drive x2.5-3 that of y 1.2). Rows, x-extent and r <= 120 are exhausted levers (r 100 -> 120
+  buys 0.5 pt; |x| > 15 adds little at realizable radii). Designs are inter-row cancellations: a 50 nm x-shift 0.69 -> 0.80 (fab risk).
+- Order: zero-GPU O1 re-score all converged devices with plain Born x0.7 on the dy29 control (one multiplicative calibration, drop
+  kappa*x1); O2 project c29's MEASURED residual onto arch14; O3 discretize (gaps/wall/tube asserts, full + half-step predictions).
+  R1 bare Nt80x with the cavity trimmed to c29's lambda shift, no posts, + x-line field monitors y 0.55/0.7/0.85/1.0/1.2/1.5 (runner
+  edit needed): cavity-enlargement null (expect Q_i within +-3 % of 5.67e5) AND the direct inner-layer drive. R2 DWBA-1 on c29's
+  residual (pass: >= x1.55). R3 inner wall-following layer (0.2 um clearance, r <= 80) from R1's drive = the x2 test, with a matched
+  lambda/width/core-energy check. R4 DWBA-2 if R2 confirmed. R5 matched fine pair + port calibration, R6 direct -3 dB, winner only.
+- Fable also corrected a premise: in lossless FDTD the only non-port loss IS radiation; the doc's "share 0.8-0.9" mismatch is the
+  energy proxy + T bias, not a missing loss channel. Reviewer scripts: scratchpad review_ceil/review_design/review_capped.py (not kept).
+- **Fable FINAL version (same review, later message) - use this over the bullets above where they differ:** realisable endpoint with
+  posts at y >= 1.1 is x1.5-1.65 (INFERENCE), not x1.7; x2 needs the inner layer. Binding limit = the >= 100 nm gap / discreteness
+  (capped optimum is a quasi-continuous low-amplitude cloud over ~3700 of 3844 sites), not r or length; the "length helps" scans were
+  uncapped. Drop: |x| <= 45, rows > 4, r <= 120 / 50-nm-gap designs. Single pa3 rows each RAISE the leak (1.01/1.27/1.08); only the
+  sum cancels -> the fragile quantity is the model's inter-row PHASE (element pattern or near-field coupling).
+  Offline: O1 capped (r <= 100) + gap-aware ceiling on the CONVERGED Gram for |x| <= 15/24/30, rows <= 4 (lsq_linear/bvls took 5-7 h
+  at n 3844: use nnls with a variable split or projected gradient); O2 score 269505 vs Fable bands (fixes model scale, no run); O3
+  discriminant table (dlam, Q_c, width, core-energy fraction) for all converged devices; O4 angular map of c29's measured vs model
+  residual. Runs (all with x-line monitors y 0.75-1.8): R1 DWBA-1 on c29's measured residual, |x| <= 24 (expect x1.5-1.55); R2
+  cavity-shift control (+0.1-0.25 nm, no posts), concurrent with R1; R3 inner layer from R1's in-situ drive, accept only if
+  dlam <= 0.1 nm, Q_c within 3 %, width not wider, gain beats R2; R4 DWBA-2 if R3 >= x1.7; R5 fine pair; R6 -3 dB device.
+- **Earlier Fable code review (production-mesh era) - items not yet fixed:** `solve_v4.py:36` uses t0 = 5 ps; a DFT from 0 ps is flat
+  to 0.2 % and t0 = 5 biases T +1 % on both devices (Q_i +3-4 %, RATIO only +0.5 %). Coupling symmetry verified (port ring-down
+  amplitudes 0.9935 / 1.0048 -> Q_i bias < 0.1 %). `postarray_born.py:26` default KCUT 9 vs 7.5 used for designs (pin one).
+  `postarray_design.py:19-25` seeds one capped post per NNLS cluster with fixed N (no splitting): discretisation costs ~5 pt.
+  `postarray_ceiling.py:31` "any size" ceiling allows ~4x pa3's polarizable volume (not physical). Positivity (no sign flip from a
+  shift) costs ~10 pt. None of these change a decision now; fix t0 and KCUT before the final numbers.

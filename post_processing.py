@@ -185,6 +185,8 @@ def extract_2d_fields(sim) -> dict:
         'lambda_3d': lam_xy,
     }
     del res_xy
+    if getattr(sim, "field_2d_xy_band_m", None):       # XY-only drive map: no Poynting, no YZ/XZ monitors
+        return {'xy': xy_data}
 
     try:
         print("  Extracting Poynting vector for XY monitor...")

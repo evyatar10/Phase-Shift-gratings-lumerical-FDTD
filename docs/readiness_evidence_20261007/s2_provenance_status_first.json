@@ -1,0 +1,25 @@
+{
+  "accounting": {
+    "exit_code": 0,
+    "out": "170921_0|COMPLETED|0:0|00:00:28|billing=24,cpu=8,mem=64G,node=1|billing=24,cpu=8,mem=64G,node=1\n",
+    "err": ""
+  },
+  "job": {
+    "exit_code": 0,
+    "out": "JobId=170921 ArrayJobId=170921 ArrayTaskId=0 ArrayTaskThrottle=1 JobName=s2_provenance_nosolve\n   UserId=evyatarrubin(14979) GroupId=users(100) MCS_label=N/A\n   Priority=863366 Nice=0 Account=rosenthal_prj QOS=2h_2g\n   JobState=COMPLETED Reason=None Dependency=(null)\n   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0\n   RunTime=00:00:28 TimeLimit=00:45:00 TimeMin=N/A\n   SubmitTime=2026-10-07T07:50:58 EligibleTime=2026-10-07T07:50:58\n   AccrueTime=2026-10-07T07:50:58\n   StartTime=2026-10-07T07:50:58 EndTime=2026-10-07T07:51:26 Deadline=N/A\n   PreemptEligibleTime=2026-10-07T08:05:58 PreemptTime=None\n   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-07T07:50:58 Scheduler=Main\n   Partition=l40s-public AllocNode:Sid=athena-login:2359672\n   ReqNodeList=(null) ExcNodeList=(null)\n   NodeList=athena-post\n   BatchHost=athena-post\n   NumNodes=1 NumCPUs=8 NumTasks=1 CPUs/Task=8 ReqB:S:C:T=0:0:*:*\n   ReqTRES=cpu=8,mem=64G,node=1,billing=24\n   AllocTRES=cpu=8,mem=64G,node=1,billing=24\n   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*\n   MinCPUsNode=8 MinMemoryNode=64G MinTmpDiskNode=0\n   Features=(null) DelayBoot=00:00:00\n   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)\n   Command=jobs/run_s2_provenance_20261007.sh\n   WorkDir=/home/evyatarrubin/bragg_sim_athena/jobs\n   StdErr=/home/evyatarrubin/bragg_sim_athena/jobs/logs/lum_array-170921_0.out\n   StdIn=/dev/null\n   StdOut=/home/evyatarrubin/bragg_sim_athena/jobs/logs/lum_array-170921_0.out\n   TresPerTask=cpu=8\n   MailUser=evyatar10.rubin@gmail.com MailType=ARRAY_TASKS,END,FAIL\n   \n\n",
+    "err": ""
+  },
+  "log_tail": "============================================================\nArray:      170921[0]\nNode:       athena-post\nStarted:    Wed Oct  7 07:51:01 AM IDT 2026\nGPU:        none requested; no-solve CAD probe\nCPUs:       8\nSWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\nUsing CONSTANT Materials (object-defined dielectric): SiN=1.97, SiO2=1.444\n07:51:13 - INFO - Generating optimization project...\n07:51:16 - INFO - FDTD version '8.35.4572' meets the minimum requirement.\n/work/results/s2_provenance_probe_20261007T0753/provenance.json\n[wrapper] python exit code: 0\nINFO:    Terminating fuse-overlayfs after timeout\nINFO:    Timeouts can be caused by a running background process\n============================================================\nFinished:  Wed Oct  7 07:51:25 AM IDT 2026\nExit code: 0\n============================================================\n",
+  "report_summary": {
+    "execution_error": null,
+    "critical_evidence_available": true,
+    "original_file_identity_unchanged": true
+  },
+  "case_errors": {
+    "re_fwd": null,
+    "re_adj": null,
+    "im_fwd": null,
+    "im_adj": null
+  },
+  "checked_at": "2026-10-07T07:53:13.701090+03:00"
+}

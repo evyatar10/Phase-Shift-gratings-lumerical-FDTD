@@ -1,0 +1,70 @@
+{
+  "checks": [
+    {
+      "skill": "add-study",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "athena-preflight",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "athena-status",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "check-result",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "dispatch-study",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "fetch-results",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "lock-target",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "lumopt2-design",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "predict-q3db",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "safe-compact",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "stop-runs",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "update-container",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    },
+    {
+      "skill": "work-alone",
+      "exit": 0,
+      "output": "Skill is valid!\n"
+    }
+  ],
+  "claude_originals_unchanged": true
+}

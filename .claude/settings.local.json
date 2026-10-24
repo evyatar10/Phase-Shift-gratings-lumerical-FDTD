@@ -18,7 +18,27 @@
       "Bash(python -c \"import json;json.load\\(open\\('.vscode/tasks.json'\\)\\);print\\('tasks.json valid'\\)\")",
       "Bash(sed -i 's#bash dgx/deploy_dgx.sh --option2   \\\\# choose sweep \\(legacy DGX cluster\\)#bash athena/deploy_athena.sh --option2   \\\\# choose sweep#; s#\\\\# bash dgx/deploy_dgx.sh --option2   \\\\# \\(or use the new Athena cluster\\)#\\\\# bash igum/deploy_igum.sh --option2       \\\\# \\(or IGUM\\)#' runners/sweeps/apod_and_shift.py runners/sweeps/innermost_shift.py runners/sweeps/inner_tooth_size.py runners/sweeps/number_of_periods.py)",
       "Bash(sed -i 's#\"Run: bash dgx/deploy_dgx.sh --option2  \\(DGX\\) or bash dgx/deploy_dgx.sh --option2  \\(Athena\\)\"#\"Run: bash athena/deploy_athena.sh --option2  \\(Athena\\) or bash igum/deploy_igum.sh --option2  \\(IGUM\\)\"#' runners/sweeps/sweep_spec.py)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(mkdir -p C:/Users/evyat/AppData/Local/Temp/claude/c--Users-evyat-Lumerical-phase-shift-grating-FTDT-codes/9c1b25e8-bc5c-44be-aa99-1fa06bfac584/scratchpad/px)",
+      "Bash(unzip -q -o \"C:/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes/docs/radiation_cancellation_deck_2026-10-10/radiation_cancellation.pptx\" ppt/slides/slide3.xml)",
+      "Bash(python3 ~/.claude/skills/research-deck/scripts/pptx/build_deck.py deck.json radiation_cancellation.pptx --font safe)",
+      "Bash(python \"C:/Users/evyat/AppData/Local/Temp/claude/c--Users-evyat-Lumerical-phase-shift-grating-FTDT-codes/9c1b25e8-bc5c-44be-aa99-1fa06bfac584/scratchpad/edit_final.py\")",
+      "Bash(pdflatex -interaction=nonstopmode -jobname=radiation_cancellation_deck_new radiation_cancellation_deck.tex)",
+      "Bash(pdftoppm -png -r 70 -f 2 -l 7 radiation_cancellation_deck_new.pdf bp)",
+      "Bash(python \"C:/Users/evyat/AppData/Local/Temp/claude/c--Users-evyat-Lumerical-phase-shift-grating-FTDT-codes/9c1b25e8-bc5c-44be-aa99-1fa06bfac584/scratchpad/edit_decks19.py\")",
+      "Bash(pdftoppm -png -r 70 -f 2 -l 16 radiation_cancellation_deck_new.pdf bp)",
+      "Bash(SBATCH_MEM=256G LUMOPT2_QOS=24h_1g LUMOPT2_TIME=10:00:00 timeout 300 bash athena/deploy_athena.sh --lumopt2-design=runners.lumopt2_design.prod_confirm_te --array-tasks=3-7%3 --gpu=a100)",
+      "Read(//c/Users/evyat/Lumerical/**)",
+      "Bash(python -I -c ' *)",
+      "Bash(D=\"/c/Users/evyat/OneDrive/Documents/תואר שני/Photonics Research/Results for lab/share_with_Evyatar\"; ls -la \"$D\" | head -80; echo ---; find \"$D\" -newer \"/c/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes/CLAUDE.md\" -type f 2>/dev/null | head -30; echo ---; ls -la /c/Users/evyat/Lumerical/ | head -40; echo; ls /c/Users/evyat/Downloads 2>/dev/null | grep -iE \"nt80|extreme|npy|config|bragg\" | head)",
+      "Read(//c/Users/evyat/Lumerical//**)",
+      "Read(//c/Users/evyat/Downloads/**)",
+      "Read(//c/Users/evyat/.claude/projects/c--Users-evyat-Lumerical-phase-shift-grating-FTDT-codes/memory/**)",
+      "Bash(find /c/Users/evyat/Lumerical /c/Users/evyat/Downloads /c/Users/evyat/Documents /c/Users/evyat/OneDrive -maxdepth 4 \\\\\\( -iname \"*Nt60*\" -o -iname \"*Nt80*\" -o -iname \"*_dw.npy\" -o -iname \"*config_param*\" -o -iname \"*extreme*\" -o -iname \"*low_er*\" \\\\\\) 2>/dev/null | head -40; echo ---; ls -la --time-style=long-iso /c/Users/evyat/Lumerical/*.npy 2>/dev/null)",
+      "Read(//c/Users/evyat/Lumerical/ron_lumerical_codes//**)",
+      "Read(//c/Users/evyat/Lumerical/ron_lumerical_codes/**)",
+      "Bash(SBATCH_MEM=256G LUMOPT2_QOS=24h_1g LUMOPT2_TIME=10:00:00 timeout 300 bash athena/deploy_athena.sh --lumopt2-design=runners.lumopt2_design.prod_confirm_te --array-tasks=12-15 --max-concurrent=4 --gpu=a100)",
+      "Bash(timeout 60 ssh evyatarrubin@athena.technion.ac.il \"sleep 5; squeue -u evyatarrubin -r -h -o '%i %T %M %R' | sort\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\evyat\\.claude\\projects\\c--Users-evyat-Lumerical-phase-shift-grating-FTDT-codes\\memory"

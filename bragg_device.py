@@ -54,6 +54,7 @@ class PiShiftBraggFDTD:
                  # --- NEW OPTIONAL 2D PARAMS ---
                  record_2d_fields_top_and_cross=False,
                  field_2d_x_span_m=None,  # If None, records full device. If set, crops X span for XY.
+                 field_2d_xy_band_m=None,  # (y_lo, y_hi): XY plane only, over this y band (2026-10-23)
                  monitor_y_span_m=None,
                  monitor_z_span_m=None,
                  downsample_yz=1,       # Default 1 to preserve resolution at interfaces
@@ -101,6 +102,7 @@ class PiShiftBraggFDTD:
                  scatterer_x_list_m=None,
                  scatterer_y_list_m=None,
                  scatterer_r_list_m=None,
+                 scatterer_r2_list_m=None,   # per-site 2nd semi-axis (ellipse, cylinders only; None entry = circle)
                  scatterer_rot_list_deg=None,
                  scatterer_z_min=None,
                  # --- solver: auto-shutoff threshold (convergence study knob) ---
@@ -170,6 +172,7 @@ class PiShiftBraggFDTD:
         # --- NEW STATE VARS ---
         self.record_2d_fields_top_and_cross = record_2d_fields_top_and_cross
         self.field_2d_x_span_m = field_2d_x_span_m
+        self.field_2d_xy_band_m = field_2d_xy_band_m
         
         self.record_3d_fields = record_3d_fields
         self.field_3d_span_m = field_3d_span_m
@@ -395,6 +398,13 @@ class PiShiftBraggFDTD:
                 raise ValueError("scatterer_r_list_m is cylinder-only.")
             if min(self.scatterer_r_list_m) <= 0.0:
                 raise ValueError("scatterer_r_list_m radii must be positive.")
+        # Per-site ELLIPSE second semi-axis (post arrays 2026-10-24): radius = semi-axis along x before rotation, r2 = along y;
+        # rotation (scatterer_rot_list_deg) about z, the -y mirror copy gets the negated angle (mirror symmetry kept).
+        self.scatterer_r2_list_m = ([None if v is None else float(v) for v in scatterer_r2_list_m]
+                                    if scatterer_r2_list_m is not None else None)
+        if self.scatterer_r2_list_m is not None:
+            if self.scatterer_r_list_m is None or len(self.scatterer_r2_list_m) != len(self.scatterer_r_list_m):
+                raise ValueError("scatterer_r2_list_m requires scatterer_r_list_m of the same length.")
         # Per-site in-plane rotation (deg, about z) — rect strips only; used by
         # the corner-array (sawtooth retro) study. The -y mirror copy gets the
         # NEGATED angle so the V-corners stay mirror-symmetric about y=0.
@@ -406,8 +416,8 @@ class PiShiftBraggFDTD:
                 raise ValueError(
                     "scatterer_rot_list_deg requires scatterer_x_list_m of the same length."
                 )
-            if self.scatterer_shape != "rect":
-                raise ValueError("scatterer_rot_list_deg is rect-only.")
+            if self.scatterer_shape != "rect" and self.scatterer_r2_list_m is None:
+                raise ValueError("scatterer_rot_list_deg is rect- or ellipse-only.")
         self.scatterer_index = scatterer_index  # None → n_core_const at placement
         # Named Lumerical-database material (e.g. "PEC (Perfect Electrical
         # Conductor)", "Al (Aluminium) - Palik") — metal-mirror study. When set
@@ -451,6 +461,8 @@ class PiShiftBraggFDTD:
             # Domain/PML/teeth checks bound by the LARGEST site radius.
             _r_max = (max(self.scatterer_r_list_m) if self.scatterer_r_list_m
                       else self.scatterer_radius_m)
+            if self.scatterer_r2_list_m:
+                _r_max = max([_r_max] + [v for v in self.scatterer_r2_list_m if v is not None])
             self._scat_half_x = _r_max
             self._scat_half_y = _r_max
         if (self._has_scatterer and not self.scatterer_mirrored_y
@@ -1261,9 +1273,11 @@ class PiShiftBraggFDTD:
                      else [None] * len(x_centers))
         r_sites = (self.scatterer_r_list_m if self.scatterer_r_list_m is not None
                    else [self.scatterer_radius_m] * len(x_centers))
+        r2_sites = (self.scatterer_r2_list_m if self.scatterer_r2_list_m is not None
+                    else [None] * len(x_centers))
         n_drawn = 0
-        for j, (x_c, y_s, rot_s, r_s) in enumerate(
-                zip(x_centers, y_sites, rot_sites, r_sites), start=1):
+        for j, (x_c, y_s, rot_s, r_s, r2_s) in enumerate(
+                zip(x_centers, y_sites, rot_sites, r_sites, r2_sites), start=1):
             if abs(x_c) + self._scat_half_x > 0.5 * self.fdtd_x_span:
                 raise ValueError(
                     f"Scatterer at x={x_c*1e6:.2f} µm extends outside the domain "
@@ -1303,6 +1317,12 @@ class PiShiftBraggFDTD:
                         if self._object_index_mode:
                             fdtd.set("index", n_scat)
                     fdtd.set("radius", r_s)
+                    if r2_s is not None:          # ellipse: radius along x, radius 2 along y (before rotation)
+                        fdtd.set("make ellipsoid", 1)
+                        fdtd.set("radius 2", r2_s)
+                        if rot_s:
+                            fdtd.set("first axis", "z")
+                            fdtd.set("rotation 1", rot_s if y_c >= 0.0 else -rot_s)
                     fdtd.set("x", x_c)
                     fdtd.set("y", y_c)
                 fdtd.set("z", 0.0)
@@ -1415,8 +1435,12 @@ class PiShiftBraggFDTD:
             fdtd.set("monitor type", "2D Z-normal")
             fdtd.set("x", 0)
             fdtd.set("x span", x_span_xy)
-            fdtd.set("y", 0)
-            fdtd.set("y span", y_span_val)
+            if self.field_2d_xy_band_m:            # XY-only drive map over one y band (post arrays, 2026-10-23)
+                fdtd.set("y", 0.5 * (self.field_2d_xy_band_m[0] + self.field_2d_xy_band_m[1]))
+                fdtd.set("y span", self.field_2d_xy_band_m[1] - self.field_2d_xy_band_m[0])
+            else:
+                fdtd.set("y", 0)
+                fdtd.set("y span", y_span_val)
             fdtd.set("z", 0)  # Locked to core center
 
             # Defaults (overridden by apply_monitor_overrides after build)
@@ -1427,40 +1451,41 @@ class PiShiftBraggFDTD:
             fdtd.set("down sample x", 1)
             fdtd.set("down sample y", self.downsample_yz)
 
-            # 2. Cross Section View (YZ Plane)
-            fdtd.addprofile()
-            fdtd.set("name", "field_profile_2D_YZ_cross")
-            fdtd.set("monitor type", "2D X-normal")
-            fdtd.set("x", self.cavity_length / 2.0)  # Locked to Phase Shift Defect Center
-            fdtd.set("y", 0)
-            fdtd.set("y span", y_span_val)
-            fdtd.set("z", 0)
-            fdtd.set("z span", z_span_val)
+            if not self.field_2d_xy_band_m:
+                # 2. Cross Section View (YZ Plane)
+                fdtd.addprofile()
+                fdtd.set("name", "field_profile_2D_YZ_cross")
+                fdtd.set("monitor type", "2D X-normal")
+                fdtd.set("x", self.cavity_length / 2.0)  # Locked to Phase Shift Defect Center
+                fdtd.set("y", 0)
+                fdtd.set("y span", y_span_val)
+                fdtd.set("z", 0)
+                fdtd.set("z span", z_span_val)
 
-            # Safe settings to save space
-            fdtd.set("override global monitor settings", 1)
-            fdtd.set("use source limits", 1)
-            fdtd.set("frequency points", 5)
-            # Downsampling
-            fdtd.set("down sample y", self.downsample_yz)
-            fdtd.set("down sample z", self.downsample_yz)
+                # Safe settings to save space
+                fdtd.set("override global monitor settings", 1)
+                fdtd.set("use source limits", 1)
+                fdtd.set("frequency points", 5)
+                # Downsampling
+                fdtd.set("down sample y", self.downsample_yz)
+                fdtd.set("down sample z", self.downsample_yz)
 
-            # 3. Side View (XZ Plane) — Y-normal at y=0
-            fdtd.addprofile()
-            fdtd.set("name", "field_profile_2D_XZ_side")
-            fdtd.set("monitor type", "2D Y-normal")
-            fdtd.set("x", 0)
-            fdtd.set("x span", x_span_xy)
-            fdtd.set("y", 0)
-            fdtd.set("z", 0)
-            fdtd.set("z span", z_span_val)
+                # 3. Side View (XZ Plane) — Y-normal at y=0
+                fdtd.addprofile()
+                fdtd.set("name", "field_profile_2D_XZ_side")
+                fdtd.set("monitor type", "2D Y-normal")
+                fdtd.set("x", 0)
+                fdtd.set("x span", x_span_xy)
+                fdtd.set("y", 0)
+                fdtd.set("z", 0)
+                fdtd.set("z span", z_span_val)
 
-            fdtd.set("override global monitor settings", 1)
-            fdtd.set("use source limits", 1)
-            fdtd.set("frequency points", 5)
-            # Downsampling
-            fdtd.set("down sample x", 1)
-            fdtd.set("down sample z", self.downsample_yz)
+                fdtd.set("override global monitor settings", 1)
+                fdtd.set("use source limits", 1)
+                fdtd.set("frequency points", 5)
+                # Downsampling
+                fdtd.set("down sample x", 1)
+                fdtd.set("down sample z", self.downsample_yz)
 
         # --- OPTIONAL FULL 3D MONITOR ---
         if self.record_3d_fields:

@@ -1,0 +1,5 @@
+{
+  "exit_code": 1,
+  "out": "",
+  "err": "...\r\nTraceback (most recent call last):\n  File \"<stdin>\", line 15, in <module>\nAssertionError: {'hashes': {'scripts/probe_s2_provenance_20261007.py': '40dd487831da68080b29813cdbef2e1ce9e6629528dccd3d7c431dfc1229e99d', 'jobs/run_s2_provenance_20261007.sh': '27f64ede5baa8fafa6a24e3d59a05ccb14178ca14a4d6a779482f7c37e2c518f'}, 'test_only': {'exit_code': 1, 'out': '', 'err': \"sbatch: error: QOSMaxMemoryPerJob\\nallocation failure: Job violates accounting/QOS policy (job submit limit, user's size and/or time limits)\\n\"}}\n"
+}

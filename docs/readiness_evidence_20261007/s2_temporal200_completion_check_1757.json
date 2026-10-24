@@ -1,0 +1,5 @@
+{
+  "rc": 0,
+  "out": "{\"at\": \"2026-10-07T17:56:18.813146+03:00\", \"accounting\": {\"rc\": 0, \"out\": \"JobID|State|ExitCode|Elapsed|NodeList\\n171390_0|COMPLETED|0:0|01:10:07|n309\\n171390_0.batch|COMPLETED|0:0|01:10:07|n309\\n171390_0.extern|COMPLETED|0:0|01:10:07|n309\\n171390_1|COMPLETED|0:0|01:09:54|n311\\n171390_1.batch|COMPLETED|0:0|01:09:54|n311\\n171390_1.extern|COMPLETED|0:0|01:09:54|n311\\n171390_2|COMPLETED|0:0|01:09:53|n306\\n171390_2.batch|COMPLETED|0:0|01:09:53|n306\\n171390_2.extern|COMPLETED|0:0|01:09:53|n306\\n\", \"err\": \"\"}, \"checkpoints\": [\"/home/evyatarrubin/bragg_sim_athena/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_00.json\", \"/home/evyatarrubin/bragg_sim_athena/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_01.json\", \"/home/evyatarrubin/bragg_sim_athena/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_02.json\"]}\n",
+  "err": "...\r\n"
+}

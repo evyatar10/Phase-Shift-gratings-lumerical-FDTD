@@ -2,7 +2,9 @@
 
 Study: runners/sweeps/farfield_sph_20um.py   |   Created 2026-09-29
 Usage:  python python_tools/farfield_multipole.py result_..._ff.mat [more.mat ...]
-        [--lmax 200] [--csv]     (--csv writes <mat>_multipoles.csv next to each file)
+        [--lmax 200] [--csv] [--origin-x UM]
+        (--csv writes <mat>_multipoles.csv next to each file; --origin-x moves the expansion
+         centre along the grating and tags the csv _x<UM>um -- the shares depend on it, 2026-10-10)
 
 Input: a result .mat with farfield_top / farfield_side (complex Ex_c/Ey_c/Ez_c on
 a direction-cosine grid ux/uy, Lumerical farfieldvector3d at 1 m). Only the
@@ -181,7 +183,7 @@ def multipoles(x, w, phi, E_th, E_ph, lmax):
     return aE, aM
 
 
-def analyze(mat_path, lmax=200, write_csv=False):
+def analyze(mat_path, lmax=200, write_csv=False, origin_x_um=0.0):
     m = sio.loadmat(mat_path, squeeze_me=True, struct_as_record=False)
     def _grid(s):
         return {k: np.asarray(getattr(s, k)) for k in ("ux", "uy", "Ex_c", "Ey_c", "Ez_c")}
@@ -196,6 +198,11 @@ def analyze(mat_path, lmax=200, write_csv=False):
               f"  far field {info['far_loss']*100:.2f}%  (ports: 1-T-R at resonance)")
     else:
         x, w, phi, E_th, E_ph, info = full_sphere_field(top, side, lmax)
+    if origin_x_um:                       # field about centre x0: E(n) exp(+i k n_x x0)
+        k = 2 * np.pi * 1.444 / (lam_ff * 1e-9)
+        ph = np.exp(1j * k * origin_x_um * 1e-6 * np.sqrt(1 - x**2)[:, None] * np.cos(phi)[None, :])
+        E_th, E_ph = E_th * ph, E_ph * ph
+        print(f"  expansion centre moved to x = {origin_x_um:+.3f} um")
     aE, aM = multipoles(x, w, phi, E_th, E_ph, lmax)
     P = np.abs(aE) ** 2 + np.abs(aM) ** 2
     P_l = P.sum(axis=1); PE_l = (np.abs(aE) ** 2).sum(1); PM_l = (np.abs(aM) ** 2).sum(1)
@@ -218,7 +225,7 @@ def analyze(mat_path, lmax=200, write_csv=False):
         t = "E" if abs(aE[l, mi]) >= abs(aM[l, mi]) else "M"
         print(f"    {t} {l:3d} {mm:+4d}  {P[l, mi]/tot*100:6.2f}%")
     if write_csv:
-        out = os.path.splitext(mat_path)[0] + "_multipoles.csv"
+        out = os.path.splitext(mat_path)[0] + (f"_multipoles_x{origin_x_um:+.3f}um.csv" if origin_x_um else "_multipoles.csv")
         with open(out, "w") as fh:
             fh.write("l,m,frac_E,frac_M\n")
             for l in range(lmax + 1):
@@ -234,6 +241,7 @@ if __name__ == "__main__":
     ap.add_argument("mats", nargs="+")
     ap.add_argument("--lmax", type=int, default=200)
     ap.add_argument("--csv", action="store_true")
+    ap.add_argument("--origin-x", type=float, default=0.0, help="expansion centre along x, um")
     a = ap.parse_args()
     for p in a.mats:
-        analyze(p, a.lmax, a.csv)
+        analyze(p, a.lmax, a.csv, a.origin_x)

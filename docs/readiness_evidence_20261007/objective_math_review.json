@@ -1,0 +1,10 @@
+{
+  "phr_gradient_max_fd_error": 1.687805450956148e-11,
+  "historical_gradient_inside_active_strip": 0.0,
+  "phr_gradient_inside_active_strip": 1.0,
+  "combined_linear_adjoint_max_error": 6.206335383118183e-17,
+  "separate_gradients_not_identifiable_from_sum": true,
+  "fdtd_test": false,
+  "script": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_objective_math_gfp_rv3i\\verify.py",
+  "script_sha256": "20bd3b4cc8300dd9c4cb2cf202d07b32fca23c8dbb7e138f8fe99c2d39a51dc3"
+}

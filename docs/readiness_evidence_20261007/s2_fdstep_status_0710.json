@@ -1,0 +1,23 @@
+{
+  "accounting": {
+    "code": 0,
+    "out": "170906_1|RUNNING|0:0|00:28:32\n170906_1.batch|RUNNING|0:0|00:28:32\n170906_1.extern|RUNNING|0:0|00:28:32\n170906_2|PENDING|0:0|00:00:00\n",
+    "err": ""
+  },
+  "queue": {
+    "code": 0,
+    "out": "          170906_2 a100-publ lum_pipe evyatarr PD       0:00      1 (JobArrayTaskLimit)\n          170906_1 a100-publ lum_pipe evyatarr  R      28:32      1 n306\n",
+    "err": ""
+  },
+  "tasks": {
+    "1": {
+      "log_tail": "sion: 13.2     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA A100-SXM4-40GB          On  |   00000000:47:00.0 Off |                    0 |\n| N/A   25C    P0             51W /  400W |       0MiB /  40960MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|  No running processes found                                                             |\n+-----------------------------------------------------------------------------------------+\n============================================================\n[athena_run_one] kind=lumopt2_design  index=1/2  line='1'\n  USE_GPU=True  REQUIRE_GPU=1\n============================================================\n[athena_run_one] GPU enabled on FDTD resource 1.\n[athena_run_one] FDTD threads = 8 (Slurm allocation).\n[athena_run_one] device type readback = 'GPU'\nUsing CONSTANT Materials (object-defined dielectric): SiN=1.97, SiO2=1.444\n06:42:15 - INFO - Generating optimization project...\n[athena_run_one] GPU enabled on FDTD resource 1.\n[athena_run_one] FDTD threads = 8 (Slurm allocation).\n[athena_run_one] device type readback = 'GPU'\n06:42:20 - INFO - FDTD version '8.35.4572' meets the minimum requirement.\n",
+      "checkpoint": null
+    },
+    "2": {
+      "log_tail": null,
+      "checkpoint": null
+    }
+  },
+  "checked_at": "2026-10-07T07:10:29.681994+03:00"
+}

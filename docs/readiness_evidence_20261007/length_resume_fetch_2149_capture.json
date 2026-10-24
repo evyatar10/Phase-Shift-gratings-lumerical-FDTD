@@ -1,0 +1,6 @@
+{
+  "exit_code": 1,
+  "payload_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "bytes": 0,
+  "stderr": "Traceback (most recent call last):\n  File \"<stdin>\", line 7, in <module>\n  File \"<readonly_fetch>\", line 143, in remote_capture\n  File \"<readonly_fetch>\", line 26, in need\nRuntimeError: Cold capture unexpectedly imported CAD API\n"
+}

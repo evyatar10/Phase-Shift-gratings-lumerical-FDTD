@@ -1,0 +1,5 @@
+{
+  "rc": 0,
+  "out": "{\"queue\": {\"rc\": 0, \"out\": \"             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\\n\", \"err\": \"\"}, \"accounting\": {\"rc\": 0, \"out\": \"JobID|State|ExitCode|Elapsed\\n171390_0|COMPLETED|0:0|01:10:07\\n171390_0.batch|COMPLETED|0:0|01:10:07\\n171390_0.extern|COMPLETED|0:0|01:10:07\\n171390_1|COMPLETED|0:0|01:09:54\\n171390_1.batch|COMPLETED|0:0|01:09:54\\n171390_1.extern|COMPLETED|0:0|01:09:54\\n171390_2|COMPLETED|0:0|01:09:53\\n171390_2.batch|COMPLETED|0:0|01:09:53\\n171390_2.extern|COMPLETED|0:0|01:09:53\\n171516_0|FAILED|1:0|00:00:32\\n171516_0.batch|FAILED|1:0|00:00:32\\n171516_0.extern|COMPLETED|0:0|00:00:32\\n\", \"err\": \"\"}, \"target_paths\": {\"scripts/s2_saved_time_result_inventory_20261007_1912\": false, \"results/s2_saved_time_result_inventory_20261007_1912\": false, \"jobs/run_saved_time_result_inventory_20261007_1912.sh\": false}, \"recent\": {\"rc\": 0, \"out\": \"JobID|JobName|State|ExitCode\\n171516_0|s2_time_nosolve|FAILED|1:0\\n171516_0.batch|batch|FAILED|1:0\\n171516_0.extern|extern|COMPLETED|0:0\\n\", \"err\": \"\"}}\n",
+  "err": "...\r\n"
+}

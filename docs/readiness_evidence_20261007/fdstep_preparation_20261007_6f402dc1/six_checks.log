@@ -1,0 +1,7 @@
+DIAGNOSTIC checkpoint, review required C:\Users\evyat\AppData\Local\Temp\s2_fdstep_gate_m2srw89s\task_00.json {'task': 0, 'delta_nm': 0.0, 'peak3_tout': 0.93, 'peak3_modal': 0.97, 'lam_nm': 1560.878859628509}
+REUSED diagnostic checkpoint C:\Users\evyat\AppData\Local\Temp\s2_fdstep_gate_m2srw89s\task_00.json
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.142s
+
+OK

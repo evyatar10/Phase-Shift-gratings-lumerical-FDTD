@@ -1,0 +1,9 @@
+{
+  "time_utc": "2026-10-07T18:54:59.171205+00:00",
+  "returncode": 0,
+  "packet": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_length_capture_repaired_251r_9jj\\packet",
+  "helper_sha256": "88fc9cc4475f3b609582a9e0ffd69078274807daf3cf0fd7401fba1123018fb1",
+  "payload_sha256": "e23921d2defccff08177a8dcf56775f5d5b4066db01484be0494ce3e15f9c7de",
+  "bytes": 6900557,
+  "stderr": ""
+}

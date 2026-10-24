@@ -1,0 +1,12 @@
+{
+  "athena": {
+    "rc": 0,
+    "out": "{\"at\": \"2026-10-07T16:16:22.579788+03:00\", \"queue\": {\"rc\": 0, \"out\": \"             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\\n\", \"err\": \"\"}, \"quota\": {\"rc\": 0, \"out\": \"Disk quotas for user evyatarrubin (uid 14979): \\n     Filesystem   space   quota   limit   grace   files   quota   limit   grace\\n hpc-nfs1:/home    230G    300G    330G            115k   4295m   4295m        \\n\", \"err\": \"\"}, \"qos\": {\"rc\": 0, \"out\": \"Name|MaxWall|MaxTRESPU|MaxJobsPU|MaxSubmitPU\\n12h_4g|12:00:00|cpu=512,gres/gpu=4,mem=1792G||100\\n\", \"err\": \"\"}, \"hashes\": {\"project/runners/lumopt2_design/s2_temporal_forward.py\": \"555f3d13b42c494171e7658cc4263c588ce418e5d937da1497d690824b41d44a\", \"project/runners/lumopt2_design/s2_temporal_step150.py\": \"c41f522e8502598c4b8a3d4a4096baf094ede8a1c66763169992fbc82d696c8a\", \"project/runners/lumopt2_design/lumopt2_design.py\": \"53108bbd368dd699179ab65029628aa4c4b2d8ad687777f88b82f404a0952569\", \"jobs/run_python_array.sh\": \"ebf1780e1d23f6a5a885577ba6b562111482935b69be63f27389d5ae87bcdcf1\"}, \"new_runner_exists\": false, \"new_root_exists\": false}\n",
+    "err": "...\r\n"
+  },
+  "igum": {
+    "rc": 0,
+    "out": "{\"at\": \"2026-10-07T16:16:23.298691+03:00\", \"queue\": {\"rc\": 0, \"out\": \"             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\\n\", \"err\": \"\"}, \"seats\": {\"rc\": 0, \"out\": \"lmutil - Copyright (c) 1989-2025 Flexera. All Rights Reserved.\\nFlexible License Manager status on Wed 10/7/2026 16:16\\n\\nLicense server status: 1055@lumerical-lm.ece.technion.ac.il\\n    License file(s) on lumerical-lm.ece.technion.ac.il: /ansyslm/shared_files/licensing/license_files/ansyslmd.lic:\\n\\nlumerical-lm.ece.technion.ac.il: license server UP (MASTER) v11.19.4\\n\\nVendor daemon status (on lumerical-lm.ece.technion.ac.il):\\n\\n  ansyslmd: UP v11.19.4\\nFeature usage info:\\n\\nUsers of lum_fdtd_solve:  (Total of 50 licenses issued;  Total of 0 licenses in use)\\n\\n\\n\", \"err\": \"\"}}\n",
+    "err": ""
+  }
+}

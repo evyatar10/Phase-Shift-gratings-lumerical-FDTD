@@ -1,0 +1,110 @@
+{
+  "snapshot_utc": "20261006T234023Z",
+  "completed_legs": 8,
+  "expected_legs": 12,
+  "missing_tasks": [
+    9,
+    10,
+    11,
+    12
+  ],
+  "validation": "finite scalar observables and in-scan resonance only; no fit or gradient pass claimed",
+  "rows": [
+    {
+      "task": 1,
+      "sha256": "1b90e02672963718cf0f3baa42be49d77b9007a89321010df3ebf0c0fd6cce5d",
+      "in_scan": true,
+      "index": 0,
+      "sign": 1,
+      "fom": 0.7276668095973466,
+      "peak3_tout": 0.9260092711665489,
+      "peak3_modal": 0.9720953845075596,
+      "lam_nm": 1560.8782189638007,
+      "width_nm": 0.20231765495327636
+    },
+    {
+      "task": 2,
+      "sha256": "3c695d247e22f32f9c7708e444536f4f2e9b7200906db555ad405fc96fd126ce",
+      "in_scan": true,
+      "index": 0,
+      "sign": -1,
+      "fom": 0.727251861749113,
+      "peak3_tout": 0.9254630569100413,
+      "peak3_modal": 0.9715003110635261,
+      "lam_nm": 1560.8782189638007,
+      "width_nm": 0.20237260410976887
+    },
+    {
+      "task": 3,
+      "sha256": "df11243aad993906053b851db888d550ff5c48976afc0f80c0f286812c53138c",
+      "in_scan": true,
+      "index": 29,
+      "sign": 1,
+      "fom": 0.7275761517046796,
+      "peak3_tout": 0.925966641201861,
+      "peak3_modal": 0.9720443619627557,
+      "lam_nm": 1560.8782189638007,
+      "width_nm": 0.20223238019366363
+    },
+    {
+      "task": 4,
+      "sha256": "2bafdb29dfb181afcf173598a8b42c5f9bd282ed70bcbfd27d0974c5c9bd0790",
+      "in_scan": true,
+      "index": 29,
+      "sign": -1,
+      "fom": 0.7275285171687224,
+      "peak3_tout": 0.9258916466066561,
+      "peak3_modal": 0.9719585944934143,
+      "lam_nm": 1560.8782189638007,
+      "width_nm": 0.2023682254925916
+    },
+    {
+      "task": 5,
+      "sha256": "ff71dbea1c821445508b36de88068c8dde2ba6d9009b6220e758cb5588ff3e72",
+      "in_scan": true,
+      "index": 60,
+      "sign": 1,
+      "fom": 0.7275051572527179,
+      "peak3_tout": 0.9259318618214499,
+      "peak3_modal": 0.9719931310707911,
+      "lam_nm": 1560.8862190015195,
+      "width_nm": 0.20231837941582853
+    },
+    {
+      "task": 6,
+      "sha256": "27328792ad4a4f5d3f6c2a1a0fafd7177eccb1de67bcbe0afb0bd07e0077b58d",
+      "in_scan": true,
+      "index": 60,
+      "sign": -1,
+      "fom": 0.7277995154886578,
+      "peak3_tout": 0.9263788425656638,
+      "peak3_modal": 0.9724904672590099,
+      "lam_nm": 1560.8702190080865,
+      "width_nm": 0.20221876674577288
+    },
+    {
+      "task": 7,
+      "sha256": "d6fe70b5e0a5f7d9fe2c5b23971129cd27c42ea021328acc94719c29abba2c8b",
+      "in_scan": true,
+      "index": 120,
+      "sign": 1,
+      "fom": 0.7274894830869564,
+      "peak3_tout": 0.9258033986058473,
+      "peak3_modal": 0.971867567526548,
+      "lam_nm": 1560.8782189638007,
+      "width_nm": 0.20233429237214295
+    },
+    {
+      "task": 8,
+      "sha256": "d1d5a7d97c9642e40b2587c6113ba4d3a33ecdebb97a3f996d6faabd1562604e",
+      "in_scan": true,
+      "index": 120,
+      "sign": -1,
+      "fom": 0.7275180533740765,
+      "peak3_tout": 0.9258425299757719,
+      "peak3_modal": 0.9719109009213397,
+      "lam_nm": 1560.8782189638007,
+      "width_nm": 0.20231473943886158
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "scope": "Prepared dataset Ey readout only, CPU8/128G30min, explicit 256MiB export and32MiB per time axis. NoFDTD.",
+  "source": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_dataset_time_readout_vascfgd1",
+  "source_sha256": "b4b4944e174a2766c88ff7fa687a8fa9455805d16db6c7b120432ba67f5fc4cd",
+  "operator": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_dataset_time_ops_scqzq75g\\dispatch_saved_times.py",
+  "wrapper_sha256": "edcee5fe02224d5d2202de56d1858d0015d98fb78efea1ccb21de15060c6b952",
+  "tests": "8 offline groups pass exit0",
+  "claude_model": "claude-opus-5-5",
+  "claude_response": "C:/Users/evyat/AppData/Local/Temp/ask_claude_p3pimpij/response.json",
+  "review_disposition": [
+    "Adopt explicit script whitelist and output sentinels; preflight dataset-time shape/count before transfer.",
+    "Raw t exists on all9 measured monitors; missing t already fails inventory.",
+    "Time-axis validation has its separate32MiB cap;256MiB caps exported payload, not cumulative validation traffic.",
+    "Three time points means three spatial monitors, not three temporal samples; full Ey histories intended.",
+    "Review does not establish physical convergence."
+  ]
+}

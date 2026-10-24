@@ -492,3 +492,34 @@ GPT: 2D placement yes, but the discrete search is the defect (one post per NNLS 
 continuous polish; exact insertion score 2 s a Re<B,e> + s^2 a^2 ||B||^2 vs absence; monotone by keeping the incumbent; certifiable MIQP
 benchmark on a reduced lattice; interpolate columns consistently (G_new = T^T G T); strict gap tolerance; compare at matched budgets.
 Claude: forwarded to the Fable 2D prototype agent.
+
+### 2026-10-23 late — session 01a16a61 (wave-1 review: DWBA target, alpha law, XY drive map)
+- GPT: DWBA algebra (C', b', cc') correct; but wholesale redesign extrapolates c29's model error -> prefer bounded step; alpha may be
+  Born pattern error parallel to C (not identified); complex-z terms needed in the calibrated quadratic; XY map normalisation must match
+  conj(D)/|D|/sqrt(U); 21 freqs (25 pm) vs 16 pm linewidth -> check bins; snap bug (corner 0 at grid edge); twod reaches y 2.100 (4 nm
+  from tube face, 1.3 um to PML).
+- Claude adopted: snap removed (direct-Born verification instead); P/Pc caveat for twod; ran BOTH twod (269581) and pure DWBA (269588)
+  as a deliberate model-discrimination pair (opposite predicted ordering); 21 freqs kept, bin check at y 2.1 vs tube field planned.
+
+### 2026-10-24 — session 01a16bcf (cancellation vs cavity-loading separation)
+- GPT: no unique mechanism split from existing data (same radiation channel, interference); r2pack strongest cancellation evidence
+  (P_corr 0.615 vs Q_i x1.655, core fit 1.017); clouds' XY maps and far fields missed resonance (dlam +0.4); don't borrow q3db slopes (TM
+  exponents); cheapest control = bare device matching dlam AND dW AND Q_c with smooth width knobs; design screen dlam <= 0.12 nm, |dW| <= 0.02.
+- Claude adopted the screen for future designs; matched-cavity control only for a winner with dlam > 0.15 nm.
+
+### 2026-10-24 — session 01a16d84 (strategy beyond x2)
+- GPT: x2 = 5.5 % less loss than x1.89, x2.5 = 24 %; symmetry allows vertical cancellation (p_y radiates along z); rank: bounded resize first
+  (half+full step of one direction), ellipses at the near-cavity sites (2-run tensor test), post-only adjoint (P_rad/(wU), shape gradients,
+  ~14 GPU-h first gate); outer-row failure = replace local response model, not add rows.
+- Claude: w4 resize (269918) + w5 small posts (269953) running; half-step companion for the winner; ellipse test if builder supports it.
+
+### 2026-10-24 — session 01a16e79 (route to the goal after failed increments)
+- GPT: x1.82 vs 1.89 unresolved without a noise floor; cheapest test = trace refits (done: zero spread) + identical repeat + half-cell
+  offset pair; route ranking knobs > one fresh compact array > post-only adjoint (first for x3) > new elements; symmetric +-10 nm knobs.
+- Claude: kept the already-submitted knob wave 270198, will add symmetric partners; ellipses measured +-1 % (noise).
+
+### 2026-10-24 — session 01a16ef4 (dense 2-D cloud diagnosis)
+- GPT: fragility vs loading confounded (F_cell~M corr 0.982); held-out clouds under-predicted by the fragility fit; factors_pmodel rho
+  weighting non-PSD (don't optimise it); m4 feasibility enforced post hoc; recipe = bounded free-2-D correction on nw_r2pack (incumbent kept),
+  J = |E|^2 + 0.02 F_cell + 1e-4 N, dlam <= 0.18 nm, |dW| <= 0.02; diagnostic = twod replay with in-post volume fields (not run).
+- Claude forwarded all to the Fable design agent (w8).

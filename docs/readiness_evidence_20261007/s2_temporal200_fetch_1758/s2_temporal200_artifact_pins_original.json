@@ -1,0 +1,38 @@
+{
+  "0:checkpoint": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal200_fetch_1758\\s2_temporal200_task00_original.json",
+    "path": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_00.json",
+    "sha256": "37fa4074d0dd5bfaa88bf6932b1ca1deed786620126b56f8a2d0c4cd44dbe029",
+    "bytes": 744064
+  },
+  "0:ports": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal200_fetch_1758\\s2_temporal200_task00_ports.npz",
+    "path": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_00_ijj9ydcu/ports.npz",
+    "sha256": "1bd6d30fd486371f695be0a5b85d1a410b79d9392cd0c9e3e47f9006fd0f7e8f",
+    "bytes": 134142
+  },
+  "1:checkpoint": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal200_fetch_1758\\s2_temporal200_task01_original.json",
+    "path": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_01.json",
+    "sha256": "e8d3bb65b7648be3957f0bfc510379ebbc0d7a796ea196c9edaa9f49940b82ed",
+    "bytes": 744205
+  },
+  "1:ports": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal200_fetch_1758\\s2_temporal200_task01_ports.npz",
+    "path": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_01_3rcx6ifx/ports.npz",
+    "sha256": "20514434774966cf38251c230a111cd91212cd837d6f40395c4f308f2f167c45",
+    "bytes": 134142
+  },
+  "2:checkpoint": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal200_fetch_1758\\s2_temporal200_task02_original.json",
+    "path": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_02.json",
+    "sha256": "d8a2c9b9705c8cd54c9a6d9329063207876eed4c44d168ead7ffd04721b60b56",
+    "bytes": 744651
+  },
+  "2:ports": {
+    "local": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\readiness_evidence_20261007\\s2_temporal200_fetch_1758\\s2_temporal200_task02_ports.npz",
+    "path": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_02_47mcx1av/ports.npz",
+    "sha256": "eb0236eca164b48f5a86bf261244d4bb3fc218209786ac69349b494fc87cebc0",
+    "bytes": 134142
+  }
+}

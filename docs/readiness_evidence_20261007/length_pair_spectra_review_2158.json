@@ -1,0 +1,26 @@
+{
+  "status": "COLD_VERIFIED_LENGTH_PAIR_SPECTRA_ONLY",
+  "tasks": {
+    "0": {
+      "N": 98,
+      "peak3_tout": 0.994494448017899,
+      "peak3_modal": 0.9750141202982329,
+      "lam_nm": 1560.8702190080865,
+      "width_nm": 0.20673606007835588
+    },
+    "1": {
+      "N": 80,
+      "peak3_tout": 0.9988781469517265,
+      "peak3_modal": 0.9794023424022227,
+      "lam_nm": 1560.8822189724094,
+      "width_nm": 0.5746227075990191
+    }
+  },
+  "delta_N80_minus_N98": {
+    "peak3_tout": 0.004383698933827507,
+    "peak3_modal": 0.004388222103989814,
+    "lam_nm": 0.011999964322967571,
+    "width_nm": 0.36788664752066325
+  },
+  "qualification": "width_nm is spectral linewidth, not spatial FWHM; physical profile extraction pending. Native N98 Tout differs materially from Athena150 center and must be understood before pooling gradients."
+}

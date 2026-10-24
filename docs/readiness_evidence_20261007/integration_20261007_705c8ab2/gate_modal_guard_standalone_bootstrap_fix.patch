@@ -1,0 +1,14 @@
+--- a/runners/lumopt2_design/gates/gate_modal_guard.py
++++ b/runners/lumopt2_design/gates/gate_modal_guard.py
+@@ -5,9 +5,11 @@
+ import tempfile
+ import types
+ import unittest
++import sys
+ from unittest.mock import patch
+ 
+ import numpy as np
++sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+ from runners.lumopt2_design import lumopt2_design as eng
+ from runners.lumopt2_design import persistence
+ from runners.lumopt2_design.campaign_te_s1 import SPEC_V3

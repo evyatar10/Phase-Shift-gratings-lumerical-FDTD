@@ -1,0 +1,9 @@
+{
+  "status": "OFFLINE_PREPARATION_PASS_ACTUAL200_PENDING",
+  "extractor_sha256": "36ff78a1c567a911c84d707682e9dfa0e0e3e51c740e142a8be4d43f65e4f9f3",
+  "helper_sha256": "994c3e9757a10b5bd8ea211aaee8425c5d3540203a4da04b0439684163baf6ca",
+  "parent_test_exit": 0,
+  "focused_test_groups": 6,
+  "archive_sha256": "64616e0f38c7b8296d33c67aaddd2d3734ece06c460a1b10380cb03dbe39de2b",
+  "qualification": "Synthetic200 tests, no new physics or dispatch"
+}

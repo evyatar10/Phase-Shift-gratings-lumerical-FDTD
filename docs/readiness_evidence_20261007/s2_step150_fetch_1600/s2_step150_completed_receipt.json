@@ -1,0 +1,342 @@
+{
+  "at": "2026-10-07T15:59:35.174989+03:00",
+  "job_id": "171276",
+  "review_marker": "/work/data/s2_step150_review_20261007_1507.json",
+  "review_marker_sha256": "8cc8e9da52262b19f4fd51d98c11de1a686c7e61b8c8bf2b364944922677dc0f",
+  "environment": {
+    "KEEP_H5": "1",
+    "S2_STEP150_REPO": "/work/project",
+    "S2_STEP150_PARENT_ROOT": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007",
+    "S2_STEP150_PARENT_MARKER": "/work/data/s2_temporal150_review_20261007_1257.json",
+    "S2_STEP150_OUTPUT_ROOT": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007",
+    "S2_STEP150_REVIEW_MARKER": "/work/data/s2_step150_review_20261007_1507.json",
+    "S2_STEP150_REVIEW_SHA256": "8cc8e9da52262b19f4fd51d98c11de1a686c7e61b8c8bf2b364944922677dc0f"
+  },
+  "family": "s2_shift30_step150_20261007",
+  "runner_sha256": "c41f522e8502598c4b8a3d4a4096baf094ede8a1c66763169992fbc82d696c8a",
+  "base_helper_sha256": "555f3d13b42c494171e7658cc4263c588ce418e5d937da1497d690824b41d44a",
+  "accounting": "171276_0|COMPLETED|0:0\n171276_0.batch|COMPLETED|0:0\n171276_0.extern|COMPLETED|0:0\n171276_1|COMPLETED|0:0\n171276_1.batch|COMPLETED|0:0\n171276_1.extern|COMPLETED|0:0\n",
+  "verified_records": [
+    {
+      "task": 0,
+      "checkpoint": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_00.json",
+      "checkpoint_sha256": "8d49988494fd09323821029a9e88adc96b06dec9e586da032278cb2e8c7dd5e6",
+      "source": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_00_4f0zrw97/s2_shift30_step150_20261007_files/fwd_default.fsp",
+      "ports": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_00_4f0zrw97/ports.npz",
+      "ports_sha256": "4a3b52f5906eba2d8a8b7231df0caf5e2b1694f065d360fb8c55bdb40ad492f8",
+      "termination": {
+        "log": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_00_4f0zrw97/s2_shift30_step150_20261007_files/fwd_default_p0.log",
+        "log_sha256": "e8bf40d0a22d02bfd58f66d71ac5ca7129cc208ebac3651cc38cc4ba54158245",
+        "iterations": 2248530,
+        "physical_time_s": 1.5e-10,
+        "requested_time_s": 1.5e-10,
+        "recorded_dt_s": 6.671026479768415e-17,
+        "delta_s": 0.0,
+        "status": 1,
+        "reason": "completed_full_simulation_time"
+      },
+      "fsp_sha256": "42362557e0f08b6239ddcf6337ab059da4296c51293ebf2114a6f00c159b89f7",
+      "h5_sha256": "97814139be36c12a236fd48bff85e68d4a270a84b797d799ddf65342f53e3436",
+      "metrics": {
+        "fom": 0.7310277173111661,
+        "peak3_tout": 0.9335484941530775,
+        "peak3_modal": 0.9799437400348227,
+        "lam_nm": 1560.8902190511315,
+        "modal_t": 0.9798242298470388,
+        "width_nm": 0.20159877722267083,
+        "tout_at_modal_peak": 0.9279949074764507,
+        "p1_T_in": 0.9423956556365448
+      },
+      "vendor_api_sha256": {
+        "lumopt2/__init__.py": "9d2083f40812b74a8c4066764900ebd57f79945a645fe709f1f71fffd3a96a85",
+        "lumopt2/_version.py": "d454a9e0ec34ee12db4c00ff4be1c92879cd51f2cbf7778014e531118d50d085",
+        "lumopt2/core/__init__.py": "149fdea1af9bb67f2bdaf902c98f36936f09c37add07c69617434f56c029b645",
+        "lumopt2/core/fdtd_session.py": "8fd99250c399d255dd28c2b2749af55774dd6d0fd9f47722fa68a5a2d9f36cad",
+        "lumopt2/core/optimization.py": "c8a60c3fd1c28c782ab0fd6e0518dd07d3a9c039307c30b7aed59c1ab4274550",
+        "lumopt2/core/project.py": "7ffc078ca07789e036b6be330dcc82b6c4b8762cbccbe0a7eb7907346087c88a",
+        "lumopt2/core/project_config.py": "7e151ba146e48f6fa614f3c76d57d13a56b41fc6caa092a89ef2740a0381a912",
+        "lumopt2/fom/__init__.py": "aa374787489e28983f738e0c7544105168269ac9039609d27ad8c4d54437b4ae",
+        "lumopt2/fom/base_fom.py": "4f411de2a13c356b862172c42cde0f789f898d6b8537d2051aadf6308362d3f1",
+        "lumopt2/fom/field_fom.py": "6cb945ab04dec8b75a54eae67b3bc6821c1360a32904053bfb3fdf5b4c4e0fee",
+        "lumopt2/fom/fom.py": "1634527ee7584062cc5ce83fb1ad9dc2d55f1766da9b1590eee5eeef991c5e39",
+        "lumopt2/fom/port_fom.py": "8384f90c7df452169ab3ff922059e16e1a9eb954690c81090137ad466d4c33b5",
+        "lumopt2/fom/simulation_results.py": "e4f997af7dba11afc2b49582aee90e5f817fc654d79734cda382ad567d4c19c7",
+        "lumopt2/optimizer/__init__.py": "19709efbe891f34a930ad0a1a5772fe3e4a53b74797478675848d2b72ab3a263",
+        "lumopt2/optimizer/base_optimizer.py": "d75b7465da8653ae96984d70618bb943f71948709f9d67add80b9f0b7ec97132",
+        "lumopt2/optimizer/scipy_optimizer.py": "a0ecffccdc95502a0a5af1206ae75b1fc84193b508d49531cb7483226bff3649",
+        "lumopt2/parametrization/__init__.py": "a9a8e7c867a9e4a27e6c7104fdf3437543e7a18688b07bc8438f7d09db26dcd6",
+        "lumopt2/parametrization/base_parametrization.py": "fe9f5505253fb76b907a1bea7529eb29b7992bb0887e8758113772811d6727fd",
+        "lumopt2/parametrization/closed_curve.py": "00bbd9d82a973b537f97e76da7acb6bb6e5fa02fd727b741d901968dca1e13e3",
+        "lumopt2/parametrization/combined_parametrization.py": "a2415161e047901597954d8c92c6b66da815929ab7c25601af5aba5fe1712ef7",
+        "lumopt2/parametrization/d_eps_calculator.py": "ad8865d1ea557419955f690c86ce2531efaa41dd86d1b1e90401c43e39f5ee1d",
+        "lumopt2/parametrization/parametrization.py": "4eee57114c00aefae2eb4980f2e9439edc359fa2e73a245acc975d71db87c1c4",
+        "lumopt2/parametrization/topology.py": "2e7d08d76e80420e28d4ab26ce3ac96bdaad784e67f799b13b149b688af060ed",
+        "lumopt2/utils/__init__.py": "6adf3ca0439a6d85096dea1cebe1a7cd4dbb0d1cc207c7fe4468f6e28365c9b2",
+        "lumopt2/utils/callbacks.py": "7bf1ca8febcc90fe4edc02a5f49db06d48f897d1eae4fc30599c9e794658aca4",
+        "lumopt2/utils/common.py": "bfb35c08f0cd5e27841b2b95c1ef27af3f3e287c742a052c7a9c73a4b989ef83",
+        "lumopt2/utils/config_map.py": "294e9690f97b0b094c8531714c509d8837e09907079760cd2feb80811f31dfaf",
+        "lumopt2/utils/doc_utils.py": "4eb17f614ec4b1eb0aad1f83d2b11a74487367e8ad1614abfc6f1d48122f7b0b",
+        "lumopt2/utils/fd_grad.py": "c7027408ffbd232abc4106f27cda5d407525e7fa85a0f49239b2542b9991340b",
+        "lumopt2/utils/file_logger.py": "4a27e2c5b1c5152e83bcd9fd84db34834fbe1dd6072318768c8fb7d7caee31b5",
+        "lumopt2/utils/graphical_visualizer.py": "cebc1fb6521f2d6cf2c15783f9a7e06942601bb3ad6bdf0af780344e411db6fd",
+        "lumopt2/utils/panels/__init__.py": "7caa02fa6d06708bfd7e40dfea751cae85287976a119265234df89fbb043ffba",
+        "lumopt2/utils/panels/base.py": "59bc6c8ed1fa067ed87024cf21174ad0888e179c71a645ae5d372c184501bf50",
+        "lumopt2/utils/panels/fom.py": "aa05ce0fd71851eabe87990ba53ae2dedb8b153a2d370dceaa2dcb30dddb5540",
+        "lumopt2/utils/panels/geometry.py": "1b306d474c4e2a05708e8432da98817696ad929c0549e8e4720e649aff84f2bc",
+        "lumopt2/utils/panels/gradient.py": "297ffd1b477fb6261cfd8402d044b74a69c1901e3d31da8b07175d8657adf9fa",
+        "lumopt2/utils/panels/monitor.py": "86ddd010b98b67d7d4da1b18a644761bbb446673293fd91635763d73455bcf40",
+        "lumopt2/utils/profiler.py": "2ac7ad25ccc9078ea221eda3f39a1baed28004b4f4c3c2835a1ca0eaa1e67e87",
+        "lumopt2/utils/runner.py": "b94874bd6ec512fa77e907f83cc639aa7228ebddb07e6f6e159746ae090cfcf0",
+        "lumopt2/utils/sparse_helpers.py": "ce5bc7ea8c781c8c09ed3de027dafe46fbae31fabe40f932ac22411b32eb5189",
+        "lumapi.py": "e455920c9ef6245dd587728a219348423e8c3196cfb3040f710bd2c728e9a66b",
+        "lumslurm.py": "7648b7be6223b660b443f8a54dbdb7503b5f0d9f096da925b544e6d1c0b6ff5b"
+      },
+      "control_sha256": {
+        "before_sha256": "1b11b8202433f20fb030759d98bbdb2d6b303e5ed54a982c471c8c57a0ebc527",
+        "after_sha256": "331c095860b21b47ddf3b90a83032cc3e9a4aafdf1c68b0a04a899bd39977811",
+        "persisted_sha256": "1934c33719f1b8c9cb3ec2b2f9430958b914007b000f5f4b723f32b66dc3a3cd"
+      },
+      "parent_review": {
+        "path": "/work/data/s2_step150_review_20261007_1507.json",
+        "sha256": "8cc8e9da52262b19f4fd51d98c11de1a686c7e61b8c8bf2b364944922677dc0f",
+        "lead_verdict": "Lead reviewed exact150ps triplet, full spectra and temporal sensitivities; seven offline groups, actual driver tasklist0/1, both hidden CAD mappings/persistence, independent source review and strict remote parent artifact/vendor checks passed. Release ONLY two150ps shift30 +/-0.125nm forwards to compare finite-step dependence with existing +/-0.0625nm and reuse exact150center. Existing global calibration FAILED; no optimizer, no coefficients, no200ps or adjoint release. Cross-run Port_1 phase allowance limited to measured2ULP with raw values retained; no physics tolerance. Shared15:03 usage7/50, plus14new=21/50; quota228G/300G; Athena empty and IGUM101155 running.",
+        "allowed_tasks": [
+          0,
+          1
+        ],
+        "parent150": {
+          "marker": "/work/data/s2_temporal150_review_20261007_1257.json",
+          "marker_sha256": "6cc6d9fd8cab5419b436b433725fbb2cc88b49f538628f897929217940527f51",
+          "checkpoints": {
+            "3": {
+              "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_03.json",
+              "sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+              "ports_sha256": "a9a4b2e87379c645786ac8fc179852ad3bdec2a040c7fe2c8c1ae21342a5d90d",
+              "fsp_sha256": "724a8c5649d90b7442e8e706a37e07b532940771efa21e4660ab781e133da1bf",
+              "h5_sha256": "e96da50115864b429ef23c04cb72e594de33fa136192002131068c8588de25b7",
+              "termination": {
+                "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_03_yc61w355/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+                "log_sha256": "ab85f80f393f0dc2d984a0a2a4c241e17a8e1bd97eea68bffebb217941daf232",
+                "iterations": 2248530,
+                "physical_time_s": 1.5e-10,
+                "requested_time_s": 1.5e-10,
+                "recorded_dt_s": 6.671026479768415e-17,
+                "delta_s": 0.0,
+                "status": 1,
+                "reason": "completed_full_simulation_time"
+              }
+            },
+            "4": {
+              "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_04.json",
+              "sha256": "31ec8f2f72bfb1a5aa991240cec45c5fb515d18e82fc37d7cfac89703e75efe4",
+              "ports_sha256": "a92bb781482ec2cd01e688fb3dc25f7e86f33a16e3fc7289f629ba4267caac90",
+              "fsp_sha256": "acd321888c5860ce3c02ce31b9889ab8c6846bae8c0c8e6da1516178663d5995",
+              "h5_sha256": "6b94b8c6c0edab4066ad84f0c6955c94bbc4f9714e0332a93fe0511c15ab2cdc",
+              "termination": {
+                "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_04_k6m8pmaa/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+                "log_sha256": "40ed80265c740494c7bfd3af680d0af278e2959ec422ede961ec27f1d7460b7c",
+                "iterations": 2248530,
+                "physical_time_s": 1.5e-10,
+                "requested_time_s": 1.5e-10,
+                "recorded_dt_s": 6.671026479768415e-17,
+                "delta_s": 0.0,
+                "status": 1,
+                "reason": "completed_full_simulation_time"
+              }
+            },
+            "5": {
+              "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_05.json",
+              "sha256": "a0e9d73a0f8f0162c9f7a843ca24eb4c4c29e444b1fca2b692ffd5002feb571d",
+              "ports_sha256": "54694438904b08eaf9bdc7ef2c8a0a1b7c56183a39bdc3e1bcf6fa8309e4c688",
+              "fsp_sha256": "2c11c6a52289cc5d79ce489806e9ef00aae68ecb0b81f7d1c1fa046f2392cda4",
+              "h5_sha256": "df5eeaf3e2dc88a731ceaa71c5077fe97e819feb3090481572b1988decacae98",
+              "termination": {
+                "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_05_1jsw9c64/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+                "log_sha256": "8cd0907c94eac3eb1bf486c3589216a87cf2ab7a6818e1ffb60a30e58502fdd9",
+                "iterations": 2248530,
+                "physical_time_s": 1.5e-10,
+                "requested_time_s": 1.5e-10,
+                "recorded_dt_s": 6.671026479768415e-17,
+                "delta_s": 0.0,
+                "status": 1,
+                "reason": "completed_full_simulation_time"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "task": 1,
+      "checkpoint": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_01.json",
+      "checkpoint_sha256": "5d88d683852591d48d0a06b62ba763d3483c035be42d4f2467dbde591e5f692f",
+      "source": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_01_6mkxcbum/s2_shift30_step150_20261007_files/fwd_default.fsp",
+      "ports": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_01_6mkxcbum/ports.npz",
+      "ports_sha256": "fcc4e8d2d2b2d0921fab0b2f4d2ae16667cd504ac1b869d29ee3bf813ca7ff48",
+      "termination": {
+        "log": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_01_6mkxcbum/s2_shift30_step150_20261007_files/fwd_default_p0.log",
+        "log_sha256": "5830d69d59256ce466c44334358a45e5968012afbfcbe55dd310a8aa6ec36959",
+        "iterations": 2248530,
+        "physical_time_s": 1.5e-10,
+        "requested_time_s": 1.5e-10,
+        "recorded_dt_s": 6.671026479768415e-17,
+        "delta_s": 0.0,
+        "status": 1,
+        "reason": "completed_full_simulation_time"
+      },
+      "fsp_sha256": "162ec00f08ec39f0dd4655944f9062ab71c3ee15b16480e2394e34b6eaf0b494",
+      "h5_sha256": "02b34c4cad6c0ec0ebd6a5c205a65591fa92cddd098af78c5e3f65bec9385172",
+      "metrics": {
+        "fom": 0.7310567068326512,
+        "peak3_tout": 0.9335959677783789,
+        "peak3_modal": 0.9800066397745121,
+        "lam_nm": 1560.8662190609805,
+        "modal_t": 0.9799970235575363,
+        "width_nm": 0.20158228938907996,
+        "tout_at_modal_peak": 0.9297686918945104,
+        "p1_T_in": 0.9440416972923811
+      },
+      "vendor_api_sha256": {
+        "lumopt2/__init__.py": "9d2083f40812b74a8c4066764900ebd57f79945a645fe709f1f71fffd3a96a85",
+        "lumopt2/_version.py": "d454a9e0ec34ee12db4c00ff4be1c92879cd51f2cbf7778014e531118d50d085",
+        "lumopt2/core/__init__.py": "149fdea1af9bb67f2bdaf902c98f36936f09c37add07c69617434f56c029b645",
+        "lumopt2/core/fdtd_session.py": "8fd99250c399d255dd28c2b2749af55774dd6d0fd9f47722fa68a5a2d9f36cad",
+        "lumopt2/core/optimization.py": "c8a60c3fd1c28c782ab0fd6e0518dd07d3a9c039307c30b7aed59c1ab4274550",
+        "lumopt2/core/project.py": "7ffc078ca07789e036b6be330dcc82b6c4b8762cbccbe0a7eb7907346087c88a",
+        "lumopt2/core/project_config.py": "7e151ba146e48f6fa614f3c76d57d13a56b41fc6caa092a89ef2740a0381a912",
+        "lumopt2/fom/__init__.py": "aa374787489e28983f738e0c7544105168269ac9039609d27ad8c4d54437b4ae",
+        "lumopt2/fom/base_fom.py": "4f411de2a13c356b862172c42cde0f789f898d6b8537d2051aadf6308362d3f1",
+        "lumopt2/fom/field_fom.py": "6cb945ab04dec8b75a54eae67b3bc6821c1360a32904053bfb3fdf5b4c4e0fee",
+        "lumopt2/fom/fom.py": "1634527ee7584062cc5ce83fb1ad9dc2d55f1766da9b1590eee5eeef991c5e39",
+        "lumopt2/fom/port_fom.py": "8384f90c7df452169ab3ff922059e16e1a9eb954690c81090137ad466d4c33b5",
+        "lumopt2/fom/simulation_results.py": "e4f997af7dba11afc2b49582aee90e5f817fc654d79734cda382ad567d4c19c7",
+        "lumopt2/optimizer/__init__.py": "19709efbe891f34a930ad0a1a5772fe3e4a53b74797478675848d2b72ab3a263",
+        "lumopt2/optimizer/base_optimizer.py": "d75b7465da8653ae96984d70618bb943f71948709f9d67add80b9f0b7ec97132",
+        "lumopt2/optimizer/scipy_optimizer.py": "a0ecffccdc95502a0a5af1206ae75b1fc84193b508d49531cb7483226bff3649",
+        "lumopt2/parametrization/__init__.py": "a9a8e7c867a9e4a27e6c7104fdf3437543e7a18688b07bc8438f7d09db26dcd6",
+        "lumopt2/parametrization/base_parametrization.py": "fe9f5505253fb76b907a1bea7529eb29b7992bb0887e8758113772811d6727fd",
+        "lumopt2/parametrization/closed_curve.py": "00bbd9d82a973b537f97e76da7acb6bb6e5fa02fd727b741d901968dca1e13e3",
+        "lumopt2/parametrization/combined_parametrization.py": "a2415161e047901597954d8c92c6b66da815929ab7c25601af5aba5fe1712ef7",
+        "lumopt2/parametrization/d_eps_calculator.py": "ad8865d1ea557419955f690c86ce2531efaa41dd86d1b1e90401c43e39f5ee1d",
+        "lumopt2/parametrization/parametrization.py": "4eee57114c00aefae2eb4980f2e9439edc359fa2e73a245acc975d71db87c1c4",
+        "lumopt2/parametrization/topology.py": "2e7d08d76e80420e28d4ab26ce3ac96bdaad784e67f799b13b149b688af060ed",
+        "lumopt2/utils/__init__.py": "6adf3ca0439a6d85096dea1cebe1a7cd4dbb0d1cc207c7fe4468f6e28365c9b2",
+        "lumopt2/utils/callbacks.py": "7bf1ca8febcc90fe4edc02a5f49db06d48f897d1eae4fc30599c9e794658aca4",
+        "lumopt2/utils/common.py": "bfb35c08f0cd5e27841b2b95c1ef27af3f3e287c742a052c7a9c73a4b989ef83",
+        "lumopt2/utils/config_map.py": "294e9690f97b0b094c8531714c509d8837e09907079760cd2feb80811f31dfaf",
+        "lumopt2/utils/doc_utils.py": "4eb17f614ec4b1eb0aad1f83d2b11a74487367e8ad1614abfc6f1d48122f7b0b",
+        "lumopt2/utils/fd_grad.py": "c7027408ffbd232abc4106f27cda5d407525e7fa85a0f49239b2542b9991340b",
+        "lumopt2/utils/file_logger.py": "4a27e2c5b1c5152e83bcd9fd84db34834fbe1dd6072318768c8fb7d7caee31b5",
+        "lumopt2/utils/graphical_visualizer.py": "cebc1fb6521f2d6cf2c15783f9a7e06942601bb3ad6bdf0af780344e411db6fd",
+        "lumopt2/utils/panels/__init__.py": "7caa02fa6d06708bfd7e40dfea751cae85287976a119265234df89fbb043ffba",
+        "lumopt2/utils/panels/base.py": "59bc6c8ed1fa067ed87024cf21174ad0888e179c71a645ae5d372c184501bf50",
+        "lumopt2/utils/panels/fom.py": "aa05ce0fd71851eabe87990ba53ae2dedb8b153a2d370dceaa2dcb30dddb5540",
+        "lumopt2/utils/panels/geometry.py": "1b306d474c4e2a05708e8432da98817696ad929c0549e8e4720e649aff84f2bc",
+        "lumopt2/utils/panels/gradient.py": "297ffd1b477fb6261cfd8402d044b74a69c1901e3d31da8b07175d8657adf9fa",
+        "lumopt2/utils/panels/monitor.py": "86ddd010b98b67d7d4da1b18a644761bbb446673293fd91635763d73455bcf40",
+        "lumopt2/utils/profiler.py": "2ac7ad25ccc9078ea221eda3f39a1baed28004b4f4c3c2835a1ca0eaa1e67e87",
+        "lumopt2/utils/runner.py": "b94874bd6ec512fa77e907f83cc639aa7228ebddb07e6f6e159746ae090cfcf0",
+        "lumopt2/utils/sparse_helpers.py": "ce5bc7ea8c781c8c09ed3de027dafe46fbae31fabe40f932ac22411b32eb5189",
+        "lumapi.py": "e455920c9ef6245dd587728a219348423e8c3196cfb3040f710bd2c728e9a66b",
+        "lumslurm.py": "7648b7be6223b660b443f8a54dbdb7503b5f0d9f096da925b544e6d1c0b6ff5b"
+      },
+      "control_sha256": {
+        "before_sha256": "c2f2fcb296a96ee07c823d6079f393b7d4eed21503f50cb5d14b1a6418d28e7b",
+        "after_sha256": "cad61b22a95fcc15af610049c6178f199170bbf11caf4c675d3091bb80e25f90",
+        "persisted_sha256": "74320dfbf7089f60eb926a030d5649894bc65fdd57b1842f8a112188236b03d6"
+      },
+      "parent_review": {
+        "path": "/work/data/s2_step150_review_20261007_1507.json",
+        "sha256": "8cc8e9da52262b19f4fd51d98c11de1a686c7e61b8c8bf2b364944922677dc0f",
+        "lead_verdict": "Lead reviewed exact150ps triplet, full spectra and temporal sensitivities; seven offline groups, actual driver tasklist0/1, both hidden CAD mappings/persistence, independent source review and strict remote parent artifact/vendor checks passed. Release ONLY two150ps shift30 +/-0.125nm forwards to compare finite-step dependence with existing +/-0.0625nm and reuse exact150center. Existing global calibration FAILED; no optimizer, no coefficients, no200ps or adjoint release. Cross-run Port_1 phase allowance limited to measured2ULP with raw values retained; no physics tolerance. Shared15:03 usage7/50, plus14new=21/50; quota228G/300G; Athena empty and IGUM101155 running.",
+        "allowed_tasks": [
+          0,
+          1
+        ],
+        "parent150": {
+          "marker": "/work/data/s2_temporal150_review_20261007_1257.json",
+          "marker_sha256": "6cc6d9fd8cab5419b436b433725fbb2cc88b49f538628f897929217940527f51",
+          "checkpoints": {
+            "3": {
+              "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_03.json",
+              "sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+              "ports_sha256": "a9a4b2e87379c645786ac8fc179852ad3bdec2a040c7fe2c8c1ae21342a5d90d",
+              "fsp_sha256": "724a8c5649d90b7442e8e706a37e07b532940771efa21e4660ab781e133da1bf",
+              "h5_sha256": "e96da50115864b429ef23c04cb72e594de33fa136192002131068c8588de25b7",
+              "termination": {
+                "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_03_yc61w355/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+                "log_sha256": "ab85f80f393f0dc2d984a0a2a4c241e17a8e1bd97eea68bffebb217941daf232",
+                "iterations": 2248530,
+                "physical_time_s": 1.5e-10,
+                "requested_time_s": 1.5e-10,
+                "recorded_dt_s": 6.671026479768415e-17,
+                "delta_s": 0.0,
+                "status": 1,
+                "reason": "completed_full_simulation_time"
+              }
+            },
+            "4": {
+              "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_04.json",
+              "sha256": "31ec8f2f72bfb1a5aa991240cec45c5fb515d18e82fc37d7cfac89703e75efe4",
+              "ports_sha256": "a92bb781482ec2cd01e688fb3dc25f7e86f33a16e3fc7289f629ba4267caac90",
+              "fsp_sha256": "acd321888c5860ce3c02ce31b9889ab8c6846bae8c0c8e6da1516178663d5995",
+              "h5_sha256": "6b94b8c6c0edab4066ad84f0c6955c94bbc4f9714e0332a93fe0511c15ab2cdc",
+              "termination": {
+                "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_04_k6m8pmaa/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+                "log_sha256": "40ed80265c740494c7bfd3af680d0af278e2959ec422ede961ec27f1d7460b7c",
+                "iterations": 2248530,
+                "physical_time_s": 1.5e-10,
+                "requested_time_s": 1.5e-10,
+                "recorded_dt_s": 6.671026479768415e-17,
+                "delta_s": 0.0,
+                "status": 1,
+                "reason": "completed_full_simulation_time"
+              }
+            },
+            "5": {
+              "checkpoint": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_05.json",
+              "sha256": "a0e9d73a0f8f0162c9f7a843ca24eb4c4c29e444b1fca2b692ffd5002feb571d",
+              "ports_sha256": "54694438904b08eaf9bdc7ef2c8a0a1b7c56183a39bdc3e1bcf6fa8309e4c688",
+              "fsp_sha256": "2c11c6a52289cc5d79ce489806e9ef00aae68ecb0b81f7d1c1fa046f2392cda4",
+              "h5_sha256": "df5eeaf3e2dc88a731ceaa71c5077fe97e819feb3090481572b1988decacae98",
+              "termination": {
+                "log": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007/task_05_1jsw9c64/s2_shift30_temporal_20261007_files/fwd_default_p0.log",
+                "log_sha256": "8cd0907c94eac3eb1bf486c3589216a87cf2ab7a6818e1ffb60a30e58502fdd9",
+                "iterations": 2248530,
+                "physical_time_s": 1.5e-10,
+                "requested_time_s": 1.5e-10,
+                "recorded_dt_s": 6.671026479768415e-17,
+                "delta_s": 0.0,
+                "status": 1,
+                "reason": "completed_full_simulation_time"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "files": {
+    "0:checkpoint": {
+      "path": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_00.json",
+      "sha256": "8d49988494fd09323821029a9e88adc96b06dec9e586da032278cb2e8c7dd5e6",
+      "bytes": 733432
+    },
+    "0:ports": {
+      "path": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_00_4f0zrw97/ports.npz",
+      "sha256": "4a3b52f5906eba2d8a8b7231df0caf5e2b1694f065d360fb8c55bdb40ad492f8",
+      "bytes": 134142
+    },
+    "1:checkpoint": {
+      "path": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_01.json",
+      "sha256": "5d88d683852591d48d0a06b62ba763d3483c035be42d4f2467dbde591e5f692f",
+      "bytes": 733116
+    },
+    "1:ports": {
+      "path": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007/task_01_6mkxcbum/ports.npz",
+      "sha256": "fcc4e8d2d2b2d0921fab0b2f4d2ae16667cd504ac1b869d29ee3bf813ca7ff48",
+      "bytes": 134142
+    }
+  },
+  "artifact_pins_sha256": "27aa559155998d56336ddbbc9b0ebd6d9d74de1b6f65eb1a3445546c3826b42e"
+}

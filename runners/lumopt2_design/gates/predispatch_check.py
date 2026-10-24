@@ -134,6 +134,12 @@ for _mod in _te.SEEDS.values():
                    eng.seed_params(_mod.SPEC_V3))
 allok &= _te.check_points()
 
+# Nt80x gradient lane (2026-10-20): the seed run_campaign submits (trust boxes
+# re-centred on it), under both the locate and the campaign spec.
+from runners.lumopt2_design import campaign_te_nt80x as _nt
+for _s in (_nt.LOCATE_SPEC, _nt.SPEC):
+    allok &= check(f"{_s.label} seed (window {_s.scan_width_nm} nm)", _s, eng.seed_params(_s))
+
 print("\n" + ("ALL CHECKED SEEDS AND FD LEGS IN BOUNDS"
                if allok else "*** DO NOT DISPATCH — fix the bounds first ***"))
 # ★INDEX-REACHABILITY (2026-08-28, after TWO collisions with _GFR_RUNGS'

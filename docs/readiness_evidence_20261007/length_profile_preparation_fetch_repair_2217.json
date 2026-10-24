@@ -1,0 +1,15 @@
+{
+  "status": "LOCAL_PREPARED_OFFLINE_ONLY_NO_REMOTE",
+  "original_path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_length_native_fetch_7febdd132a81\\fetch_length_native.py",
+  "original_sha256": "70b49ad88d2f4b2dd2221460765e4fb056ece7e70030bfdc661e687622d78961",
+  "patched_path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_length_fetch_repair_8yp6zjjx\\fetch_length_native.py",
+  "patched_sha256": "88fc9cc4475f3b609582a9e0ffd69078274807daf3cf0fd7401fba1123018fb1",
+  "tests": {
+    "count": 4,
+    "exit_code": 0,
+    "test_path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\s2_length_fetch_repair_8yp6zjjx\\test_fetch_repair.py"
+  },
+  "cause": "lane.code -> base.code -> prior.dependency_hashes -> diag.identity(0) -> eager import bragg_device -> eager import lumapi",
+  "patch": "In-memory override only prior.dependency_hashes with exact twelve file hashes; original base.code/lane.code wrappers retained; all17 released source hashes checked on everycall; deny CAD module imports before cold checks; both original no-lumapi assertions retained",
+  "limits": "Fake nested wrappers verified; actual native imported lane equivalence checked at execution before any cold validation. No actual CP data fetched or remote command executed. Frozen source/vendor files unchanged."
+}

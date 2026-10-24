@@ -17,6 +17,11 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
 > refit. State: memory `project_q3db_predictive_engine.md`. **CMT is authorized
 > for this program** (the CMT ban is scoped to the lumopt2 optimizer/width-wall).
 >
+> ## ★★★POST-ARRAY RADIATION CANCELLATION (2026-10-23) — skill `postarray-design`
+> Born-designed full-height SiN post arrays beside the TE overshoot (Nt80x): Q_i +33 % on the core-refined (dy29) mesh, the honest
+> number (+63 % at the production mesh was partly a mesh artefact the design cancelled). START: `docs/HANDOFF_postarray_2026-10-23.md`.
+> The two arms of an apodized device are NOT mirror images -> independent phases. Model ceilings are conditional, never limits.
+>
 > ## ★★★CURRENT PROGRAM STATE — READ BEFORE ANY INVERSE-DESIGN WORK
 > **★TWO LANES since 2026-10-07 (user):** this folder = branch `claude-te`
 > (Claude's lane, Athena base `~/bragg_sim_athena`, IGUM `~/research/bragg_sim_igum`).
@@ -81,6 +86,10 @@ The device is a **pi-shift Bragg grating** (use this term in discussion/writeups
   IGUM has no `rpm2cpio` — extract on Athena, tar-stream over the LAN. Submission needs
   `--account`+matching QOS, `part-preempt` is preemptible (sweeps OK, long stateful
   optimizations stay on Athena), and **license seats are SHARED with Athena** —
+  ★2026-10-20: `qos-preempt` is REVOKED for our account ("Invalid qos specification"), and the
+  fallback `part-lumerical` nodes carry 11-GB 2080Ti / A4500 cards on which the far-field scenes die
+  at engine start (IGUM 113101/113102). Until the admins restore qos-preempt, IGUM is closed to
+  GPU runs of this programme; probe with `sbatch --test-only` before any IGUM dispatch —
   probe both before big runs. Athena stays the default. See `igum/README.md`.
 - **Local is allowed** for: building scenes, `save_fsp`, smoke tests, MATLAB plotting,
   and any quick non-GPU check. Local `fdtd.run()` is slow — only do a real local FDTD
@@ -289,10 +298,32 @@ Over-testing never once cost anything. So:
   carries comb r = 80.1386, and `run_adjoint_only`'s detune=1 sets the centre post to
   100.0. Reproduce the runner's exact vector locally (seed → detune → clamp) and check
   it against `param_bounds(spec)`; it is a two-second numpy check with zero GPU.
-  Reusable checker: `runners/lumopt2_design/gates/predispatch_check.py`. Corollary: when a fit or gate
+  Reusable checker: `runners/lumopt2_design/gates/predispatch_check.py`. ★SAME CLASS, 2026-10-20 (Athena 265100, 1.2 GPU-h): a validation
+  module pasted a solved profile from a scratch `.npy` that a later one-knob run had silently
+  overwritten → the job ran ZEROS. Numbers carried from a scratch artifact into a dispatch are
+  re-generated right before the paste, asserted non-trivial (max |dw| > threshold, not just
+  "non-empty"), and echoed in the pre-dispatch printout next to the solve's own printed result. Corollary: when a fit or gate
   must sit at the SAME operating point as a stored reference, the spec must ALLOW that
   point — freeing the comb changes only the bounds, not the geometry at an explicitly
   set point.
+- **★ANALYSIS SELF-CHECKS BEFORE A NUMBER LEAVES THE SCRATCHPAD (incidents 2026-10-21):** (a) every fraction/share is
+  reported only with its complement and their sum printed (a broadcast error made "76 % of the leak toward +x"; true 52 %);
+  (b) every symmetry/parity decomposition states its ORIGIN or plane and scans it (a 43/57 x-parity split about x = 0 was an
+  origin artefact; about the leak's own plane x0 = +0.195 um it is 90/10); (c) a reviewer (Fable subagent) re-derives any
+  number that changes a decision before it reaches the user.
+- **★AN OPTIMIZER WILL CANCEL NUMERICAL ARTEFACTS — design AND judge on the converged mesh (2026-10-23, false +63 %):** the post
+  array designed against the production-mesh (dy 57.7 nm) leak gave Q_i +63 % there but +33 % at dy 28.8 nm (Athena 269410): the
+  unconverged leak pattern contains staircase-mesh radiation the design learned to cancel. Two audits missed it (both compared at one
+  mesh). Any pattern-matching design (far-field cancellation, response-matrix solves) takes its target field from a mesh-converged
+  control, and its headline number is the converged-mesh one; production-mesh gains are screening only.
+- **★CLEARANCES AND MODEL LIMITS READ THE ACTUAL PER-TOOTH ARRAYS (2026-10-23, two corrections in one day):** apodized devices
+  have teeth far wider than avg+corr/2 (Nt80x reaches 1800 nm, |y| 0.9 um). A post row placed by the formula sat inside the teeth
+  and produced a fake 50 % model ceiling; the plain wall formula was also wrong once. Compute wall = max over the built tooth widths
+  and the cavity, assert clearance from it, and keep added structures inside the far-field tube (side face ~2.1 um) or read Q_i only.
+- **★EVERY NEW ROW/VARIANT GETS A PROPERTY ASSERT, not just a printout (incident 2026-10-21):** name-based dispatch logic
+  (`endswith("_M")` vs a name `r0_M_d2p5`) silently fell through and would have built the matched rows mirrored about x = 0.
+  For each new variant, assert the property that distinguishes it (e.g. left sites == mirror of right sites about x0) in the
+  module's `__main__`, and echo every arm/site list, not only the first arm.
 - **Skip** re-verifying known-good baselines and re-linting untouched code. Don't invent
   extra test passes for mechanical edits.
 - **All local verification runs are SILENT** (user rule 2026-08-07): lumapi always
@@ -302,6 +333,12 @@ Over-testing never once cost anything. So:
 
 ## 6. Server safety
 
+- **★NEVER DISPATCH IMMEDIATELY — propose, then wait for an explicit "run" (user rule 2026-10-22).** Every
+  new dispatch (including a follow-up step of a study already running, e.g. a PROD step after its LOC) is first
+  stated in ≤3 lines: what runs, how many tasks, wall time / GPU-h, and what it decides. Dispatch only after the
+  user's explicit go for THAT run. Before proposing a run, first answer from data already on disk (estimates,
+  bounds, stored results). INCIDENT: 268160 (3 tasks, up to ~4 h each) was dispatched to get a peak T the user
+  only asked to SEE; cancelled before starting.
 - **A run is never a trivial action — think first, run second** (user rule 2026-08-07,
   after the flush-ladder mesh artifact burned ~20 GPU-h). Before ANY dispatch or long
   run: state what the run will decide and why existing results can't answer it; prefer
@@ -437,6 +474,8 @@ Over-testing never once cost anything. So:
   `PreemptMode=REQUEUE`** — there is no non-preemptible partition. Array sim tasks
   are idempotent (requeue = harmless re-run); any LONG STATEFUL DRIVER (lumopt2
   campaign, optimization loop) must cold-start-resume from its own persisted log.
+  ★`4d_1g` also caps memory per job at 275G (sacctmgr MaxTRESPerJob; 400G is REJECTED, QOSMaxMemoryPerJob, 2026-10-23). Measured RSS: production
+  overshoot short run 34 GB, dy29 43 GB.
   Jobs needing >23:30 walltime must submit with `--qos=4d_1g` (or 72h_8g/contrib) —
   the default `ARRAY_QOS=24h_1g` kills them. ★`ARRAY_TIME=...` as an env override is
   **silently IGNORED** (`athena.conf` plain-assigns it after sourcing; `SBATCH_MEM`
@@ -464,7 +503,8 @@ Over-testing never once cost anything. So:
   `$LUM/licensingclient/linx64/lmutil lmstat -c 1055@132.68.48.51 -f lum_fdtd_solve`.
   Budget concurrency vs FREE seats and actual simultaneous solves. Under the
   standard GPU solve licenses, each solve consumes ceil(SMs/16) seats (A100:
-  7; L40S: 9), subject also to CPU licensing requirements. LocalRunner capacity
+  7; L40S: 9; the 188-SM node n317: 12 - two cards died there at 17-21 s with FlexNet -4,132 'only 10 of
+  the requested 12' on 2026-10-21; under seat pressure pin --gpu=a100), subject also to CPU licensing requirements. LocalRunner capacity
   1 runs FD legs sequentially; an iteration is not two concurrent solves.
   For long batches keep the trouble-finder seat bands running (≥35/50
   HIGH = hold fan-outs; ≥45/50 CRITICAL = no new dispatches). LocalRunner's
@@ -565,9 +605,11 @@ them; when a convergence study finishes, state where the files live.
   No overlapping tick/exponent labels in stacked subplots. Envelope comparisons =
   envelopes only, overlaid in ONE figure, FWHM in the legend. Final deliverables are
   editable MATLAB `.fig` + PNG (not plotly/matplotlib).
-- **Replies are SHORT (user rule, reinforced 2026-10-19): a plan/report is ≤ ~15 lines** — verdict, one
-  compact table or ≤6 bullets, ≤3 asks, file paths. No history recaps, no re-explaining physics, no
-  restating subagent reports; details only on request.
+- **Replies are SHORT (user rule, reinforced 2026-10-19; TIGHTENED 2026-10-20 "you're telling me way too many
+  things"): status = ≤5 lines, a report = ≤10 lines, a plan = ≤15.** Verdict FIRST, then only the numbers that
+  change a decision (one compact table or ≤5 bullets), ≤2 asks, file paths last. No lists of what is running
+  unless asked, no history recaps, no re-explaining physics, no restating subagent reports, no narration of
+  monitoring. Be upfront: bad news in line 1. Details only on request.
 - If the user writes in Hebrew, answer in Hebrew (right-to-left, and avoid em-dashes
   in Hebrew text).
 

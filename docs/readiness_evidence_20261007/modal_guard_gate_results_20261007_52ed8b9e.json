@@ -1,0 +1,227 @@
+{
+  "date_utc": "2026-10-06T22:31:20.907839+00:00",
+  "candidate": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e",
+  "candidate_engine_sha256": "d11f34db9777dd1d9deba6ab19372238c046e8d705a5c9c8c4281702e88b9559",
+  "before": {
+    "production_engine": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+    "prior_engine": "2558954f23df132a57f6de259e2a60ee43bf62012ce87617913b288117a38587"
+  },
+  "after": {
+    "production_engine": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+    "prior_engine": "2558954f23df132a57f6de259e2a60ee43bf62012ce87617913b288117a38587"
+  },
+  "count": 13,
+  "all_passed": true,
+  "preserved_sources": true,
+  "results": [
+    {
+      "gate": "gate_projection_local.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\gate_projection_local.py",
+      "gate_sha256": "623bb521b33af2774784a5f7ebf3371323b1f913e7594bc976c491bdbc1c8f66",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\gate_projection_local.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_projection_local.py.modal_final.log"
+    },
+    {
+      "gate": "gate_lam_chain.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_lam_chain.py",
+      "gate_sha256": "f5134251e44c9002dd86c94dacd177b40a675871bc9d166584e6529d50e15a4f",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_lam_chain.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_lam_chain.py.modal_final.log"
+    },
+    {
+      "gate": "gate_lam_chain_plumbing.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_lam_chain_plumbing.py",
+      "gate_sha256": "c1e307138cf7ee4736ce9ff2d95c448d602e42ed2469d74826c55661a767730e",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_lam_chain_plumbing.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_lam_chain_plumbing.py.modal_final.log"
+    },
+    {
+      "gate": "predispatch_check.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\predispatch_check.py",
+      "gate_sha256": "16783b2c7de3c553abcc4d4b4ce5fe31e64657d82d2934bb00c7a5b35032b2b5",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\predispatch_check.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\predispatch_check.py.modal_final.log"
+    },
+    {
+      "gate": "gate_tm_identity.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_tm_identity.py",
+      "gate_sha256": "8ebc08bca265d7e8073d658e60b761e82138544a36637c9df061d59d3812f906",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_tm_identity.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_tm_identity.py.modal_final.log"
+    },
+    {
+      "gate": "gate_v3_local.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\gate_v3_local.py",
+      "gate_sha256": "1d76af190376fcd1d7157ff9ab3fb67d50b31219d14b33b662402b476a362ac2",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\gate_v3_local.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_v3_local.py.modal_final.log"
+    },
+    {
+      "gate": "gate_recovery.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_recovery.py",
+      "gate_sha256": "429835b2eb911f1f23571897be498067e24c64704ffbcd0ac15542c5d3b06502",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_recovery.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_recovery.py.modal_final.log"
+    },
+    {
+      "gate": "gate_persistence.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\gate_persistence.py",
+      "gate_sha256": "ce11cf0eb18def5e76ed9a491d68aa34463eb6ef9dfb29ec3e4b96d63ad9faea",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\gate_persistence.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_persistence.py.modal_final.log"
+    },
+    {
+      "gate": "gate_s2_smoke.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_s2_smoke.py",
+      "gate_sha256": "9ff3b02696d979f992006008dd304ff9726f7de8719bf64f9978b24c2259e561",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_s2_smoke.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_s2_smoke.py.modal_final.log"
+    },
+    {
+      "gate": "gate_width_contract.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_width_contract.py",
+      "gate_sha256": "390167da504bcc35d2c2ef7c7366b49e56404cc5d94a7409f4005dd447f072bb",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_width_contract.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_width_contract.py.modal_final.log"
+    },
+    {
+      "gate": "gate_evaluation_budget.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_evaluation_budget.py",
+      "gate_sha256": "8bf06d28a423ef6030fcbaca2bbabfaaa01cffa290baf99da4f7ee401024c22f",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\runners\\lumopt2_design\\gates\\gate_evaluation_budget.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_evaluation_budget.py.modal_final.log"
+    },
+    {
+      "gate": "gate_campaign_budget.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\gate_campaign_budget.py",
+      "gate_sha256": "dab266c38da3e086cb4547f975dff300e35baeb6859a59b9ef0d5ecd92d59f8a",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\gate_campaign_budget.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_campaign_budget.py.modal_final.log"
+    },
+    {
+      "gate": "gate_modal_guard.py",
+      "exit_code": 0,
+      "gate_source": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\gate_modal_guard.py",
+      "gate_sha256": "30dec10a0811056c5053f96df362bfda01f3734205e14efd1e5a0a29748e533d",
+      "command": [
+        "C:\\Users\\evyat\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-X",
+        "utf8",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\run_gate.py",
+        "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\gate_modal_guard.py"
+      ],
+      "log": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\gate_modal_guard.py.modal_final.log"
+    }
+  ],
+  "aggregate_registration": {
+    "gates": [
+      "gate_projection_local.py",
+      "gate_lam_chain.py",
+      "gate_lam_chain_plumbing.py",
+      "predispatch_check.py",
+      "gate_tm_identity.py",
+      "gate_v3_local.py",
+      "gate_recovery.py",
+      "gate_persistence.py",
+      "gate_s2_smoke.py",
+      "gate_width_contract.py",
+      "gate_evaluation_budget.py",
+      "gate_campaign_budget.py",
+      "gate_modal_guard.py"
+    ],
+    "syntax_checked": true,
+    "candidate_path": "C:\\Users\\evyat\\AppData\\Local\\Temp\\te_modal_guard_candidate_20261007_52ed8b9e\\runners\\lumopt2_design\\gates\\run_all_gates.py",
+    "candidate_sha256": "40128dfb4a7468423e166a1b3e4595b00e3ae43d12b521c035ad984928736c93",
+    "note": "List-only update after all13 suites passed; no numerical code changed"
+  },
+  "consolidated_patch_check": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "path": "C:\\Users\\evyat\\Lumerical\\phase_shift_grating_FTDT_codes\\docs\\te_modal_guard_candidate_20261007.patch"
+  }
+}

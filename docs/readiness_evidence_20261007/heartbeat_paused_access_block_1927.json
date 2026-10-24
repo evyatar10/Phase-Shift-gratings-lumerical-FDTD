@@ -1,0 +1,10 @@
+{
+  "time_utc": "2026-10-07T16:27:15.773471+00:00",
+  "automation_id": "s2-overnight-inverse-design-readiness",
+  "status": "PAUSED",
+  "reason": "Per heartbeat instruction: both SSH connections remain blocked in fresh 19:23 snapshot. Reused snapshot rather than probing again after three minutes.",
+  "checkpoint_commit": "7d2b886",
+  "server_jobs": "No cancellation or modification. IGUM101434 current state unknown; last-known pending18:50.",
+  "unfinished": "Global gradient calibration failed; saved-result API inventory prepared but not dispatched; mesh/domain/length and optimizer hardware checks incomplete.",
+  "resume": "After network/VPN restoration, resume thread; reconcile exact jobs and original checkpoints before dispatch; use TOP continuation."
+}

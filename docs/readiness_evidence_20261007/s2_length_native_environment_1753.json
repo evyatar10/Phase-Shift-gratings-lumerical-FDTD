@@ -1,0 +1,10 @@
+{
+  "S2_LEN_NATIVE_BASE": "/home/evyatarrubin/research/bragg_sim_igum",
+  "S2_LEN_REPO": "/home/evyatarrubin/research/bragg_sim_igum/project",
+  "S2_LEN_OUTPUT_ROOT": "/home/evyatarrubin/research/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007",
+  "S2_LEN_CAD_OUTPUT": "/home/evyatarrubin/research/bragg_sim_igum/results/s2_length_native_cad_20261007",
+  "S2_LEN_REFERENCE_CP": "/home/evyatarrubin/research/bragg_sim_igum/data/s2_length_native_20261007/reference_150_center_original.json",
+  "S2_LEN_REFERENCE_PROFILE": "/home/evyatarrubin/research/bragg_sim_igum/data/s2_length_native_20261007/reference_spatial_inventory_original.json",
+  "S2_LEN_REFERENCE_GRIDS": "/home/evyatarrubin/research/bragg_sim_igum/data/s2_length_native_20261007/reference_port_grids.json",
+  "LUMAPI_PATH": "/home/evyatarrubin/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumapi.py"
+}

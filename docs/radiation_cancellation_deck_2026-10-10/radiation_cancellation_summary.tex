@@ -1,0 +1,214 @@
+% Radiation cancellation summary, 2026-10-11. Companion to radiation_cancellation_deck.tex.
+% Data: IGUM 100034 far fields (tube projection), N = 98; harmonic tables from
+% matlab_plotting/studies/plot_farfield_sph_20um.m (section C2); multipoles from python_tools/farfield_multipole.py.
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{xcolor}
+\usepackage{float}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+
+\title{Radiation Cancellation in $\pi$ Shift Bragg Grating Cavities\\[0.2em]\large Model, measured multipole content, and what can be gained}
+\author{Evyatar Rubin}
+\date{October 12, 2026}
+
+\begin{document}
+\maketitle
+
+\section*{Scope}
+This note describes the idea stage of radiation cancellation: a model of where the cavity leak comes from, what an added feature must do to cancel part of it, and how much each device could gain at best. No cancellation has been attempted yet. All numbers come from three devices with $N=98$ periods per side and a mode width of about 19 to 20\,$\mu$m (Table~\ref{tab:devices}). Numbers marked as estimates are derived from these, not measured.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{lrrrrrr}
+\toprule
+device & corrugation & $\lambda$ (nm) & $T$ & $Q_L$ & mode width & radiated \\
+\midrule
+TE, plain grating & 250\,nm & 1559.99 & 0.912 & 1694 & 19.1\,$\mu$m & 7.3\,\% \\
+TE, overshoot apodization & profile & 1559.87 & 0.973 & 7696 & 19.6\,$\mu$m & 0.7\,\% \\
+TM, plain grating & 325\,nm & 1559.07 & 0.915 & 1652 & 19.2\,$\mu$m & 6.5\,\% \\
+\bottomrule
+\end{tabular}
+\caption{The three devices. The last column, radiated, is the power crossing a closed surface around the cavity, as a fraction of the input.}
+\label{tab:devices}
+\end{table}
+
+\section{The model}
+\textbf{Far field.} Everything that differs from the oxide cladding acts as a source: the core carries a polarization $\Delta\varepsilon\,\mathbf E$, with $\Delta\varepsilon=\varepsilon-n_c^2$, radiating into uniform oxide. The far field is then exactly
+\begin{equation}
+\mathbf A(\hat{\mathbf r})=(\mathsf I-\hat{\mathbf r}\hat{\mathbf r})\int\Delta\varepsilon\,\mathbf E\,e^{-ik\hat{\mathbf r}\cdot\mathbf r}\,d^3r,\qquad \frac{dP}{d\Omega}\propto|\mathbf A|^2 .
+\end{equation}
+It is linear in the source, so the radiation of two sources adds field by field.
+
+\textbf{Multipole harmonics.} The far field is a transverse vector on the sphere, with two polarizations, so every order $l$ and index $m$ has two vector harmonics:
+\begin{equation}
+\mathbf A=\sum_{lm}\bigl[\alpha_{lm}\mathbf X_{lm}+\beta_{lm}\,\hat{\mathbf r}\times\mathbf X_{lm}\bigr],\qquad P\propto\sum_{lm}\bigl(|\alpha_{lm}|^2+|\beta_{lm}|^2\bigr).
+\end{equation}
+$\alpha_{lm}$ is the magnetic coefficient and $\beta_{lm}$ the electric one. For the same $(l,m)$ the two patterns have the same angular shape with the polarization rotated by $90^\circ$; they are orthogonal and never interfere. ``Magnetic'' refers to the shape of the source current, not to a magnetic material: both come from the same polarization current $\Delta\varepsilon\,\mathbf E$, the electric part from its charge like component and the magnetic part from its circulating component. Johnson et al.\ work with a scalar 2D TM field and therefore have one set of moments; in 3D there are two.
+
+\textbf{One coefficient, two ways to compute it.} The coefficient can be obtained by projecting the simulated far field, or, after expanding the plane wave in multipoles, as an integral over the device:
+\begin{equation}
+\alpha_{lm}=\oint\mathbf X^*_{lm}\cdot\mathbf A\,d\Omega
+=4\pi(-i)^l\int\Delta\varepsilon\,j_l(kr)\,\mathbf X^*_{lm}\cdot\mathbf E\,d^3r ,
+\label{eq:twoways}
+\end{equation}
+and likewise for $\beta_{lm}$. Both give the same complex number. The projection is what we compute from data. The source integral shows how a local change $\delta\varepsilon$ moves a harmonic, which is what a feature design needs.
+
+\textbf{Percentage or coefficient.} The tables below report $|\alpha_{lm}|^2$ or $|\beta_{lm}|^2$ as a share of the total. The share keeps the size and drops the phase; it tells how much power disappears if that harmonic is made zero. Making it zero needs the complex value: a feature adds its own $\delta\alpha$, and the harmonic power becomes $|\alpha+\delta\alpha|^2$. With $\alpha=3e^{i40^\circ}$, a feature of the same size gives power 0 at the opposite phase, four times the power at the same phase, and twice the power at $90^\circ$. So the share sets the potential, the complex value sets the design.
+
+\textbf{Symmetry.} The device is mirror symmetric in $y$ and $z$, so $\pm m$ are tied and each harmonic $(l,|m|)$ is one complex number. For TE only electric harmonics with $l+m$ even and magnetic harmonics with $l+m$ odd appear (TM the converse), as the measured tables confirm. There is no mirror plane across the $\pi$ shift: both arms are built in the same order.
+
+\section{Relation to Johnson et al.\ (2001)}
+Johnson et al.\ swept one geometric knob (a rod radius in 2D, the permittivity of four neighbouring rods in 3D) and found a sharp peak in $Q$ inside the band gap. They confirmed afterwards, from the multipole moments in 2D and from new nodal planes in 3D, that the peak is the cancellation of the lowest nonzero moment. One knob sufficed because one harmonic carried almost all the loss and a real knob can zero one real number. The present model keeps their idea, cancel what dominates by interference, but treats the vector field, predicts what each knob can remove, and handles a loss spread over several harmonics.
+
+\section{Adding features}
+\textbf{Perturbation.} With $\mathcal R[\mathbf X]=(\mathsf I-\hat{\mathbf r}\hat{\mathbf r})\int\mathbf X\,e^{-ik\hat{\mathbf r}\cdot\mathbf r}d^3r$, a feature $\delta\varepsilon$ changes the leak to first order by
+\begin{equation}
+\mathbf A_\text{new}-\mathbf A_c=\mathcal R[\delta\varepsilon\,\mathbf E_0]+\mathcal R[\Delta\varepsilon\,\delta\mathbf E]+\delta k\,\partial_k\mathcal R[\Delta\varepsilon\,\mathbf E_0]:
+\end{equation}
+the feature's own radiation, the change of the cavity field, and the shift of the resonance. Every coefficient changes linearly; the first term is explicit,
+\begin{equation}
+\delta\alpha_{lm}=4\pi(-i)^l\int\delta\varepsilon\,j_l(kr)\,\mathbf X^*_{lm}\cdot\mathbf E_0\,d^3r+\ldots,
+\end{equation}
+and likewise for $\beta_{lm}$. The other two terms need the perturbed field and were as large as the first in earlier experiments, so the change of all coefficients per unit knob, $\mathbf b$, is measured: two runs per knob. The expansion is valid while the feature holds a small part of the mode energy, $\int|\delta\varepsilon|\,|\mathbf E_0|^2dV\ll\int\varepsilon\,|\mathbf E_0|^2dV$; in practice the $+h$ and $-h$ runs must give equal and opposite changes.
+
+\textbf{One knob.} Let $\mathbf c$ list all coefficients of the leak per unit stored energy, so that $P_c\propto\|\mathbf c\|^2\propto1/Q_\mathrm{rad}$ (normalizing this way stops a feature that only lowers the coupling from looking like cancellation), and let a knob of real strength $q$ add $q\mathbf b$. Then
+\begin{align}
+P(q)&\propto\|\mathbf c+q\mathbf b\|^2=\|\mathbf c\|^2+2q\,\mathrm{Re}\langle\mathbf b,\mathbf c\rangle+q^2\|\mathbf b\|^2 && \text{(expand)}\\
+\frac{dP}{dq}=0\ &\Rightarrow\ q_*=-\frac{\mathrm{Re}\langle\mathbf b,\mathbf c\rangle}{\|\mathbf b\|^2} && \text{(minimize)}\\
+\frac{P(q_*)}{P_c}&=1-\eta^2,\qquad \eta^2=\frac{[\mathrm{Re}\langle\mathbf b,\mathbf c\rangle]^2}{\|\mathbf b\|^2\|\mathbf c\|^2}&& \text{(insert)}
+\end{align}
+$\eta^2$ is the share of the leak that points along the knob's own pattern $\mathbf b$: the knob removes that part and nothing else. In this work $\eta^2$ is a model quantity: it is computed from a knob's measured response $\mathbf b$ and the measured leak $\mathbf c$. No knob has been measured yet, so the tables of Section~5 assume ideal knobs, each removing exactly the harmonics it targets; for such a knob $\eta^2$ equals the share of those harmonics. In general $P(q)/P_c=1-\eta^2+\eta^2(q/q_*-1)^2$: at $2q_*$ the loss is back where it started, and beyond that, or with the wrong sign, it is higher. A knob aimed at one harmonic also radiates into others, which is why zeroing a single harmonic can raise the total.
+
+\textbf{Several knobs.} \emph{Problem:} find $n$ real knob settings $\mathbf q$ that zero a chosen set of $K$ complex coefficients $\mathbf c_S$ while the mode width $W$ and the resonance $\lambda$ stay fixed. \emph{Linear model:} $\mathbf c_S(\mathbf q)=\mathbf c_S+\mathsf B_S\mathbf q$, $W(\mathbf q)=W+\mathbf w\cdot\mathbf q$, $\lambda(\mathbf q)=\lambda+\mathbf v\cdot\mathbf q$. \emph{Conditions:} $\mathbf c_S+\mathsf B_S\mathbf q=0$ (real and imaginary parts, $2K$ equations), $\mathbf w\cdot\mathbf q=0$ and $\mathbf v\cdot\mathbf q=0$. Stacked,
+\begin{equation}
+\mathsf M\mathbf q=-\mathbf r,\qquad
+\mathsf M=\begin{pmatrix}\mathrm{Re}\,\mathsf B_S\\ \mathrm{Im}\,\mathsf B_S\\ \mathbf w^{\mathsf T}\\ \mathbf v^{\mathsf T}\end{pmatrix},\qquad
+\mathbf r=\begin{pmatrix}\mathrm{Re}\,\mathbf c_S\\ \mathrm{Im}\,\mathbf c_S\\ 0\\ 0\end{pmatrix},\qquad
+\mathbf q=-\mathsf M^{+}\mathbf r .
+\end{equation}
+\emph{Solution:} $\mathsf M$ has $2K+2$ rows, so $2K+2$ knobs are necessary but not sufficient: their responses must be independent, the knobs mirror symmetric in $y$ and $z$, and the changes in the linear range. With $n=2K+2$ knobs it is square and the solution is exact; with more knobs the pseudo inverse gives the smallest change; with fewer, the least squares compromise. $\mathsf B_S$, $\mathbf w$ and $\mathbf v$ come from two runs per knob, and one run validates the result; if the changes are large, the step is repeated from the new point (Newton's method). Targeting the whole leak instead, $\min\|\mathbf c+\mathsf B\mathbf q\|^2$, is the same solve with all coefficients, and the singular value decomposition of $\mathsf B$ shows which leak patterns the knobs can reach at all. This is the general form of Johnson's idea: if one singular vector carries most of the leak, its partner vector is the list of geometry changes to make.
+
+\section{Measured harmonic content}
+\textbf{Far field and Poynting flux.} The fields are recorded at the resonance on two planar monitors 80\,$\mu$m long, one above the cavity ($+z$) and one beside it ($+y$). Using the mirror symmetry in $y$ and $z$, with the parity read from the data, they are completed into a closed tube around the cavity with open, tapered ends. By the equivalence principle the tangential fields act as surface currents $\mathbf J=\hat{\mathbf n}\times\mathbf H$ and $\mathbf M=-\hat{\mathbf n}\times\mathbf E$ radiating into uniform oxide; their far field gives the radiated Poynting flux per solid angle, $dP/d\Omega=r^2|\mathbf E_\mathrm{far}|^2/(2\eta)$ (Fig.~\ref{fig:maps}). The power through the tube and the integral of the far field agree to 0.1\,\% (TE) and 1.8\,\% (TM).
+
+\begin{figure}[H]
+\centering\includegraphics[width=0.90\textwidth]{cancel_farfield_maps.png}
+\caption{Radiated power per solid angle at resonance, in dB relative to the peak, seen from above (top row) and from the side (bottom row); $u_x$ runs along the waveguide.}
+\label{fig:maps}
+\end{figure}
+
+Figures~\ref{fig:te}--\ref{fig:tm} then give the share of the radiated power in each harmonic, computed by projecting the far field (Eq.~\ref{eq:twoways}) with the expansion centred at the $\pi$ shift. The far field is computed from the fields on a closed surface around the cavity at the resonance; the shares sum to the total power to within 0.1\,\%.
+
+\begin{figure}[H]
+\centering\includegraphics[width=0.86\textwidth]{cancel_channels_te_plain.png}
+\caption{TE, plain grating. Orders $l\le5$ hold 95\,\% of the radiated power; electric and magnetic are about equal (51 / 49\,\%). The largest harmonics are $\beta_{33}$ (19\,\%), $\alpha_{10}$ (14\,\%), $\alpha_{21}$ (13\,\%), $\beta_{44}$ (12\,\%) and $\beta_{22}$ (11\,\%).}
+\label{fig:te}
+\end{figure}
+
+\begin{figure}[H]
+\centering\includegraphics[width=0.86\textwidth]{cancel_channels_te_overshoot.png}
+\caption{TE, overshoot apodization. Only 53\,\% of the power is in $l\le12$; the spectrum reaches $l\approx25$ and the largest harmonic, $\alpha_{21}$, holds 6\,\%. Power weighted mean order 15.}
+\label{fig:os}
+\end{figure}
+
+\begin{figure}[H]
+\centering\includegraphics[width=0.86\textwidth]{cancel_channels_tm_plain.png}
+\caption{TM, plain grating at the same mode width. 74\,\% is in $l\le5$, with a long tail from light leaving along the waveguide axis; 9\,\% of the power falls in the cone around the axis where the closed surface is open, so these shares are indicative.}
+\label{fig:tm}
+\end{figure}
+
+\textbf{The expansion centre.} Single harmonic shares depend on where the expansion is centred. Moving the centre by 0.19\,$\mu$m along the grating changes the plain TE magnetic dipole from 5 to 20\,\% and order $l=3$ from 23 to 41\,\%, while the block $l\le5$ stays between 94.7 and 95.8\,\%. The overlap $\eta^2$ of a real knob does not depend on this choice, so the harmonic table is a diagnostic of how compact the source is, and knobs are designed against the whole leak.
+
+\section{What cancellation can gain}
+\textbf{Loss budget.} With coupling to the two ports $Q_c=Q_L/\sqrt T$, cavity radiation $Q_\mathrm{rad}$ from the radiated fraction $L$ through $L=2Q_L^2/(Q_cQ_\mathrm{rad})$, and the remainder $1/Q_\mathrm{rest}=1/Q_L-1/Q_c-1/Q_\mathrm{rad}$, the three devices split as in Table~\ref{tab:budget}. These are estimates built on that two port model.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{lrrrrr}
+\toprule
+device & $Q_c$ & $Q_\mathrm{rad}$ & $Q_\mathrm{rest}$ & $Q_i$ & radiation share of internal loss \\
+\midrule
+TE, plain grating & 1774 & $4.4\times10^4$ & $2.5\times10^5$ & $3.8\times10^4$ & 85\,\% \\
+TE, overshoot apodization & 7802 & $2.2\times10^6$ & $7.6\times10^5$ & $5.7\times10^5$ & 26\,\% \\
+TM, plain grating & 1727 & $4.9\times10^4$ & $1.8\times10^5$ & $3.8\times10^4$ & 78\,\% \\
+\bottomrule
+\end{tabular}
+\caption{Loss budget at $N=98$. $Q_\mathrm{rest}$ collects everything that is neither port coupling nor cavity radiation, probably scattering at the grating ends.}
+\label{tab:budget}
+\end{table}
+
+\textbf{Removing harmonics.} If the harmonics holding a fraction $f$ of the cavity radiation are cancelled cleanly, the radiation loss falls to $(1-f)$ of its value and $Q_\mathrm{rad}\to Q_\mathrm{rad}/(1-f)$. The quantity a reader knows is the $Q$ of the device at the $-3$\,dB, 20\,$\mu$m operating point: $Q_{-3\,\mathrm{dB}}=0.293\,Q_i$. For the plain TE and TM devices the internal loss at that length is essentially the cavity radiation (their $Q_i$ at the operating point equals $Q_\mathrm{rad}$ above to within a few percent), so $Q_{-3\,\mathrm{dB}}$ scales as $1/(1-f)$ from the measured values, 12\,903 (TE) and 13\,930 (TM). For the overshoot device the stored $Q_i$ ladder of the same apodization (best conditioned point, $N=195$) gives $Q_i\approx6.7\times10^5$, so $Q_{-3\,\mathrm{dB}}\approx2.0\times10^5$, a floor. With $Q_\mathrm{rad}=2.2\times10^6$ from the far field, radiation is about a third of its internal loss, and $1/Q_i=(1-f)/Q_\mathrm{rad}+1/Q_\mathrm{other}$ with $Q_\mathrm{other}=9.7\times10^5$. All entries are upper bounds: a real knob also radiates into harmonics it was not meant for, and other losses are neglected. For the overshoot the ladder geometry (an earlier reconstruction of the same apodization) and the far field device are not identical. The far field device's own $Q_i$ at $N=98$, with $T$ corrected for the early stop, is $8\times10^5$ to $10^6$, which puts radiation at 37 to 46\,\% of its loss and the ceilings at about $+20$ to $+28$\,\% for twenty harmonics and $\times1.6$ to $\times1.9$ for all radiation, against $+17$\,\% and $\times1.44$ in the table. For plain TE a residual loss that the 2\,\% agreement cannot exclude would lower the ten harmonic entry from 113\,000 to about 94\,000.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{llrrr}
+\toprule
+device & harmonics cancelled & knobs & radiation loss at $N=98$ & $Q$ \\
+\midrule
+TE, plain & none & & 7.3\,\% & 12\,900 at $-3$\,dB \\
+ & largest $\beta$ & 4 & 5.9\,\% & 16\,000 \\
+ & largest $\beta$ and $\alpha$ & 6 & 4.9\,\% & 19\,000 \\
+ & 5 largest & 12 & 2.3\,\% & 41\,000 \\
+ & 10 largest & 22 & 0.8\,\% & 113\,000 \\
+\midrule
+TM, plain & none & & 6.5\,\% & 13\,900 at $-3$\,dB \\
+ & largest $\alpha$ & 4 & 5.6\,\% & 16\,300 \\
+ & 5 largest & 12 & 3.6\,\% & 25\,600 \\
+ & 10 largest & 22 & 2.3\,\% & 40\,100 \\
+\midrule
+TE, overshoot & none & & 0.69\,\% & 198\,000 at $-3$\,dB \\
+ & largest $\alpha$ & 4 & 0.65\,\% & 201\,000 \\
+ & 5 largest & 12 & 0.56\,\% & 210\,000 \\
+ & 20 largest & 42 & 0.37\,\% & 230\,000 \\
+\bottomrule
+\end{tabular}
+\caption{Estimated (not simulated) upper bounds on cancelling the largest harmonics, expansion centred at the $\pi$ shift. Radiation loss in \% of the input power at $N=98$. For plain TE the single harmonic gain ranges from 1.24 to 1.63$\times$ and the five harmonic gain from 3.2 to 6.1$\times$ over expansion centres within $\pm0.19$\,$\mu$m.}
+\label{tab:gain}
+\end{table}
+
+\textbf{Reading the table.} For the plain TE device the leak is compact, so a modest number of coordinated knobs at the junction could remove most of it; cancelling one harmonic is not worth a design. For the overshoot device the same number of harmonics holds much less of the leak, and the cavity radiation is a smaller part of its loss, so the same calculation gives small gains.
+
+\section{The overshoot device: loss budget}
+The far field run of this device used the production auto shutoff. Measured on another copy of the same seed, this shutoff biases $T$ low by 0.008 to 0.012 at this $Q$ (a fixed 150\,ps simulation gives 0.9807). The 1.9 points of port loss not seen as cavity radiation are therefore probably mostly this bias rather than end scattering, and the radiation share in Table~\ref{tab:budget} is probably closer to one half than one quarter. One run at a fixed simulation time with a closed surface spanning the whole grating settles the budget. An inverse Fourier transform of its far field places the radiation at the apodization lobes, at about $\pm6$, $\pm13$ and $\pm25$\,$\mu$m, rather than at the junction.
+
+\section{The plain TE device: knobs}
+A feature at distance $x$ from the $\pi$ shift reaches orders up to $l\approx kx$ ($k=5.82\,\mu$m$^{-1}$ in oxide): the first tooth reaches $l\le3$, teeth two and three $l\le5$, which covers 95\,\% of the plain TE leak. Features inside the core see a standing wave and supply only a sign; the phase comes from position.
+\begin{itemize}
+\item \textbf{Inner teeth.} Width of teeth one and two, left and right separately (there is no mirror plane across the shift), shift of the inner teeth for the phase, and the cavity gap length to hold the resonance. Five knobs (tooth one width and shift on each side, plus the gap) cost about ten runs.
+\item \textbf{A short second grating at the junction} (untested). A few periods of a second corrugation with period $\Lambda_2$ scatter the guided wave $\beta$ to $k_x=\beta-2\pi/\Lambda_2$. Choosing $\Lambda_2=2\pi/(\beta+k|u_x|)\approx575$\,nm sends the forward wave to $u_x\approx-0.8$ and the backward wave to $u_x\approx+0.8$, the two lobes where the TE leak peaks. Its length $L$ sets the angular width, $\Delta u_x\approx2\pi/(kL)\approx0.5$ for 2\,$\mu$m, comparable to the leak; its offset sets the phase and its depth the amplitude, so each patch supplies one complex coefficient. Kept short and near the junction, it reaches the same low orders as the leak.
+\item \textbf{Not useful:} holes or posts on the axis (they reach 2 to 5\,\% of the leak); long cladding combs, whose narrow beam suits the TM leak along the axis but not the broad TE pattern; and a second tooth set at \emph{half the pitch} along the whole grating, which scatters $\pm\beta$ to $\pm3\beta$, outside the light cone. The difference from the short second grating is the period: 575\,nm lands inside the light cone, 250\,nm does not.
+\end{itemize}
+
+\section{Corrections to the earlier notes}
+\begin{itemize}
+\item The ``largest harmonic group 19\,\%'' in v7 is the single harmonic $\beta_{33}$. Order $l=3$ as a whole holds 31\,\%, a ceiling of 1.45$\times$ if all four of its harmonics were cancelled.
+\item The magnetic dipole was 2\,\% in v6.2 and is 14\,\% now. v6.2 used a different device (TE, $N=80$, corrugation 300\,nm), a single top monitor projected at the band centre rather than the resonance, and assumed a mirror plane in $x$ that forbids the magnetic dipole. The change is a change of measurement, not of physics.
+\item The 83\,\% of the plain TE leak reproduced by sources within $\pm0.5$\,$\mu$m of the shift is a ceiling for ideal currents. A realistic share for real tooth changes may be near 10\,\%; only the knob runs can decide.
+\end{itemize}
+
+\section{Conclusions}
+\begin{itemize}
+\item \textbf{The plain TE leak is not a dipole.} Dipoles ($l=1$) carry 14\,\% of it (5 to 20\,\% depending on the expansion centre, almost all of it the magnetic dipole; the electric dipole is 0.7\,\%); 95\,\% lies in orders $l\le5$. For the overshoot the dipole share is 6\,\%, for TM 11\,\%.
+\item \textbf{Model.} The leak splits into independent electric and magnetic harmonics, read directly from the simulated far field. A small geometry change moves every harmonic linearly; the best setting of one knob is the minimum of a parabola, and several knobs are set by one linear solve at fixed width and resonance.
+\item \textbf{Plain TE.} The leak is compact, 95\,\% in $l\le5$. Cancelling its ten largest harmonics could raise $Q$ at $-3$\,dB from 12\,900 to about $10^5$ (an upper bound, 22 knobs).
+\item \textbf{Overshoot.} With $Q\approx2\times10^5$, its leak spreads to $l\approx25$ and is a third to a half of its loss. Twenty harmonics add about 20\,\%; even removing all its radiation gives at most $\times1.4$ to $\times1.9$.
+\item \textbf{Comparison.} The ideal plain TE result stays below the overshoot under every estimate.
+\item \textbf{Decision.} On present numbers harmonic cancellation is not worth pursuing: it cannot lift the plain TE grating past the overshoot, and it adds only tens of percent to the overshoot. One measurement can change this: if the overshoot's own loss budget shows that radiation dominates its loss, the ceiling rises and the path reopens. No real knob has been tested, so all gains above are upper bounds.
+\end{itemize}
+
+\section{Next steps}
+\begin{enumerate}
+\item \textbf{Decide.} Measure the overshoot's own loss budget and $Q$ at $-3$\,dB at a fixed simulation time; continue only if radiation dominates its loss.
+\item \textbf{Choose the perturbation.} Find the geometry change near the junction (inner tooth widths and positions) that reaches the largest harmonics, and measure its response, two runs per knob.
+\item \textbf{Optimize.} Solve for the knob settings at fixed width and resonance, then validate with one run.
+\end{enumerate}
+
+\section*{Data}
+Far fields: IGUM job 100034 (2026-10-05), Lumerical 2026 R1.3, mesh dx 50\,nm, boxes 6.8 / 6.81\,$\mu$m (TE) and 8.0 / 8.8\,$\mu$m (TM), far field at the resonance from a closed surface. Shutoff bias: Athena jobs 174406 and 174645 at a fixed 150\,ps simulation time. Johnson et al., Appl.\ Phys.\ Lett.\ \textbf{78}, 3388 (2001).
+
+\end{document}

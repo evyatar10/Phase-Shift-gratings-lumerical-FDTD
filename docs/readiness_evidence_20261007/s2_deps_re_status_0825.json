@@ -1,0 +1,14 @@
+{
+  "accounting": {
+    "exit_code": 0,
+    "out": "170926_0        RUNNING   00:24:52                 0:0 \n170926_0.ba+    RUNNING   00:24:52                 0:0 \n170926_0.ex+    RUNNING   00:24:52                 0:0 \n170926_1        RUNNING   00:24:52                 0:0 \n170926_1.ba+    RUNNING   00:24:52                 0:0 \n170926_1.ex+    RUNNING   00:24:52                 0:0 \n170926_2        RUNNING   00:24:52                 0:0 \n170926_2.ba+    RUNNING   00:24:52                 0:0 \n170926_2.ex+    RUNNING   00:24:52                 0:0 \n170926_3        RUNNING   00:24:52                 0:0 \n170926_3.ba+    RUNNING   00:24:52                 0:0 \n170926_3.ex+    RUNNING   00:24:52                 0:0 \n170950_0        RUNNING   00:04:02                 0:0 \n170950_0.ba+    RUNNING   00:04:02                 0:0 \n170950_0.ex+    RUNNING   00:04:02                 0:0 \n",
+    "err": ""
+  },
+  "queue": {
+    "exit_code": 0,
+    "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n          170926_0 a100-publ lum_pipe evyatarr  R      24:52      1 n309\n          170926_1 a100-publ lum_pipe evyatarr  R      24:52      1 n309\n          170926_2 a100-publ lum_pipe evyatarr  R      24:52      1 n309\n          170926_3 a100-publ lum_pipe evyatarr  R      24:52      1 n310\n          170950_0 l40s-publ s2_deps_ evyatarr  R       4:02      1 athena-post\n",
+    "err": ""
+  },
+  "deps_log_tail": "SWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\nUsing CONSTANT Materials (object-defined dielectric): SiN=1.97, SiO2=1.444\n08:21:12 - INFO - Generating optimization project...\n08:21:16 - INFO - FDTD version '8.35.4572' meets the minimum requirement.",
+  "checked_at": "2026-10-07T08:25:00.457204+03:00"
+}

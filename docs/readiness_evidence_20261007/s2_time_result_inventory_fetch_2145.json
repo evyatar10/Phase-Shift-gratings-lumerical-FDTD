@@ -1,0 +1,14 @@
+{
+  "accounting": {
+    "rc": 0,
+    "out": "JobID|State|ExitCode|Elapsed\n171733_0|RUNNING|0:0|00:01:23\n171733_0.batch|RUNNING|0:0|00:01:23\n171733_0.extern|RUNNING|0:0|00:01:23\n",
+    "err": ""
+  },
+  "queue": {
+    "rc": 0,
+    "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n          171733_0 l40s-publ s2_time_ evyatarr  R       1:23      1 athena-post\n",
+    "err": ""
+  },
+  "report_exists": false,
+  "log_tail": "============================================================\nArray:      171733[0]\nNode:       athena-post\nStarted:    Wed Oct  7 09:43:12 PM IDT 2026\nGPU:        none requested; no-solve CAD probe\nCPUs:       8\nSWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\n"
+}

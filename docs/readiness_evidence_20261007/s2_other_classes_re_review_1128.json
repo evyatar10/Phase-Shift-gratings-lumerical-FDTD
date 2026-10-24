@@ -1,0 +1,50 @@
+{
+  "job": "171145_0",
+  "completed": true,
+  "elapsed": "00:05:34",
+  "no_fdtd_solve": true,
+  "originals_preserved": true,
+  "source_sha256": "0be8299d6607388f373876bf16b5f15e3d894220efcd770b9cccedd6f46d526d",
+  "report_sha256": "98ddf3b319561b5a51f2a2f62f6bd868cf910c6ad6068be17af1f56e85ef59eb",
+  "rows": [
+    {
+      "index": 0,
+      "label": "corr_1",
+      "raw_contraction": 0.00029327743576382616,
+      "original_1nm_raw_contraction": 0.00029327743576382313,
+      "relative_difference": 1.03511750743897e-14
+    },
+    {
+      "index": 60,
+      "label": "avg_1",
+      "raw_contraction": 0.010743148444375187,
+      "original_1nm_raw_contraction": 0.010743148444374972,
+      "relative_difference": 2.0022595064648088e-14
+    },
+    {
+      "index": 120,
+      "label": "shift_1",
+      "raw_contraction": 0.0003035759342601648,
+      "original_1nm_raw_contraction": 0.00030357593426015865,
+      "relative_difference": 2.0178616231461413e-14
+    },
+    {
+      "index": 149,
+      "label": "shift_30",
+      "raw_contraction": 0.20875441140950038,
+      "original_1nm_raw_contraction": 0.20875441140949622,
+      "relative_difference": 1.9943704730519277e-14
+    },
+    {
+      "index": 295,
+      "label": "wcav",
+      "raw_contraction": 0.0027148273266758066,
+      "original_1nm_raw_contraction": 0.002714827326675751,
+      "relative_difference": 2.0447396667113287e-14
+    }
+  ],
+  "max_abs_relative_difference": 2.0447396667113287e-14,
+  "verdict": "Re single-parameter reconstruction agrees with original full-loop values near roundoff. No support for a Re geometry-restoration carryover error in these probes. Does not validate actual adjoint physics or calibrate C; Im pending.",
+  "Im_job": "171151_0",
+  "Im_submitted_at": "2026-10-07T11:26:23+03:00"
+}

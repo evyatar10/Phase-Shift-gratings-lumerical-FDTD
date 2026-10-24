@@ -48,7 +48,16 @@ right the first time.
      type (`runners/lumopt2_design/port_norm_ref.py`; stored refs in
      `results_from_athena/port_norm_ref/`) — never run a second simulation per device.
 
-5. End with the full absolute local path(s) of the file(s) inspected.
+5. **Spectrum traps (2026-10-20, found by a GPT review after a wrong number was nearly used):**
+   `wl_m`/`wl_nm` are stored DESCENDING — sort before `np.interp` (unsorted gave |S21| 0.05 for a
+   0.987 line). `S11_complex`/`S21_complex` are feed-de-embedded AND phase-aligned per run
+   (`simulation_config.py` port options; `analysis.py`), so they are NOT a phase reference for the
+   stored far-field / tube surfaces (`surface_top/side`, one frequency point `surface_top.lam`).
+   Cross-run far-field phases: divide by the cavity Lorentzian at that run's `lam_ff`
+   (det = 2 Q_L (lam_ff - lam_res)/lam_res; DFT fields are already cwnorm'd), amplitude per stored
+   energy ∝ sqrt(Q_L)·T^(1/4); never by S21.
+
+6. End with the full absolute local path(s) of the file(s) inspected.
 
 ## Keep it minimal
 

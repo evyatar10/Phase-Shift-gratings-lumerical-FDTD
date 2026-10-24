@@ -1,0 +1,153 @@
+[--gpu] pinned partition list to: a100-public
+============================================================
+Target: evyatarrubin@athena.technion.ac.il  (Athena cluster — athena.technion.ac.il)
+Remote: /home/evyatarrubin/bragg_sim_athena
+============================================================
+
+=== Creating remote directories ===
+
+=== Uploading project files ===
+sending incremental file list
+
+sent 239 bytes  received 12 bytes  167.33 bytes/sec
+total size is 215,976  speedup is 860.46
+  syncing runners/ (single + sweeps + studies)
+sending incremental file list
+.d..t...... lumopt2_design/
+<f.st...... lumopt2_design/AL_COMBINED_DESIGN.md
+<f.st...... lumopt2_design/THEORY.md
+<f+++++++++ lumopt2_design/diagnose_te_s2_fdstep.py
+<f+++++++++ lumopt2_design/evaluation_budget.py
+<f.st...... lumopt2_design/lumopt2_design.py
+<f+++++++++ lumopt2_design/persistence.py
+<f+++++++++ lumopt2_design/smoke_te_s2_restart.py
+<f+++++++++ lumopt2_design/width_contract.py
+.d..t...... lumopt2_design/__pycache__/
+<f+++++++++ lumopt2_design/__pycache__/diagnose_te_s2_fdstep.cpython-314.pyc
+<f+++++++++ lumopt2_design/__pycache__/evaluation_budget.cpython-314.pyc
+<f.st...... lumopt2_design/__pycache__/lumopt2_design.cpython-314.pyc
+<f+++++++++ lumopt2_design/__pycache__/persistence.cpython-314.pyc
+<f+++++++++ lumopt2_design/__pycache__/smoke_te_s2_restart.cpython-314.pyc
+<f+++++++++ lumopt2_design/__pycache__/width_contract.cpython-314.pyc
+.d..t...... lumopt2_design/gates/
+<f+++++++++ lumopt2_design/gates/gate_campaign_budget.py
+<f+++++++++ lumopt2_design/gates/gate_evaluation_budget.py
+<f+++++++++ lumopt2_design/gates/gate_modal_guard.py
+<f+++++++++ lumopt2_design/gates/gate_persistence.py
+<f.st...... lumopt2_design/gates/gate_projection_local.py
+<f+++++++++ lumopt2_design/gates/gate_s2_fdstep_diagnostic.py
+<f+++++++++ lumopt2_design/gates/gate_s2_smoke.py
+<f.st...... lumopt2_design/gates/gate_v3_local.py
+<f+++++++++ lumopt2_design/gates/gate_width_contract.py
+<f.st...... lumopt2_design/gates/run_all_gates.py
+
+sent 409,956 bytes  received 5,723 bytes  166,271.60 bytes/sec
+total size is 7,771,767  speedup is 18.70
+  syncing convergence_testing/
+sending incremental file list
+
+sent 354 bytes  received 13 bytes  244.67 bytes/sec
+total size is 131,181  speedup is 357.44
+
+=== Uploading neff data ===
+sending incremental file list
+
+sent 71 bytes  received 12 bytes  33.20 bytes/sec
+total size is 16,424  speedup is 197.88
+
+=== Uploading Athena job scripts and helpers ===
+sending incremental file list
+
+sent 207 bytes  received 12 bytes  146.00 bytes/sec
+total size is 43,546  speedup is 198.84
+sending incremental file list
+<f..tp..... athena_run_one.py
+<f+++++++++ test_watch_te_recovery.py
+<f+++++++++ watch_te_recovery.py
+
+sent 8,215 bytes  received 265 bytes  5,653.33 bytes/sec
+total size is 55,937  speedup is 6.60
+
+=== Upload complete ===
+
+=== Submitting SLURM job ===
+
+Option 3: building sweep_list.txt locally for kind='lumopt2_design'...
+Wrote 3 task lines to: C:/Users/evyat/Lumerical/phase_shift_grating_FTDT_codes/results_from_athena/_sweep_list.txt
+SWEEP_META: kind=lumopt2_design
+SWEEP_META: spec_module=runners.lumopt2_design.diagnose_te_s2_fdstep
+[--array-tasks] overriding array range to: 0
+Uploading sweep list as data/sweep_list_diagnose_te_s2_fdstep.txt ...
+Array: 0%1  (3 tasks total, max 1 concurrent)
+[--mem] requesting 256G host RAM for this array
+[lumopt2] QOS override: 12h_4g
+[lumopt2] walltime override: 02:00:00
+Submitted: Submitted batch job 170901
+
+============================================================
+Job submitted: Submitted batch job 170901
+
+You will receive an email at job start, finish, and failure.
+
+Check status at any time:
+  bash athena/deploy_athena.sh --status
+
+Live log on Athena cluster:
+  ssh evyatarrubin@athena.technion.ac.il tail -f /home/evyatarrubin/bragg_sim_athena/jobs/logs/lum_*170901*.out
+
+Download results after job finishes:
+  bash athena/deploy_athena.sh --results           # prompts for mode
+  bash athena/deploy_athena.sh --results-no-fsp    # data files only (fast)
+  bash athena/deploy_athena.sh --results-full      # everything incl. .fsp (heavy)
+============================================================
+
+STDERR
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+...
+sbatch: lua: Submitted: 170901.4294967294 component: 0 using: sbatch

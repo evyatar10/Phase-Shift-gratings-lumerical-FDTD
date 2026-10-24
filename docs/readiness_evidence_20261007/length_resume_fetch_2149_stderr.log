@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "<stdin>", line 7, in <module>
+  File "<readonly_fetch>", line 143, in remote_capture
+  File "<readonly_fetch>", line 26, in need
+RuntimeError: Cold capture unexpectedly imported CAD API

@@ -1,0 +1,5 @@
+{
+  "rc": 1,
+  "out": "",
+  "err": "...\r\n  File \"<stdin>\", line 7\n    print(json.dumps(dict(at=datetime.datetime.now().astimezone().isoformat(),accounting=run(['sacct','-j','171276','--format=JobID,State,ExitCode,Elapsed','-nP']),engine={str(p):p.read_text(errors='replace')[-2000:] for p in root.rglob('*_p0.log')},checkpoints=[str(p) for p in root.glob('task_*.json')]))))\n                                                                                                                                                                                                                                                                                                                   ^\nSyntaxError: unmatched ')'\n"
+}

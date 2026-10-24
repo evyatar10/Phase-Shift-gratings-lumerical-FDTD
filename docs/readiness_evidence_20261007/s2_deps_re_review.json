@@ -1,0 +1,7 @@
+{
+  "reviewed_at": "2026-10-07T08:32:16.618696+03:00",
+  "re_checkpoint_sha256": "73ae6c36fc75ac0c1a9ca470aff3c6627cb49c94f230b9b839810b5ade505440",
+  "h1_relative_difference": 4.108184463226988e-14,
+  "verdict": "RE_EXTRACTION_REPRODUCES_REFERENCE_AUTHORIZE_IM_SAME_PROBE",
+  "limitations": "No global calibration pass; Im and forward step convergence pending."
+}

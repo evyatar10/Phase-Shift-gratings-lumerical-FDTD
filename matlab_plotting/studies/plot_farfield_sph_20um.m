@@ -5,16 +5,16 @@
 % Input: the *_multipoles.csv files written by python_tools/farfield_multipole.py.
 % Study: runners/sweeps/farfield_sph_20um.py
 clear; close all;
+% 2026-10-10: input = the CORRECTED tube-projection far fields (IGUM 100034); figures land in
+% results_from_igum/farfield_sph_20um/. Use 'results_from_athena' for the original 164893 planar version.
 D = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), ...
-             'results_from_athena', 'farfield_sph_20um', 'results');
+             'results_from_igum', 'farfield_sph_20um', 'results');
 LMAX = 12;
 dev = { ...
-  'result_N98_avg_C250_Ybox6p8_Zbox6p8_ff', ...
-    sprintf('TE plain, corr 250 nm, N=98\n\\lambda 1559.99 nm, T 0.912, mode 19.1 \\mum'); ...
-  'result_N98_W951_Wavg1000_C494_ptw98W951to1247_ptn98W951to753_Ybox6p8_Zbox6p8_ff', ...
-    sprintf('TE overshoot apodization (Nt60), N=98\n\\lambda 1559.87 nm, T 0.973, mode 19.6 \\mum'); ...
-  'result_N98_TM_avg_C325_Ybox8p0_Zbox8p8_ff', ...
-    sprintf('TM plain, corr 325 nm, N=98\n\\lambda 1559.07 nm, T 0.915, mode 19.2 \\mum')};
+  'result_N98_avg_C250_Ybox6p8_Zbox6p8_ff', 'TE, plain grating'; ...
+  'result_N98_W951_Wavg1000_C494_ptw98W951to1247_ptn98W951to753_Ybox6p8_Zbox6p8_ff', 'TE, overshoot apodization'; ...
+  'result_N98_TM_avg_C325_Ybox8p0_Zbox8p8_ff', 'TM, plain grating'};
+% 2026-10-10: article style titles (panel letter + device); lambda, T and mode width live in the captions.
 
 fig = figure('Color', 'w', 'Position', [50 50 1750 1000]);
 tl = tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
@@ -37,7 +37,7 @@ for d = 1:size(dev, 1)
         im = imagesc(0:LMAX, 0:LMAX, P); set(im, 'AlphaData', ~isnan(P));
         set(ax, 'YDir', 'normal', 'XTick', 0:LMAX, 'YTick', 0:LMAX, 'FontSize', 9, ...
                 'Color', 'w', 'TickLength', [0 0]); clim([0 cmax]); box on;
-        xlabel('|m|'); ylabel('l');
+        xlabel('|m|'); ylabel('l', 'Rotation', 0);
         for l = 0:LMAX
             for m = 0:l
                 v = P(l + 1, m + 1);
@@ -47,12 +47,11 @@ for d = 1:size(dev, 1)
                 end
             end
         end
-        title(sprintf('%s\n%s multipoles: %.1f%% of power (l > %d: %.1f%%)', ...
-              dev{d, 2}, nm, 100 * sum(T.(sprintf('frac_%s', nm(1)))), LMAX, rest), 'FontSize', 9.5);
+        title(sprintf('(%s) %s, %s', char('a' + (typ - 1) * 3 + d - 1), dev{d, 2}, lower(nm)), ...
+              'FontSize', 11, 'FontWeight', 'normal');
     end
 end
 colormap(flipud(hot)); cb = colorbar; cb.Layout.Tile = 'east'; cb.Label.String = '% of radiated power';
-title(tl, 'Far-field vector spherical-harmonic content at resonance (% of radiated power per (l, |m|), \pm m summed)', 'FontSize', 11);
 
 out = fullfile(D, '..', 'farfield_sph_20um_triangles');
 savefig(fig, [out '.fig']); exportgraphics(fig, [out '.png'], 'Resolution', 150);
@@ -71,15 +70,14 @@ for typ = 1:2
     end
     ax = nexttile; im = imagesc(0:LMAX2, 0:LMAX2, P); set(im, 'AlphaData', ~isnan(P));
     set(ax, 'YDir', 'normal', 'XTick', 0:2:LMAX2, 'YTick', 0:2:LMAX2, 'FontSize', 9, 'TickLength', [0 0]);
-    clim([0 6]); box on; xlabel('|m|'); ylabel('l');
+    clim([0 6]); box on; xlabel('|m|'); ylabel('l', 'Rotation', 0);
     for l = 0:LMAX2, for m = 0:l
         v = P(l + 1, m + 1);
         if v >= 0.3, text(m, l, sprintf('%.1f', v), 'HorizontalAlignment', 'center', 'FontSize', 6.5, 'Color', [0 0 0] + (v > 3.5) * [1 1 1]); end
     end, end
-    title(sprintf('%s\n%s multipoles: %.1f%% of power (l > %d: %.1f%%)', dev{d, 2}, nm, 100 * sum(col), LMAX2, 100 * sum(col(T.l > LMAX2))), 'FontSize', 9.5);
+    title(sprintf('(%s) %s, %s', char('a' + typ - 1), dev{d, 2}, lower(nm)), 'FontSize', 11, 'FontWeight', 'normal');
 end
 colormap(flipud(hot)); cb = colorbar; cb.Layout.Tile = 'east'; cb.Label.String = '% of radiated power';
-title(tl2, 'TE overshoot device: far-field spherical-harmonic content to l = 24 (\pm m summed)', 'FontSize', 11);
 out2 = fullfile(D, '..', 'farfield_sph_20um_overshoot_l24');
 savefig(fig2, [out2 '.fig']); exportgraphics(fig2, [out2 '.png'], 'Resolution', 150);
 
@@ -94,7 +92,7 @@ for d = 1:3
     xline(lam_ff, 'r-', sprintf('far field %.3f', lam_ff), 'LabelOrientation', 'horizontal', 'LabelVerticalAlignment', 'bottom');
     fw = abs(S.spectral_fwhm_nm); xlim(S.resonance_wavelength_nm + 3 * fw * [-1 1]); ylim([0 1]);
     xlabel('\lambda (nm)'); ylabel('T'); grid on;
-    title(sprintf('%s\nlinewidth %.3f nm, offset %.0f%% of it', dev{d, 2}, fw, 100 * abs(lam_ff - S.resonance_wavelength_nm) / fw), 'FontSize', 9.5);
+    title(sprintf('(%s) %s', char('a' + d - 1), dev{d, 2}), 'FontSize', 11, 'FontWeight', 'normal');
 end
 out3 = fullfile(D, '..', 'farfield_sph_20um_on_resonance');
 savefig(fig3, [out3 '.fig']); exportgraphics(fig3, [out3 '.png'], 'Resolution', 150);
@@ -137,7 +135,7 @@ for d = 1:3
     colormap(ax, cmap); cb = colorbar(ax); clim(ax, [log10(vmin) log10(vmax)]);
     cb.Ticks = log10([0.05 0.1 0.2 0.5 1 2 5 10 20]); cb.TickLabels = {'0.05', '0.1', '0.2', '0.5', '1', '2', '5', '10', '20'};
     cb.Label.String = '% of radiated power (log scale; white < 0.05%)';
-    title(ax, {dev{d, 2}; sprintf('Far-field spherical-harmonic content, E + M summed, l > %d: %.1f%%', LMAX3, rest)}, 'FontSize', 10);
+    title(ax, sprintf('%s, electric + magnetic', dev{d, 2}), 'FontSize', 12, 'FontWeight', 'normal');
     o = fullfile(D, '..', ['farfield_sph_20um_triangle_' short{d}]);
     savefig(f4, [o '.fig']); exportgraphics(f4, [o '.png'], 'Resolution', 150); fprintf('saved %s\n', o);
 end
@@ -239,6 +237,130 @@ title({'Loss budget at resonance (corrected method)'; 'part of the port loss is 
 title(tl, 'The far-field measurement: what was wrong, and what the corrected one shows', 'FontSize', 12);
 save2(f, DR, 'farfield_v7_method_and_budget');
 fprintf('saved report figures in %s\n', DR);
+
+%% ── Cancellation deck figures (2026-10-10), article style: panel letter + device, details in captions.
+% Input: *_multipoles.csv (tube projection, IGUM 100034) and the TE plain files written with
+% farfield_multipole.py --origin-x (expansion centre moved along the grating). Output: cancel_*.fig/.png in DR.
+% A channel = (type, l, |m|): the y mirror ties +m and -m, so each channel is one complex number.
+FS = 11; cE = [0.00 0.45 0.74]; cM = [0.85 0.33 0.10]; cG = [0.47 0.67 0.19];
+devc = {dev{1, 1}, dev{2, 1}, dev{3, 1}}; dname = {dev{1, 2}, dev{2, 2}, dev{3, 2}};
+xo = [-0.19 -0.125 0 0.125 0.19];                        % TE plain expansion centres (um); 0 = pi shift
+csvA = @(x0) fullfile(D, [devc{1} iif(x0 == 0, '_multipoles.csv', sprintf('_multipoles_x%+.3fum.csv', x0))]);
+
+% C1: power per order l, electric and magnetic stacked, cumulative share on the right axis
+f = figure('Color', 'w', 'Position', [40 40 1500 420]);
+tiledlayout(1, 3, 'TileSpacing', 'compact', 'Padding', 'compact'); LM = [10 30 20];
+for d = 1:3
+    T = readtable(fullfile(D, [devc{d} '_multipoles.csv'])); L = LM(d);
+    PE = accumarray(T.l + 1, T.frac_E); PM = accumarray(T.l + 1, T.frac_M);
+    ax = nexttile; b = bar(0:L, 100 * [PE(1:L + 1) PM(1:L + 1)], 'stacked', 'BarWidth', 0.8, 'EdgeColor', 'none');
+    b(1).FaceColor = cE; b(2).FaceColor = cM; xlim([0.3 L + 0.7]);
+    xlabel('multipole order l'); ylabel('radiated power (%)');
+    cum = 100 * cumsum(PE(1:L + 1) + PM(1:L + 1));
+    yyaxis right; hc = plot(1:L, cum(2:end), 'k-o', 'MarkerSize', 3, 'LineWidth', 1.1);
+    ylim([0 100]); ylabel('cumulative (%)'); ax.YAxis(2).Color = 'k'; yyaxis left; ax.YAxis(1).Color = 'k';
+    set(ax, 'FontSize', FS, 'TickDir', 'out', 'Box', 'off');
+    title(sprintf('(%s) %s', char('a' + d - 1), dname{d}), 'FontWeight', 'normal');
+    if d == 1, legend([b(1) b(2) hc], {'electric', 'magnetic', 'cumulative'}, 'Location', 'east', 'Box', 'off'); end
+end
+save2(f, DR, 'cancel_order_spectra');
+
+% C2: power per channel (l, |m|), electric (beta_lm) and magnetic (alpha_lm) side by side, one figure per device
+short = {'te_plain', 'te_overshoot', 'tm_plain'}; LC = [7 12 10]; CM = [20 20 20];    % one colour scale for all three devices (user, 2026-10-11)
+for d = 1:3
+    f = figure('Color', 'w', 'Position', [40 40 900 400]);    % small canvas = large text on a slide
+    tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+    T = readtable(fullfile(D, [devc{d} '_multipoles.csv'])); L = LC(d); fsz = 12 - 3 * (L > 7);
+    for typ = 1:2
+        col = T.frac_E; nm = 'electric (\beta_{lm})'; if typ == 2, col = T.frac_M; nm = 'magnetic (\alpha_{lm})'; end
+        P = nan(L + 1); for l = 1:L, P(l + 1, 1:l + 1) = 0; end
+        for k = 1:height(T)
+            if T.l(k) <= L, P(T.l(k) + 1, abs(T.m(k)) + 1) = P(T.l(k) + 1, abs(T.m(k)) + 1) + 100 * col(k); end
+        end
+        ax = nexttile; im = imagesc(0:L, 0:L, P); set(im, 'AlphaData', ~isnan(P)); clim([0 CM(d)]);
+        set(ax, 'YDir', 'normal', 'XTick', 0:L, 'YTick', 1:L, 'FontSize', 13, 'TickLength', [0 0], 'XTickLabelRotation', 0); ylim([0.5 L + 0.5]);
+        for l = 1:L, for m = 0:l
+            v = P(l + 1, m + 1);
+            if v >= 0.3 + 0.2 * (L > 7), text(m, l, sprintf('%.1f', v), 'HorizontalAlignment', 'center', 'FontSize', fsz, 'Color', [0 0 0] + (v > 0.55 * CM(d)) * [1 1 1]); end
+        end, end
+        xlabel('|m|'); ylabel('l', 'Rotation', 0); title(sprintf('(%s) %s', char('a' + typ - 1), nm), 'FontWeight', 'normal');
+    end
+    colormap(flipud(hot)); cb = colorbar; cb.Layout.Tile = 'east'; cb.Label.String = 'radiated power (%)';
+    save2(f, DR, ['cancel_channels_' short{d}]);
+    fprintf('%s: shown l <= %d holds %.1f%% (E %.1f, M %.1f)\n', short{d}, L, 100 * sum(T.frac_E(T.l <= L) + T.frac_M(T.l <= L)), 100 * sum(T.frac_E), 100 * sum(T.frac_M));
+end
+
+% C3: cancellation ceiling: loss left after the K largest channels are removed exactly
+f = figure('Color', 'w', 'Position', [40 40 760 520]); ax = axes(f); hold(ax, 'on'); K = 1:30;
+R = zeros(numel(xo), numel(K));
+for j = 1:numel(xo), r = 1 - cumsum(chshare(readtable(csvA(xo(j))))); R(j, :) = 100 * r(K); end
+fill([K fliplr(K)], [min(R) fliplr(max(R))], cE, 'FaceAlpha', 0.15, 'EdgeColor', 'none');
+h(1) = plot(K, R(xo == 0, :), '-o', 'Color', cE, 'LineWidth', 1.6, 'MarkerFaceColor', cE, 'MarkerSize', 4);
+r = 1 - cumsum(chshare(readtable(fullfile(D, [devc{2} '_multipoles.csv'])))); h(2) = plot(K, 100 * r(K), '-s', 'Color', cM, 'LineWidth', 1.6, 'MarkerSize', 4);
+r = 1 - cumsum(chshare(readtable(fullfile(D, [devc{3} '_multipoles.csv'])))); h(3) = plot(K, 100 * r(K), '-^', 'Color', cG, 'LineWidth', 1.6, 'MarkerSize', 4);
+set(ax, 'YScale', 'log', 'FontSize', FS, 'TickDir', 'out', 'Box', 'off', 'XTick', [1 5:5:30]); ylim([1 100]); xlim([0.5 30.5]);
+set(ax, 'YTick', [1 2 5 10 20 50 100]); grid(ax, 'on'); ax.GridAlpha = 0.12; ax.MinorGridAlpha = 0.05;
+xlabel('channels cancelled, K (real knobs needed: 2K + 2)'); ylabel('radiated power left (%)');
+legend(h, {'TE, plain grating (band: expansion centre within \pm0.19 \mum)', dname{2}, dname{3}}, 'Location', 'southwest', 'Box', 'off');
+save2(f, DR, 'cancel_ceiling');
+
+% C4: TE plain, share per order l for five expansion centres
+f = figure('Color', 'w', 'Position', [40 40 820 480]); Y = zeros(7, numel(xo));
+for j = 1:numel(xo)
+    T = readtable(csvA(xo(j))); Pl = accumarray(T.l + 1, T.frac_E + T.frac_M); Y(:, j) = 100 * Pl(2:8);
+end
+b = bar(1:7, Y, 'BarWidth', 0.85, 'EdgeColor', 'none'); cm = flipud(parula(numel(xo) + 1));
+for j = 1:numel(xo), b(j).FaceColor = cm(j, :); end
+set(gca, 'FontSize', FS, 'TickDir', 'out', 'Box', 'off'); xlabel('multipole order l'); ylabel('radiated power (%)');
+legend(arrayfun(@(v) strrep(sprintf('x_0 = %+.3g \\mum', v), '+0 ', '0 '), xo, 'UniformOutput', false), 'Location', 'northeast', 'Box', 'off');
+save2(f, DR, 'cancel_origin_dependence');
+
+% C5: one knob of strength q against the leak: P/P_c = 1 - eta^2 + eta^2 (q/q_* - 1)^2
+f = figure('Color', 'w', 'Position', [40 40 760 480]); ax = axes(f); hold(ax, 'on'); q = linspace(-0.5, 2.5, 301);
+patch([2 2.5 2.5 2], [1 1 2.6 2.6], [0.85 0.85 0.85], 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+patch([-0.5 0 0 -0.5], [1 1 2.6 2.6], [0.85 0.85 0.85], 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+eta2 = [0.25 0.5 0.9]; cc = [cG; cM; cE]; hh = gobjects(1, 3);
+for j = 1:3, hh(j) = plot(q, 1 - eta2(j) + eta2(j) * (q - 1).^2, 'Color', cc(j, :), 'LineWidth', 1.8); end
+yline(1, 'k:'); xline([0 1 2], 'k:');
+set(ax, 'FontSize', FS, 'TickDir', 'out', 'Box', 'off', 'XTick', [0 1 2], 'XTickLabel', {'0', 'q_*', '2q_*'}); ylim([0 2.6]); xlim([-0.5 2.5]);
+xlabel('knob strength q'); ylabel('radiated power P / P_c');
+legend(hh, arrayfun(@(e) sprintf('\\eta^2 = %.2g', e), eta2, 'UniformOutput', false), 'Location', 'north', 'Box', 'off');
+text(2.25, 2.4, 'worse', 'HorizontalAlignment', 'center', 'FontSize', FS); text(-0.25, 2.4, 'worse', 'HorizontalAlignment', 'center', 'FontSize', FS);
+save2(f, DR, 'cancel_single_knob');
+
+% C6: radiated power per solid angle (far-field Poynting flux), seen from above (+z) and from the side (+y),
+% dB re peak; tube projection (report_data.mat). White outside the unit disk, tick labels on the outer panels only.
+f = figure('Color', 'w', 'Position', [40 40 1000 650]);    % small canvas = readable labels on a slide
+tiledlayout(2, 3, 'TileSpacing', 'tight', 'Padding', 'compact');
+sn = {'TE plain', 'TE overshoot', 'TM plain'}; vw = {'from above', 'from the side'}; yl = {'u_y', 'u_z'};
+th = linspace(0, 2 * pi, 361);
+for v = 1:2
+    for d = 1:3
+        S = RD.(tags{d}); u = S.u_map; M = S.map_top; if v == 2, M = S.map_side; end
+        [UX, UY] = meshgrid(u, u); M = max(10 * log10(M.'), -30); M(UX.^2 + UY.^2 > 1) = NaN;
+        ax = nexttile; hold(ax, 'on');
+        im = imagesc(ax, u, u, M); set(im, 'AlphaData', ~isnan(M)); plot(ax, cos(th), sin(th), 'k-', 'LineWidth', 0.6);
+        axis(ax, 'image'); xlim(ax, [-1.02 1.02]); ylim(ax, [-1.02 1.02]); clim(ax, [-30 0]);
+        set(ax, 'FontSize', 12, 'TickDir', 'out', 'XTick', -1:0.5:1, 'YTick', -1:0.5:1, 'Box', 'off', 'Color', 'w');
+        if v == 2, xlabel(ax, 'u_x'); else, set(ax, 'XTickLabel', []); end
+        if d == 1, ylabel(ax, yl{v}); else, set(ax, 'YTickLabel', []); end
+        title(ax, sprintf('(%s) %s, %s', char('a' + (v - 1) * 3 + d - 1), sn{d}, vw{v}), 'FontWeight', 'normal', 'FontSize', 12);
+    end
+end
+colormap(turbo); cb = colorbar; cb.Layout.Tile = 'east'; cb.Ticks = -30:10:0; cb.FontSize = 12;
+cb.Label.String = 'radiated power per solid angle (dB)';
+save2(f, DR, 'cancel_farfield_maps');
+fprintf('saved cancellation figures in %s\n', DR);
+
+function s = chshare(T)
+% channel shares (type, l, |m|) of one multipole csv, sorted large to small
+key = [T.l * 1000 + abs(T.m); 1e6 + T.l * 1000 + abs(T.m)];
+[~, ~, g] = unique(key); s = sort(accumarray(g, [T.frac_E; T.frac_M]), 'descend'); s = s / sum(s);
+end
+
+function out = iif(c, a, b)
+if c, out = a; else, out = b; end
+end
 
 function save2(f, folder, name)
 savefig(f, fullfile(folder, [name '.fig']));

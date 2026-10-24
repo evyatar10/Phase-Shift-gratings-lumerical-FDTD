@@ -20,9 +20,10 @@ for k = 1:numel(names)
 end
 xlabel(ax, 'x along the waveguide (\mum); \pi-shift cavity at x = 0');
 d = D.designs.(names{1}); ax = nexttile(tl); hold(ax, 'on');
-draw_device(ax, nar, wid, cav, P, [10 16], SiN); draw_posts(ax, d.x_nm(:)' * 1e-3, d.y_nm(:)' * 1e-3, d.r_nm(:)' * 1e-3, POST);
-axis(ax, 'equal'); xlim(ax, [10 16]); ylim(ax, [-0.2 max(d.y_nm) / 1e3 + 0.25]); set(ax, 'FontSize', 10); xlabel(ax, 'x (\mum)'); ylabel(ax, 'y (\mum)');
-title(ax, 'Zoom x 10-16 um (SiN posts, 350 nm)', 'Interpreter', 'none', 'FontSize', 11);
+if ~exist('zx', 'var'), zx = [10 16]; end   % zoom window (um); caller may preset
+draw_device(ax, nar, wid, cav, P, zx, SiN); draw_posts(ax, d.x_nm(:)' * 1e-3, d.y_nm(:)' * 1e-3, d.r_nm(:)' * 1e-3, POST);
+axis(ax, 'equal'); xlim(ax, zx); ylim(ax, [-0.2 max(d.y_nm) / 1e3 + 0.25]); set(ax, 'FontSize', 10); xlabel(ax, 'x (\mum)'); ylabel(ax, 'y (\mum)');
+title(ax, sprintf('Zoom x %g to %g um (SiN posts, 350 nm)', zx(1), zx(2)), 'Interpreter', 'none', 'FontSize', 11);
 if isfield(D, 'title'), ttl = D.title; else, ttl = sprintf('TE overshoot Nt80x + SiN posts (pitch %.0f nm, %d periods/side, %.1f nm)', D.pitch, D.n_side, D.lam); end
 title(tl, ttl, 'FontSize', 12);
 tag = strjoin(names, '_'); exportgraphics(f, fullfile(out, ['devices_' tag '.png']), 'Resolution', 150); savefig(f, fullfile(out, ['devices_' tag '.fig']));

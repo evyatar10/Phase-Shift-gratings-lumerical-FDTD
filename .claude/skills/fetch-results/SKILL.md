@@ -67,3 +67,8 @@ execute it in an **Opus subagent** (`Agent`, `model: "opus"`) with the steps abo
 as the brief, and have it return verdict lines only (queue state / job IDs /
 result paths / PASS-FAIL), never raw logs. Fable reads the verdict and decides.
 Exception: a single ssh line the manager needs right now is cheaper inline.
+
+
+## Windows path-length trap (2026-10-20)
+Scatterer-array result names run ~190 characters; with the local results path they exceed MAX_PATH, so `python open()` fails
+while bash `ls` still lists them. Rename the local copy to a short name right after the fetch (note the server name in memory).

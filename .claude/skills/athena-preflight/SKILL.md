@@ -70,7 +70,8 @@ which evade the pattern match).
 Ports open ≠ seats free. Probe the actual count from IGUM (reliable vantage;
 Athena lmstat is the documented false negative):
 ```bash
-ssh igum '$HOME/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/licensingclient/linx64/lmutil lmstat -c 1055@132.68.48.51 -f lum_fdtd_solve' | grep "Users of lum_fdtd_solve"
+ssh evyatarrubin@132.68.58.101 "LUM=~/research/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261; \$LUM/licensingclient/linx64/lmutil lmstat -c 1055@132.68.48.51 -f lum_fdtd_solve 2>&1 | grep 'Users of lum_fdtd_solve'"
+# (host = the IP from igum/igum.conf IGUM_HOST; `igum.ece.technion.ac.il` is the docs host and fails host-key verification — burned 2026-10-20)
 ```
 Budget by simultaneous solves and GPU SM count: under standard GPU solve
 licensing, ceil(SMs/16) seats per solve (A100 7, L40S 9; also check CPU license
@@ -88,3 +89,10 @@ execute it in an **Opus subagent** (`Agent`, `model: "opus"`) with the steps abo
 as the brief, and have it return verdict lines only (queue state / job IDs /
 result paths / PASS-FAIL), never raw logs. Fable reads the verdict and decides.
 Exception: a single ssh line the manager needs right now is cheaper inline.
+
+
+## Seat budget of your OWN fleet (incident 2026-10-20, job 265204 died 23 s in: `FlexNet Licensing error:-4,132` in the
+layout's `*_p0.log`): each GPU solve holds ceil(SMs/16) seats — H200 9, A100 7, L40S 9, the 188-SM node n317 12 (FlexNet -4,132 "only 10 of the requested 12" in the layout _p0.log; pin --gpu=a100 under seat pressure) — and lumopt2 lanes hold one solve's
+worth continuously. Sum RUNNING + about-to-start tasks (array %N, pending lanes) BEFORE dispatching: 4 H200 rows + 2 lanes +
+2 A100 rows = 59 > 50 killed the extra row. Loud `-4` in the engine log on Athena = seat starvation from your own fleet;
+the silent 1-s no-op is the shared-pool starvation signature. Recover failed array indices with `--array-tasks=<dead>`.

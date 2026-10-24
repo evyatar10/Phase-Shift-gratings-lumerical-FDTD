@@ -1,0 +1,13 @@
+{
+  "athena": {
+    "exit_code": 1,
+    "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n",
+    "err": "...\ndate: invalid argument \u00e2\u20ac\u02dcs\\r\u00e2\u20ac\u2122 for \u00e2\u20ac\u02dc--iso-8601\u00e2\u20ac\u2122\nValid arguments are:\n  - \u00e2\u20ac\u02dchours\u00e2\u20ac\u2122\n  - \u00e2\u20ac\u02dcminutes\u00e2\u20ac\u2122\n  - \u00e2\u20ac\u02dcdate\u00e2\u20ac\u2122\n  - \u00e2\u20ac\u02dcseconds\u00e2\u20ac\u2122\n  - \u00e2\u20ac\u02dcns\u00e2\u20ac\u2122\nTry 'date --help' for more information.\nsqueue: error: Invalid user: evyatarrubin\n\nquota: Bad output format units for human readable output: \nsacctmgr: invalid option -- '\n'\nTry \"sacctmgr --help\" for more information\n"
+  },
+  "igum": {
+    "exit_code": 0,
+    "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\nlmutil - Copyright (c) 1989-2025 Flexera. All Rights Reserved.\nFlexible License Manager status on Wed 10/7/2026 08:53\n\nLicense server status: 1055@lumerical-lm.ece.technion.ac.il\n    License file(s) on lumerical-lm.ece.technion.ac.il: /ansyslm/shared_files/licensing/license_files/ansyslmd.lic:\n\nlumerical-lm.ece.technion.ac.il: license server UP (MASTER) v11.19.4\n\nVendor daemon status (on lumerical-lm.ece.technion.ac.il):\n\n  ansyslmd: UP v11.19.4\nFeature usage info:\n\n\n",
+    "err": "date: invalid argument \u00e2\u20ac\u02dcs\\r\u00e2\u20ac\u2122 for \u00e2\u20ac\u02dc--iso-8601\u00e2\u20ac\u2122\nValid arguments are:\n  - \u00e2\u20ac\u02dchours\u00e2\u20ac\u2122\n  - \u00e2\u20ac\u02dcminutes\u00e2\u20ac\u2122\n  - \u00e2\u20ac\u02dcdate\u00e2\u20ac\u2122\n  - \u00e2\u20ac\u02dcseconds\u00e2\u20ac\u2122\n  - \u00e2\u20ac\u02dcns\u00e2\u20ac\u2122\nTry 'date --help' for more information.\nsqueue: error: Invalid user: evyatarrubin\n\n"
+  },
+  "checked_at": "2026-10-07T08:53:50.756879"
+}

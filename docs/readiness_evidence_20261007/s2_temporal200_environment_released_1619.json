@@ -1,0 +1,11 @@
+{
+  "KEEP_H5": "1",
+  "S2_TEMP200_REPO": "/work/project",
+  "S2_TEMP200_OUTPUT_ROOT": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007",
+  "S2_TEMP200_PARENT150_ROOT": "/work/results/diagnose_te_s2_temporal/results/s2_shift30_temporal_20261007",
+  "S2_TEMP200_PARENT150_MARKER": "/work/data/s2_temporal150_review_20261007_1257.json",
+  "S2_TEMP200_STEP150_ROOT": "/work/results/diagnose_te_s2_step150/results/s2_shift30_step150_20261007",
+  "S2_TEMP200_STEP150_MARKER": "/work/data/s2_step150_review_20261007_1507.json",
+  "S2_TEMP200_REVIEW_MARKER": "/work/data/s2_temporal200_review_20261007_1619.json",
+  "S2_TEMP200_REVIEW_SHA256": "4fe3c0e7fc37cced733ac7cf7b2ee3de3536213ee938e23a1095dffc307cd44f"
+}

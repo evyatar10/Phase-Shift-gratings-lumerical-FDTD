@@ -1,0 +1,47 @@
+============================================================
+Array:      171300[0]
+Node:       athena-post
+Started:    Wed Oct  7 03:44:33 PM IDT 2026
+GPU:        none requested; no-solve CAD probe
+CPUs:       8
+SWEEP_KIND: 
+SWEEP_LIST: /work/data/sweep_list.txt
+SWEEP_INDEX:0
+REQUIRE_GPU:0
+Container:  /home/evyatarrubin/containers/lumerical-2026R1.sif
+============================================================
+No devices were found
+(nvidia-smi not available)
+INFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.
+FWHM Calc -> Max: 1.15e-04, Min: 8.19e-07, Target: 5.80e-05
+/work/scripts/s2_saved_profiles_20261007_1542/extract_saved_spatial_profiles.py:97: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  power=np.sum(abs(e[:,:,0,0,:])**2,axis=-1);full_I=np.trapz(power,coords['y'],axis=1);need(np.allclose(full_I[aux['keep']],I,rtol=0,atol=0),'Production y integral mismatch')
+FWHM Calc -> Max: 1.15e-04, Min: 8.44e-07, Target: 5.77e-05
+FWHM Calc -> Max: 1.11e-04, Min: 8.20e-07, Target: 5.60e-05
+FWHM Calc -> Max: 1.13e-04, Min: 8.30e-07, Target: 5.67e-05
+FWHM Calc -> Max: 1.14e-04, Min: 8.38e-07, Target: 5.73e-05
+FWHM Calc -> Max: 1.15e-04, Min: 8.44e-07, Target: 5.77e-05
+FWHM Calc -> Max: 1.15e-04, Min: 8.26e-07, Target: 5.79e-05
+FWHM Calc -> Max: 1.15e-04, Min: 8.19e-07, Target: 5.80e-05
+FWHM Calc -> Max: 1.15e-04, Min: 8.46e-07, Target: 5.79e-05
+FWHM Calc -> Max: 1.14e-04, Min: 8.42e-07, Target: 5.76e-05
+FWHM Calc -> Max: 1.14e-04, Min: 8.36e-07, Target: 5.72e-05
+FWHM Calc -> Max: 1.15e-04, Min: 8.19e-07, Target: 5.80e-05
+FWHM Calc -> Max: 1.15e-04, Min: 8.44e-07, Target: 5.77e-05
+FWHM Calc -> Max: 1.11e-04, Min: 8.20e-07, Target: 5.60e-05
+FWHM Calc -> Max: 1.13e-04, Min: 8.30e-07, Target: 5.67e-05
+FWHM Calc -> Max: 1.14e-04, Min: 8.38e-07, Target: 5.73e-05
+FWHM Calc -> Max: 1.15e-04, Min: 8.44e-07, Target: 5.77e-05
+FWHM Calc -> Max: 1.15e-04, Min: 8.26e-07, Target: 5.79e-05
+FWHM Calc -> Max: 1.15e-04, Min: 8.19e-07, Target: 5.80e-05
+FWHM Calc -> Max: 1.15e-04, Min: 8.47e-07, Target: 5.79e-05
+FWHM Calc -> Max: 1.14e-04, Min: 8.43e-07, Target: 5.76e-05
+FWHM Calc -> Max: 1.14e-04, Min: 8.36e-07, Target: 5.72e-05
+SAVED_RAW_PROFILE_EXTRACTION_COMPLETE_NO_PHYSICS_PASS 
+[wrapper] python exit code: 0
+INFO:    Terminating fuse-overlayfs after timeout
+INFO:    Timeouts can be caused by a running background process
+============================================================
+Finished:  Wed Oct  7 03:45:46 PM IDT 2026
+Exit code: 0
+============================================================

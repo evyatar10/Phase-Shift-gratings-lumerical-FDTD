@@ -1,0 +1,13 @@
+{
+  "athena": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": "...\n"
+  },
+  "igum": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "time_utc": "2026-10-07T18:42:22.976720+00:00"
+}

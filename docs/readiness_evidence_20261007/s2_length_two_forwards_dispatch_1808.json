@@ -1,0 +1,5 @@
+{
+  "rc": 1,
+  "out": "",
+  "err": "Traceback (most recent call last):\n  File \"<stdin>\", line 9, in <module>\nAssertionError: {'rc': 1, 'out': '', 'err': 'slurm_load_jobs error: Invalid job id specified\\n'}\n"
+}

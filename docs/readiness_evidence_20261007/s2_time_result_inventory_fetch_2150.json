@@ -1,0 +1,10 @@
+{
+  "accounting": {
+    "rc": 0,
+    "out": "JobID|State|ExitCode|Elapsed\n171733_0|COMPLETED|0:0|00:01:48\n171733_0.batch|COMPLETED|0:0|00:01:48\n171733_0.extern|COMPLETED|0:0|00:01:48\n",
+    "err": ""
+  },
+  "report_exists": true,
+  "log_tail": "============================================================\nArray:      171733[0]\nNode:       athena-post\nStarted:    Wed Oct  7 09:43:12 PM IDT 2026\nGPU:        none requested; no-solve CAD probe\nCPUs:       8\nSWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\nALTERNATE_RESULT_INVENTORY_COLLECTED_NO_PHYSICS_PASS \n[wrapper] python exit code: 0\nINFO:    Terminating fuse-overlayfs after timeout\nINFO:    Timeouts can be caused by a running background process\n============================================================\nFinished:  Wed Oct  7 09:44:56 PM IDT 2026\nExit code: 0\n============================================================\n",
+  "report_sha256": "0bbba1ccd4aec748d553bb13dff06a4a448c0edb16bff05e319525c421ddc27f"
+}

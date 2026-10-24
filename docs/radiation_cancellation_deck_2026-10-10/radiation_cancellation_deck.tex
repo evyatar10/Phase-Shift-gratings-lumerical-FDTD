@@ -1,0 +1,260 @@
+% Radiation cancellation deck, 2026-10-11 (two parts: model, then can it be done). Data: IGUM 100034 far fields, N = 98.
+% Figures: matlab_plotting/studies/plot_farfield_sph_20um.m (sections C2, C6). Numbers verified by an independent check 2026-10-11.
+\documentclass[11pt, aspectratio=169]{beamer}
+
+\usetheme{Boadilla}
+\usecolortheme{seahorse}
+\setbeamertemplate{navigation symbols}{}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\vfuzz=5pt
+\hfuzz=5pt
+
+\setbeamertemplate{itemize/enumerate body begin}{\itemsep0.20cm}
+
+\title[Radiation Cancellation]{Radiation Cancellation}
+\subtitle{\texorpdfstring{A multipole model of the leak from $\pi$ shift Bragg grating cavities}{A multipole model of the leak from pi shift Bragg grating cavities}}
+\author[Evyatar Rubin]{\texorpdfstring{Evyatar Rubin \\ \textit{Research Update}}{Evyatar Rubin}}
+\date{October 12, 2026}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Main conclusions}
+    \begin{itemize}
+        \setlength{\itemsep}{0.30cm}
+        \item \textbf{The leak splits into electric and magnetic harmonics.}\\
+              {\footnotesize A small geometry change shifts each harmonic linearly, so several knobs are set by one linear solve.}
+        \item \textbf{The plain TE leak is mostly beyond the dipole.}\\
+              {\footnotesize Dipoles carry 14\,\% of it; 95\,\% lies in the first five orders.}
+        \item \textbf{Plain TE: ten cancelled harmonics could raise $Q$ at $-3$\,dB from 12\,900 to about $10^5$.}
+        \item \textbf{Overshoot ($Q\approx2\times10^5$): twenty harmonics would add about 20\,\%.}\\
+              {\footnotesize Radiation is only part of its loss; removing all of it gives $\times1.4$ to $\times1.9$.}
+    \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}
+    \vfill
+    \begin{center}
+        {\Large \textbf{Part I: The model}}
+        \vspace{0.5cm}
+
+        \large How a geometry change alters the radiated leak.
+    \end{center}
+    \vfill
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Johnson et al.\ cancelled one dominant harmonic with one knob}
+    \vspace{0.15cm}
+    \begin{columns}[T]
+        \begin{column}{0.49\textwidth}
+            \textbf{Johnson et al., APL 2001}
+            \vspace{0.25cm}
+            \begin{itemize}
+                \setlength{\itemsep}{0.20cm}
+                \item One knob swept until $Q$ peaks.
+                \item One harmonic carries almost all the loss.
+                \item Cancellation confirmed afterwards.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.49\textwidth}
+            \textbf{This cavity}
+            \vspace{0.25cm}
+            \begin{itemize}
+                \setlength{\itemsep}{0.20cm}
+                \item The loss is spread over several harmonics.
+                \item The model predicts what each knob can remove.
+                \item Several knobs are set together.
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    \vfill
+    {\footnotesize Johnson's 2D example has one field component, $E_z$, so each order has one coefficient. Our 3D field has two polarizations, so each $(l,m)$ has two.}
+    \vspace{0.10cm}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The leak is a sum of electric and magnetic harmonics}
+    \vspace{0.05cm}
+    \textbf{Far field.} Everything that differs from the oxide radiates:
+    \[
+        \mathbf A(\hat{\mathbf r}) = (\mathsf I-\hat{\mathbf r}\hat{\mathbf r})\int \Delta\varepsilon\,\mathbf E\,e^{-ik\hat{\mathbf r}\cdot\mathbf r}\,d^3r .
+    \]
+    \textbf{Harmonics.} The same coefficients from the far field, or from the source:
+    \begin{align*}
+        \alpha_{lm}&=\oint\mathbf X^*_{lm}\cdot\mathbf A\,d\Omega=4\pi(-i)^l\!\int\Delta\varepsilon\,j_l(kr)\,\mathbf X^*_{lm}\cdot\mathbf E\,d^3r,\\
+        \beta_{lm}&=\oint(\hat{\mathbf r}\times\mathbf X_{lm})^*\cdot\mathbf A\,d\Omega=\frac{4\pi i(-i)^l}{k}\!\int\Delta\varepsilon\,\mathbf E\cdot\nabla\times\bigl[j_l(kr)\,\mathbf X^*_{lm}\bigr]d^3r .
+    \end{align*}
+    {\footnotesize $\mathbf X_{lm}$: vector spherical harmonic, the angular pattern of order $(l,m)$; $j_l$: spherical Bessel function. $\alpha$ magnetic, $\beta$ electric; $P\propto\sum(|\alpha_{lm}|^2+|\beta_{lm}|^2)$.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{A feature adds its own coefficients to those of the leak}
+    \vspace{0.10cm}
+    \textbf{Leak:} its coefficients $\mathbf c=(\alpha_{lm},\beta_{lm})$, per unit stored energy.
+    \vspace{0.20cm}
+
+    \textbf{Feature:} strength $q$ (for example a tooth width); adds $\mathbf b$ per unit $q$, measured.
+    \[
+        \mathbf c(q)=\mathbf c+q\,\mathbf b,\qquad P(q)\propto\|\mathbf c+q\,\mathbf b\|^2 .
+    \]
+    {\footnotesize Linear while the feature is small: runs at $\pm h$ give equal and opposite changes.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{One knob: the best strength follows from $dP/dq=0$}
+    \vspace{0.05cm}
+    \textbf{1. Expand.} \hfill
+    $P(q)\propto\|\mathbf c\|^2+2q\,\mathrm{Re}\langle\mathbf b,\mathbf c\rangle+q^2\|\mathbf b\|^2$ \hfill\null
+    \vspace{0.30cm}
+
+    \textbf{2. Lowest loss where the slope is zero.} \hfill
+    $\dfrac{dP}{dq}=0\;\Rightarrow\; q_*=-\dfrac{\mathrm{Re}\langle\mathbf b,\mathbf c\rangle}{\|\mathbf b\|^2}$ \hfill\null
+    \vspace{0.30cm}
+
+    \textbf{3. Insert.} \hfill
+    $\dfrac{P(q_*)}{P_c}=1-\eta^2,\qquad \eta^2=\dfrac{[\mathrm{Re}\langle\mathbf b,\mathbf c\rangle]^2}{\|\mathbf b\|^2\|\mathbf c\|^2}$ \hfill\null
+    \vspace{0.35cm}
+
+    {\footnotesize $\eta^2$: the fraction of the leak this knob can remove. A knob set too strong overshoots: at $2q_*$ the loss is back at its original value, and beyond it is higher.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Several knobs: one linear problem}
+    \vspace{0.10cm}
+    \centering
+    \renewcommand{\arraystretch}{1.6}
+    \begin{tabular}{@{}ll@{}}
+        \toprule
+        \textbf{unknowns} & $\mathbf q=(q_1,\dots,q_n)$, the knob settings \\
+        \textbf{zero the targets} & $\mathbf c_S+\mathsf B_S\,\mathbf q=0$ \quad ($2K$ real equations) \\
+        \textbf{hold the width} & $\mathbf w\cdot\mathbf q=0$ \\
+        \textbf{hold the resonance} & $\mathbf v\cdot\mathbf q=0$ \\
+        \textbf{solution} & $\mathsf M\mathbf q=-\mathbf r\ \Rightarrow\ \mathbf q=-\mathsf M^{+}\mathbf r$ \\
+        \bottomrule
+    \end{tabular}\\[0.40cm]
+    \begin{minipage}{0.90\textwidth}
+    {\footnotesize $K$ target harmonics; $\mathsf B_S$, $\mathbf w$, $\mathbf v$: their response, two runs per knob. Exact with $2K+2$ knobs, least squares with fewer.}
+    \end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}
+    \vfill
+    \begin{center}
+        {\Large \textbf{Part II: Can it be done?}}
+        \vspace{0.5cm}
+
+        \large Measured harmonic content, and what ideal knobs would gain.
+    \end{center}
+    \vfill
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Each device leaks in a different angular pattern}
+    \centering
+    \includegraphics[width=0.80\textwidth,height=0.64\textheight,keepaspectratio]{cancel_farfield_maps.png}\\[0.25cm]
+    \begin{minipage}{0.94\textwidth}
+    {\footnotesize Radiated power per solid angle at resonance, dB relative to the peak; $u_x$ runs along the waveguide. Computed from $\mathbf E$ and $\mathbf H$ on a closed surface around the cavity, projected to the far field.}
+    \end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Plain TE: the leak sits in low order harmonics}
+    \centering
+    \includegraphics[width=0.84\textwidth,height=0.62\textheight,keepaspectratio]{cancel_channels_te_plain.png}\\[0.30cm]
+    \begin{minipage}{0.94\textwidth}
+    {\footnotesize Share of the radiated power per harmonic; $+m$ and $-m$ are equal by the mirror symmetry in $y$, so each cell is their sum. Corrugation 250\,nm, $N=98$, $T=0.912$, mode 19.1\,$\mu$m. Dipoles ($l=1$) hold 14\,\%; 95\,\% is in $l\le5$.}
+    \end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Overshoot apodization: the leak is spread over many orders}
+    \centering
+    \includegraphics[width=0.84\textwidth,height=0.62\textheight,keepaspectratio]{cancel_channels_te_overshoot.png}\\[0.30cm]
+    \begin{minipage}{0.94\textwidth}
+    {\footnotesize $N=98$, $T=0.973$, mode 19.6\,$\mu$m. Dipoles hold 6\,\%; half of the power is above $l=12$.}
+    \end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Plain TM at the same mode width}
+    \centering
+    \includegraphics[width=0.84\textwidth,height=0.62\textheight,keepaspectratio]{cancel_channels_tm_plain.png}\\[0.30cm]
+    \begin{minipage}{0.94\textwidth}
+    {\footnotesize Corrugation 325\,nm, $N=98$, $T=0.915$, mode 19.2\,$\mu$m. Dipoles hold 11\,\%; 74\,\% is in $l\le5$, with a tail along the waveguide axis.}
+    \end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Plain TE: cancelling ten harmonics could raise $Q$ up to $\times9$}
+    \vspace{0.20cm}
+    \centering
+    \begin{tabular}{lrrr}
+        \toprule
+        \textbf{harmonics cancelled} & \textbf{knobs} & \textbf{radiation loss} & \textbf{estimated $Q$ at $-3$\,dB} \\
+        \midrule
+        none & & 7.3\,\% & 12\,900 \\
+        largest $\beta$ & 4 & 5.9\,\% & 16\,000 \\
+        largest $\beta$ and $\alpha$ & 6 & 4.9\,\% & 19\,000 \\
+        5 largest & 12 & 2.3\,\% & 41\,000 \\
+        10 largest & 22 & 0.8\,\% & 113\,000 \\
+        \bottomrule
+    \end{tabular}\\[0.40cm]
+    \begin{minipage}{0.86\textwidth}
+    {\footnotesize Estimated for ideal knobs, each removing exactly its harmonics ($\eta^2$ equal to their share $f$): $Q$ at $-3$\,dB $=12\,900/(1-f)$. Example, 5 largest: $12\,900/0.31=41\,000$.}
+    \end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Overshoot: cancellation reaches only part of its loss}
+    \vspace{0.20cm}
+    \centering
+    \begin{tabular}{lrrr}
+        \toprule
+        \textbf{harmonics cancelled} & \textbf{knobs} & \textbf{radiation loss} & \textbf{estimated $Q$ at $-3$\,dB} \\
+        \midrule
+        none & & 0.69\,\% & 198\,000 \\
+        largest $\alpha$ & 4 & 0.65\,\% & 201\,000 \\
+        5 largest & 12 & 0.56\,\% & 210\,000 \\
+        10 largest & 22 & 0.48\,\% & 218\,000 \\
+        20 largest & 42 & 0.37\,\% & 230\,000 \\
+        \bottomrule
+    \end{tabular}\\[0.35cm]
+    \begin{minipage}{0.90\textwidth}
+    {\footnotesize Estimated for ideal knobs. Radiation ($Q_\mathrm{rad}=2.2\times10^6$) is a third of the internal loss ($Q_i=6.7\times10^5$), so $1/Q_i=(1-f)/Q_\mathrm{rad}+1/Q_\mathrm{other}$ and $Q_{-3\,\mathrm{dB}}=0.293\,Q_i$.}
+    \end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Conclusions}
+    \begin{itemize}
+        \setlength{\itemsep}{0.30cm}
+        \item \textbf{Model:} harmonics, the linear effect of a feature, one linear solve for all knobs.
+        \item \textbf{Plain TE:} a compact leak; about ten harmonics would have to cancel for a large gain.
+        \item \textbf{Overshoot:} a spread leak, and radiation is only part of its loss: tens of percent.
+        \item \textbf{Open question:} does radiation dominate the overshoot's loss? That sets how far cancellation can go.
+    \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Next steps}
+    \begin{itemize}
+        \setlength{\itemsep}{0.30cm}
+        \item \textbf{Decide:} measure the overshoot's own loss budget and $Q$ at $-3$\,dB at a fixed simulation time; continue only if radiation dominates.
+        \item \textbf{Choose the perturbation:} the geometry change near the junction that reaches the largest harmonics, with its response measured.
+        \item \textbf{Optimize:} solve for the knob settings at fixed width and resonance, then validate with one run.
+    \end{itemize}
+\end{frame}
+
+\end{document}

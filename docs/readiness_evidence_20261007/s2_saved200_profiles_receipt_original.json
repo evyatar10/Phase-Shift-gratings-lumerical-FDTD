@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "source_job_id": "171390",
+  "extraction_job_id": "171458",
+  "extraction_state": "COMPLETED",
+  "extraction_exit_code": "0:0",
+  "producer_sha256": "36ff78a1c567a911c84d707682e9dfa0e0e3e51c740e142a8be4d43f65e4f9f3",
+  "core_reader_sha256": "994c3e9757a10b5bd8ea211aaee8425c5d3540203a4da04b0439684163baf6ca",
+  "checkpoint_path": "/work/results/diagnose_te_s2_temporal200/results/s2_shift30_temporal200_20261007/task_00.json",
+  "checkpoint_sha256": "37fa4074d0dd5bfaa88bf6932b1ca1deed786620126b56f8a2d0c4cd44dbe029",
+  "report_path": "/work/results/s2_saved200_profiles_20261007/report.json",
+  "report_sha256": "28e963402efe32191123ef21c28cfc510f7e777506aaadc48485752c106eb89c",
+  "npz_path": "/work/results/s2_saved200_profiles_20261007/profiles_200ps.npz",
+  "npz_sha256": "8dc42e263f3a75b6b8c715711bcc99b39778ab2afb2c938ad9a1fea1265a98a0"
+}

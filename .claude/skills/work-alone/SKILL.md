@@ -46,6 +46,13 @@ you will PARK for the user. Then stop asking — everything after this is action
 
 ## Keeping the loop alive
 
+- **★END-OF-TURN WATCHER CHECK (incident 2026-10-21, ~5 h idle):** a watcher that EXITS to wake you is consumed by that wake.
+  Before ending ANY turn while autonomous, confirm a live wake mechanism exists for every pending job (a running background
+  watcher or Monitor); if the last one exited, re-arm it in the same turn. Bundled notifications are the trap: on 03:48 a
+  watcher wake arrived together with an unrelated task notification, the other one was handled, no watcher was re-armed, and
+  six finished rows plus the 07:00 follow-up window were lost. Prefer one long-lived Monitor (re-armed on every expiry) over
+  exit-on-change shell loops, and after handling ANY notification re-read the queue before ending the turn.
+
 - Never end a turn "waiting" without a mechanism that re-invokes you: a background
   watcher script (`run_in_background`) that polls the queue and **exits only on
   ssh-success AND condition met** (ssh failure ≠ queue empty — VPN blips), with an

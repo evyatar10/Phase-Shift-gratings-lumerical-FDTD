@@ -1,0 +1,13 @@
+{
+  "athena": {
+    "rc": 0,
+    "out": "{\"queue\": {\"rc\": 0, \"out\": \"             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\\n          171162_2 a100-publ lum_pipe evyatarr  R      32:38      1 n306\\n          171162_3 a100-publ lum_pipe evyatarr  R      32:38      1 n307\\n          171162_0 a100-publ lum_pipe evyatarr  R      32:39      1 n307\\n\", \"err\": \"\"}, \"quota\": {\"rc\": 0, \"out\": \"Disk quotas for user evyatarrubin (uid 14979): \\n     Filesystem   space   quota   limit   grace   files   quota   limit   grace\\n hpc-nfs1:/home    229G    300G    330G            115k   4295m   4295m        \\n\", \"err\": \"\"}, \"qos\": {\"rc\": 0, \"out\": \"Name|MaxTRESPU|MaxJobsPU|MaxSubmitPU\\n2h_2g|cpu=64,gres/gpu=2,mem=240G||100\\n\", \"err\": \"\"}}\n",
+    "err": "...\r\n"
+  },
+  "igum": {
+    "rc": 0,
+    "out": "{\"queue\": {\"rc\": 0, \"out\": \"             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\\n      101155_[0%1] part-pree lum_pipe evyatarr PD       0:00      1 (Resources)\\n\", \"err\": \"\"}, \"seats\": {\"rc\": 0, \"out\": \"lmutil - Copyright (c) 1989-2025 Flexera. All Rights Reserved.\\nFlexible License Manager status on Wed 10/7/2026 12:14\\n\\nLicense server status: 1055@lumerical-lm.ece.technion.ac.il\\n    License file(s) on lumerical-lm.ece.technion.ac.il: /ansyslm/shared_files/licensing/license_files/ansyslmd.lic:\\n\\nlumerical-lm.ece.technion.ac.il: license server UP (MASTER) v11.19.4\\n\\nVendor daemon status (on lumerical-lm.ece.technion.ac.il):\\n\\n  ansyslmd: UP v11.19.4\\nFeature usage info:\\n\\nUsers of lum_fdtd_solve:  (Total of 50 licenses issued;  Total of 7 licenses in use)\\n\\n  \\n\\\"lum_fdtd_solve\\\" v9999.9999, vendor: ansyslmd, expiry: 19-jan-2027\\n  vendor_string: customer:01141253 tp:at\\n  floating license\\n\\n    evyatarrubin n307.zeus.technion.ac.il evyatarrubin 2548284 (v2026.0708) (lumerical-lm.ece.technion.ac.il/1055 680), start Wed 10/7 11:42, 7 licenses\\n\\n\\n\", \"err\": \"\"}}\n",
+    "err": ""
+  },
+  "at": "2026-10-07T12:14:10.747481"
+}

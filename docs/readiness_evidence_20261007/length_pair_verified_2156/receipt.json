@@ -1,0 +1,523 @@
+{
+  "schema": 1,
+  "status": "NATIVE_PAIR_COLD_VERIFIED_READ_ONLY",
+  "job_id": "101434",
+  "at": "2026-10-07T18:54:58.343240+00:00",
+  "env_sha256": "61d9134df698b49eb3ca2bf05f3fc99244a4498010a5363dfcda4ca24f74eec0",
+  "marker_sha256": "d824bf5632c52defad99bf95be170d4921b011fea9dc455a50fdc29fb878f23a",
+  "helper_sha256": "88fc9cc4475f3b609582a9e0ffd69078274807daf3cf0fd7401fba1123018fb1",
+  "accounting": {
+    "sacct": {
+      "rc": 1,
+      "out": "",
+      "err": "sacct: error: slurm_persist_conn_open_without_init: failed to open persistent connection to host:localhost:6819: Connection refused\nsacct: error: Sending PersistInit msg: Connection refused\nsacct: error: Problem talking to the database: Connection refused\n",
+      "argv": [
+        "sacct",
+        "-j",
+        "101434",
+        "--format=JobID,State,ExitCode",
+        "-n",
+        "-P"
+      ]
+    },
+    "scontrol": {
+      "0": {
+        "rc": 1,
+        "out": "",
+        "err": "slurm_load_jobs error: Invalid job id specified\n",
+        "argv": [
+          "scontrol",
+          "show",
+          "job",
+          "101434_0",
+          "-o"
+        ]
+      },
+      "1": {
+        "rc": 1,
+        "out": "",
+        "err": "slurm_load_jobs error: Invalid job id specified\n",
+        "argv": [
+          "scontrol",
+          "show",
+          "job",
+          "101434_1",
+          "-o"
+        ]
+      }
+    }
+  },
+  "records": [
+    {
+      "task": 0,
+      "identity_sha256": "7ac6f3c5fd1f2ecb8046acc91c26c9f28ca5a53fa5ffe99cf47054ef7e9ce26c",
+      "profile_metadata_sha256": "07ba8691cf9a267601cbc309a025086b9a50c8cf2ac35bf6e8566892ea31730d",
+      "completion": {
+        "mode": "LIVE_ACCOUNTING_UNAVAILABLE_WRAPPER_PLUS_COLD_CP_AND_TERMINAL_ENGINE",
+        "live_sources": [],
+        "live_accounting_unavailable": [
+          "sacct: error or no exact task record",
+          "scontrol: rc1 slurm_load_jobs error: Invalid job id specified"
+        ],
+        "wrapper_sha256": "b59a7a97da61be7a2e35bb83107b9a1dfc43f69c85f579c5f3db879538600bf1",
+        "task": 0
+      }
+    },
+    {
+      "task": 1,
+      "identity_sha256": "bc85a7fc107e4223df3d997fbbb0b5a077f2887fa8c3475e78d9205db681c41c",
+      "profile_metadata_sha256": "b6b99b08a9c7c661ff032b53ec165159a56bc3deab1ab5f435f7c6727a11ecd1",
+      "completion": {
+        "mode": "LIVE_ACCOUNTING_UNAVAILABLE_WRAPPER_PLUS_COLD_CP_AND_TERMINAL_ENGINE",
+        "live_sources": [],
+        "live_accounting_unavailable": [
+          "sacct: error or no exact task record",
+          "scontrol: rc1 slurm_load_jobs error: Invalid job id specified"
+        ],
+        "wrapper_sha256": "9f81c09414f57be40a85f839d7fd8fe0fd7d2ae627519078b01b7dfdf70f307f",
+        "task": 1
+      }
+    }
+  ],
+  "retained_artifacts": {
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/data/s2_length_native_20261007/reference_150_center_original.json": {
+      "sha256": "a0ff55eacaa52e00a2aab17dcc43d0e5fff9a72566e15da371ff25279c172663",
+      "bytes": 732570,
+      "mtime_ns": 1791384691000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/data/s2_length_native_20261007/reference_port_grids.json": {
+      "sha256": "9aaaee8efe7d6017869b02705895ba1342c53175870dbcf46c8892b54241d6f4",
+      "bytes": 62329,
+      "mtime_ns": 1791384691000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/data/s2_length_native_20261007/reference_spatial_inventory_original.json": {
+      "sha256": "01a6fe6540c7cf903de67cecc42a89c6318983301364b679b9da0870dede595a",
+      "bytes": 216147,
+      "mtime_ns": 1791384691000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/data/s2_length_native_20261007/review_two_forwards.json": {
+      "sha256": "d824bf5632c52defad99bf95be170d4921b011fea9dc455a50fdc29fb878f23a",
+      "bytes": 28818,
+      "mtime_ns": 1791385564000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/jobs/logs/lum_array-101434_0.out": {
+      "sha256": "b59a7a97da61be7a2e35bb83107b9a1dfc43f69c85f579c5f3db879538600bf1",
+      "bytes": 4018,
+      "mtime_ns": 1791394312000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/jobs/logs/lum_array-101434_1.out": {
+      "sha256": "9f81c09414f57be40a85f839d7fd8fe0fd7d2ae627519078b01b7dfdf70f307f",
+      "bytes": 4242,
+      "mtime_ns": 1791394334000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/bragg_device.py": {
+      "sha256": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+      "bytes": 84714,
+      "mtime_ns": 1790701268000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/config.py": {
+      "sha256": "da07ca3cf48d1cdbe947350678bb8b9699918a513752b207883007c93ac82795",
+      "bytes": 1389,
+      "mtime_ns": 1777969495000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/campaign_te_s2.py": {
+      "sha256": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+      "bytes": 7526,
+      "mtime_ns": 1791287568000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/diagnose_te_s2_fdstep.py": {
+      "sha256": "3bf24e3ea47600f1c08f13803c7ab29bc6cf8b95c08fef63152168b1069ee361",
+      "bytes": 8217,
+      "mtime_ns": 1791341748000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/lumopt2_design.py": {
+      "sha256": "53108bbd368dd699179ab65029628aa4c4b2d8ad687777f88b82f404a0952569",
+      "bytes": 244962,
+      "mtime_ns": 1791340912000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/recover_te_s2.py": {
+      "sha256": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+      "bytes": 11445,
+      "mtime_ns": 1791311158000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/s2_fdhalf_classes.py": {
+      "sha256": "4f5f9d21cb95f5cfbcb1e0fc91ae960dc0dd57449c973369051c551c07c7bba1",
+      "bytes": 15948,
+      "mtime_ns": 1791384691000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/s2_length_fixed150.py": {
+      "sha256": "9076fb3d693604048df40f465d0987310651ebb92c39105979aa43a12a662490",
+      "bytes": 25003,
+      "mtime_ns": 1791384691000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/s2_length_fixed_domain_build.py": {
+      "sha256": "d5230121273d73a3fff4b7efe971ab945220be55c7b0682eb1b4a1a1bcb97c8c",
+      "bytes": 11606,
+      "mtime_ns": 1791384691000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/s2_length_no_solve_guard.py": {
+      "sha256": "40dd487831da68080b29813cdbef2e1ce9e6629528dccd3d7c431dfc1229e99d",
+      "bytes": 21346,
+      "mtime_ns": 1791384691000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/s2_length_reference_checks.py": {
+      "sha256": "1498643c2718607c07a2ccbe50a8278fdf90900041936867266c03380fb8d59f",
+      "bytes": 3922,
+      "mtime_ns": 1791384691000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/s2_shift30_convergence.py": {
+      "sha256": "7f0500a8a037961a3d72e3aa5d58ae2cd52ebbab2a8505f5395097adfac5c857",
+      "bytes": 15957,
+      "mtime_ns": 1791384691000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/s2_temporal_forward.py": {
+      "sha256": "555f3d13b42c494171e7658cc4263c588ce418e5d937da1497d690824b41d44a",
+      "bytes": 19135,
+      "mtime_ns": 1791384691000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/v3_step.py": {
+      "sha256": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8",
+      "bytes": 23700,
+      "mtime_ns": 1791227798000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/runners/lumopt2_design/validate_te.py": {
+      "sha256": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+      "bytes": 22298,
+      "mtime_ns": 1791309408000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/sim_helpers.py": {
+      "sha256": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+      "bytes": 33180,
+      "mtime_ns": 1791190561000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/project/simulation_config.py": {
+      "sha256": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+      "bytes": 45779,
+      "mtime_ns": 1791189321000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00.json": {
+      "sha256": "116fdc0be132d934626e5d776f4982b6cc628fdbb9d59d008591069ff34e0c83",
+      "bytes": 1712336,
+      "mtime_ns": 1791394312000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00_7dv32tut/N98_native_pre_correction.fsp": {
+      "sha256": "5cbdd809488f6489b78e7c050f44f003bc2c015c64975cc29d06e7614693304d",
+      "bytes": 1014561,
+      "mtime_ns": 1791391432000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00_7dv32tut/fwd_default.fsp": {
+      "sha256": "cd34ca2a8516c4c5e301e0f1d1ce327d900978e63c1054954d12a04b2f5485f4",
+      "bytes": 24929601,
+      "mtime_ns": 1791394260000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00_7dv32tut/fwd_default/fwd_default_output.h5": {
+      "sha256": "3f63a7857c0c95bd762ead25fa3f3a552df3152a1d49b9b47c7e8337e607c9e2",
+      "bytes": 796781770,
+      "mtime_ns": 1791394260000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00_7dv32tut/fwd_default_p0.log": {
+      "sha256": "ddfc00ae4d12f4f1213ba4876f865718f9f744e470e534ea76bc1d44534ab756",
+      "bytes": 18690,
+      "mtime_ns": 1791394260000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00_7dv32tut/ports.npz": {
+      "sha256": "9493abdb1adedc8c0e03452c9a03119e5dd1a074f49e97d08c882330ca3a3335",
+      "bytes": 134142,
+      "mtime_ns": 1791394309000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00_7dv32tut/prepared_forward_before_solve.fsp": {
+      "sha256": "e0a2af935ddbf305de67259abf73bf1e6c7985665c509c2295a47d0268afc662",
+      "bytes": 1014561,
+      "mtime_ns": 1791391444000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01.json": {
+      "sha256": "340325ffb42980b34eadbc224c2b9ce0aa6d6f1d8d6eb3ce4d3c58a8137ec0e9",
+      "bytes": 3170535,
+      "mtime_ns": 1791394334000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01_5ur74bqg/N80_native_pre_correction.fsp": {
+      "sha256": "f747f67825a1807e5d6fed8718abeade8ee01a2fc87899340b0966e2b65b6df1",
+      "bytes": 954153,
+      "mtime_ns": 1791391456000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01_5ur74bqg/fresh_N98_anchor/N98_native_pre_correction.fsp": {
+      "sha256": "a2cac5655f1346086beb130ebd4fd37633456e0d682be2ba500f930104ca6a3c",
+      "bytes": 1014561,
+      "mtime_ns": 1791391420000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01_5ur74bqg/fresh_N98_anchor/fwd_default.fsp": {
+      "sha256": "9d9ee1a1b54602df12ff67f5acfb73b1a0cb1aee90238e1e45a0ff217982da8c",
+      "bytes": 1014561,
+      "mtime_ns": 1791391427000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01_5ur74bqg/fwd_default.fsp": {
+      "sha256": "d1d09ee18808145f2dba368cddff71a7d3ea8ff7a65fec34c96cd80089c67d84",
+      "bytes": 24869193,
+      "mtime_ns": 1791394283000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01_5ur74bqg/fwd_default/fwd_default_output.h5": {
+      "sha256": "389d8d6cdf22d06426c317a25c52a7c133d14488e55678923a5a1cdee118416d",
+      "bytes": 791446830,
+      "mtime_ns": 1791394283000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01_5ur74bqg/fwd_default_p0.log": {
+      "sha256": "79018036e5a803a98c46773cefb31b016cf7ab6cb2782d6b898cf509d2fa52cd",
+      "bytes": 18691,
+      "mtime_ns": 1791394283000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01_5ur74bqg/ports.npz": {
+      "sha256": "405b88526789b708c77e9cf68b08f5a3e5c9bbaabde1ef463f1aace1a2c84e6d",
+      "bytes": 134142,
+      "mtime_ns": 1791394331000000000
+    },
+    "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01_5ur74bqg/prepared_forward_before_solve.fsp": {
+      "sha256": "b2c4b118a536e067c99cc3d9afbf915f4395984016adc9829df7c0b5a838479c",
+      "bytes": 954153,
+      "mtime_ns": 1791391467000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumapi.py": {
+      "sha256": "e455920c9ef6245dd587728a219348423e8c3196cfb3040f710bd2c728e9a66b",
+      "bytes": 77908,
+      "mtime_ns": 1783553254000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/__init__.py": {
+      "sha256": "9d2083f40812b74a8c4066764900ebd57f79945a645fe709f1f71fffd3a96a85",
+      "bytes": 10635,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/_version.py": {
+      "sha256": "d454a9e0ec34ee12db4c00ff4be1c92879cd51f2cbf7778014e531118d50d085",
+      "bytes": 754,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/core/__init__.py": {
+      "sha256": "149fdea1af9bb67f2bdaf902c98f36936f09c37add07c69617434f56c029b645",
+      "bytes": 305,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/core/fdtd_session.py": {
+      "sha256": "8fd99250c399d255dd28c2b2749af55774dd6d0fd9f47722fa68a5a2d9f36cad",
+      "bytes": 72747,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/core/optimization.py": {
+      "sha256": "c8a60c3fd1c28c782ab0fd6e0518dd07d3a9c039307c30b7aed59c1ab4274550",
+      "bytes": 50691,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/core/project.py": {
+      "sha256": "7ffc078ca07789e036b6be330dcc82b6c4b8762cbccbe0a7eb7907346087c88a",
+      "bytes": 40259,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/core/project_config.py": {
+      "sha256": "7e151ba146e48f6fa614f3c76d57d13a56b41fc6caa092a89ef2740a0381a912",
+      "bytes": 4619,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/fom/__init__.py": {
+      "sha256": "aa374787489e28983f738e0c7544105168269ac9039609d27ad8c4d54437b4ae",
+      "bytes": 1557,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/fom/base_fom.py": {
+      "sha256": "4f411de2a13c356b862172c42cde0f789f898d6b8537d2051aadf6308362d3f1",
+      "bytes": 26289,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/fom/field_fom.py": {
+      "sha256": "6cb945ab04dec8b75a54eae67b3bc6821c1360a32904053bfb3fdf5b4c4e0fee",
+      "bytes": 7145,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/fom/fom.py": {
+      "sha256": "1634527ee7584062cc5ce83fb1ad9dc2d55f1766da9b1590eee5eeef991c5e39",
+      "bytes": 2638,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/fom/port_fom.py": {
+      "sha256": "8384f90c7df452169ab3ff922059e16e1a9eb954690c81090137ad466d4c33b5",
+      "bytes": 37703,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/fom/simulation_results.py": {
+      "sha256": "e4f997af7dba11afc2b49582aee90e5f817fc654d79734cda382ad567d4c19c7",
+      "bytes": 14089,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/optimizer/__init__.py": {
+      "sha256": "19709efbe891f34a930ad0a1a5772fe3e4a53b74797478675848d2b72ab3a263",
+      "bytes": 399,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/optimizer/base_optimizer.py": {
+      "sha256": "d75b7465da8653ae96984d70618bb943f71948709f9d67add80b9f0b7ec97132",
+      "bytes": 10947,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/optimizer/scipy_optimizer.py": {
+      "sha256": "a0ecffccdc95502a0a5af1206ae75b1fc84193b508d49531cb7483226bff3649",
+      "bytes": 24934,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/parametrization/__init__.py": {
+      "sha256": "a9a8e7c867a9e4a27e6c7104fdf3437543e7a18688b07bc8438f7d09db26dcd6",
+      "bytes": 724,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/parametrization/base_parametrization.py": {
+      "sha256": "fe9f5505253fb76b907a1bea7529eb29b7992bb0887e8758113772811d6727fd",
+      "bytes": 12148,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/parametrization/closed_curve.py": {
+      "sha256": "00bbd9d82a973b537f97e76da7acb6bb6e5fa02fd727b741d901968dca1e13e3",
+      "bytes": 111720,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/parametrization/combined_parametrization.py": {
+      "sha256": "a2415161e047901597954d8c92c6b66da815929ab7c25601af5aba5fe1712ef7",
+      "bytes": 14759,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/parametrization/d_eps_calculator.py": {
+      "sha256": "ad8865d1ea557419955f690c86ce2531efaa41dd86d1b1e90401c43e39f5ee1d",
+      "bytes": 53587,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/parametrization/parametrization.py": {
+      "sha256": "4eee57114c00aefae2eb4980f2e9439edc359fa2e73a245acc975d71db87c1c4",
+      "bytes": 30517,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/parametrization/topology.py": {
+      "sha256": "2e7d08d76e80420e28d4ab26ce3ac96bdaad784e67f799b13b149b688af060ed",
+      "bytes": 9824,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/__init__.py": {
+      "sha256": "6adf3ca0439a6d85096dea1cebe1a7cd4dbb0d1cc207c7fe4468f6e28365c9b2",
+      "bytes": 1010,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/callbacks.py": {
+      "sha256": "7bf1ca8febcc90fe4edc02a5f49db06d48f897d1eae4fc30599c9e794658aca4",
+      "bytes": 9953,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/common.py": {
+      "sha256": "bfb35c08f0cd5e27841b2b95c1ef27af3f3e287c742a052c7a9c73a4b989ef83",
+      "bytes": 21186,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/config_map.py": {
+      "sha256": "294e9690f97b0b094c8531714c509d8837e09907079760cd2feb80811f31dfaf",
+      "bytes": 12494,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/doc_utils.py": {
+      "sha256": "4eb17f614ec4b1eb0aad1f83d2b11a74487367e8ad1614abfc6f1d48122f7b0b",
+      "bytes": 1441,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/fd_grad.py": {
+      "sha256": "c7027408ffbd232abc4106f27cda5d407525e7fa85a0f49239b2542b9991340b",
+      "bytes": 17035,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/file_logger.py": {
+      "sha256": "4a27e2c5b1c5152e83bcd9fd84db34834fbe1dd6072318768c8fb7d7caee31b5",
+      "bytes": 40892,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/graphical_visualizer.py": {
+      "sha256": "cebc1fb6521f2d6cf2c15783f9a7e06942601bb3ad6bdf0af780344e411db6fd",
+      "bytes": 33397,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/panels/__init__.py": {
+      "sha256": "7caa02fa6d06708bfd7e40dfea751cae85287976a119265234df89fbb043ffba",
+      "bytes": 869,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/panels/base.py": {
+      "sha256": "59bc6c8ed1fa067ed87024cf21174ad0888e179c71a645ae5d372c184501bf50",
+      "bytes": 6942,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/panels/fom.py": {
+      "sha256": "aa05ce0fd71851eabe87990ba53ae2dedb8b153a2d370dceaa2dcb30dddb5540",
+      "bytes": 4162,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/panels/geometry.py": {
+      "sha256": "1b306d474c4e2a05708e8432da98817696ad929c0549e8e4720e649aff84f2bc",
+      "bytes": 5001,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/panels/gradient.py": {
+      "sha256": "297ffd1b477fb6261cfd8402d044b74a69c1901e3d31da8b07175d8657adf9fa",
+      "bytes": 3953,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/panels/monitor.py": {
+      "sha256": "86ddd010b98b67d7d4da1b18a644761bbb446673293fd91635763d73455bcf40",
+      "bytes": 40584,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/profiler.py": {
+      "sha256": "2ac7ad25ccc9078ea221eda3f39a1baed28004b4f4c3c2835a1ca0eaa1e67e87",
+      "bytes": 11472,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/runner.py": {
+      "sha256": "b94874bd6ec512fa77e907f83cc639aa7228ebddb07e6f6e159746ae090cfcf0",
+      "bytes": 31343,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumopt2/utils/sparse_helpers.py": {
+      "sha256": "ce5bc7ea8c781c8c09ed3de027dafe46fbae31fabe40f932ac22411b32eb5189",
+      "bytes": 6541,
+      "mtime_ns": 1783554805000000000
+    },
+    "/research/amir.r/evyatarrubin/lumerical/Lumerical-2026-R1.3/opt/lumerical/v261/api/python/lumslurm.py": {
+      "sha256": "7648b7be6223b660b443f8a54dbdb7503b5f0d9f096da925b544e6d1c0b6ff5b",
+      "bytes": 34889,
+      "mtime_ns": 1783553254000000000
+    }
+  },
+  "all_inputs_preserved": true,
+  "no_CAD": true,
+  "no_solve": true,
+  "qualification": "FINITE_DURATION_LENGTH_SENSITIVITY_ONLY_NO_TEMPORAL_MESH_OR_GRADIENT_PASS",
+  "files": [
+    {
+      "file": "task_00.json",
+      "source_path": "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00.json",
+      "sha256": "116fdc0be132d934626e5d776f4982b6cc628fdbb9d59d008591069ff34e0c83",
+      "bytes": 1712336
+    },
+    {
+      "file": "task_00_ports.npz",
+      "source_path": "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_00_7dv32tut/ports.npz",
+      "sha256": "9493abdb1adedc8c0e03452c9a03119e5dd1a074f49e97d08c882330ca3a3335",
+      "bytes": 134142
+    },
+    {
+      "file": "task_01.json",
+      "source_path": "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01.json",
+      "sha256": "340325ffb42980b34eadbc224c2b9ce0aa6d6f1d8d6eb3ce4d3c58a8137ec0e9",
+      "bytes": 3170535
+    },
+    {
+      "file": "task_01_ports.npz",
+      "source_path": "/research/amir.r/evyatarrubin/bragg_sim_igum/results/diagnose_te_s2_length/results/s2_length_N98_N80_fixed150_20261007/task_01_5ur74bqg/ports.npz",
+      "sha256": "405b88526789b708c77e9cf68b08f5a3e5c9bbaabde1ef463f1aace1a2c84e6d",
+      "bytes": 134142
+    }
+  ],
+  "wrapper_log_hashes": {
+    "0": "b59a7a97da61be7a2e35bb83107b9a1dfc43f69c85f579c5f3db879538600bf1",
+    "1": "9f81c09414f57be40a85f839d7fd8fe0fd7d2ae627519078b01b7dfdf70f307f"
+  }
+}

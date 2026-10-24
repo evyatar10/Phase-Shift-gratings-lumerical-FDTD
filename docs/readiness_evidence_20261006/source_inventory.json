@@ -1,0 +1,5966 @@
+{
+  "scope": "Static syntax and seed contracts only; not physics validation",
+  "counts": {
+    ".py": 380,
+    ".sh": 23,
+    ".m": 128
+  },
+  "lines": 648081,
+  "syntax_errors": [],
+  "seeds": {
+    "S1_uniform": {
+      "label": "lumopt2_te_s1_v3",
+      "parameters": 296,
+      "active_parameters": 181,
+      "pitch_nm": 500.0,
+      "n_side": 98,
+      "n_free": 60,
+      "corr_min_nm": 250.0,
+      "corr_max_nm": 250.0,
+      "avg_min_nm": 800.0,
+      "avg_max_nm": 800.0,
+      "bulk_corr_nm": 250.0,
+      "cavity_width_nm": 800.0,
+      "physical_width_band_um": [
+        18.73858,
+        19.50342
+      ],
+      "softw_twin_anchor_um": 18.738,
+      "scan_center_nm": 1560.936,
+      "scan_width_nm": 10.0,
+      "n_wl_points": 501,
+      "lambda_step_bound_nm": 0.25,
+      "port_calibration": [
+        0.945335,
+        0.117012
+      ],
+      "field_calibration": [
+        0.96672,
+        0.03656
+      ],
+      "width_row_reuse": 0,
+      "corr_nm": [
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0,
+        250.0
+      ],
+      "avg_nm": [
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0,
+        800.0
+      ]
+    },
+    "S2_overshoot": {
+      "label": "lumopt2_te_s2_v3",
+      "parameters": 296,
+      "active_parameters": 181,
+      "pitch_nm": 491.06,
+      "n_side": 98,
+      "n_free": 60,
+      "corr_min_nm": 0.0,
+      "corr_max_nm": 634.3,
+      "avg_min_nm": 951.4,
+      "avg_max_nm": 1030.35,
+      "bulk_corr_nm": 494.2,
+      "cavity_width_nm": 951.4,
+      "physical_width_band_um": [
+        19.24328,
+        20.02872
+      ],
+      "softw_twin_anchor_um": 19.558,
+      "scan_center_nm": 1560.464,
+      "scan_width_nm": 2.0,
+      "n_wl_points": 501,
+      "lambda_step_bound_nm": 0.05,
+      "port_calibration": null,
+      "field_calibration": [
+        0.983623,
+        -0.088013
+      ],
+      "width_row_reuse": 0,
+      "corr_nm": [
+        0.0,
+        56.200000000000045,
+        75.89999999999998,
+        108.5,
+        145.79999999999995,
+        182.89999999999986,
+        218.79999999999995,
+        253.79999999999995,
+        288.29999999999995,
+        322.20000000000005,
+        355.5,
+        387.9999999999999,
+        419.60000000000014,
+        449.80000000000007,
+        478.70000000000005,
+        505.6,
+        530.5,
+        553.7,
+        575.4,
+        594.1999999999999,
+        609.7,
+        621.5999999999999,
+        629.6999999999999,
+        634.0,
+        634.3,
+        630.5,
+        622.5,
+        610.4000000000001,
+        596.5,
+        580.5,
+        562.7,
+        543.5,
+        523.7,
+        503.79999999999995,
+        484.5000000000001,
+        466.19999999999993,
+        448.89999999999986,
+        432.70000000000005,
+        417.70000000000005,
+        405.79999999999995,
+        397.19999999999993,
+        392.30000000000007,
+        390.80000000000007,
+        392.19999999999993,
+        396.10000000000014,
+        402.0,
+        408.30000000000007,
+        414.70000000000005,
+        421.39999999999986,
+        428.5000000000001,
+        435.9,
+        443.29999999999995,
+        450.69999999999993,
+        457.79999999999995,
+        464.5,
+        471.1,
+        477.70000000000005,
+        484.0999999999999,
+        489.4,
+        493.0
+      ],
+      "avg_nm": [
+        951.4,
+        952.0,
+        952.55,
+        953.75,
+        955.6999999999999,
+        958.15,
+        961.1,
+        964.4,
+        968.15,
+        972.3000000000001,
+        976.75,
+        981.5999999999999,
+        986.6,
+        991.8,
+        997.0500000000001,
+        1002.2,
+        1007.25,
+        1012.0500000000001,
+        1016.8,
+        1021.0,
+        1024.5500000000002,
+        1027.3,
+        1029.25,
+        1030.3,
+        1030.35,
+        1029.45,
+        1027.55,
+        1024.7,
+        1021.55,
+        1017.95,
+        1014.0500000000001,
+        1009.95,
+        1005.85,
+        1001.9,
+        998.1500000000001,
+        994.7,
+        991.65,
+        988.85,
+        986.35,
+        984.4,
+        983.0,
+        982.25,
+        982.0,
+        982.2,
+        982.85,
+        983.8,
+        984.75,
+        985.85,
+        986.9,
+        988.1500000000001,
+        989.3499999999999,
+        990.65,
+        991.95,
+        993.1999999999999,
+        994.45,
+        995.6500000000001,
+        996.85,
+        998.05,
+        999.0999999999999,
+        999.8
+      ]
+    }
+  },
+  "sources": [
+    {
+      "path": "analysis.py",
+      "bytes": 6043,
+      "lines": 169,
+      "sha256": "1ea5d80ae9b2b9ceeb9e16e412136c17462737e959ae84b4f44d1cdd2176d650",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "align_phases_at_resonance_peak",
+        "apply_phase_correction",
+        "calculate_physics_matrices",
+        "export_for_interconnect_symmetric"
+      ]
+    },
+    {
+      "path": "athena/deploy_athena.sh",
+      "bytes": 74255,
+      "lines": 1424,
+      "sha256": "4e997bd6791f4289eb04cace831ee161f45a23733ceaba9493a5587f7b5f2031",
+      "language": ".sh"
+    },
+    {
+      "path": "athena/h5_clean_once.sh",
+      "bytes": 1768,
+      "lines": 32,
+      "sha256": "43c1d0d5e30a3d3fb71e998122c703f0aa4ec72e6738632cf7d8e3abc1a9ba4a",
+      "language": ".sh"
+    },
+    {
+      "path": "athena/jobs/run_fsp_gpu.sh",
+      "bytes": 8912,
+      "lines": 202,
+      "sha256": "4262f8cb0f52715e107c527851be3a93e331fad763b2501e906dd3698b8d5fdf",
+      "language": ".sh"
+    },
+    {
+      "path": "athena/jobs/run_fsp_gpu_array.sh",
+      "bytes": 8022,
+      "lines": 193,
+      "sha256": "8189c55b868a8368a7e661f5e0ef3a720df0127533645f869c9e5fe56939f1b4",
+      "language": ".sh"
+    },
+    {
+      "path": "athena/jobs/run_mesh_aggregate.sh",
+      "bytes": 3957,
+      "lines": 98,
+      "sha256": "519dbdd72c26aa152d5ffaedbe9181eab41dda42efb6fee0381d98bd2ce61677",
+      "language": ".sh"
+    },
+    {
+      "path": "athena/jobs/run_python_array.sh",
+      "bytes": 7975,
+      "lines": 185,
+      "sha256": "ebf1780e1d23f6a5a885577ba6b562111482935b69be63f27389d5ae87bcdcf1",
+      "language": ".sh"
+    },
+    {
+      "path": "athena/jobs/run_python_gpu.sh",
+      "bytes": 11205,
+      "lines": 230,
+      "sha256": "338a0da278541a42e94ca531049a2a5e8fd1c4d9065cf861b4f6f81725b4f40a",
+      "language": ".sh"
+    },
+    {
+      "path": "athena/jobs/run_shift_summary.sh",
+      "bytes": 3475,
+      "lines": 84,
+      "sha256": "c83c1fd5a7c89e2e77c91a0b5c6472a750c929f28e03911b51ec4e80077248b3",
+      "language": ".sh"
+    },
+    {
+      "path": "athena/scripts/athena_run.py",
+      "bytes": 13202,
+      "lines": 283,
+      "sha256": "4324c71ab7e5e96bd7d442f410dc86e5476b93d4c99614494badc0b2c2b533b6",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_discover_runners",
+        "_patched_FDTD_init"
+      ]
+    },
+    {
+      "path": "athena/scripts/athena_run_one.py",
+      "bytes": 21938,
+      "lines": 501,
+      "sha256": "03a23e518561a5bad45c93dc92c0235d1bd841f0605291c1bb917d9bc218f0fc",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_patched_FDTD_init",
+        "_run_kind_mesh_conv_x",
+        "_run_kind_mesh_conv_yz",
+        "_run_kind_shutoff_conv",
+        "_save_array_part",
+        "_run_kind_spec",
+        "_run_kind_cards",
+        "_run_kind_inverse_design",
+        "_run_kind_lumopt2_design",
+        "_run_kind_gradient_free_design",
+        "_run_kind_fd_gradient_design",
+        "_run_kind_lumerical_native_optimization"
+      ]
+    },
+    {
+      "path": "athena/scripts/build_sweep_list.py",
+      "bytes": 13033,
+      "lines": 283,
+      "sha256": "59a2be48e2fbf701b4473882a9abfdde8108289dacbbbdb15a6efa21a2343415",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_values_mesh_conv_x",
+        "_values_mesh_conv_yz",
+        "_values_shutoff_conv",
+        "_values_spec",
+        "_values_cards",
+        "_values_inverse_design",
+        "_values_gradient_free_design",
+        "_values_lumerical_native_optimization",
+        "_values_fd_gradient_design",
+        "_values_lumopt2_design",
+        "main"
+      ]
+    },
+    {
+      "path": "athena/scripts/test_watch_te_recovery.py",
+      "bytes": 2421,
+      "lines": 60,
+      "sha256": "9636d515e48e2254862401c0d29bd48bbcd8dcce3959ab558767f603fb1a4240",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "WatcherChecks"
+      ]
+    },
+    {
+      "path": "athena/scripts/watch_te_recovery.py",
+      "bytes": 5343,
+      "lines": 119,
+      "sha256": "0f767ace750abe2c5c7c395516d6c44c5c81de532c5d474a5b05ae511c83f2a8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "collect",
+        "verdict",
+        "persist",
+        "main"
+      ]
+    },
+    {
+      "path": "bragg_device.py",
+      "bytes": 84714,
+      "lines": 1576,
+      "sha256": "3fa3d18df0b67683ebb428d8f8bfc5246234f1d15156a46ca23af705aaf16dc5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "PiShiftBraggFDTD"
+      ]
+    },
+    {
+      "path": "config.py",
+      "bytes": 1389,
+      "lines": 30,
+      "sha256": "da07ca3cf48d1cdbe947350678bb8b9699918a513752b207883007c93ac82795",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "__getattr__"
+      ]
+    },
+    {
+      "path": "container/AnsysInstaller.sh",
+      "bytes": 76038382,
+      "lines": 566609,
+      "sha256": "61cb0ec88e9d7f8ea5ac16dde9c55587066cb35ff94b7dc9c6c102fc923d629a",
+      "language": ".sh"
+    },
+    {
+      "path": "container/build.sh",
+      "bytes": 5000,
+      "lines": 93,
+      "sha256": "2bf37d0993868c3c3bddc85f5546312fff0cb4d1c362c77a0febec3bad91623b",
+      "language": ".sh"
+    },
+    {
+      "path": "convergence_testing/run_auto_shutoff_convergence.py",
+      "bytes": 23278,
+      "lines": 518,
+      "sha256": "8f5d069f9f04eac0697d12d9435fb11e6865d803e1923a7135231760f1be8c26",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_make_cfg",
+        "_load_checkpoint",
+        "_save_checkpoint",
+        "_threshold_for",
+        "_read_termination_status",
+        "_run_one",
+        "_run_phase",
+        "_print_table",
+        "aggregate_array_parts",
+        "main",
+        "run"
+      ]
+    },
+    {
+      "path": "convergence_testing/run_convergence.py",
+      "bytes": 12782,
+      "lines": 300,
+      "sha256": "cf38bddba437877b2274a28a6e50f4cba07456695aa329c2a50891ad71634c4b",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_apply_polarization",
+        "run_convergence"
+      ]
+    },
+    {
+      "path": "convergence_testing/run_mesh_convergence.py",
+      "bytes": 28959,
+      "lines": 610,
+      "sha256": "c23a59da7f9b1cea1cbe5c6e9dff31fcc692be9d8d4facc9bbb393e85033b37a",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_make_cfg",
+        "_load_checkpoint",
+        "_save_checkpoint",
+        "_threshold_for",
+        "_run_one",
+        "_run_phase",
+        "_print_table",
+        "aggregate_array_parts",
+        "main",
+        "run"
+      ]
+    },
+    {
+      "path": "debug_fsp_compare/diff_fsp.py",
+      "bytes": 5316,
+      "lines": 126,
+      "sha256": "221dc25a47cc2ef39f48071a46fd5b92de39ba89494d93ce0ce4b82a2f0d1be3",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "header",
+        "safe",
+        "report",
+        "main"
+      ]
+    },
+    {
+      "path": "debug_fsp_compare/diff_fsp_job.sh",
+      "bytes": 1789,
+      "lines": 54,
+      "sha256": "7aac6486ba530c42bbd78f3855c3f99c02aeea1705e4cf440ca312d3083c9871",
+      "language": ".sh"
+    },
+    {
+      "path": "debug_fsp_compare/scene_snapshot.py",
+      "bytes": 7541,
+      "lines": 205,
+      "sha256": "17d677f04a6075ef37d87fdc33629bde9252599f1216a4158bde029799187d59",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_te_baseline",
+        "_te_apod_tanh",
+        "_te_shift_innersize",
+        "_tm_anchored_scatterer",
+        "_tm_shaped_cavity",
+        "_two_device",
+        "_fmt",
+        "dump_scene",
+        "main"
+      ]
+    },
+    {
+      "path": "debug_fsp_compare/test_lumopt_broadband.py",
+      "bytes": 3395,
+      "lines": 90,
+      "sha256": "c4e79a84224808e846464008fb6b476cfce520ff358cbde6a0f2206446ffa07f",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "debug_fsp_compare/test_single_lambda.py",
+      "bytes": 2380,
+      "lines": 66,
+      "sha256": "906b391758c676ff668b476aeb546426740879fb0f7bfd0a5157e80018522c5c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "experiment_card.py",
+      "bytes": 16610,
+      "lines": 262,
+      "sha256": "61ec63e61a10c91b8c9f4786be2a6987ea09924cfafd8da104aafa1a6fe3b682",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "ExperimentCard",
+        "_print_card_results",
+        "run_card",
+        "run_cards"
+      ]
+    },
+    {
+      "path": "experiment_examples/p8RC1_tanh.py",
+      "bytes": 1655,
+      "lines": 50,
+      "sha256": "7956e62f232e1adb3ecda4c402059370d8452d31331e970d1f44ab2225ffc38e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "igum/deploy_igum.sh",
+      "bytes": 72619,
+      "lines": 1400,
+      "sha256": "d636d126c209e569a7733055ddc3b1c46e67e06c2077a0fc35e39660e204c5e6",
+      "language": ".sh"
+    },
+    {
+      "path": "igum/jobs/run_fsp_gpu.sh",
+      "bytes": 6892,
+      "lines": 160,
+      "sha256": "3262bd0260702b81066c7d02cc7abee747074508eb6210623d29740b0ed11426",
+      "language": ".sh"
+    },
+    {
+      "path": "igum/jobs/run_fsp_gpu_array.sh",
+      "bytes": 6442,
+      "lines": 158,
+      "sha256": "d9c2c9371f70eb702dc583db03264baa1f365354db544f8c6411eb80c82231cf",
+      "language": ".sh"
+    },
+    {
+      "path": "igum/jobs/run_mesh_aggregate.sh",
+      "bytes": 3242,
+      "lines": 81,
+      "sha256": "49dfae82077141df601e1bde96975b54ae7c8d15cda89baf2e77c9ceef8f3ec6",
+      "language": ".sh"
+    },
+    {
+      "path": "igum/jobs/run_python_array.sh",
+      "bytes": 6792,
+      "lines": 149,
+      "sha256": "8ae77d2eaf78f7f1a6c9902fa9b5e6103fd7210a65bedf9f64c124b0c646ff7c",
+      "language": ".sh"
+    },
+    {
+      "path": "igum/jobs/run_python_gpu.sh",
+      "bytes": 7105,
+      "lines": 161,
+      "sha256": "ec0d7350b5f79e2ae2aad43543bca2a9dcfdf26ada7efd132e2a8f8002e30d99",
+      "language": ".sh"
+    },
+    {
+      "path": "igum/jobs/run_shift_summary.sh",
+      "bytes": 2828,
+      "lines": 70,
+      "sha256": "8473288b2649505176850b310809376f53d9ac9c7b561c613a9c038409bf6d22",
+      "language": ".sh"
+    },
+    {
+      "path": "igum/scripts/athena_run.py",
+      "bytes": 13374,
+      "lines": 285,
+      "sha256": "0da4d4d3f9ba5c82e2b85c12666a6fbd5517f1ce8de7535db102ca1958f27e72",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_discover_runners",
+        "_patched_FDTD_init"
+      ]
+    },
+    {
+      "path": "igum/scripts/athena_run_one.py",
+      "bytes": 22511,
+      "lines": 509,
+      "sha256": "614eab9291b53c6775a1780fd14552c903a581c718ee7e2fd2fc606351cb638c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_patched_FDTD_init",
+        "_run_kind_mesh_conv_x",
+        "_run_kind_mesh_conv_yz",
+        "_run_kind_shutoff_conv",
+        "_save_array_part",
+        "_run_kind_spec",
+        "_run_kind_cards",
+        "_run_kind_inverse_design",
+        "_run_kind_lumopt2_design",
+        "_run_kind_gradient_free_design",
+        "_run_kind_fd_gradient_design",
+        "_run_kind_lumerical_native_optimization"
+      ]
+    },
+    {
+      "path": "igum/scripts/build_sweep_list.py",
+      "bytes": 13033,
+      "lines": 283,
+      "sha256": "59a2be48e2fbf701b4473882a9abfdde8108289dacbbbdb15a6efa21a2343415",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_values_mesh_conv_x",
+        "_values_mesh_conv_yz",
+        "_values_shutoff_conv",
+        "_values_spec",
+        "_values_cards",
+        "_values_inverse_design",
+        "_values_gradient_free_design",
+        "_values_lumerical_native_optimization",
+        "_values_fd_gradient_design",
+        "_values_lumopt2_design",
+        "main"
+      ]
+    },
+    {
+      "path": "matlab_analysis/analyze_core_k_space.m",
+      "bytes": 13030,
+      "lines": 311,
+      "sha256": "fc25f5f35cd97aa1d247a4a209d8518e7edc6a393ac897175209670e4be87937",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_analysis/analyze_farfield_radiation.m",
+      "bytes": 5871,
+      "lines": 169,
+      "sha256": "b1099ee1850556a87b283fdc055282bbc85709a77da39cc6f0ebabf19572a411",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_analysis/analyze_radiation_recycling.m",
+      "bytes": 21223,
+      "lines": 561,
+      "sha256": "4016ab91265abd368271aa28e39b93a9443f5fb36bf7f55dfeed344a7d114c7f",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_analysis/analyze_yz_circle_power.m",
+      "bytes": 5397,
+      "lines": 148,
+      "sha256": "a2b67a0a38fc5ee66ed2f828de5400ee282efabf683e3347b9f6a828e04af0b9",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_analysis/compare_simulations.m",
+      "bytes": 15539,
+      "lines": 328,
+      "sha256": "7f20a55ed3574b64dee71111800a4481bbbb6fc6ab9223b2e5ec4c51a38eb896",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_analysis/overlap_analysis_bg.m",
+      "bytes": 12331,
+      "lines": 259,
+      "sha256": "4ac41fdbcff72e786dc74ac0bca12a0b1ba6d8de687c615935c2191e9667993b",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_analysis/overlap_analysis_many.m",
+      "bytes": 10515,
+      "lines": 256,
+      "sha256": "450a4bc05c3d837e45c26da8eb09ca84db9ac8541f595e2bbd2e50db6eef1c64",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/legacy/plot_field_poynting.m",
+      "bytes": 23452,
+      "lines": 547,
+      "sha256": "c5a04d3131171beda3623cee8fe4d2939e0afe62e46d74bedc7efb22ef86f86b",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/legacy/plot_field_poynting_overlay.m",
+      "bytes": 17557,
+      "lines": 415,
+      "sha256": "13b145ec9b873526cb49dd6ff9e5fc035bffa748322019a293a0464289830a0a",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_antineedle_design.m",
+      "bytes": 2977,
+      "lines": 61,
+      "sha256": "8c5d27b551a672dc6529a6ecce134890c2a3c92c54ae3ebf1a466f990420fcb6",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_comb_difference.m",
+      "bytes": 2707,
+      "lines": 62,
+      "sha256": "e8b0bba4ead59ca042f6f9b7ec86553f3124579215bd9f926d2b773981485778",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_comb_phase_scan.m",
+      "bytes": 3889,
+      "lines": 75,
+      "sha256": "e4da38b9d4dfb96527392ee65a552a6fb7fd56df06750ee23a9108bfcee0629e",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_comb_q3db.m",
+      "bytes": 8363,
+      "lines": 147,
+      "sha256": "0d4c23d9628538317acb6a1d47a12358a9728d1ecfca99f54dff3bc07f6fc0d7",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_comb_schematic.m",
+      "bytes": 4164,
+      "lines": 84,
+      "sha256": "bcfd10cd7ad825d6799d17577907f2c828ec1a90b02938e025812a4558ff0437",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_convergence.m",
+      "bytes": 10932,
+      "lines": 263,
+      "sha256": "27547f2ab4160aaf4b46c44eec7d00cb30edb05c10eca4166e22883be1fab932",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_farfield.m",
+      "bytes": 33369,
+      "lines": 776,
+      "sha256": "6d913e87fced67ec64d2580c72e89dd1cbeaa431c994ded4ee706a104afab9c3",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_field_3d.m",
+      "bytes": 49208,
+      "lines": 1129,
+      "sha256": "78ce3cf4c71f8be374930682c63bd7540d5684aa7eec27f38d65233de096ca29",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_field_poynting_zoom.m",
+      "bytes": 39508,
+      "lines": 895,
+      "sha256": "c88d1be912c901db299b9218a3f33131e47005cf9967120871a962ce908d6a7f",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_invdesign_pillar_space.m",
+      "bytes": 4059,
+      "lines": 81,
+      "sha256": "4741d3ada64f81cea7b12996152f4e07717bc2656274cbae125053853714ac62",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_itai_hh_apod.m",
+      "bytes": 2179,
+      "lines": 45,
+      "sha256": "8a3300c03b77abcb7335707ed2509137ba7572f42dd160abb5a1a19cd8b090c2",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_itai_hh_asdrawn_spatial.m",
+      "bytes": 1481,
+      "lines": 25,
+      "sha256": "cfc64c12ecea13f4bb17f1ec69c17f232bae0c534912a6aa82dfc8656ee10f63",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_itai_hh_nt60w20_envelope.m",
+      "bytes": 41106,
+      "lines": 422,
+      "sha256": "8c5176d7b557261e057d82ca1fe744fed4563a813c5698cb55625ad36ec14f9b",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_itai_hh_nt60w20_profiles.m",
+      "bytes": 6080,
+      "lines": 100,
+      "sha256": "2586fcbca6b3a8d05195598d07b7aa35c49b483719e246e6adf9911a1635274d",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_itai_hh_summary.m",
+      "bytes": 3314,
+      "lines": 57,
+      "sha256": "b47d9d12fce7045e0af963a2760e00a47fd187c7d2c96384960728d9d0945d27",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_metal_mirror_dscan.m",
+      "bytes": 1921,
+      "lines": 38,
+      "sha256": "0a8bdab20f7a56aa82d31d374d29968483e94e6f31180ddd944aec9b7b7bb888",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_mode_profile.m",
+      "bytes": 14804,
+      "lines": 470,
+      "sha256": "ad5aa6c150d596a5f4f452f2e99deb0d4f433854724477b8ae19a280dff22e43",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_mode_profile_xz.m",
+      "bytes": 8882,
+      "lines": 282,
+      "sha256": "7d23c144788c1fa10ffa99a212b6ed48e380b136185d136c32804d81d872290c",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_proposal_fieldmaps_n100.m",
+      "bytes": 7171,
+      "lines": 133,
+      "sha256": "967552ab9e6c42c4f2b6b209cf64690f574467e71a81d6f27d799ff2682e7f77",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_q20um_3db_benchmark.m",
+      "bytes": 5028,
+      "lines": 99,
+      "sha256": "ce20425d009782db05270e22fd8f36b55ad819c7ca37f994688e1be2d27c2c89",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_q20um_short_benchmark.m",
+      "bytes": 4376,
+      "lines": 84,
+      "sha256": "9a0b848e04db8d3ef9e26e44a05f8d01f2625ee9bca47c048d7082aaba673607",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_resonance_vs_param.m",
+      "bytes": 8161,
+      "lines": 250,
+      "sha256": "b0d492e1cd5b0f179bb27b84013ee8bd05f4cfbcdb2dcd2491747d3dd4e867af",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_retro_bank.m",
+      "bytes": 1845,
+      "lines": 36,
+      "sha256": "31355ea53b8782ef188331ceba67e3ce1a1c3e0420a42fdd6a7c7f2a0dca739b",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_scat_benchmark.m",
+      "bytes": 10110,
+      "lines": 198,
+      "sha256": "c46d1121fda21dbf47c14a68e0ffb2d93fb61e9dccd409cc7a591e5185f54d9c",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_scat_c3_ygrid.m",
+      "bytes": 2053,
+      "lines": 45,
+      "sha256": "cf8bb3720b8b49c4fd746aed4d54fd7ba506ce6c537630e461274a3502bac611",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_scat_c_ff_angle.m",
+      "bytes": 4564,
+      "lines": 83,
+      "sha256": "2a23b219d86dd1d4d0417f15edcc3cde56c87b7c28ab7462e4823d6adebc40cb",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_scat_c_ff_positions.m",
+      "bytes": 9896,
+      "lines": 185,
+      "sha256": "bbda7c74eb3a06398a7d219b723412c9d0740cd3611d6bcebb11f5e981280d78",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_scat_ff_simple.m",
+      "bytes": 2760,
+      "lines": 57,
+      "sha256": "91b6abf12fa2e7924cb09abd39b76b25f38dae33311bea4f9dce048da4d0b6ab",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_scat_i_fieldmaps.m",
+      "bytes": 3133,
+      "lines": 67,
+      "sha256": "49166e3e629e4623d69fb577152294870407a339f45a8fb492413eebefd7c180",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_scat_p_antineedle.m",
+      "bytes": 3243,
+      "lines": 70,
+      "sha256": "499296b7064693a541dcc240a74cd6422c011c4d239c3849816114759898032e",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_scat_r_aim536.m",
+      "bytes": 3273,
+      "lines": 63,
+      "sha256": "52807fda301aeb02138e53292e24b53aaec64fc0541ba885db344edae721d2d0",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_scat_s_refine.m",
+      "bytes": 2677,
+      "lines": 57,
+      "sha256": "19f27651a8ad61eb11681e775cc659f0c92f635239eba1e1835d8d711a3d318e",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_scatterer_greens.m",
+      "bytes": 8318,
+      "lines": 172,
+      "sha256": "0018e238a57ac05e297b91b77e9a6dbcf8b3d21aead1e23bcc1da97267bfa214",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_short_device_cross_sections.m",
+      "bytes": 6235,
+      "lines": 119,
+      "sha256": "0c7055219070048726373d0f117568b7f40dd157714082c3f5e9f606dcc832b1",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_tm_h200_w1800_p504_n1300.m",
+      "bytes": 2982,
+      "lines": 62,
+      "sha256": "32e216e2256ab50f7c1dcf16d219c04003d94ef76490dc7863ab35ad6879dd8b",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_tooth_profiles.m",
+      "bytes": 5055,
+      "lines": 86,
+      "sha256": "0cc9c07d5c9cd11fd5eba1f48039491a9a37ece7543ee5ec2ca379089c5522f6",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_transmission.m",
+      "bytes": 21315,
+      "lines": 583,
+      "sha256": "9db6b0a6646497073f36e790f8f120e03a6a566f62f03fc9c731b8b88cb8ab3e",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_transmission_compare.m",
+      "bytes": 1946,
+      "lines": 69,
+      "sha256": "ffc0b241353de684706f1497647514758df2c799cb09e1dd71b44314448fa03f",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_trench_farfield.m",
+      "bytes": 3900,
+      "lines": 85,
+      "sha256": "8c067944652f39c4ab6711888e5a8d5550acad9742909a984704fd16cc6483f7",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_trench_flush_q3db.m",
+      "bytes": 2511,
+      "lines": 46,
+      "sha256": "43cc17ac32f8f5d938dbc5d27eade9b4fed6215444277c8cfb4df38903ea9c3e",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_trench_flush_top.m",
+      "bytes": 1857,
+      "lines": 30,
+      "sha256": "b411438ad56e568d49da6894a675afbe1b1a1433efc0a4b0487ed40029dc4c71",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_trench_hscan.m",
+      "bytes": 2770,
+      "lines": 61,
+      "sha256": "69ac6bdfc055f526a866a7b8da85bb37358400b3bb6839a4be394d1847211a29",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_trench_n150_maps.m",
+      "bytes": 19747,
+      "lines": 376,
+      "sha256": "b4fbbac23ccf901c551d5dd5a9802e1e7cae6b64a3535b5e6f8143cf82f41661",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/plot_trench_stack_cross_sections.m",
+      "bytes": 7027,
+      "lines": 141,
+      "sha256": "11c950a2c123c40bedb482e1f314882ce6fbc8330517805526fd2e0551ae9a70",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/save_figures_interactive.m",
+      "bytes": 4899,
+      "lines": 143,
+      "sha256": "fb56a72038e2a60d5cd2f900fc5e6322902f4c5933a22694a96dde4ccfdc4a30",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/draw_incore_r50_device.m",
+      "bytes": 2614,
+      "lines": 39,
+      "sha256": "38692c4ce2f4979937a3c81ab61d4731b41aca7b0583be3e9a85111f52db7aab",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/make_te80_tm80_field_fig.m",
+      "bytes": 1634,
+      "lines": 39,
+      "sha256": "f1846465f7c7b2c3b1e836403bf159a6b213fdf913797b03de78c5854fafc87d",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/make_tm_match_field_fig.m",
+      "bytes": 1777,
+      "lines": 41,
+      "sha256": "630405a02b410730bb75930d1ba75192a35b28730957fe254fcd04997f133779",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/make_tm_match_fig.m",
+      "bytes": 2021,
+      "lines": 45,
+      "sha256": "d2fbe072a75ed9752cf50ca55603b67dfb095568dfbcb668a3d3a1b2c06cad10",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plane_mode_widths.m",
+      "bytes": 4207,
+      "lines": 112,
+      "sha256": "b91b202a68fbd68fe7efba574a976c0508ed54c71a2ea5ad5a665eecd4c172bb",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_air_trench_peakT.m",
+      "bytes": 3963,
+      "lines": 96,
+      "sha256": "bf806d9cc743054302636aca6e39c35f6b40421cf8908cad3004e58e12162963",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_air_trench_peakT_regular.m",
+      "bytes": 3414,
+      "lines": 82,
+      "sha256": "4c51307196889bc6e0196d359a1e34781edac6aacb8eb5b41b0f9db152241722",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_air_trench_regular_peakT.m",
+      "bytes": 2950,
+      "lines": 73,
+      "sha256": "ab659f0b26146a3ca4b4062d21cf036bcca2086af11fd43eba5e568a58ed5492",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_anti_moment_cavity.m",
+      "bytes": 6713,
+      "lines": 130,
+      "sha256": "9fc3b7fe50520023596c085bf78c1c7e38746dcf54752a26811af7a014f4f51a",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_apod_linear_vs_tanh_headless.m",
+      "bytes": 7425,
+      "lines": 125,
+      "sha256": "afdd18da25c55bf8d65f0452f227cfb363f3dd5b402a762ae5cfeb166e9e1d3e",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_apod_tanh_headless.m",
+      "bytes": 6631,
+      "lines": 135,
+      "sha256": "4cdd42e0517b765331f5bb088b198fd0872a8f5ccf1d22276f6c460c39fa4b85",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_apod_tm518_lin_vs_tanh_headless.m",
+      "bytes": 4421,
+      "lines": 81,
+      "sha256": "ca11e84476a2e1059431dfc4b39cf719a892615711fab6d6fa8baf1a91848f08",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_apodization_vs.m",
+      "bytes": 5859,
+      "lines": 159,
+      "sha256": "4524f6dad2cc19f8cd584160b7f2375e64f37e933d5df102afb6345426912a1c",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_autoshutoff_qspan.m",
+      "bytes": 3635,
+      "lines": 76,
+      "sha256": "6afbbeaef56cc88c8c291a35ea4b575562944107eb88ae7fec46cb511dcf8a59",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_axis_r50_vs_plain.m",
+      "bytes": 4060,
+      "lines": 53,
+      "sha256": "285acca24bc0623456e00ad8c7da1dea737d85bfa3fd122a75d5511322c9c1f9",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_axis_r60_summary.m",
+      "bytes": 7354,
+      "lines": 100,
+      "sha256": "4441670c879d96f0fc9f1cec67b9e674f1b4d07a8773dc82ceeb249a3f85623c",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_barrel_field_overlay.m",
+      "bytes": 1888,
+      "lines": 32,
+      "sha256": "e5d3ecc33c4c71a9e47bc85ebcd44d04cc08ca5d1d53c6220f22f536d435655c",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_barrel_followup.m",
+      "bytes": 3752,
+      "lines": 73,
+      "sha256": "fbdaadc1f95b30af1f46d62de4bc8d5f7d4183c96dbedc46345631b04c5305c1",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_barrel_geometry.m",
+      "bytes": 3519,
+      "lines": 74,
+      "sha256": "df6f91a1b30a9a640cf0f6726b427ec70137c69655a56d2a87e2269290c4b378",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_best_spectrum_and_mode.m",
+      "bytes": 3376,
+      "lines": 68,
+      "sha256": "8229d8896980cfd9fa5a32617a52c5af2919c75a7e4a74926364f360696d5b61",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_best_T9609_device.m",
+      "bytes": 4045,
+      "lines": 69,
+      "sha256": "fa27f931523cdbbcf4a53eaeacb3e09bea41b6743302b6157e90ce17d8d35b92",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_best_T9635_retrim_device.m",
+      "bytes": 3749,
+      "lines": 69,
+      "sha256": "f98c61be7a88be0da0381465967836eef812b99f1647d6430f6677169db6a7a9",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_cavity_acc_confirm.m",
+      "bytes": 2602,
+      "lines": 52,
+      "sha256": "a1645646cc54832778c7e6b042bd1ca836c6793aefaa80a477d01061a4b16f30",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_cavity_combo.m",
+      "bytes": 2869,
+      "lines": 57,
+      "sha256": "51fc649d7f8ebc02d2ffc09c3ef0e90e863462e42517fdd670666470b62f2d50",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_cavity_shape_schematic.m",
+      "bytes": 3202,
+      "lines": 65,
+      "sha256": "0269e91264841e5c5c3430fd6518364e2053cb8d2bdb3a49ed579a9ffda79602",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_cavity_width_ladder.m",
+      "bytes": 3539,
+      "lines": 69,
+      "sha256": "affb8c2f6e450234f1103bacd0a2413b217a19dbeb1125dcb622133d13155730",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_center_completion.m",
+      "bytes": 6538,
+      "lines": 127,
+      "sha256": "2addc4b4eb8e79c9fe0d5641ec70f0b25c2b0795eeb64401e1f72354153112d0",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_comb_and_shift_studies.m",
+      "bytes": 4664,
+      "lines": 72,
+      "sha256": "d073c039c7b3d61647b377df1702a2d670d0228ff4cea8417b15524c02e654f8",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_comb_period_scan.m",
+      "bytes": 5002,
+      "lines": 90,
+      "sha256": "d4141bfe588959adc88cf27f0e973e0bac414a9158299d3351ae4e569c239a09",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_comb_phase_convention.m",
+      "bytes": 6798,
+      "lines": 131,
+      "sha256": "eed40d9de7113c2c18c549f8737fc536e1a97bff853361f38e4731293ddf6e6e",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_compare_8_devices.m",
+      "bytes": 4844,
+      "lines": 112,
+      "sha256": "2d4c77a9b9208ca047a72a2217945e17a9fa94e659932442ad6a186c36f37103",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_detune_T_gap34.m",
+      "bytes": 4163,
+      "lines": 91,
+      "sha256": "6d57a10b03a3bd1b3b7051f04fce55646f0c12292dc6c977518538c74296f194",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_device_gallery.m",
+      "bytes": 8174,
+      "lines": 136,
+      "sha256": "fd7131b245aebae9d9a6fcca49e7cf936c12a0d1ce335cb10929b47934cbc5c9",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_distributed_shift.m",
+      "bytes": 3109,
+      "lines": 67,
+      "sha256": "5b7ee587465008616415afe70d7e6629c269cb5dc9bf9bbce4b2cc24148565fc",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_farfield_sph_20um.m",
+      "bytes": 8448,
+      "lines": 143,
+      "sha256": "92a2c85833c783ed311b3db06b6264700581bede39b2931e122ac75b9c50fb0f",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_hole_lattice_spectra.m",
+      "bytes": 3277,
+      "lines": 54,
+      "sha256": "80c40a4599e89b34ecdd6750720023d15fa5652d7649622ee3f59491a2e203ed",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_hole_scan.m",
+      "bytes": 4312,
+      "lines": 98,
+      "sha256": "eb93ced28d3ea5a2dabc164884c2ec877b2437291673753a66af37d5a9bfe8a6",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_hole_scan_best_vs_control.m",
+      "bytes": 3840,
+      "lines": 63,
+      "sha256": "25f7df744b9d35804f7d677d402192753ab36e80bed4a8fcd7084fe4a85db778",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_incore_axis_vs_pair.m",
+      "bytes": 4308,
+      "lines": 54,
+      "sha256": "bf6c171dfc32003db8fa781c20cb9df4b340bb1a31aa82dad3c9bb3c59a78abe",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_incore_circle.m",
+      "bytes": 6306,
+      "lines": 92,
+      "sha256": "d78e25a4f3bb3d8938c40c48255d0e571c57091d06f738f31714945fe00ccd4c",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_incore_circle_fit.m",
+      "bytes": 6146,
+      "lines": 86,
+      "sha256": "3de9532688facfae5d813acedf5b77055e4b227eeccd5da3694b5c4adcdc7c99",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_incore_oxide_periodic.m",
+      "bytes": 4175,
+      "lines": 68,
+      "sha256": "969d1dd36ee47e578c25340eb179c245b31eb5ef327756bc8d360f37e14b5bbb",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_incore_r50_spectrum.m",
+      "bytes": 2004,
+      "lines": 21,
+      "sha256": "27960d17b25150d332d091a4f0866e1e80505f657c6e6ad16f363ba9f08fd90c",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_incore_r50_summary.m",
+      "bytes": 7865,
+      "lines": 100,
+      "sha256": "10aedcbea120c42354c2c4fb5d350dbf65283095ed673fd38c047f27c3a2fe57",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_incore_radius_T_over_width.m",
+      "bytes": 2796,
+      "lines": 34,
+      "sha256": "6ed52b552f6acc77b4552501656ea420ea7bf1291d92ccb71ffcf9ead168d3e7",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_inner_shape_study.m",
+      "bytes": 2578,
+      "lines": 62,
+      "sha256": "f21f7c992f43bd705c51b66f5d81b76d653bb207dfe6da4b9dcce3f09512f9c9",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_invdesign_q3db_20um.m",
+      "bytes": 7988,
+      "lines": 142,
+      "sha256": "9bb0d0624e58e253317abb850cce8990db5180960ab0476c5878b1b78fc9c6b9",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_pareto_stack_vs_apod.m",
+      "bytes": 4133,
+      "lines": 82,
+      "sha256": "ee99c80ab769ec61125e1d45d89dfb000cbffff00f066380cface2351b8574f2",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_radiation_kspace_diag.m",
+      "bytes": 2960,
+      "lines": 68,
+      "sha256": "181fd19452fd372a32c8676e3c528d2fbcb364e688ce1788f9eba0012ffa535f",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_radiation_polarimetry.m",
+      "bytes": 5025,
+      "lines": 101,
+      "sha256": "bcdf41ef670e7f3871827fde5afa1437ff203fc80f665d4f66c5729f2e8ecc6c",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_scatterer_array.m",
+      "bytes": 2408,
+      "lines": 54,
+      "sha256": "fb2db716c8084e9441f99158faa266df624a6376586556e0059b42bdf70db593",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_scatterer_demo.m",
+      "bytes": 6574,
+      "lines": 141,
+      "sha256": "8ece22d2f9300e0da96cf33f3dd0e1785062b91da71642450ead72e5d175f3e0",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_scatterer_program_summary.m",
+      "bytes": 5657,
+      "lines": 113,
+      "sha256": "7a52927a8a98e97b23ed796ace7f100594457615347a99ef078c3430f2af891c",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_scatterer_scan.m",
+      "bytes": 7885,
+      "lines": 172,
+      "sha256": "c74ed45de46c97ca0aa3f9503305f2c97c96f385eacf329fceec80acf47aeb64",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_scatterer_scan_r80.m",
+      "bytes": 5030,
+      "lines": 93,
+      "sha256": "444e7a41dc989b68269e207756e40d731b67312702ca855ae45bb3c9c8e75251",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_shape_gallery.m",
+      "bytes": 8575,
+      "lines": 174,
+      "sha256": "3c59e738365e678c80cff1776d26cf668a14b39ac80bae38e2fff17c988cb3b6",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_shape_study.m",
+      "bytes": 3609,
+      "lines": 79,
+      "sha256": "2c180f5f39409682209a708a118102e671c684224b87ef1ff8e3a7ab53c816b5",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_shift_frontier.m",
+      "bytes": 3603,
+      "lines": 71,
+      "sha256": "04aa03d0da2db9254106c3165894449d959d3077eeca449f663314df94466bd8",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_strip_geometry.m",
+      "bytes": 5064,
+      "lines": 100,
+      "sha256": "5cb7ff494f3f6475af3f5f4c9c30e2a952cc663615270ecbbde14957b0031df0",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_te300_vs_tm400_match_headless.m",
+      "bytes": 4426,
+      "lines": 94,
+      "sha256": "cefd671c512f13b5f2b8904da56b508df7454f883cd16f6d4e80c6595987be57",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_te500_vs_tm518_headless.m",
+      "bytes": 8356,
+      "lines": 135,
+      "sha256": "26a65403a10af2e78383fe136510baf62b7b3b87db1a606de453c1b0b8c31066",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_te_apod_tradeoff.m",
+      "bytes": 2762,
+      "lines": 42,
+      "sha256": "8b2c96c0ef82405d816dda3a1864c16383917dedc439dcaab8ccc1939dc58ba8",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_te_q3db_20um.m",
+      "bytes": 4027,
+      "lines": 74,
+      "sha256": "94e57b0f613071c855a5acbf8ca57c3b57c7e7636ca29aca7b71781242594316",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_te_s1_v3_design.m",
+      "bytes": 4183,
+      "lines": 72,
+      "sha256": "3b4dcbaa1e216060ad6eefffb522f0c3de77a55c08be2a88ad819bc97cc09501",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_tm518_linear_vs_tanh_headless.m",
+      "bytes": 6307,
+      "lines": 114,
+      "sha256": "98ce21b318ccf839c0e7bb3a807af970e35d603175360bd6874d009bcba5fe85",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_tm_H200_1590_corr_compare.m",
+      "bytes": 2548,
+      "lines": 57,
+      "sha256": "5ac630b6b0e3838dd381a2c34988324d5c2c13aae4c75b85cab019eecf63e7c5",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_tm_H200_1590_TRL.m",
+      "bytes": 2892,
+      "lines": 68,
+      "sha256": "32eaf3cd5319f2c789bed5e9603460af9d89acf0f18f5cea305bb5fb07a4fd8f",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_tm_H200_corr_compare.m",
+      "bytes": 2093,
+      "lines": 47,
+      "sha256": "4dd6450b15c8354eb3d4b36cb6d05128aee7d2bc8f7deb510479f118415c16d2",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_tm_H200_TRL.m",
+      "bytes": 2113,
+      "lines": 49,
+      "sha256": "50502cf405db2a5b5d4006de432a01bbaafcf126cfaf755d63a14331a85a495f",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_tm_wide_mode_H200.m",
+      "bytes": 3207,
+      "lines": 76,
+      "sha256": "e42e56adbc0864b893228a2a4efae3f16493a35bbcb9eb7dd975d43210f4f5e2",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_tm_wide_mode_H200_1590.m",
+      "bytes": 3826,
+      "lines": 91,
+      "sha256": "a7cbba5442a3ddd32cd52d4572687d01d6c2c2554db6442c950b7c8f7c7682b5",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_trench_q3db_20um.m",
+      "bytes": 5345,
+      "lines": 110,
+      "sha256": "c1e64e49875af5eba23f42d936fc8b773a4095a4c4d22e8c38f11af066c62fd2",
+      "language": ".m"
+    },
+    {
+      "path": "matlab_plotting/studies/plot_width_lightline.m",
+      "bytes": 2741,
+      "lines": 54,
+      "sha256": "833caa175994e551b506ff8e700dc742ead8db459c82c6f81c415de9865e6dfa",
+      "language": ".m"
+    },
+    {
+      "path": "post_processing.py",
+      "bytes": 28261,
+      "lines": 577,
+      "sha256": "5595d37bc264bb3f621dc689c9a1b39cffc82ab887b0dae91602614a3e692276",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "SParameters",
+        "ResonanceResult",
+        "FieldProfileResult",
+        "extract_s_parameters",
+        "find_resonance",
+        "extract_field_profile",
+        "extract_2d_fields",
+        "extract_3d_fields",
+        "extract_farfield_data",
+        "assemble_results",
+        "save_results",
+        "export_interconnect",
+        "plot_results",
+        "analyze_simulation"
+      ]
+    },
+    {
+      "path": "python_tools/analyze_batch.py",
+      "bytes": 4371,
+      "lines": 115,
+      "sha256": "1b1cb73c31eb88418c6ff09e051e8a309978783ea686c36d1820b54b902e0428",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "count_peaks",
+        "analyze_one",
+        "main"
+      ]
+    },
+    {
+      "path": "python_tools/analyze_farfield.py",
+      "bytes": 6402,
+      "lines": 174,
+      "sha256": "57dea41a9d94bb47e9a47a5d2c45726bff0cab9efbabefd2473b03859adde153",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "analyze_farfield"
+      ]
+    },
+    {
+      "path": "python_tools/antineedle_comb_design.py",
+      "bytes": 4689,
+      "lines": 101,
+      "sha256": "b0f0ce551825b72c2eeb3e8075a9ed8102c49d994b45a4e78598f774960165c4",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_field",
+        "cancel"
+      ]
+    },
+    {
+      "path": "python_tools/archive/phase0_aniso_cladding.py",
+      "bytes": 5588,
+      "lines": 115,
+      "sha256": "2bf39fa664695576d68822962bb7cc87685626911f9e17ac94e6f400eab8e97a",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "cladding_line_spectrum"
+      ]
+    },
+    {
+      "path": "python_tools/archive/phase0_bic_cmt.py",
+      "bytes": 11192,
+      "lines": 211,
+      "sha256": "133d619b235db9f74179a3777b6bfbd7961365367ce2fcc6627d0fe8fb71c373",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "python_tools/archive/phase0_cladding_reflector.py",
+      "bytes": 7829,
+      "lines": 180,
+      "sha256": "9a85210d21402d92626b9db9f0ed7184d6137218b4d53880b47228e06db9ea8a",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "leak_flux",
+        "caught",
+        "tir",
+        "dbr_reflectance",
+        "report"
+      ]
+    },
+    {
+      "path": "python_tools/archive/phase0_counterdiabatic.py",
+      "bytes": 9695,
+      "lines": 244,
+      "sha256": "aebfa5481152752c1dc6203eb63e6ada90a6ffb2e52c6b25a366174ce5581a4e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "resample_row",
+        "tooth_edges",
+        "width_profile",
+        "dA_of",
+        "rel_dloss",
+        "deposit",
+        "extra_pair_shift",
+        "tooth_translation"
+      ]
+    },
+    {
+      "path": "python_tools/archive/phase0_greens_cluster.py",
+      "bytes": 6853,
+      "lines": 159,
+      "sha256": "be44596bea58190656c57453978b1146893b5d4a61786a6b508e5dfc419d0e52",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "row",
+        "Svec"
+      ]
+    },
+    {
+      "path": "python_tools/archive/phase0_greens_overlap.py",
+      "bytes": 10416,
+      "lines": 224,
+      "sha256": "b6dce4502b234dad9b8e437eef60a882ab2fc9a672da4a87b14ce59858d2c321",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "load",
+        "analyze"
+      ]
+    },
+    {
+      "path": "python_tools/archive/phase0_kerker_mie.py",
+      "bytes": 8316,
+      "lines": 201,
+      "sha256": "a175013d831d12d38cfe1e5ab2875a97a534a64ba4361d7c44bb4f193d4a6d98",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "coeffs_caseI",
+        "coeffs_caseII",
+        "pattern",
+        "qsca",
+        "mie_ab1"
+      ]
+    },
+    {
+      "path": "python_tools/archive/phase0_supercavity_fw.py",
+      "bytes": 7596,
+      "lines": 157,
+      "sha256": "d0979b2003ec3a5df171015275ae26c20b2330b23466da3624e61782107d3f1a",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "radiated",
+        "overlap"
+      ]
+    },
+    {
+      "path": "python_tools/audit_readiness.py",
+      "bytes": 4703,
+      "lines": 104,
+      "sha256": "af1eefaf7b1e31e39be4c35950f12e059ff9e424d4fb517dcb0d4afc36d15ec2",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "inventory",
+        "seeds",
+        "main"
+      ]
+    },
+    {
+      "path": "python_tools/bragg_cmt.py",
+      "bytes": 12450,
+      "lines": 280,
+      "sha256": "73a995afc2ea14447337e0bba1b43aaa27a9b7d5c09ef6e4bb9ab13e66d703ce",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "segment_matrices",
+        "plate_matrix",
+        "pi_shift_device",
+        "spectrum",
+        "envelope",
+        "find_resonance",
+        "fwhm_of",
+        "alpha_from_qi",
+        "_selftest"
+      ]
+    },
+    {
+      "path": "python_tools/calc_neff_vs_wl.py",
+      "bytes": 7207,
+      "lines": 201,
+      "sha256": "d1b55eb260ea64b628bb07ad000669bf85c031b4683386d36a34a333281c5b6c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "NeffSweeper"
+      ]
+    },
+    {
+      "path": "python_tools/calibrate_n_core.py",
+      "bytes": 17705,
+      "lines": 380,
+      "sha256": "d175f4a914c9ad5fc87a171b4b5140d5d54966df16219a79ca9a5733dbb83bf4",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "CalibInputs",
+        "NeffCalibrator",
+        "calibrate",
+        "_build_inputs",
+        "main"
+      ]
+    },
+    {
+      "path": "python_tools/calibrate_q3db.py",
+      "bytes": 32739,
+      "lines": 666,
+      "sha256": "5ef07030430bcc4a553f61120dba8f3089c6899123652c5fc711ef3c96fdd348",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "qc_of",
+        "qi_of",
+        "T_of",
+        "QL_of",
+        "cond_A",
+        "parse_name",
+        "load_mat_row",
+        "load_family",
+        "load_itai",
+        "wlin",
+        "fit_qc_exp",
+        "fit_qi_pow",
+        "fit_qi_sat",
+        "qc_model",
+        "qi_model",
+        "solve_crossing",
+        "fit_width",
+        "kappa_per_nm",
+        "engine_qc",
+        "engine_calibrate_kappa_width",
+        "engine_qc_ratio",
+        "engine_width",
+        "check",
+        "report",
+        "error_bands",
+        "_in_band",
+        "b1_invdesign",
+        "b2_b5_bare_c325",
+        "b3_b4_trench",
+        "b6_b7_itai",
+        "b8_decorations",
+        "b9_lambda",
+        "b10_spectral",
+        "b11_apodized",
+        "b13_te_q3db",
+        "b14_corr_transform",
+        "b12_kappa_corr_reconciliation",
+        "calibration_table",
+        "main"
+      ]
+    },
+    {
+      "path": "python_tools/comb_kspace_model.py",
+      "bytes": 26543,
+      "lines": 471,
+      "sha256": "cd7e3d8dfc29b10c6118db1a484e515c8939f5f14237bd7272a17364aad95cfd",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "load_planes",
+        "line_field",
+        "resample_uniform",
+        "spectrum",
+        "k_perp",
+        "leak_spectra",
+        "in_cone_power",
+        "carrier_field",
+        "leak_source_spectrum",
+        "comb_spectrum",
+        "dgamma_over_gamma",
+        "T_from_dgamma",
+        "sites_from_row",
+        "predict_row",
+        "leak_top_spectrum",
+        "leak_with_profile",
+        "dgamma_over_gamma_2d",
+        "predict_row2",
+        "row_basis",
+        "eval_basis",
+        "fit",
+        "fine_kx",
+        "continued_field",
+        "dft",
+        "leak_fine",
+        "load_rows",
+        "validate",
+        "needle_lorentz",
+        "validate2",
+        "geometry_row",
+        "best_for_geometry",
+        "design_scan"
+      ]
+    },
+    {
+      "path": "python_tools/derive_boundary_profile.py",
+      "bytes": 11965,
+      "lines": 259,
+      "sha256": "dbede3c467106ab3e0ce716713eba9ee356fc20b06419e0fe9dc45f3be5764c4",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "width_profile",
+        "wall_factor",
+        "dA_of",
+        "rel_dloss",
+        "deposit",
+        "gap_shift_pattern",
+        "seesaw_pattern"
+      ]
+    },
+    {
+      "path": "python_tools/derive_boundary_profile_stack.py",
+      "bytes": 8275,
+      "lines": 201,
+      "sha256": "c55c45ab5dfcf1eeb818676bf571c1519e47d7699509f7ef71f884e0854992aa",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "resample_row",
+        "width_profile",
+        "dA_of",
+        "rel_dloss",
+        "deposit",
+        "extra_pair_shift"
+      ]
+    },
+    {
+      "path": "python_tools/farfield_export.py",
+      "bytes": 16740,
+      "lines": 365,
+      "sha256": "a1e5d9e5236c2e1c50b423d5f56571e0b4bf25f49b9f7224219fc7b68f51b012",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "extract",
+        "_normalize",
+        "_width_at_thresh",
+        "_fwhm_deg",
+        "_analyze_lobe",
+        "_draw_x_cone",
+        "_deg_ticks",
+        "_polar_grid",
+        "_imshow",
+        "make_figure"
+      ]
+    },
+    {
+      "path": "python_tools/farfield_multipole.py",
+      "bytes": 13101,
+      "lines": 239,
+      "sha256": "6e0058afed18eaa90d7df6f7b3396db4bfe530b03b4e07f3270b213bb996232f",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "sphere_grid",
+        "_interp",
+        "parity_sign",
+        "full_sphere_field",
+        "legendre_norm",
+        "multipoles",
+        "analyze"
+      ]
+    },
+    {
+      "path": "python_tools/farfield_surface.py",
+      "bytes": 12802,
+      "lines": 215,
+      "sha256": "2ac7a260a96931070626699e55453b2b4f59ea2c1c96e3ccfffe08e56f7b80e1",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_trapz_w",
+        "_taper",
+        "_parity",
+        "tube_faces",
+        "tube_flux",
+        "tube_farfield",
+        "load_surfaces",
+        "sphere_field",
+        "_dipole_fields",
+        "selftest"
+      ]
+    },
+    {
+      "path": "python_tools/lateral_radiation_theory.py",
+      "bytes": 17976,
+      "lines": 414,
+      "sha256": "1618c99d4f287b0ff9710998dba33a10a1c8297ea5ab7afb51fa18a7952329c1",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "slab_neff",
+        "ridge_neff_tm",
+        "tmm_stack",
+        "stack_transmission",
+        "build_grating",
+        "field_profile",
+        "envelope_fwhm",
+        "lightcone_weight",
+        "find_resonance",
+        "arm_reflection",
+        "find_defect_resonance",
+        "dbr_R",
+        "model_at"
+      ]
+    },
+    {
+      "path": "python_tools/overlap_analysis.py",
+      "bytes": 5748,
+      "lines": 144,
+      "sha256": "1cf2f09a88a5468d15a3b5e48f38f359567ee44dd05c08005781ddd14ca59cac",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "calculate_overlap_profile"
+      ]
+    },
+    {
+      "path": "python_tools/plot_loss_spectra.py",
+      "bytes": 4322,
+      "lines": 153,
+      "sha256": "716ace6c7c962491aad9f80b6c9f9e0625adafaacaf7e183ee0e790b534c7e9c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "python_tools/predict_q3db.py",
+      "bytes": 25690,
+      "lines": 459,
+      "sha256": "6219f65ca8152736ba0c32593bb6697782d4ecc76f6297ebdb889813b2a4b3ea",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "load_calib",
+        "qc_of_N",
+        "qi_of_N",
+        "width_of_N",
+        "observables",
+        "design_N",
+        "anchor_on_row",
+        "rescale_family_to_corr",
+        "retune_corr",
+        "validity_notes",
+        "uncertainty_band",
+        "deviation_band",
+        "knob_band_line",
+        "print_prediction",
+        "bare_family_at_corr",
+        "anchor_with_corr_fix",
+        "check_anchor_pol",
+        "compare",
+        "main"
+      ]
+    },
+    {
+      "path": "python_tools/recommend_cavity_length.py",
+      "bytes": 4473,
+      "lines": 112,
+      "sha256": "50bdb389d0f923abc3ef5b4439148ff30c9d6765c2d8c55e1b244160a5e5fae8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "suggest_cavity_neg_detuning",
+        "get_neff_at_wavelength",
+        "main"
+      ]
+    },
+    {
+      "path": "python_tools/theory_innermost_recycling.py",
+      "bytes": 14154,
+      "lines": 229,
+      "sha256": "b7cebfbe1b086aa6d8acbebef0187bbfa756655d5123e6bf1a9d895220990052",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "Atil",
+        "Prad",
+        "share_within",
+        "proj_cancel",
+        "textpage"
+      ]
+    },
+    {
+      "path": "runners/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/experiment_comparison/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/experiment_comparison/pull_by_subname.py",
+      "bytes": 7201,
+      "lines": 179,
+      "sha256": "aae5cdf6a0b43476a683380f7a791dd4e6c6ba0cad714a8d429f7fe8cede6d9b",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_pretty",
+        "_load_records",
+        "_ssh_list_done",
+        "_scp_pull",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/analyze_device1_T.py",
+      "bytes": 2101,
+      "lines": 32,
+      "sha256": "c63d495d4bc3e73db7c3830cc9a5f8bdd2922e2fff2461621eb697798e8f8980",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "s"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/check_band_resonance.py",
+      "bytes": 3678,
+      "lines": 53,
+      "sha256": "67ee461f0361bb36dfaef9ae6ae43f6b9f27cd7d43bd947c45321fc159de0b6a",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/plot_side_by_side_maps.py",
+      "bytes": 5553,
+      "lines": 117,
+      "sha256": "68e74f6c82d65cfd78e97311e6595df7af94df8e0a2138ca4f10201b1a3b3b63",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_s",
+        "load_records",
+        "grid",
+        "heat",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/plot_te_300nm_map.py",
+      "bytes": 4737,
+      "lines": 113,
+      "sha256": "0d9b3fe82446b75d2bb0fc307d50da5f80a4d0ac37827061561afc54d7e7d624",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_scalar",
+        "load_points",
+        "grid",
+        "heatmap",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/plot_te_300nm_splitting.py",
+      "bytes": 3878,
+      "lines": 98,
+      "sha256": "85b19629c9e9c770c894eaccb6596fade29ddff2b23fd33290c4374961039c14",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "two_peaks",
+        "load",
+        "grid",
+        "heatmap",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/plot_tm_400nm_coupling.py",
+      "bytes": 4121,
+      "lines": 89,
+      "sha256": "a8a44011ed0fb62c91c913589985a0f096979fc19b259fc7ca17cecd4b8b6d92",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_s",
+        "load",
+        "grid",
+        "heat",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/plot_tm_400nm_detune.py",
+      "bytes": 6512,
+      "lines": 157,
+      "sha256": "49085d70d33d60a6234b0332d604e2a3dfd3fe4e4bdf197c1cb4c77b3501bb2c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_s",
+        "two_peaks",
+        "load_points",
+        "_lines",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/plot_tm_400nm_detune_T_gap34.py",
+      "bytes": 2872,
+      "lines": 83,
+      "sha256": "549a46d8024f0786c12c7ad79668712c330369e4aeb2c292c985c9ce91d506f4",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_s",
+        "load_points",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/plot_tm_400nm_map.py",
+      "bytes": 4768,
+      "lines": 113,
+      "sha256": "717592a4c218db27788dc70519e898055ca637a21fda24d0bce0991769cc1128",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_scalar",
+        "load_points",
+        "grid",
+        "heatmap",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/plot_tm_400nm_splitting.py",
+      "bytes": 4547,
+      "lines": 113,
+      "sha256": "c9f293ef33fef212ac115a949e7cc49552bfc7dc8806dbecac76e4759070b283",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "two_peaks",
+        "load",
+        "grid",
+        "heatmap",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/analysis/transmission_maps.py",
+      "bytes": 2879,
+      "lines": 47,
+      "sha256": "241b14fc4b781291a387a1875b4151d61c0fa060bdc3a91c45cd546c9b98b7dd",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "sc"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_coupling.py",
+      "bytes": 5427,
+      "lines": 115,
+      "sha256": "3332e0418cd96af68fcce67776772a96cb2c2fecb4990308024ffefd40bb1001",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_base"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_detune.py",
+      "bytes": 2698,
+      "lines": 65,
+      "sha256": "a0b224a33b7e4dd35ac3f1e5a64c9fabc1d01feebd3f956c26e0544356cdf743",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_recycle.py",
+      "bytes": 2488,
+      "lines": 60,
+      "sha256": "bcdd0ab9ef719522801ed35044dd2c471e8b2a0a99737c3f1f8869ffa5d0ff11",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_recycle_base"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_te_300nm.py",
+      "bytes": 5243,
+      "lines": 119,
+      "sha256": "042bba4d62150f76d7f7e132904767714f97a465962f5160c61d096db7670541",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_base"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_te_detune_300nm.py",
+      "bytes": 3063,
+      "lines": 69,
+      "sha256": "854f60469c5547c798410d9c7544becddc8a7a3285b7cbe304543147af59f1a7",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_tm_400nm.py",
+      "bytes": 5553,
+      "lines": 122,
+      "sha256": "fa32df57e115b6bac703d864cab9b20c96de7bd31c2ae58455e17b6423cccc82",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_base"
+      ]
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_tm_400nm_widegap.py",
+      "bytes": 2345,
+      "lines": 54,
+      "sha256": "32a3f24d4c882566478fa41e2df8f44a373ba3751ac9aa2ae74f4011c12c301d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_tm_detune_400nm.py",
+      "bytes": 3563,
+      "lines": 72,
+      "sha256": "9c8b81fdfdd0f80935f30ea25b610ed0ae175d00725cde8d904601320e3c2a1b",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_tm_detune_400nm_ext.py",
+      "bytes": 3308,
+      "lines": 68,
+      "sha256": "82734c56bb00d527e937c9747930baebbd6957ef353a355979316270f28e37d5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_tm_detune_400nm_lobe.py",
+      "bytes": 2523,
+      "lines": 57,
+      "sha256": "fd7ed6798e1d6018496fb812a1560153c35ffecbbec54fb6894f5ce3039c1f4b",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/side_by_side/side_by_side_tm_detune_400nm_stag6.py",
+      "bytes": 2627,
+      "lines": 59,
+      "sha256": "46b88a1cd02b89297c65573cae3be5864502f106dbb4fff52ced02442dcc9702",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/apodization/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/apodization/tm_apod_518_a20.py",
+      "bytes": 2078,
+      "lines": 55,
+      "sha256": "0e359e9cacd3d85c9b0581629229c83327eff16ed19ffe23eb8e4fb405cb50a5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/apodization/tm_apod_pitch518.py",
+      "bytes": 3599,
+      "lines": 77,
+      "sha256": "b24aafc2607f1b23c7722ce2aae18cfc6d9abac470c341b1f39645dbe7360611",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/apodization/tm_te_apod.py",
+      "bytes": 3055,
+      "lines": 69,
+      "sha256": "6cb49981a22ff1574a9f6f20bbf3e6ab138baa4cd1a3e530e9c0aa756d5f97fa",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/apodization/tm_te_apod_tanh.py",
+      "bytes": 3520,
+      "lines": 74,
+      "sha256": "3d95807db3e981837d00b39d493510478f7b6fb750f3e478c3a427a1f523a0ce",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/bic_kerker_trench/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/bic_kerker_trench/tm_air_trench.py",
+      "bytes": 5167,
+      "lines": 117,
+      "sha256": "d1a98231ff04b1ac18cff05e8667c2c08d14fb4f96a140c878cc8259c5a64936",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "row"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/bic_kerker_trench/tm_air_trench_regular.py",
+      "bytes": 3237,
+      "lines": 83,
+      "sha256": "d8791eeb147f811eba22b67e679b89ab8396be5bdb496c14c9230f025dbcabcf",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "row"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/bic_kerker_trench/tm_air_trench_w400fill.py",
+      "bytes": 2732,
+      "lines": 81,
+      "sha256": "f6a42640a8a6de259e0300b955abf0ba6a490ba33392308bb228cf58b2465a42",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "row"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/bic_kerker_trench/tm_bic_kerker_batch1.py",
+      "bytes": 8521,
+      "lines": 177,
+      "sha256": "50c4e162c9387386069e79bf7e142855e55f57a29208eb33f82238969c26e96b",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "alt",
+        "cd_shifts",
+        "add"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/bic_kerker_trench/tm_cd_profile_scan.py",
+      "bytes": 6171,
+      "lines": 137,
+      "sha256": "0dbb857725cc22ce7716e92dbc00e20690e44e2b3517a181f490f583a2014f04",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "cd_shifts",
+        "uniform_shifts",
+        "lumped_shifts"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/bic_kerker_trench/tm_fw_bic_scan.py",
+      "bytes": 8098,
+      "lines": 165,
+      "sha256": "819fd26703073d827169d7ac5a0a3a6ed1abdce7682b5fc9ac5547575ddc9195",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_base"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/bic_kerker_trench/tm_novel_phase2.py",
+      "bytes": 5997,
+      "lines": 138,
+      "sha256": "f64d73d1f11efcfcc919d63985bdd156e109eed18a22f814fd9ccff03e25cad8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "cd_shifts",
+        "cd_plus_2lambda",
+        "scat_row"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/anti_moment_cavity.py",
+      "bytes": 3779,
+      "lines": 89,
+      "sha256": "0971c057d6c0b246e0f5b885e29d708f02dac93171844be1b9d3477741f94dbb",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_pair"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/asym_dw_study.py",
+      "bytes": 3165,
+      "lines": 78,
+      "sha256": "7fe022357becbfaec86a74e280b1c4f86c6c35e9614b88f65df9f5590da92624",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_delta_list"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/barrel_followup.py",
+      "bytes": 3298,
+      "lines": 75,
+      "sha256": "52027f71489e300b120fd5235427c22179783d0056e8a5e8663b4542dfa6da76",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/cavity_acc_confirm.py",
+      "bytes": 2667,
+      "lines": 69,
+      "sha256": "a7d22ccc343d05508b11f3662ef2a228835f882808bb6780ae82b365e3ddcb90",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/cavity_combo_study.py",
+      "bytes": 2827,
+      "lines": 70,
+      "sha256": "e684c2ce97761794938eb535e2cbe86767ac9d99b099436c5265036092bcfc7e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/cavity_design_study.py",
+      "bytes": 3639,
+      "lines": 86,
+      "sha256": "47e2b86d0e4ba9a860fb3b0575d466aa6c375da251a9219cf669558533c7c549",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/cavity_hann_peak1050.py",
+      "bytes": 4966,
+      "lines": 104,
+      "sha256": "7001c5b2cfa418f155e83afdf61504172a3d1eb938e4749439f9cbc45604fdc1",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/cavity_hann_sweep.py",
+      "bytes": 5181,
+      "lines": 102,
+      "sha256": "b68fc5b3148d902772ef42e50f3804a0da262a01f6690e7c1e880369198043a8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/cavity_shape2_study.py",
+      "bytes": 2787,
+      "lines": 68,
+      "sha256": "9884b1f34a8fb630f3f636ec2452aafed275c23c4c4fc8cc2ccdfd6bc5edd028",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/cavity_width.py",
+      "bytes": 1651,
+      "lines": 47,
+      "sha256": "d87d36bcf3aee6ec19b1fe9da02c23c355089a3facc7c74873b77ae394658e59",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/cavity_width_ladder.py",
+      "bytes": 2523,
+      "lines": 64,
+      "sha256": "edd5ae65cf153a23c6940c06cd40300135dd85bb1ec87d36a75014c7c848bdcd",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/distributed_shift_study.py",
+      "bytes": 3949,
+      "lines": 101,
+      "sha256": "bfb6a53e5b9094152c62045a4c65bb7ba8bcb0bc817aa07fcb7ed9b47e539ff2",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_gauss_shifts",
+        "_uniform_shifts"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/inner_shape_study.py",
+      "bytes": 3929,
+      "lines": 91,
+      "sha256": "0f020ddf64fd46c6a5cfa9a0cffa4a0668115530ff68a881b1ee4049ad5f1626",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/shape_study.py",
+      "bytes": 5113,
+      "lines": 114,
+      "sha256": "ed9b9fd39a0e3a27d6536d04c6d9515a3bd77b38b01ab849b94a54022dd1c950",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/cavity_shapes/width_envelope_study.py",
+      "bytes": 3437,
+      "lines": 91,
+      "sha256": "305e3ff8772ad30cdbd46384593c3d946255ceeb3fd320db1527cb3f8397870f",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "step_island",
+        "taper_island"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/compare_3d_field_shift.py",
+      "bytes": 4011,
+      "lines": 86,
+      "sha256": "bfb0d0d7beea8311dd4d58e9833d34a5bf2c0fc63ad44afdf3485649dbc7f7eb",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/convergence/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/convergence/te_span_z_check.py",
+      "bytes": 3055,
+      "lines": 83,
+      "sha256": "127f7620a51d231654b0fefc86dd5cf694d694ad48f3806732a15d2dea01ebd1",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_base"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/convergence/tm_span_convergence.py",
+      "bytes": 2747,
+      "lines": 64,
+      "sha256": "b2857cf8749a01f32cad5348262b9e2c06aabb45e647ee1b87b3aebea0eff423",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/convergence/tm_span_convergence2.py",
+      "bytes": 2126,
+      "lines": 56,
+      "sha256": "2386905bcca4a34f637e50ed99c2abd8b20f3bc84fa617095481861a301aeaa7",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/loss_program/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/loss_program/tm_center_completion.py",
+      "bytes": 8593,
+      "lines": 166,
+      "sha256": "a0d92377ccd5369e5c97f0a34e0688496d91f5dd9ec363e378806e88df550819",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "row"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/loss_program/tm_derived_profile.py",
+      "bytes": 4481,
+      "lines": 118,
+      "sha256": "5e76c69ceb6155c08878c4cc87c5813a4bbf6ee324a204d360443bde0dc2ee97",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "derived",
+        "row"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/loss_program/tm_field_export.py",
+      "bytes": 3182,
+      "lines": 77,
+      "sha256": "56d02c87d0f8437db779a1897d2e788d671a2c77fee6adf4243cae0e854f19e0",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/loss_program/tm_pareto_stack_vs_apod.py",
+      "bytes": 6092,
+      "lines": 132,
+      "sha256": "7910dc5a18dc7be48e0e973f863a366f15ae423ef6cba2de602fb16cd331e5ce",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "row"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/loss_program/tm_radiation_polarimetry.py",
+      "bytes": 5135,
+      "lines": 100,
+      "sha256": "8c9833f705d966e71ecec9d88d43af587fd86bfb1bd65368350489683de424e4",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/loss_program/tm_shift_frontier.py",
+      "bytes": 7294,
+      "lines": 146,
+      "sha256": "48e166536faccefd5fa2d9fe74baf91c8b4115a1a0c9365fae0b1c105c5af98d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "row"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/loss_program/tm_strip_reflector.py",
+      "bytes": 5660,
+      "lines": 123,
+      "sha256": "0ca7f7c1276aa0be222397e647038b341c6d81ac9c6ffbe08470668e272b125e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "row"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/loss_program/tm_width_lightline.py",
+      "bytes": 3344,
+      "lines": 72,
+      "sha256": "2c842b8e898ad5df41bd1a101682f5b98877b5aa6b0972a7aa9e8ce598d9c462",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/plot_tm_periods_match_te.py",
+      "bytes": 11934,
+      "lines": 287,
+      "sha256": "d1cefea14a30687f39744f4a853356dde63580de974ccf2710946cfa71523875",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_scalar",
+        "_spectrum",
+        "_peak_T",
+        "_q_factor",
+        "collect_tm",
+        "load_te_ref",
+        "find_crossing",
+        "_plot_vs_N",
+        "plot_combined",
+        "write_csv",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/scatterers/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/scatterers/tm_hole_scan.py",
+      "bytes": 4488,
+      "lines": 111,
+      "sha256": "c7de08fac594a9faba604fd3688bd60ea762cbbee2364267363553f794273fde",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_base"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/scatterers/tm_scatterer_acc.py",
+      "bytes": 2248,
+      "lines": 54,
+      "sha256": "4dc05a8b2c3b4774d1d93dcd46311e3288a670f1c5dce1a43ab2cc979ffd473e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/scatterers/tm_scatterer_array.py",
+      "bytes": 4781,
+      "lines": 105,
+      "sha256": "c054f770edbcf3ca1985a06582b775fa3a27498082f1650efddb1c02e42bce57",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_rho_comb_x"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/scatterers/tm_scatterer_demo.py",
+      "bytes": 2346,
+      "lines": 55,
+      "sha256": "4660b2ad83ac22bd8fb1db2b917f5c6050ed63416070410044e4144cf7836069",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/scatterers/tm_scatterer_r80_xscan.py",
+      "bytes": 3428,
+      "lines": 95,
+      "sha256": "da9d2f7e05b703c066a3c92b231c2df3e751b2a57578d9ba8e681c8b3cd4361b",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_base"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/scatterers/tm_scatterer_radius.py",
+      "bytes": 2652,
+      "lines": 70,
+      "sha256": "92b758c6969af14ca43f4bfa9e8d7ab35914d71eef9c40fce97e99e4c8aaacdd",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/scatterers/tm_scatterer_scan.py",
+      "bytes": 5720,
+      "lines": 114,
+      "sha256": "576833e2a02965e06257d949eb6dffa0535ce3d444d08b2a8f7973567720e31e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_line"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/scatterers/tm_scatterer_ydist_scan.py",
+      "bytes": 7464,
+      "lines": 150,
+      "sha256": "446831426a0ce250b8cd009f2add1564c0da7bffce82c424629f69742f519030",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_base"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/tm_periods_match_te.py",
+      "bytes": 3204,
+      "lines": 69,
+      "sha256": "7bc65e3b79f12d33f2492c2d3cc67e141f44fd92e755037910f0d92022f70b79",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/archive/sweeps/view_tm_match_interactive.py",
+      "bytes": 5063,
+      "lines": 129,
+      "sha256": "dff7f5087512f863a4ab144dfe7f623afa64af9b1bc9aee8b100a63d99bf9864",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_load",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/archive/sweeps/view_tm_match_plotly.py",
+      "bytes": 4040,
+      "lines": 97,
+      "sha256": "99763ad45ce1872b292b361dee3353609501007b796bbcc2ae1541c599a26266",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_load",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/experiment_comparison/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/experiment_comparison/compare_with_experiment.py",
+      "bytes": 13476,
+      "lines": 317,
+      "sha256": "dd13d8cd305246f205cc4767c1018954a5917408b8dd71a974133cd7f60da82c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_find_sim_mat",
+        "_find_exp_mat",
+        "_load_sim_spectrum",
+        "_load_exp_spectrum",
+        "PeakMetrics",
+        "_movmean",
+        "_fwhm_3db",
+        "compute_metrics",
+        "plot_overlay",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/experiment_comparison/it11_card_builder.py",
+      "bytes": 7865,
+      "lines": 202,
+      "sha256": "9bffd5ec5c380e725922e183fc52122c13d29433da562e501ecea7e9c3699719",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "DeviceRecord",
+        "parse_subname",
+        "_read_csv_rows",
+        "build_it11",
+        "build_it11_cards",
+        "build_it11_records"
+      ]
+    },
+    {
+      "path": "runners/experiment_comparison/it11_devices.py",
+      "bytes": 1957,
+      "lines": 47,
+      "sha256": "2e0c3eeb91e7468ff2ab2c1ba504d4986b443183acc184363fe46ebac396ecb2",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/experiment_comparison/it11_devices_500.py",
+      "bytes": 1178,
+      "lines": 36,
+      "sha256": "c0d22dc5324b7b5635cd30de37a76df979bf0587996fe3a005cf38825a7b6fd7",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/experiment_comparison/it11_devices_516.py",
+      "bytes": 1024,
+      "lines": 32,
+      "sha256": "b46083040f3437b7371b73ca30a06ebb9bd410c9a526defcf2e96ee43eccbb33",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/experiment_comparison/two_resonators.py",
+      "bytes": 5612,
+      "lines": 110,
+      "sha256": "9cab06e925a3f18c2379a9ff18c969e83025674c7819dcfb3fa25d480b8f3114",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/fd_gradient_design/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/fd_gradient_design/fd_gradient_design.py",
+      "bytes": 30920,
+      "lines": 646,
+      "sha256": "1e54cfe4e8de92e9f5c03ccd06626ecefb4a17743c30947631d1df63ca5fd2f5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_smoothed_peak_T",
+        "FDGradientSpec",
+        "_FDBudgetExceeded",
+        "_round_key",
+        "_make_objective_and_grad",
+        "run_fd_gradient_design",
+        "_load_spec",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/fd_gradient_design/optimize_transmission.py",
+      "bytes": 3939,
+      "lines": 87,
+      "sha256": "f9f6c0f09acb8629d2b7959ff75d7efe91beeb060517e1b8d9266f442c932072",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/fd_gradient_design/smoke_test.py",
+      "bytes": 1981,
+      "lines": 59,
+      "sha256": "7685c41f5bfc9dd277e3d3300d91a1f0e155a1a7b2c2743577b621c8ba56691e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/gradient_free_design/__init__.py",
+      "bytes": 927,
+      "lines": 19,
+      "sha256": "bea4058645c45bec9757f741927e2d305cfcb7c482b4005234375c4ab21be8ad",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/gradient_free_design/gradient_free_design.py",
+      "bytes": 36006,
+      "lines": 782,
+      "sha256": "a0615964f449e325587174766ef65de0d2c02cfee6a56ca7865fd0462c767c2d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "GradientFreeDesignSpec",
+        "_make_freed_group_script",
+        "_make_fom_analysis_script",
+        "_build_parametric_fsp",
+        "_set_freed_group_params",
+        "_evaluate_particle",
+        "_make_rebuild_evaluator",
+        "_pso_optimize",
+        "run_gradient_free_design",
+        "_load_spec",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/gradient_free_design/local_smoke.py",
+      "bytes": 1746,
+      "lines": 57,
+      "sha256": "ccb984c0d43660760340f9d38316f12c8e016b3713c9ecc953f029ea76931d0b",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/gradient_free_design/optimize_transmission.py",
+      "bytes": 2354,
+      "lines": 62,
+      "sha256": "dcf9293fab67eb055e8454c2d88534d338c953de5b40aeb35f5e2695861a1289",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/gradient_free_design/optimize_transmission_corrected.py",
+      "bytes": 2468,
+      "lines": 70,
+      "sha256": "f0b0c7c4fab63997de88d9891c398263766ecb798c4afefaf7b5e50505de5e01",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/gradient_free_design/optimize_transmission_tm.py",
+      "bytes": 4490,
+      "lines": 95,
+      "sha256": "0fb082960006337c20f9fa829087397997411c8ee227541aed384c7924624685",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/gradient_free_design/optimize_transmission_tm_shift.py",
+      "bytes": 4395,
+      "lines": 94,
+      "sha256": "78fa59253830324b6532852d061db66461d2338ad49ef78fb1f99d7591c97263",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/gradient_free_design/smoke_test.py",
+      "bytes": 1618,
+      "lines": 50,
+      "sha256": "0b6d15daf94276aa9b4240896ed125b686eccaa3c3f3e3ed84dd3db7bb1720eb",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/gradient_free_design/test_geometry.py",
+      "bytes": 2727,
+      "lines": 83,
+      "sha256": "324324a01bad104b3e6a8d03d5af2246c7dc865f7cd320da0e2e500398701212",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/hole_lattice/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/hole_lattice/tm_hole_lattice.py",
+      "bytes": 6206,
+      "lines": 119,
+      "sha256": "90f027078f67b9f2e395db01998996e6725bf06981e2021e54b285d4b894cf45",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "narrow_centers_nm",
+        "_build_base"
+      ]
+    },
+    {
+      "path": "runners/inverse_design/__init__.py",
+      "bytes": 699,
+      "lines": 15,
+      "sha256": "a21d64d94209a46c72ccc11b6eebfbccb317637330a4141c5859f7ec0aa031e0",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/inverse_design/check_gradient_test.py",
+      "bytes": 2666,
+      "lines": 75,
+      "sha256": "017a35cbfc6580b558cb0d3d5db219c870ffae86c181bef979c49a91aeba1a31",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/inverse_design/check_gradient_test_fine_mesh.py",
+      "bytes": 2047,
+      "lines": 67,
+      "sha256": "8386f78d75be5e4974f90950a0b08f3e44b7e2983e163728555b4afb057f9d46",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/inverse_design/check_gradient_test_regular.py",
+      "bytes": 2253,
+      "lines": 70,
+      "sha256": "821281d8c3bf84d7383a0a73034b6fe4b739a8d4c432bb3f38761ecd0131c822",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/inverse_design/check_gradient_test_small_dx.py",
+      "bytes": 2157,
+      "lines": 68,
+      "sha256": "8755f55d86f0e71d923031298510df1c10edce3b478e8d007ecbda22ed0c36a8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/inverse_design/inverse_design.py",
+      "bytes": 70212,
+      "lines": 1453,
+      "sha256": "36c98df8d1ef981e35edf92cf99a88a0ddebfef079f5bf0a9b9b8cc4fdfb2e31",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "InverseDesignSpec",
+        "regular_grating_start",
+        "params_to_kwargs",
+        "_envelope_mod_depth",
+        "freed_region_x_bounds",
+        "freed_region_segments",
+        "polygon_vertices",
+        "freed_region_named_rects",
+        "make_render_callback",
+        "make_polygon_callback",
+        "make_lumopt_geometry",
+        "_extract_peak_T_history",
+        "measure_baseline",
+        "_build_static_skeleton",
+        "make_base_script",
+        "_patch_porttransmission_weights",
+        "_gaussian_weight_fn",
+        "run_inverse_design",
+        "run_inverse_design_outer_loop",
+        "_load_spec",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/inverse_design/optimize_transmission.py",
+      "bytes": 5261,
+      "lines": 107,
+      "sha256": "7bd465b46b2b46364fb0947d51d2466ad15381011c5c6b2647c3db36119faee6",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/inverse_design/optimize_transmission_outer.py",
+      "bytes": 3590,
+      "lines": 85,
+      "sha256": "0127d5893d155c9534c0f7b53495ad9c601bbf823467605cf4f1272e4e025cb8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/inverse_design/plot_run.py",
+      "bytes": 3944,
+      "lines": 98,
+      "sha256": "300763e2c26897eb50c39df7200d8e84db80c009ef006bdb1282e9c1aa3366aa",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_load_summary",
+        "plot_from_dir",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/inverse_design/scan_cavity_width.py",
+      "bytes": 2100,
+      "lines": 69,
+      "sha256": "799fbfa52f5832e017d69e7a24a8f8f8f633105da8ed362c4c839b4c0766b193",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/inverse_design/smoke_test.py",
+      "bytes": 2125,
+      "lines": 64,
+      "sha256": "420d52da290bc27912eef93672d3178fa51ebe96623dadb73ba9f59d75787a41",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/inverse_design/test_geometry.py",
+      "bytes": 6174,
+      "lines": 149,
+      "sha256": "72af7af524058328541bc9708fea525a47d2b598f26a23d28ecd13ff12d09b97",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_make_cfg",
+        "test_x_bounds_fixed_under_shifts",
+        "test_total_length_preserved",
+        "test_single_shift_legacy_layout",
+        "test_polygon_is_closed_and_mirror_symmetric"
+      ]
+    },
+    {
+      "path": "runners/lumerical_native_optimization/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/lumerical_native_optimization/lumerical_native_optimization.py",
+      "bytes": 28757,
+      "lines": 591,
+      "sha256": "6dc2885d3255002e6d4e033583f2c4cf362e2e890ba4ea2e1c9f3eeedad1fdb8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "LumericalNativeSpec",
+        "_build_optimization_fom_analysis_group",
+        "_configure_optimization_sweep",
+        "_read_optimization_result",
+        "run_lumerical_native",
+        "_load_spec",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumerical_native_optimization/optimize_transmission.py",
+      "bytes": 2334,
+      "lines": 61,
+      "sha256": "fc4c3262d933dab78be962bbedfc15b90c7c99fc1a1ffe8255c8da3549f8424a",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/lumerical_native_optimization/plot_run.py",
+      "bytes": 3492,
+      "lines": 92,
+      "sha256": "f1190cb5beed01483c3346592b1176a39329e80af90b847de34773afb1cbb7d9",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_load_summary",
+        "plot_from_dir",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumerical_native_optimization/smoke_test.py",
+      "bytes": 2021,
+      "lines": 56,
+      "sha256": "dc171335e6cbcae9517d81a96a5f4206a9f569e1da45e5953cf9f0424c0a0adc",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/lumopt2_design/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/lumopt2_design/best_designs.py",
+      "bytes": 23980,
+      "lines": 371,
+      "sha256": "0bc57f2d08434cfa4a0caf3ff2eaa0afb2aa2ffd2f75510871a3ae25f63717fc",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [],
+      "utf8_warning": "'utf-8' codec can't decode byte 0x97 in position 14482: invalid start byte"
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_c325_bare.py",
+      "bytes": 2833,
+      "lines": 60,
+      "sha256": "07c50c2751db160aa96d08307f2892ef1f736c5551ef0a113072b7466db0646f",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_c325_seedA.py",
+      "bytes": 2758,
+      "lines": 57,
+      "sha256": "629c9d710aa51f08ff4d69c66414bf5a49262673485490a6c0841182b99d8012",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_c325_seedA2.py",
+      "bytes": 4881,
+      "lines": 88,
+      "sha256": "501f3a24d7e40f489d082f99f7acc7f01598677c7af84d7b735ad85dc83c130f",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_c325_seedA3.py",
+      "bytes": 3110,
+      "lines": 67,
+      "sha256": "0e05bab28f4188294bb378b114af45aa9436aaa27a19fe19e80ebfd13a75f5ff",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_c325_seedA4.py",
+      "bytes": 3745,
+      "lines": 78,
+      "sha256": "f1e3f7974a1dfa83443fe71703881adf8b724f251345aee4f9e800bc758f840c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_c325_seedB.py",
+      "bytes": 2342,
+      "lines": 55,
+      "sha256": "1ecf54a63c09023e5f628cb7ad81a850ff159da669fee7558d6e3d91ca501241",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_c325_seedB2.py",
+      "bytes": 5247,
+      "lines": 102,
+      "sha256": "7f43303c2c6d44563b7007fa6024a0a50f5b7a5bb99e91e3cde183a9e1a07438",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_te_s1.py",
+      "bytes": 10838,
+      "lines": 162,
+      "sha256": "07c5b058bac7abf774d230c70ee2e736329fb3b128ef6d1289b05765f60bc1c1",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_te_s2.py",
+      "bytes": 7526,
+      "lines": 136,
+      "sha256": "715be7cc13b2869dc023db84be32a407a76963b1c391aaa5bbbb9940448576bd",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "seed_vector",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_v2_noshift.py",
+      "bytes": 5361,
+      "lines": 98,
+      "sha256": "210f1a60a19bb3fe45bf2349c258e276b5c73be4842c21b682a3ea9d22aa30b8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_v2_proj.py",
+      "bytes": 10716,
+      "lines": 183,
+      "sha256": "b2f08e963d9d53aeb6bdb2b4d6c229c1cee288a502dc050712b8aa750c579b45",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_v2_proj_best.py",
+      "bytes": 2577,
+      "lines": 55,
+      "sha256": "6761580c12ade845e64c08248e579a946010fd5a0add8109ec6aae2a66f5e041",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_v2_proj_d1.py",
+      "bytes": 6021,
+      "lines": 108,
+      "sha256": "5362904d8ea2263c8d5cef987cdeb556ba610eb4a22a1ca1c3c9b9d58e3b3e46",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_v2_proj_d1u.py",
+      "bytes": 3720,
+      "lines": 79,
+      "sha256": "94ea7cf6478d4046f4e6c79f662fc279bd16513b58f6aadf54aade759df513b7",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_v2_projection.py",
+      "bytes": 6147,
+      "lines": 107,
+      "sha256": "5b62a1fa81e77cfbcdc2c9fdf54d1f661675b197b0f2363d263bdfd0d74d338c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_v2_seesaw.py",
+      "bytes": 5140,
+      "lines": 98,
+      "sha256": "7e42948185f4d3e048c4d3694b58d2ce12e0621cb2a7f64219cc3cf62356c317",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/campaign_v2_uniform.py",
+      "bytes": 8708,
+      "lines": 146,
+      "sha256": "633facb76eb83b8f93ebb812e2fb4cf06e9bb06ff80e3d25fc51679c99738195",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/comb_basin_scan.py",
+      "bytes": 5821,
+      "lines": 128,
+      "sha256": "bb11750202d227c0b468ef857124e1865d99f4c5b5be0725ce9f373e04c56934",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_variant",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/comb_count_scan.py",
+      "bytes": 4120,
+      "lines": 86,
+      "sha256": "af668c1165cde1d32aa57cb2162b935cde01e33b2420f6755b83d7439a7512d5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/comb_dip_ab.py",
+      "bytes": 6175,
+      "lines": 115,
+      "sha256": "16939e21c84cfaade8f357c477759b75f576515f8c3deb2839b2a976d3414bd0",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/corr_profile_ladder.py",
+      "bytes": 5329,
+      "lines": 116,
+      "sha256": "39ff1163767a1fbff6bd8003e7ec6e9e35ab3f897be8ce0ddfb306c12ecd0f0c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "rung_params",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/dispatch_campaign.sh",
+      "bytes": 2027,
+      "lines": 43,
+      "sha256": "c7d6ddb547523c7db1ed81a5740e180393f4fce3394417ff113407eaf2ad2446",
+      "language": ".sh"
+    },
+    {
+      "path": "runners/lumopt2_design/elong_ladder.py",
+      "bytes": 5461,
+      "lines": 114,
+      "sha256": "00280bfd5262c9ede61c54f054dfc9ca026e60fc4f02f201ae4f24d378b14576",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "rung_params",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/export_gds.py",
+      "bytes": 3256,
+      "lines": 73,
+      "sha256": "516b8e084dcc006382bde5daf49ae92c2c465f1ee9a72ebddaccb1724b1f18fc",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/lumopt2_design/extract_spectrum.py",
+      "bytes": 4077,
+      "lines": 83,
+      "sha256": "946e16e5e830d0bdef0c4132eb1fb6a79c6cd346d6dc0c525bc4acf356440b91",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_has_results",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/fit_c_field.py",
+      "bytes": 5003,
+      "lines": 89,
+      "sha256": "e6574d7967b52e2cdd884e9ba985d0d9d4210bbffd3a8cb1850d3a67989ee1d6",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "fit",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/fsp_width.py",
+      "bytes": 4187,
+      "lines": 94,
+      "sha256": "321a5c65ff4fe67673a7eca55fb018a3ce432dfad256219965284e618d2d713b",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "find_fsp",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/fwhm_audit.py",
+      "bytes": 4578,
+      "lines": 96,
+      "sha256": "33c69b8a40b6b6ff1cd356e7b4b391f75721759174bb488512907caa64ae0910",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_noshift",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/derive_dwdlam.py",
+      "bytes": 4948,
+      "lines": 111,
+      "sha256": "75916a0ccb45ce800da54d77b22518389141d300f09b4a864a981a44154fd230",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "in_band"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_lam_chain.py",
+      "bytes": 7280,
+      "lines": 172,
+      "sha256": "f5134251e44c9002dd86c94dacd177b40a675871bc9d166584e6529d50e15a4f",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "spectrum",
+        "_dTdp",
+        "glam_naive",
+        "glam_matched",
+        "_glam_unswapped"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_lam_chain_plumbing.py",
+      "bytes": 9156,
+      "lines": 204,
+      "sha256": "c1e307138cf7ee4736ce9ff2d95c448d602e42ed2469d74826c55661a767730e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_fake"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_projection_local.py",
+      "bytes": 44039,
+      "lines": 814,
+      "sha256": "f043906502689766d237221143cadbd1e4a0de9965854fa03522688634b865b5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "check",
+        "_replay",
+        "_FakeProject",
+        "_FakeLog",
+        "_drive",
+        "_trial_steps",
+        "_patched",
+        "_ev_idx",
+        "_deliv"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_recovery.py",
+      "bytes": 7741,
+      "lines": 156,
+      "sha256": "429835b2eb911f1f23571897be498067e24c64704ffbcd0ac15542c5d3b06502",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "RecoveryChecks"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_te_local.py",
+      "bytes": 9738,
+      "lines": 192,
+      "sha256": "cbd5632dde9bed2cea3acbd3a46acbf3ce885cdb2a61277e8450cca2fe37d1a8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_read",
+        "check_monitors",
+        "_builder_ref",
+        "gate",
+        "generate_smoke"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_tm_identity.py",
+      "bytes": 11483,
+      "lines": 248,
+      "sha256": "8ebc08bca265d7e8073d658e60b761e82138544a36637c9df061d59d3812f906",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "r",
+        "sha",
+        "call",
+        "flatten",
+        "captured",
+        "FakeProject",
+        "synthetic_res",
+        "record",
+        "module_constants",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/gate_v3_local.py",
+      "bytes": 73994,
+      "lines": 1287,
+      "sha256": "ce2f449116199e48f85e32fef196bd693c95736d9b3e22c4443aef1984afd209",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "check",
+        "lorentz",
+        "boxes",
+        "instance",
+        "objective",
+        "row_viol",
+        "ref_solve",
+        "in_box",
+        "rl_projected",
+        "rl_full",
+        "gT_pred",
+        "FakeProject",
+        "FakeLog",
+        "drive",
+        "patched",
+        "swap_restore",
+        "grads",
+        "steps_vs_cap",
+        "dup_run",
+        "restore_run",
+        "restore_audit",
+        "gobj_gain",
+        "qp_probe_dropped",
+        "FakeFdtd",
+        "real_cb_row",
+        "FakeFdtd14",
+        "FakeFdtdW"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/h5_gate.py",
+      "bytes": 1884,
+      "lines": 53,
+      "sha256": "114e029281f2bb458030be400347c7632cb90f13d046d6ec95824010e8f1d74d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "scan"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/predispatch_check.py",
+      "bytes": 7063,
+      "lines": 161,
+      "sha256": "16783b2c7de3c553abcc4d4b4ce5fe31e64657d82d2934bb00c7a5b35032b2b5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "detune1",
+        "check"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/gates/run_all_gates.py",
+      "bytes": 1125,
+      "lines": 26,
+      "sha256": "967556bc6f82b42e42ae24bdf1e9b48a606725fe2eaa7e25a167d5f0df8f1498",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/lumopt2_design/gpu_probe.py",
+      "bytes": 10737,
+      "lines": 237,
+      "sha256": "4997ca574ac23e73d8182f6019b55c049af06d3cdf9bb078545348eb805dc28c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_fresh_scene",
+        "probe",
+        "tiling_identity",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/lumopt2_design.py",
+      "bytes": 236152,
+      "lines": 3995,
+      "sha256": "8f09350583a53146091faf590c2c93e8d93ac01a46b48006890db62c72a295e5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "layout",
+        "dx_pitchlock",
+        "CampaignSpec",
+        "seed_params",
+        "param_bounds",
+        "replay_params",
+        "tooth_names",
+        "comb_count",
+        "scatterer_names",
+        "make_func",
+        "_plain",
+        "measure_peak",
+        "RecenterNeeded",
+        "WidthTrip",
+        "make_fct",
+        "make_fct_peak",
+        "kappa_penalty",
+        "elong_penalty",
+        "_fw_elong_curve",
+        "make_fwhm_wall",
+        "sigma_hat_of",
+        "check_sigma_surrogate",
+        "make_sigma_wall",
+        "two_kappa_L",
+        "attach_penalty",
+        "bc_normal_weight",
+        "boundary_weights",
+        "make_bc_parametrization",
+        "build_base_cfg",
+        "build_base_fsp",
+        "_assert_name_map",
+        "import_lumopt2",
+        "make_project",
+        "make_log_callback",
+        "profile_line",
+        "_line_from_res",
+        "sigma_of_line",
+        "fwhm_env_of_line",
+        "_wsmooth_matrix",
+        "soft_width_of_line",
+        "softw_and_weight",
+        "width_band_penalty",
+        "make_fct_v2",
+        "check_import_src_injects",
+        "tile_x_edges",
+        "split_dataset_x",
+        "import_tiled_source",
+        "make_width_classes",
+        "_final_fom",
+        "_proj_step",
+        "_ns2_step",
+        "_queue_adjoint_jobs_filtered",
+        "_optstate_path",
+        "_load_opt_state",
+        "_save_opt_state",
+        "profile_mac",
+        "_reject_cap",
+        "_param_key",
+        "_broyden_update",
+        "run_projected",
+        "run_campaign",
+        "_row_of_params",
+        "_sigma_of_params",
+        "_best_from_log",
+        "run_canary",
+        "detune_params",
+        "_assert_fd_legs_in_bounds",
+        "run_validate_gradient",
+        "run_adjoint_only"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/prod_confirm.py",
+      "bytes": 5913,
+      "lines": 121,
+      "sha256": "47c20c723332b5c73645daa2afbe0dedde76a9e5f571d000725a54092a395745",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "spec_of",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/prod_q3db_ladder.py",
+      "bytes": 4992,
+      "lines": 103,
+      "sha256": "eee53fc2eb41c7de147ee65d0027c0684eb43a07cc9ded8126b7e6dafb4e12e4",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "spec_of",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/recover_te_s2.py",
+      "bytes": 11445,
+      "lines": 255,
+      "sha256": "d8350bffa96925d9790bb5e367a0d91d3d320cc108328c603ba67c2df5b9ec91",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "identity",
+        "read_checkpoint",
+        "checkpoint",
+        "port_arrays",
+        "score",
+        "successful_log",
+        "export_stored",
+        "fd_leg",
+        "recover_quadrature",
+        "fit",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/recover_te_s2_peak.py",
+      "bytes": 5264,
+      "lines": 110,
+      "sha256": "f5fd9ea7ed58b8d731a2d318e6f4786fb7c3b71d672024a8f88bd38b7db80b90",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "identity",
+        "gradient",
+        "fit",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/retrim_best_c325.py",
+      "bytes": 4051,
+      "lines": 92,
+      "sha256": "ba46a25ebfd0b22c8a7ff463c0553c5760f92aa0a76dd193896adfa851555c30",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_measure",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/retrim_decompose.py",
+      "bytes": 3448,
+      "lines": 79,
+      "sha256": "5f52f617a89531d1840f2b8a451291821dd98bb2121f41a34318e190c464425a",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_params",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/rho_neutral_shape.py",
+      "bytes": 5346,
+      "lines": 115,
+      "sha256": "499af991131c84906179c798d18e6b96bed423518773c559dda46a1ae56ee561",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "shape_profile",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/seed_width_audit.py",
+      "bytes": 8655,
+      "lines": 51,
+      "sha256": "a102534dca8002e9eb29671cce29a286c4cfb79629052bf50b9c34932fdc7363",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/seesaw_ladder.py",
+      "bytes": 7550,
+      "lines": 148,
+      "sha256": "0238cbe312206bf88a3dcd56f2094b69f57d8bf2597678932db1b64eab2ef53e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "rung_params",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/shift_ladder.py",
+      "bytes": 5726,
+      "lines": 111,
+      "sha256": "ab95c2bbed468c3bf82c3c7fe91550fe161f1837351baa8c67b6c0c17381d169",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "scaled_vector",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/sigma_neutral_probe.py",
+      "bytes": 5329,
+      "lines": 110,
+      "sha256": "671c1399eebb1b5f300a0b38f0dbfb45cc376e7f4bfba57761cb790cf187e4cb",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "traded_vector",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/tangent_probe_c325.py",
+      "bytes": 3737,
+      "lines": 82,
+      "sha256": "97f46b537297da4d45977ade8eda38af8851d051b2a99a5062b9d02551c06fe5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "probe_params",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/v3_step.py",
+      "bytes": 23700,
+      "lines": 459,
+      "sha256": "0e1b1cf4dc40a15ec2ddae649dd3cd505aa9715be974bb6b5ea6a86a8beb21c8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "peak3",
+        "peak3_r",
+        "cw_from_widths",
+        "_pgrad",
+        "_dual_solve",
+        "_min_violation",
+        "_scaled_viol",
+        "_slsqp_ascent",
+        "_feasible_point",
+        "_mu_estimate",
+        "qp_step",
+        "restore_lam_step",
+        "radius_update"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/validate_c325.py",
+      "bytes": 87190,
+      "lines": 1401,
+      "sha256": "ab6253c159d749aff7ecf3131a78a877a9a490b8a6038e742d58c2a0a57a8364",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_w_spec",
+        "_softmax_from_spectrum",
+        "gate_b0",
+        "_read_props",
+        "gate_b1",
+        "_shrink_twin",
+        "main",
+        "_b4_mini_opt"
+      ]
+    },
+    {
+      "path": "runners/lumopt2_design/validate_te.py",
+      "bytes": 22298,
+      "lines": 381,
+      "sha256": "805714822247e097e6008600a25fe10875b057eadb3eb5c2eace7c02d14280b6",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_indices",
+        "te_point",
+        "check_points",
+        "_centre",
+        "_forward_spec",
+        "_port_spec",
+        "_field_spec",
+        "_campaign_spec",
+        "fit_port",
+        "_upgrade_markers",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/metal_mirror/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/air_trench_dscan.py",
+      "bytes": 4979,
+      "lines": 98,
+      "sha256": "92e599ecce74f8191cf160fd17df5b67f81defe950674ba056681640f509d774",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/air_trench_w1050.py",
+      "bytes": 4016,
+      "lines": 90,
+      "sha256": "12c5043a3a55c0d1a724a51e3165d13d2baa5bd772259e54d6d31aac59b6c391",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/comb_q3db.py",
+      "bytes": 4915,
+      "lines": 101,
+      "sha256": "8aae3e90138d9685f2d5fb503436a02d3384d0016b3b3afaa9f764b9ad97f519",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/metal_mirror/comb_q3db_layouts.py",
+      "bytes": 4779,
+      "lines": 92,
+      "sha256": "fe1f8f896263dc413057b22e70c84263e3ab04a9538b0887e84d08e5c9932388",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/metal_mirror/comb_q3db_lock.py",
+      "bytes": 3969,
+      "lines": 79,
+      "sha256": "01345d6f02a939158ffd2b9a051d61d049bb4853472e67c0440c7a12f25e2b9d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/metal_mirror/engine_canary.py",
+      "bytes": 3668,
+      "lines": 77,
+      "sha256": "f1ebc31c0a89e4dbb55e0a8fe70aa5df51333a462249ddba0009b99be36c43a6",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/metal_mirror_dscan.py",
+      "bytes": 4832,
+      "lines": 96,
+      "sha256": "ec20e73b7428f3f77053dc4b886c76ee246d5d735c36fdb16832ec3fc34aafca",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/pec_trench_geom.py",
+      "bytes": 3448,
+      "lines": 75,
+      "sha256": "ae1453e3520c01dab0751a07301af22057d5f256cbe77a6fb3a35b67e0aeaade",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/retro_bank.py",
+      "bytes": 6216,
+      "lines": 130,
+      "sha256": "3384a04d3c30867cdbd9ed74ee01c2bdf22f1f02d1f0796a75bf0a634a027dcd",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "corner_sites"
+      ]
+    },
+    {
+      "path": "runners/metal_mirror/trench_apod20.py",
+      "bytes": 3111,
+      "lines": 74,
+      "sha256": "f1fe6773bd4d64acaee37d451ca3531589efb310f59a19847975250b8048bd0e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_d_refine.py",
+      "bytes": 2952,
+      "lines": 71,
+      "sha256": "681eb59b8fa035c5551a24758eeea85466aaf2bb1cb0b30b6aadb4b8d4b4948e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_flare_apod.py",
+      "bytes": 7927,
+      "lines": 173,
+      "sha256": "38b1b9cae73b80140bf3359a3e52a3a402e388d45baf77213709b1ea91874568",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_kappa_rel",
+        "_gap_raw",
+        "flare_profile"
+      ]
+    },
+    {
+      "path": "runners/metal_mirror/trench_flush_q3db.py",
+      "bytes": 3628,
+      "lines": 79,
+      "sha256": "dd61ab2b9afdeb0c0891448be04e568589fb81edc2c36c76c81892dee8a31054",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_flush_q3db_ctrl.py",
+      "bytes": 2649,
+      "lines": 58,
+      "sha256": "586dd81bfb7e626bb157c779ff4a6ee710a48524724ef4e2924cab5201d47433",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_flush_top.py",
+      "bytes": 3289,
+      "lines": 71,
+      "sha256": "f58f1584fa345e5c85d127a4be552cc3fad526bd152a2bfcbde9b515c6c2d3cc",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_h350.py",
+      "bytes": 2897,
+      "lines": 68,
+      "sha256": "aec8b8152a247c15251f3eaf260cf0c025cfe315de37bf6eeac5d33e23ae381d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_h4.py",
+      "bytes": 2090,
+      "lines": 56,
+      "sha256": "b2da7cff36a586c89015c4e13895bdb133b852053bc11469a40fc13e62d7ca25",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_n150_full.py",
+      "bytes": 6290,
+      "lines": 118,
+      "sha256": "00776e906e3d4ecd426014a9cbf77c568ee88ac7f1ebfd780373e307babe2c37",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_n150_h350.py",
+      "bytes": 2881,
+      "lines": 72,
+      "sha256": "16c0a682e5046e68bd6a8f4ddf0537b9b9de203c75c21647a8cad8d12560e54b",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_n150_hscan.py",
+      "bytes": 5059,
+      "lines": 101,
+      "sha256": "8a04012cd1bbdbea36037c56a675e4a49936991da7be33981b770547fc88cd1c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_q3db_20um.py",
+      "bytes": 4582,
+      "lines": 95,
+      "sha256": "642cbabe5a091995d6b87cf6f32c7e183a1bb3353c5e18d1209b7065d30ba042",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/metal_mirror/trench_te_apod.py",
+      "bytes": 3710,
+      "lines": 82,
+      "sha256": "c278a54ef62befca2f1025d24fe3fa88f8e494e6070508ab7b74f9346770d549",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/optimization_common.py",
+      "bytes": 2688,
+      "lines": 52,
+      "sha256": "8ba6b79997361ac6a7f4148727ecd5a5bad3d8f4645abdf711d5452c3d47bc20",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "make_optimization_base"
+      ]
+    },
+    {
+      "path": "runners/scatterers/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/_common.py",
+      "bytes": 10576,
+      "lines": 173,
+      "sha256": "638ddde0fbf83c15a439e9d007aea8d373e32f7ef01ab4d0c21fd76e681620cd",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "y_min_nm",
+        "positions_nm",
+        "row2_positions_nm",
+        "build_ports_base",
+        "build_ff_base"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_a_baseline.py",
+      "bytes": 1696,
+      "lines": 42,
+      "sha256": "23d631acd48e1eecc2ad8217c7208547751ea64aa433deb1126f90d3a13ac8ff",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_aim_extend.py",
+      "bytes": 3795,
+      "lines": 87,
+      "sha256": "04e8b3b1cc87fdccf07331abe6fd14c1dc7dbf2de408a52e08ab9c295990a7c7",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_air_comb.py",
+      "bytes": 4439,
+      "lines": 93,
+      "sha256": "a944002c13998d2d624a25d72231892c6da9341f2eb7814030250d53cdb471af",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_b_gates.py",
+      "bytes": 3855,
+      "lines": 79,
+      "sha256": "8105ab0021ebb91e97c26cefac8ba8361cf040b2f9ab0b1f0f15a370b432fd63",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_c2_row2.py",
+      "bytes": 3358,
+      "lines": 71,
+      "sha256": "498628f901cbf2404728928cfc3aa70f7c85680f2be83609b23c98d84537d4a7",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_c3_ygrid.py",
+      "bytes": 2958,
+      "lines": 67,
+      "sha256": "89739744040a5848806b8ba13de54bd0ea60beb89a4ba554ba6677d2f2d35797",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_c4_w1050row.py",
+      "bytes": 3102,
+      "lines": 74,
+      "sha256": "9bf48d1fc6c31682523b06940a66a4ac3788ff8b5b8c5eb556e1f3ec4b4afd85",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_c_response.py",
+      "bytes": 1968,
+      "lines": 50,
+      "sha256": "f6472743bef5565774dad0e6aadda8c70f8877c19baed6c727fd392533085cc8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_e_validate.py",
+      "bytes": 8698,
+      "lines": 147,
+      "sha256": "c299e3ee1cb94704fc3e0995933b9592902b742b066afece04c67b0660a1d7c8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_f_lattice.py",
+      "bytes": 3928,
+      "lines": 85,
+      "sha256": "8614f2686571885fb32d1506c851834ff8809a97ef47cb81fa2c7b72cc8bced3",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_sites"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_g_apod.py",
+      "bytes": 2526,
+      "lines": 64,
+      "sha256": "8f02ba0deec5b761952bb194b4a2ee397a12fc613dc1fa126fa6843bf3f20a2d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_h_retrocomb.py",
+      "bytes": 5041,
+      "lines": 106,
+      "sha256": "435e0f064165b077f27df0aebbc4ad89fe7d1803f851d6858bbaeed6c8f7a2a6",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_i_fieldmaps.py",
+      "bytes": 2641,
+      "lines": 66,
+      "sha256": "ba0ff2fa6882a5a3310e1dd919c92803be34d814306daa0a2b3ad025ffd72cdd",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_longcomb.py",
+      "bytes": 3166,
+      "lines": 63,
+      "sha256": "e507cff8b6a8b4770d2f3c1df1d95fef57854f2d40ff17290d69dedfe384dcc3",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_longpair.py",
+      "bytes": 3986,
+      "lines": 75,
+      "sha256": "d36f35c5c7f7c06cb4082385c9f8e60d04b216f944e7359dcc2a2ff00306fd93",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_n_heights.py",
+      "bytes": 2634,
+      "lines": 62,
+      "sha256": "62b1099d67be4cf3f037a76572b5c7086323d83fc270bf410d97f68719565f93",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_o_comb1800.py",
+      "bytes": 3113,
+      "lines": 70,
+      "sha256": "666a50fa60033b23dcb51e45324a8e1b4d0ecee73b1d4adc0f8a285273131b97",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_offcentre.py",
+      "bytes": 4789,
+      "lines": 90,
+      "sha256": "ff693542af15053c65cd7f3bbe9ec5a816f82057a1fb35c8df9061a2f1c6d62a",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_offcentre2.py",
+      "bytes": 4618,
+      "lines": 90,
+      "sha256": "66d29fa38ed7af143202d58f9d969127520addae903225b965ceca4d3c3686a0",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_p_antineedle.py",
+      "bytes": 3632,
+      "lines": 79,
+      "sha256": "65f1e94e3419c0777fd40f39a4a5c627e4e22055992dd6cb2cffadde246308b6",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_pair_apod.py",
+      "bytes": 3024,
+      "lines": 64,
+      "sha256": "d8989cbca8d421d20f4431bb147944831ca59fadcd001007c2a2990597eec623",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_pair_transfer.py",
+      "bytes": 5102,
+      "lines": 89,
+      "sha256": "e431a9b408f201842a288b14d69b82afa34fce1a3ba21a1cea9ccd01e7e9740c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_q_r80phase.py",
+      "bytes": 3319,
+      "lines": 76,
+      "sha256": "a712053d315bdb2821a10f3deafeddb71d75f55955e1fa06792f829fbf098347",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_r_aim536.py",
+      "bytes": 2943,
+      "lines": 69,
+      "sha256": "da14ba8328d87ce9d0cc771719a531118f92dc925cca55c12f75eaa7e9a609cc",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_rect_comb.py",
+      "bytes": 4461,
+      "lines": 97,
+      "sha256": "6ff21d4ff5224fd85e7bd0ec00c14c0e07c9867b9fa4211546f01a834c9f6cd8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_s_refine.py",
+      "bytes": 3751,
+      "lines": 83,
+      "sha256": "121f12fad57f1d45d8cba4863e482682023e2311db77c55ec5a5452e515f1ca8",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_stage0_scan.py",
+      "bytes": 2387,
+      "lines": 53,
+      "sha256": "a24b6aac78e04dc27de1c715f8cd092ab4f92d46c6524c3d888b70971e01306d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_t_confirm.py",
+      "bytes": 4479,
+      "lines": 97,
+      "sha256": "12dab08c6e11819118042f814b298c584a4638baef817604ecdafc754b428413",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x",
+        "flat"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_te_comb.py",
+      "bytes": 3720,
+      "lines": 85,
+      "sha256": "c2fcdebb309e0fa90caeb8079da03a6ea1a90f8852546f146028969077774c95",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_u_flushcomb.py",
+      "bytes": 3392,
+      "lines": 74,
+      "sha256": "d5e2d9aea2ab25210a66356b83125e311cb2897f306c2b211d5f16a3383f1a4a",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_v_apodcomb.py",
+      "bytes": 2275,
+      "lines": 56,
+      "sha256": "c4f3db94827957ebc8bff72183bde62df204280692bc0624312461d222b19fce",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_w_dscan.py",
+      "bytes": 2570,
+      "lines": 66,
+      "sha256": "2066fe8280e48cc78d97e2a475201b7bf8f7bade17a35c8fa56c1f0ea6735126",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x10_incore_r50_axis.py",
+      "bytes": 2401,
+      "lines": 56,
+      "sha256": "5bdf8e8b3edcac8dd67fa251940c315e107218ee4f06956fdd6d9ef6213a8895",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_x11_incore_axis_r30_40_60.py",
+      "bytes": 2164,
+      "lines": 49,
+      "sha256": "dd620f4efec4671cc5e0aa9bda55a842c93338d11dc2520d83619e004bb3b5a4",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_x12_incore_axis_r80_110.py",
+      "bytes": 2289,
+      "lines": 49,
+      "sha256": "f8f1ab4ea19cf14a292ee8fc7e4fc2738c3252c536dc1fd6c9292d01a3f8f4e0",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_x13_incore_axis_r50_lamscan.py",
+      "bytes": 2524,
+      "lines": 56,
+      "sha256": "fca30487249ed229e6e4699f5de75c5cfe2d023006cce5b59cedfef1e58d4db2",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x14_incore_axis_r50_phase.py",
+      "bytes": 2524,
+      "lines": 56,
+      "sha256": "fece598d0640ab4cb2344ee20545ce94294c194d10c21e7ad01d96caee23b45c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x15_incore_axis_r50_circles.py",
+      "bytes": 2259,
+      "lines": 54,
+      "sha256": "a82dfd5054d900369e09a70a57c145f8f60e5ba0f38269a881d54620ff97c41c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x16_incore_axis_r50_count.py",
+      "bytes": 2664,
+      "lines": 58,
+      "sha256": "6ff344d8eca1a1fc0efa0e0fad00f13aa7747fd2d241cba52817e5af73baef6c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x17_incore_axis_eqwidth.py",
+      "bytes": 3000,
+      "lines": 59,
+      "sha256": "90ba4df5b840d000397d876443530761f73f5c8a323e6e1d658142c36278af2c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_x18_axis_r60_period_c536.py",
+      "bytes": 2335,
+      "lines": 54,
+      "sha256": "57ceebc16b9c4891c8d9b07db3de7ff1cef8ce71736dc08b3d2364664bbf10a2",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x19_axis_r60_phase524.py",
+      "bytes": 2236,
+      "lines": 53,
+      "sha256": "70d3b0218ca6dcfe248c480f6d58b731dff050c9195adebd892e0e12b6738386",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x20_incore_axis_eqwidth_r30_40.py",
+      "bytes": 3029,
+      "lines": 59,
+      "sha256": "bb6c8227e606393ad459568b2612d2daf79e004dbd8dd8767dc02e1595f2338b",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_x21_axis_l527_athena.py",
+      "bytes": 2275,
+      "lines": 53,
+      "sha256": "69f6ebc3824d48eefb93f37386f0ee184cc887df5d7a7a076f927b811a4a8f84",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x22_axis_l527_igum.py",
+      "bytes": 2260,
+      "lines": 53,
+      "sha256": "0c3aa722df58e34d0419e46c1cdde56b71ae6f63d191bc21c250685aae2e39e2",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x23_axis_l527_r50phase_r30eq.py",
+      "bytes": 2711,
+      "lines": 57,
+      "sha256": "50220611ba161f68e78d2a3d7713067c56a9bab1bdc541081082c18e9eb1dc84",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x24_axis_l527_r50eq.py",
+      "bytes": 2667,
+      "lines": 57,
+      "sha256": "cf1545aa3f4cc28f05966ef3a8e3325204175e067c26b2074f7d79d8c819797a",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x2_incore_circle.py",
+      "bytes": 3355,
+      "lines": 75,
+      "sha256": "330daa70544f296719e211a8aaa136842baaee8640ed6c2e8125701060577054",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x3_incore_lamscan.py",
+      "bytes": 2901,
+      "lines": 69,
+      "sha256": "84744eddf7ed35d0a17c40fbc3ceb3b46dc39b2c7116013275ccc179f2886c8d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x4_incore_below530.py",
+      "bytes": 2802,
+      "lines": 67,
+      "sha256": "316893c9a87dfe4169e3fea47feac548ad14c7edbc69fca1e75bdaa04af77da4",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x5_incore_r110.py",
+      "bytes": 2371,
+      "lines": 58,
+      "sha256": "12f5989f6a86d493b1b3d0340b65ef78d0971a8d0195a17d28991d0ab6c90723",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_x6_incore_r50.py",
+      "bytes": 2383,
+      "lines": 58,
+      "sha256": "9575e4175267e776a1e94c8d615f27e77af8ec980f4ce0c6caa622b380994428",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_x7_incore_r40_r30.py",
+      "bytes": 2221,
+      "lines": 56,
+      "sha256": "36a789d30e346caa5daa48c7e116cd00f54bf818583d0256aeb95231d1dfdb82",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_x8_incore_r50_c477.py",
+      "bytes": 2763,
+      "lines": 64,
+      "sha256": "fecb17b2c32dc6780615a15d9e68d69dbe03981222f8b204acbbe866f9a2d0e7",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/scat_x9_incore_r50_phase.py",
+      "bytes": 2213,
+      "lines": 59,
+      "sha256": "aa5d9b8afea785de59faa8d668cad5ddef19e3696b295e672ac5f173d450e7b5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_x_incore.py",
+      "bytes": 2940,
+      "lines": 71,
+      "sha256": "bc3be1148eeb99eab2cb6a22420cbdddbff1fdb65adacccaf72bdfcc05387111",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_y_polish.py",
+      "bytes": 3815,
+      "lines": 80,
+      "sha256": "f5e1182d476ee440eceffb93955ebdf26b31f6576be6c835c64a82270baaa4e0",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "comb_x"
+      ]
+    },
+    {
+      "path": "runners/scatterers/scat_z_teffmap.py",
+      "bytes": 2529,
+      "lines": 63,
+      "sha256": "d5ecdd69e77c825923e8e0afb6184727d317097a8fba32b13b04aee303244e77",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/scatterers/solve_response_matrix.py",
+      "bytes": 41400,
+      "lines": 822,
+      "sha256": "01bae72313b7f2f9d1b30de20e9f0a9dfc281e19895b1792b01b77a485a8e992",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_stage_dir",
+        "_monitor_vector",
+        "_check_e2_consistency",
+        "load_run",
+        "load_stage",
+        "_controls_and_rest",
+        "_shift_gate",
+        "cmd_gates",
+        "_power",
+        "_greedy",
+        "_bounded_ceiling",
+        "_periodic_scan",
+        "cmd_solve",
+        "cmd_solve2",
+        "cmd_validate",
+        "cmd_selftest",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/side_by_side/side_by_side_tm_detune_400nm_ext.py",
+      "bytes": 3308,
+      "lines": 68,
+      "sha256": "82734c56bb00d527e937c9747930baebbd6957ef353a355979316270f28e37d5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/single/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/single/compare_3d_field_default_vs_shift.py",
+      "bytes": 8457,
+      "lines": 183,
+      "sha256": "0062b5b3296ff65fe5b3edfefd6c368dbd8c6e38be5fb01850da308e6f374017",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_resolve_locked_lambda_path",
+        "_make_prelim_config",
+        "_make_locked_compare_config",
+        "run_compare_3d_field_prelim",
+        "run_compare_3d_field_default_vs_shift"
+      ]
+    },
+    {
+      "path": "runners/single/compare_8_devices.py",
+      "bytes": 4550,
+      "lines": 118,
+      "sha256": "81c13437ec963b8afc138c62088b8a58eb7a1dee39a95c4fd8a598f2788a0ef4",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_base",
+        "_baseline",
+        "_apod",
+        "_optimized",
+        "run"
+      ]
+    },
+    {
+      "path": "runners/single/compare_tm_optimized_shift.py",
+      "bytes": 1642,
+      "lines": 46,
+      "sha256": "6e130c439d7bbde4658a575955197096ae57c7201724596f9520fac63c3f3d72",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "run"
+      ]
+    },
+    {
+      "path": "runners/single/linear_apod_10p_no_shift.py",
+      "bytes": 1274,
+      "lines": 44,
+      "sha256": "4b1eb303f904792b37cffc0548cc48ab55d00d78c5ad7558d7568b23241c5ee5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "run"
+      ]
+    },
+    {
+      "path": "runners/single/run_experiment.py",
+      "bytes": 5592,
+      "lines": 112,
+      "sha256": "4b94bacdb309ef08280c74d88b21b346147385a3f1315554f87074ddb411c3ac",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "example_single_run",
+        "example_compare_devices",
+        "example_sweep",
+        "run_experiment"
+      ]
+    },
+    {
+      "path": "runners/single/run_simple_bragg.py",
+      "bytes": 21386,
+      "lines": 531,
+      "sha256": "52d9850394e1e2837604aaf0b7b3818297dc085c9dadafa1508784f0f57cc20e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "SimpleBraggFDTD",
+        "run_simple_sim"
+      ]
+    },
+    {
+      "path": "runners/single/run_simulation.py",
+      "bytes": 7075,
+      "lines": 167,
+      "sha256": "fe363b84c8493ad4042cc2d0f638848e2b229a03e780c9665eaf18ecfb10cbbc",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "run_single_sim",
+        "cleanup_lumerical_temp_files",
+        "build_cfg"
+      ]
+    },
+    {
+      "path": "runners/single/tanh_apod_10p_no_shift.py",
+      "bytes": 1382,
+      "lines": 46,
+      "sha256": "dd61cc3a6998b441ac8902ad4f89bde3a7bd7efc93c9291f7aee1f1adb1367ee",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "run"
+      ]
+    },
+    {
+      "path": "runners/single/tm_baseline_accurate.py",
+      "bytes": 1834,
+      "lines": 50,
+      "sha256": "7488af1e3f04ee7101f6a005b3433cf8895204234e8665cfe7f49deff7e59b79",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "run"
+      ]
+    },
+    {
+      "path": "runners/single/validate_te_scaling.py",
+      "bytes": 3227,
+      "lines": 85,
+      "sha256": "ce3950056b27bd2462b26e2d035fab3953928c7767a1891e0cc27fad821efaa3",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_cfg",
+        "run"
+      ]
+    },
+    {
+      "path": "runners/single/verify_pso_best.py",
+      "bytes": 1976,
+      "lines": 56,
+      "sha256": "14b0cb152352026bfc2fd7cc8c23855732f7ea51374cbea40bbea749a3316515",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "run"
+      ]
+    },
+    {
+      "path": "runners/sweeps/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/_tm_base.py",
+      "bytes": 2938,
+      "lines": 61,
+      "sha256": "44e4f82d621bd36423b1992046fdccff901bd603ad9ea6a49b293ee3ba039284",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_base"
+      ]
+    },
+    {
+      "path": "runners/sweeps/apod_and_shift.py",
+      "bytes": 1458,
+      "lines": 44,
+      "sha256": "8714706ddf5f3d39ceed4b4eee6cd2732caecca3db8ce133cbb40241769fb01d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/autoshutoff_qspan.py",
+      "bytes": 4786,
+      "lines": 95,
+      "sha256": "077496bd4a950de73f3bb5d2137d5c0bea676ad43a19b647d10fe4174c6f690e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/farfield_sph_20um.py",
+      "bytes": 9319,
+      "lines": 157,
+      "sha256": "6eec15688fdaacf782c6e6da90bb4f67b888367705cc59ed8c51859f68581924",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "zmult"
+      ]
+    },
+    {
+      "path": "runners/sweeps/inner_tooth_size.py",
+      "bytes": 1290,
+      "lines": 42,
+      "sha256": "37eb807838c07bcca5520abae46a9d981fefc4d706b14044a85fab8be755e719",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/innermost_shift.py",
+      "bytes": 995,
+      "lines": 36,
+      "sha256": "5b1ca89391aba7b72f09131d66a8949d8ea4b06150736b4b9d15090cb55b731d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/invdesign_q3db_20um.py",
+      "bytes": 10493,
+      "lines": 174,
+      "sha256": "bbe7770dc09f73f3bb5fbb23cd3a95fcc9c641f045abff29c083de486d4509b4",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/itai_hh_apod.py",
+      "bytes": 12485,
+      "lines": 231,
+      "sha256": "0ace28a71ff1f9ef47127ed29a587b84284c827bde2f0e28b091f1c8d6a54a24",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_neff",
+        "_solve_mid",
+        "teeth",
+        "pitch_for"
+      ]
+    },
+    {
+      "path": "runners/sweeps/itai_hh_asdrawn.py",
+      "bytes": 4367,
+      "lines": 86,
+      "sha256": "2986019266c2bcee1c75b1c8509bfb2055e004c85dfc5b30be1e5ad6f2d82edb",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/itai_hh_nt60w20.py",
+      "bytes": 12021,
+      "lines": 212,
+      "sha256": "3309e16f6a46cbce0a685dc16081f492849c281341d73fc0380e030f59bd199f",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "teeth",
+        "pitch_for"
+      ]
+    },
+    {
+      "path": "runners/sweeps/itai_hh_te_cross.py",
+      "bytes": 6080,
+      "lines": 113,
+      "sha256": "e4504f19df22cd6af4f72595feca13a97c39207f2c6031b9ba589183cd3bc0d0",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/itai_hh_tm_cross.py",
+      "bytes": 4535,
+      "lines": 87,
+      "sha256": "dec132c9ddb473d6336283683a3ac3deb51391c8d1dd0c493ed44f289fc6bcb2",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/number_of_periods.py",
+      "bytes": 838,
+      "lines": 32,
+      "sha256": "f887d2371a5f20d5658fed84d1d590740fffc03f137a1cd4792c8dbe38326eb7",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/optimize_innermost_shift.py",
+      "bytes": 9198,
+      "lines": 211,
+      "sha256": "9add3e47311a0bffa4233bb74a42e100c4abd6c366706e54c04de68a0ecdc6a3",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_evaluate",
+        "run_optimization",
+        "save_optimization_results",
+        "plot_optimization"
+      ]
+    },
+    {
+      "path": "runners/sweeps/plot_tm_te_shift.py",
+      "bytes": 11855,
+      "lines": 285,
+      "sha256": "d72a7c8e2b0c07236249f1266c48b227631f6c9256c46382657f34827e3c186e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_fwhm_relative",
+        "_envelope",
+        "_plane_width",
+        "plane_widths",
+        "_scalar",
+        "_parse",
+        "collect",
+        "_series",
+        "_plot",
+        "_plot_planes",
+        "write_csv",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/sweeps/proposal_fieldmaps_n100.py",
+      "bytes": 3635,
+      "lines": 73,
+      "sha256": "fd9e765920c8649c9d5d1ad1717d7dd920afc101c13b5b2d0f5ce3bfadc6c1fb",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/proposal_fieldmaps_q3db.py",
+      "bytes": 4314,
+      "lines": 90,
+      "sha256": "2acd0093804370e7dd9fd3c3df539f292ca3010bfecd3c1fc23fe36464a6d0a2",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/sweep_spec.py",
+      "bytes": 15661,
+      "lines": 270,
+      "sha256": "da6d5bfb4f8c9b3d332ea94b56e938fd121f0ac3441d9a90941dcaa380edb894",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "SweepSpec",
+        "run_sweep_spec",
+        "_run_local"
+      ]
+    },
+    {
+      "path": "runners/sweeps/te_q3db_20um.py",
+      "bytes": 3930,
+      "lines": 84,
+      "sha256": "5cbc3005f85d61b5a1000273396e768bcefa562b3a32dce6ddccd7ebb9919320",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/te_transfer_check.py",
+      "bytes": 2256,
+      "lines": 53,
+      "sha256": "c16300977577b517667b609a8eddbfa726306538325d6980deb3b5a27ef8447d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_cladding_reflector.py",
+      "bytes": 10806,
+      "lines": 219,
+      "sha256": "52a2083b9ea230534ba3ff99596d14f517e067b0ca4a2d537a307d1ce4589773",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "dbr_design",
+        "dbr_ylist",
+        "phc_grid",
+        "add"
+      ]
+    },
+    {
+      "path": "runners/sweeps/tm_comb_box_c325.py",
+      "bytes": 3461,
+      "lines": 77,
+      "sha256": "2141862d3484a0d729d2d6442c928d7cc54a013b8fd985347e8e09c74e75cc22",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_exotic_recycle.py",
+      "bytes": 3005,
+      "lines": 67,
+      "sha256": "f7fae66059ee6a5ebc529b772670f03659212b0934e1a658d38e912d576d2930",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_h200_w1800_p504_locator.py",
+      "bytes": 3857,
+      "lines": 80,
+      "sha256": "6e8f68bc5f936bd41143f4b038ab40866f5bd5ee1d8d641ba4d9ad174b63c3ce",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_h200_w1800_p504_n1300.py",
+      "bytes": 4439,
+      "lines": 92,
+      "sha256": "e2abffdcd796111b85c049e7c91f5b49d1f70db4b7456829acb7d830d904d5e5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_nladder_c276.py",
+      "bytes": 2971,
+      "lines": 68,
+      "sha256": "47b8c2a3ecfd55f4db535eb7b4a7d04b9ab1597c3b22813c1544b91c0dbc9df2",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_nladder_c325.py",
+      "bytes": 3319,
+      "lines": 70,
+      "sha256": "ebfc8db9c7314c2513c510475258c8129d316aa188dd77299b2db77e7d41c028",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_nladder_c400.py",
+      "bytes": 2653,
+      "lines": 58,
+      "sha256": "0eb73d5cd30b4f370df134e80d0cc3a512c0c5e773740dc7ef3b70b5e41fd850",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_q3db_14um_knob.py",
+      "bytes": 3889,
+      "lines": 80,
+      "sha256": "e6c3189d1eabeea1d44f6e6b8e7c60ffb70161fbba377e8a0129c83c8f1eed59",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_shift_c400.py",
+      "bytes": 5423,
+      "lines": 101,
+      "sha256": "d51ec1b466d3283877ea995bf1e2dae191ae8a740c42eee077f3f365b8f4eff1",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_shift_p518.py",
+      "bytes": 3006,
+      "lines": 63,
+      "sha256": "de9b468f78384e3496a044d8236e0dfa97a8a4f264df22370a2d0b7b5bb114cf",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_span_conv_c325.py",
+      "bytes": 4558,
+      "lines": 92,
+      "sha256": "13e83b3c351634d4e080bbaf1b64ae73b54a71f79a518325651ea785463621c3",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/sweeps/tm_superlattice_2L.py",
+      "bytes": 3357,
+      "lines": 78,
+      "sha256": "b776dc7f60c35771d4154287897561f1ba4b1cdd484c4d05a7d8e4d29d53a972",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "alternation"
+      ]
+    },
+    {
+      "path": "runners/sweeps/tm_te_shift.py",
+      "bytes": 3491,
+      "lines": 75,
+      "sha256": "542da9bd3f11d644a8ecb5cd33258688fa0eefdc44f2e053c3dba01907c11b7f",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/tm/__init__.py",
+      "bytes": 0,
+      "lines": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/tm/_tm_vs_te_common.py",
+      "bytes": 14897,
+      "lines": 288,
+      "sha256": "07b58aba52df468bc18f08a8c409d9435873bef3a3176b8f7758925aa8f7a6ee",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "build_base_cfg",
+        "_farfield_enabled",
+        "_spectral",
+        "stopband_nm",
+        "run_one_scan",
+        "_build_summary",
+        "run_stitch",
+        "_chain_from_mat",
+        "stitch_dir"
+      ]
+    },
+    {
+      "path": "runners/tm/calibrate_neff.py",
+      "bytes": 13135,
+      "lines": 294,
+      "sha256": "20c34c6af847199b8ae035884a3c56e360fb1d7575ec059a8bf09402ef4dd12c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_import_lumapi",
+        "_build_section",
+        "_pick_mode",
+        "neff_vs_wl",
+        "_read_anchor",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/tm/run_te.py",
+      "bytes": 1426,
+      "lines": 42,
+      "sha256": "1f40b2e3715b7b86718762e8820e0f09b37de6c92ea59c382adc1694b8a4c7a5",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "run_te"
+      ]
+    },
+    {
+      "path": "runners/tm/run_tm.py",
+      "bytes": 2769,
+      "lines": 61,
+      "sha256": "cedd696e84f50b956b716d682cb585f46ab3eea698253d242a38034985be8a52",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "run_tm"
+      ]
+    },
+    {
+      "path": "runners/tm/run_tm_vs_te.py",
+      "bytes": 3208,
+      "lines": 71,
+      "sha256": "c3d7a941fd62116f4c452bd50e741386172d60f90191cf4f7c561920388de698",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "run_tm_vs_te"
+      ]
+    },
+    {
+      "path": "runners/tm/tm_apod_pitch518_rest.py",
+      "bytes": 2900,
+      "lines": 68,
+      "sha256": "59d94727ec4a7938d31c5256a3fd9b3af320e66888b1bb5a88eb123971fdc16f",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_base",
+        "run"
+      ]
+    },
+    {
+      "path": "runners/tm/tm_match_corrugation_bisect.py",
+      "bytes": 27614,
+      "lines": 552,
+      "sha256": "4c017f78835fc04f30e6a3a837b12adedfe3532e012697d9b4fac73108371177",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_search_float_match",
+        "_q",
+        "_parse_pol_corr",
+        "_load_cache",
+        "_init_log",
+        "_append_log",
+        "_evaluate",
+        "_envelope",
+        "_interp_crossing",
+        "_write_outputs",
+        "run"
+      ]
+    },
+    {
+      "path": "runners/tm/tm_match_periods_bisect.py",
+      "bytes": 21363,
+      "lines": 458,
+      "sha256": "731f230b8b8570548c05883f4dee36d35c2b890870b14112ab8092a61808cff1",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_search_integer_match",
+        "_q",
+        "_parse_pol_N",
+        "_load_cache",
+        "_init_log",
+        "_append_log",
+        "_evaluate",
+        "_spectrum",
+        "_write_outputs",
+        "_interp_crossing",
+        "run"
+      ]
+    },
+    {
+      "path": "runners/tm/tm_match_pitch_bisect.py",
+      "bytes": 20269,
+      "lines": 404,
+      "sha256": "d2bad8a707d8710423de3ee69963811254ef310a34d4e82c956d8c4478150a36",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_secant_pitch",
+        "_parse_pitch",
+        "_load_cache",
+        "_init_log",
+        "_append_log",
+        "_evaluate",
+        "_write_outputs",
+        "run"
+      ]
+    },
+    {
+      "path": "runners/tm/tm_mode_loss.py",
+      "bytes": 15395,
+      "lines": 350,
+      "sha256": "bb37920cd438a1d2a3bf5d7d8ad5b92e670c65ac66fc6bc5d7b7421ed88df8bf",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "bulk_dbcm_to_k",
+        "imag_neff_to_dbcm",
+        "_setup_lossy_materials",
+        "_build_section",
+        "_ex_fraction",
+        "_pick_mode",
+        "_read_mode_at",
+        "_sweep",
+        "solve_polarization",
+        "run",
+        "main"
+      ]
+    },
+    {
+      "path": "runners/tm/tm_wide_mode_corr.py",
+      "bytes": 19490,
+      "lines": 354,
+      "sha256": "817f6fc39e0bd78ce33638d29d497f249ef1b6b907fd8cd72c570046d257908c",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_secant_invfwhm",
+        "_write_outputs",
+        "run"
+      ]
+    },
+    {
+      "path": "runners/visualization/__init__.py",
+      "bytes": 418,
+      "lines": 13,
+      "sha256": "31e866b02e9b6261a26bd9d34e5fc4df7f614baead4d1a8c7826b45f4e496b50",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "runners/visualization/plot_optimization.py",
+      "bytes": 7521,
+      "lines": 192,
+      "sha256": "5f2f5c6188fb0b9bf4ea088ed89042ae2b49446c6614a151b11057c9cdc2b28e",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "_coerce_fom_series",
+        "plot_convergence",
+        "_load_spectrum",
+        "plot_spectrum_overlay"
+      ]
+    },
+    {
+      "path": "sim_helpers.py",
+      "bytes": 33180,
+      "lines": 681,
+      "sha256": "80ff9a2348c61b2e5d208c4b69bfbf50a32d0d0bb2977348ad7bfbc289af8689",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "extract_farfield",
+        "extract_monitor_surface_eh",
+        "extract_monitor_nearfield",
+        "extract_monitor_polarimetry",
+        "find_bragg_resonance",
+        "peak_t_diagnostic",
+        "calculate_fwhm_relative",
+        "extract_envelope_peaks",
+        "extract_and_process_field_profile",
+        "generate_file_tag",
+        "apply_monitor_overrides"
+      ]
+    },
+    {
+      "path": "simulation_config.py",
+      "bytes": 45779,
+      "lines": 749,
+      "sha256": "678da8f42fac0d10a7a74d348e572c18caa0fa54ab49bb044a6632df9a2183bb",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": [
+        "GeometryConfig",
+        "GratingConfig",
+        "ApodizationConfig",
+        "SpectralConfig",
+        "MeshConfig",
+        "MaterialConfig",
+        "SourceConfig",
+        "SymmetryConfig",
+        "ScattererConfig",
+        "MonitorConfig",
+        "FarFieldConfig",
+        "PhaseCorrectionConfig",
+        "RunConfig",
+        "SimpleGratingConfig",
+        "SimulationConfig",
+        "set_nested_attr"
+      ]
+    },
+    {
+      "path": "startup.m",
+      "bytes": 348,
+      "lines": 6,
+      "sha256": "71683c8a80057b90fb853fbfb3897b7055dd8bf91ce54c24b02e799bcb7eb6b8",
+      "language": ".m"
+    },
+    {
+      "path": "zeus/deploy.sh",
+      "bytes": 26540,
+      "lines": 572,
+      "sha256": "bf43f43494a82d18207e62c5f05930a21ddf51441d76181281f34d09241ce6c8",
+      "language": ".sh"
+    },
+    {
+      "path": "zeus/jobs/run_fsp_job.sh",
+      "bytes": 3134,
+      "lines": 81,
+      "sha256": "0dac046ea71ecd29ea6f68dab0f2ae4b4ea48c4a492c670053a98b79bdbdac7a",
+      "language": ".sh"
+    },
+    {
+      "path": "zeus/jobs/run_python_job.sh",
+      "bytes": 7804,
+      "lines": 172,
+      "sha256": "1a2238d027b2a8fa8c472ccda689eb4719397f7e9a99edc874687b9d005f2511",
+      "language": ".sh"
+    },
+    {
+      "path": "zeus/scripts/local_save_fsp.py",
+      "bytes": 5049,
+      "lines": 131,
+      "sha256": "a1a4d4c27bbd1f37d472a65d2d1ae30e01d8cdf9605756628f4c9d15014d3c1d",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "zeus/scripts/server_run.py",
+      "bytes": 7338,
+      "lines": 160,
+      "sha256": "ae9ada6b1382e1b225c3a9317b7a583b560977206d0b0d8bc7c3be90f9f03027",
+      "language": ".py",
+      "syntax": "pass",
+      "top_level_symbols": []
+    },
+    {
+      "path": "zeus/scripts/setup_xvfb.sh",
+      "bytes": 2482,
+      "lines": 70,
+      "sha256": "e91b03c1804d6ab24ccecee264ae51d3041c6252aa30fd4b6a657003e865adfa",
+      "language": ".sh"
+    }
+  ]
+}

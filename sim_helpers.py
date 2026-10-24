@@ -590,6 +590,10 @@ def generate_file_tag(sim):
             # sweep share the same site list and would otherwise collide on the
             # .fsp/.h5/.mat name (corr is not in the base tag at avg width 800).
             scat_tag += f"_C{round((float(sim.width_wide) - float(sim.width_narrow)) * 1e9)}"
+            r2l = getattr(sim, 'scatterer_r2_list_m', None)
+            if r2l and any(v is not None for v in r2l):   # ellipses: count + first rotation (orientation variants must not collide)
+                rl = getattr(sim, 'scatterer_rot_list_deg', None) or [0]
+                scat_tag += f"_E{sum(v is not None for v in r2l)}r{round(rl[[i for i, v in enumerate(r2l) if v is not None][0]])}"
         else:
             scat_tag = f"{head}_X{x_str}_Y{y_str}"
         if getattr(sim, 'scatterer_mirrored_y', False) and y_nm != 0:
@@ -642,8 +646,8 @@ def apply_monitor_overrides(sim, cfg):
         print(f"Override: Set field_profile monitor to {n_fp} points.")
 
     if sim.record_2d_fields_top_and_cross:
-        _mons_2d = ("field_profile_2D_XY", "field_profile_2D_YZ_cross",
-                    "field_profile_2D_XZ_side")
+        _mons_2d = ("field_profile_2D_XY",) if getattr(sim, "field_2d_xy_band_m", None) else (
+                    "field_profile_2D_XY", "field_profile_2D_YZ_cross", "field_profile_2D_XZ_side")
         for _m in _mons_2d:
             sim.fdtd.setnamed(_m, "frequency points", n_2d_pts)
         print(f"Override: Set 2D monitors to {n_2d_pts} points.")

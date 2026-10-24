@@ -1,0 +1,19 @@
+{
+  "exit_code": 0,
+  "err": "...\r\n",
+  "data": {
+    "queue": {
+      "exit_code": 0,
+      "out": "             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n          171145_0 l40s-publ s2_class evyatarr  R       2:53      1 athena-post\n",
+      "err": ""
+    },
+    "accounting": {
+      "exit_code": 0,
+      "out": "JobID|State|Elapsed|ExitCode|NodeList|MaxRSS\n171145_0|RUNNING|00:02:54|0:0|athena-post|\n171145_0.batch|RUNNING|00:02:54|0:0|athena-post|\n171145_0.extern|RUNNING|00:02:54|0:0|athena-post|\n",
+      "err": ""
+    },
+    "log_tail": "============================================================\nArray:      171145[0]\nNode:       athena-post\nStarted:    Wed Oct  7 11:17:25 AM IDT 2026\nGPU:        none requested; no-solve CAD probe\nCPUs:       8\nSWEEP_KIND: \nSWEEP_LIST: /work/data/sweep_list.txt\nSWEEP_INDEX:0\nREQUIRE_GPU:0\nContainer:  /home/evyatarrubin/containers/lumerical-2026R1.sif\n============================================================\nNo devices were found\n(nvidia-smi not available)\nINFO:    Setting 'NVIDIA_VISIBLE_DEVICES=all' to emulate legacy GPU binding.\nUsing CONSTANT Materials (object-defined dielectric): SiN=1.97, SiO2=1.444\n11:17:37 - INFO - Generating optimization project...\n11:17:41 - INFO - FDTD version '8.35.4572' meets the minimum requirement.\n",
+    "report_exists": false
+  },
+  "checked_at": "2026-10-07T11:20:16.015631+03:00"
+}
