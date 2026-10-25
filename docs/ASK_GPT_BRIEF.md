@@ -541,3 +541,25 @@ Claude: forwarded to the Fable 2D prototype agent.
 - GPT reproduced nw_r2pack x1.887 exactly; flagged: gate threshold inconsistency, radius map = hypothesis (probe uniform vs fine2
   anisotropic mesh), missing g-correction note, ext42 tube caveat, fine2 lacked the XY map, number/registry staleness, provenance.
 - Claude applied all fixes to docs/HANDOFF_postarray_2026-10-24.md, enabled the XY map in fine2/fine2ctrl, regenerated the registry.
+
+### 2026-10-25 — sessions 01a1702c / 01a1704f / 01a1719d-1868-7623-a403-0272eae0f364 (element-pattern fit, 2-D gap, think-differently)
+- 01a1702c: found a real bug (e4_gram class indexing zeroed fields) + validation leak (repeat in fits); LOO-by-device ≠ generalisation, hold out
+  whole families; gate = sign + meas/pred 0.5-1.5 + |err| <= 0.02. Adopted all (scratch epfit). Result: per-angle fit cut field residual but
+  still missed increments (w4/w5 sign).
+- 01a1704f: at MATCHED length cloud == rows (w8 vs nwr2_x20 tube P 0.676/0.678) -> 2-D deficit = short clouds; recipe = incumbent + sparse adds.
+  Adopted: full-footprint cloud c2d_full dispatched 270981 (pre-reg 1.6-1.9).
+- 01a1719d-1868-7623-a403-0272eae0f364: tube P vs Q_i disagree on w4_rs50 (-3 % vs +4 %); a single complex factor leaves 49-84 % of increment field unexplained ->
+  mesh strength alone insufficient; ext42_hx confounded (moves posts vs grating); recommended matched fine-mesh rerun of a failed increment,
+  measured group responses or adjoint (40-70 GPU-h each). Claude: step 0 (objective reconcile) sent to the Opus model-v2 agent; small-scene
+  post-beside-strip probe (minutes) instead of device-scale tests.
+- Open now: short-run validity audit (gpt_q4), independent few-parameter model v2 (gptA), spatial localisation of model error from stored near fields (gptB).
+  ask_gpt.py now has --scratch <dir> (GPT outputs persist).
+
+### 2026-10-25 evening — sessions incl. 01a174bf-fa64-71f1-8cb7-08f62607dc23 (model v2.1 era)
+- Short-run audit: T truncation over-corrected ~1 % (fixed solve_v4 4ced19e, verified on traces); Q_L exact; coupling symmetric (Claude check).
+- Experimental Nt80x spectra (gptHH): Q_L 1.21e5/0.63e5/1.01e5 for N94/96/98 (files 10/11/12); fab Q_c > sim, extra fab loss; PARKED by user.
+- Rows' bonus = coherent interference with the MEASURED base field (verified: 85-88 % vs ~0 against the modelled base).
+- Lines (gptLINES): thin SiN lines weakly guiding/phase-mismatched; probe plan -> runner line_strip_probe (Athena 272087).
+- Ideas triage (gptIDEAS): joint tooth+post, rotated bars, segmented ribbons ranked; islands/reflectors/antisymmetric = dead ends.
+- Gap (gptGAP): v2.1 over-predicts own designs 6.4 %/11.3 %; measured-drive substitution closes most -> local-drive (DDA) is the weak link;
+  provisional gains for 272017 designs rows/y1500/y1700/acons 2.38/2.43/2.68/2.80. Next: refit drive response, conservative/ensemble objective.
