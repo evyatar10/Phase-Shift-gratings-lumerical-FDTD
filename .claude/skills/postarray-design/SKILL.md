@@ -21,6 +21,10 @@ EXCEPT in empty regions (ext42 1.6x). So, in this order, before ANY post-array d
    strength vs radius (post_mesh_probe 270533: production mesh r50 0.65 / r100 0.91 of converged), registration, post height (finite-height
    form factor sinc(k u_z h/2) ~0.84 at |u_z|=1 for 350 nm) — measure, then put into the model.
 3. **Full-device FDTD = confirmation only:** batch every candidate of a wave together, each with a pre-registered band and a kill line.
+Footprint (user 2026-10-25): keep posts inside the apodized section (|x| <= ~42 um) unless an extension gives a clear above-noise gain
+(x42 add-ons to 49.5 um: +1 %). Baseline = nw_r2pack_ext42 x2.022 (corrected T). Clouds use the same footprint.
+★Mesh change => resonance moves by NANOMETRES (dy29 -> 25 nm mesh: -4.2 nm): re-centre or widen every window (ports, far field,
+field profile, XY map) before dispatching any refined-mesh run (270754/755 lost T/far field this way; T salvaged from port time traces).
 Separate NUMERICS from PHYSICS first: at the production mesh posts are distorted (radius- and registration-dependent), so the referee itself
 is biased exactly where increments fail (resizes/fills next to posts).
 
