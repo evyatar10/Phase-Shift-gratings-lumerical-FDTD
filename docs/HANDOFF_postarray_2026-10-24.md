@@ -8,6 +8,23 @@
 Supersedes `docs/HANDOFF_postarray_2026-10-23.md` for state; that file still holds the method background. Branch `claude-te`
 (user commit b8025ed holds the engine edits). Dated log: memory `project_postarray_night_2026-10-23.md`.
 
+## ★★ UPDATE 2026-10-25 evening — CURRENT STATE (supersedes the morning update below for state)
+- BEST MEASURED: v21_seedfy Q_i x2.290 (1.272e6; T 0.824; Q_L 117390; W 16.114; 245 posts/side, 2-D, diameter 100-200 nm, gaps >= 100,
+  |x| <= 42 um), Athena 271566, file results_from_athena/comb_overshoot/v21_seedfy_dy29.mat, layouts layout_v21_seedfy{,_stretched,_true_aspect,_phone}.png.
+  Row reference ext42 x2.022. All gains use the CORRECTED solve_v4 (T truncation fix 4ced19e: older docs ~3 % high).
+- MODEL v2.1 (coupled dipoles + strip re-radiation + mode reshaping, fitted on Q_i): code python_tools/radcancel/model_v2/{model_v2,design_v2}.py,
+  weights/data/results in results_from_athena/comb_overshoot/model_v2_work/ (RESULTS_model_v2.md, PREREG_*.json, design_*.json).
+  Blind record: ext42_hx 1.708 (meas 1.711), uni 0.805 (0.798), c2d_full 1.475 (1.361), v21_seedfy 2.44 (2.290), v21_scratch 2.14 (1.922)
+  -> over-predicts its own optima by 6-10 %: pre-register designs at 0.94 x v2.1.
+- RUNNING: Athena 272017 (variant v21b, 4 tasks, ~3.5 h): v21b_rows (342 posts, v2.1 x2.63), v21b_y1500 (264, x2.68), v21b_y1700 (352, x3.00),
+  v21b_acons (CONSERVATIVE fab diameter >= 150 / gaps >= 150, 366, x3.14). Pre-reg 0.94 x v2.1 (band 0.90-0.98).
+- MEASURED today: x-shift knobs -> ext42 at its x-optimum; uniform rows x0.80; fine 25 nm mesh keeps the gain (x1.98 vs 1.85, resonance -4.2 nm:
+  re-centre windows for ANY mesh change); short-run method validated (Q_L exact, coupling symmetric); single post beside strip ~ Born (probe 271246).
+- USER RULES (10-25): fix the cloud model first; fab limits diameter >= 100 / gaps >= 100 (nothing tighter for now); posts |x| <= 42 um;
+  y range is not a fab limit (include only if >= ~5 % gain); chase only >= ~5 % gains; NO adjoint for now (design note docs/ADJOINT_POSTS_DESIGN_2026-10-25.md);
+  Fable for big decisions only, GPT as main worker (ask-gpt --scratch), Opus subagents execute. Experimental Nt80x chip data (N94/96/98) PARKED (theory first).
+- NEXT: score 272017; refit v2.1 with all new devices; next lineage step from the best measured field; GPT ideas/lines studies in scratch (gptIDEAS, gptLINES).
+
 ## ★ UPDATE 2026-10-25 morning (Claude, autonomous block) — read this first
 - BEST MEASURED (dy29, Q_i vs control 5.67e5): x42_r0910 x2.096 (352 posts/side) ~= x42_j3 x2.098 (392) > nw_r2pack_ext42 x2.076 (309, 270593) >
   nw_r2pack x1.887. Files results_from_athena/comb_overshoot/{x42_r0910,x42_j3,nw_r2pack_ext42}_dy29.mat; layout fig layout_nw_r2pack_ext42.png.
