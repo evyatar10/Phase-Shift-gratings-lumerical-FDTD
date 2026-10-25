@@ -43,3 +43,11 @@ Locator 60 ps: 14 min. Production 265 / 340 ps: 53 / 67 min (H200). Same devices
 ## When NOT to use
 Low-Q devices (Q_L ≲ 1e4: a full run is already ≤ 150 ps) and any number that needs T at the 1e-3 level (one full
 run as an anchor). Related memory: project_highq_measurement_adequacy.md, project_farfield_sph_15um.md.
+
+## ★Validation 2026-10-25 (post-array program, overshoot Nt80x, Q_L ~1.1e5, 340 ps)
+- Truncation correction must start at the EXCITATION (cavity envelope peak, ~0.4 ps here), not t_end - 5 ps: the old form over-corrected
+  peak T by ~1 % relative (Q_i gains ~3 % high). Fixed in python_tools/radcancel/solve_v4.py (commit 4ced19e).
+- Q_L from the cavity decay: refits over end 200-340 ps / start 15-100 ps agree to 1e-6 (GPT audit).
+- Coupling symmetry check (free, every device): late-time power ratio of trace_time_input vs trace_time_output = gamma_L/gamma_R;
+  measured 0.987-1.007 on 13 devices -> eta >= 0.99996, so Q_i = Q_L/(1-sqrt T) holds. Re-check it for any design that is strongly
+  asymmetric between the arms.
