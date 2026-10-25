@@ -19,7 +19,8 @@ if "--exclude" in argv: excl = [int(v) for v in take("--exclude")[0].split(",")]
 for k in list(opts):
     if f"--{k}" in argv: opts[k] = float(take(f"--{k}")[0])
 files = argv
-def trace_fit(trace, t_start=15e-12):
+t_start_fit = 15e-12
+def trace_fit(trace, t_start=t_start_fit):
     t = np.asarray(trace.t, float).ravel(); E = np.asarray(trace.E, float).reshape(t.size, -1)
     late = t >= t_start; comp = int(np.argmax(np.sum(E[late] ** 2, axis=0))); z = hilbert(E[:, comp])
     t_end = t[-1] - 0.05 * (t[-1] - t_start); k = (t >= t_start) & (t <= t_end)
@@ -33,7 +34,8 @@ def load(path):
     E = np.stack([E_th, E_ph]); dW = (w[:, None] * (2 * np.pi / len(phi)))[None] * np.ones_like(E, dtype=float)
     if short:
         omega0, kappa, t, Ec, comp = trace_fit(m["trace_time_cavity"]); Q = omega0 / (2 * kappa); lam0 = 2 * np.pi * C0 / omega0
-        g2 = 1 / (1 - np.exp(-kappa * (t[-1] - 5e-12))) ** 2; T = T_port * g2
+        t_exc = t[np.argmax(np.abs(Ec) * (t < t_start_fit))]   # ring-down starts at the excitation (envelope peak ~0.4 ps), NOT 5 ps (GPT 01a170xx audit, 2026-10-25: -5 ps over-corrected T by ~1 %)
+        g2 = 1 / (1 - np.exp(-kappa * (t[-1] - t_exc))) ** 2; T = T_port * g2
         D = np.trapz(Ec * np.exp(1j * w_ff * t), t)                 # cavity DFT at the far-field frequency (e^{-iwt} field convention -> e^{+iwt} kernel)
         En = E / D; ref = "cavity-trace DFT"; det = (w_ff - omega0) / kappa
     else:
