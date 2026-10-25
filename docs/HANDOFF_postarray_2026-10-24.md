@@ -8,6 +8,22 @@
 Supersedes `docs/HANDOFF_postarray_2026-10-23.md` for state; that file still holds the method background. Branch `claude-te`
 (user commit b8025ed holds the engine edits). Dated log: memory `project_postarray_night_2026-10-23.md`.
 
+## ★ UPDATE 2026-10-25 morning (Claude, autonomous block) — read this first
+- BEST MEASURED (dy29, Q_i vs control 5.67e5): x42_r0910 x2.096 (352 posts/side) ~= x42_j3 x2.098 (392) > nw_r2pack_ext42 x2.076 (309, 270593) >
+  nw_r2pack x1.887. Files results_from_athena/comb_overshoot/{x42_r0910,x42_j3,nw_r2pack_ext42}_dy29.mat; layout fig layout_nw_r2pack_ext42.png.
+  ext42 beat its model (+10 % vs +6.1 %); the x42 add-ons gave 1/4-1/3 of their model gain. Repeat 270650 is BIT-IDENTICAL (run noise 0).
+- 2-D diagnosis (Fable + GPT, scratch .../scratchpad/fable2d/DIAG.md): shadowing refuted; loading not the cause; y >= 1.75 posts weak (element pattern);
+  at MATCHED length cloud == rows; under one plain-Born yardstick the measured/model factor is clouds 0.97-1.26, rows 1.04-1.21, nw-family 1.32-1.39,
+  ext42 1.49. GPT: for w4_rs50 tube power fell 3 % while 1/Q_i rose 4 % -> the radiation objective and Q_i disagree at the increment level.
+- RUNNING: 270952 (uni_sub500 uniform control, model x0.95; ext42_hx = ext42 shifted +25.7 nm in x, NOT a pure noise test: also moves posts vs grating),
+  270981 (c2d_full = fresh full-footprint free 2-D cloud, 199 posts, PRE-REG x1.6-1.9, kill < 1.65 = the 2-D gate test), 270754/755 fine2 (refined mesh).
+- MODEL v2 in progress (Opus agent, scratch .../scratchpad/modelv2/RESULTS.md): step 0 reconcile tube P vs Q_i; then mesh-strength per radius,
+  finite height (sinc(k u_z h/2)), per-angle element pattern, own in-situ drive; held-out-FAMILY gate; predict(posts, h, pol). Small-scene post-beside-strip
+  probe being built (runners/single/post_strip_probe.py, NOT dispatched — needs user "run").
+- USER RULES (2026-10-25): fix the cloud model first (fab limits r>=50 / gap>=100 kept while fixing; smaller posts later); model gate on stored data
+  before ANY model-based dispatch; physics on small scenes; full device = batched confirmation (skill postarray-design WORKFLOW RULE). Adjoint still gated
+  (asked user to lift it; no answer yet). Fable quota ~70 % used -> GPT for reviews, Opus for execution, Fable for decisions.
+
 ## 0. THE GOAL — go well beyond x2, toward x3 (user, emphatic)
 x1.89 is a waypoint, not the result. The user wants > x2 and is aiming at x3 Q_i on the fabricated 96-period device; do not stop at
 "good enough", do not declare plateaus as limits (model ceilings are conditional). Where the remaining leak is (DERIVED, nw_r2pack
@@ -83,7 +99,7 @@ them a single planar layer can remove without giving back the grazing gain (INFE
 | 270538 DONE | w8_c2d: FRESH compact free 2-D, 42 posts, abs(x) <= 19 um (Fable) | MEASURED x1.49 (Q_i 8.46e5, T 0.759, dlam +0.07): MISSED pre-reg 1.87 (1.73-2.01); ~95 % of rows-cut-to-20 um (x1.55, 137 posts) with 1/3 of the posts; 2-D GATE NOT PASSED |
 | 270593 | nw_r2pack_ext42: + 89 posts on rows 1.2/1.5 at 30 < abs(x) <= 42 um (DWBA add-on on nw_r2pack's measured field) | pre-reg ~x2.00 (model x1.061 over nw_r2pack); posts reach |x| 42 but the tube is untapered only to 35 -> P/Pc approximate, Q_i valid |
 | 270650 | nw_r2pack_rep: IDENTICAL repeat on A100 (L40S 270553 never started, cancelled) | noise floor: compare with nw_r2pack x1.887 |
-| 270651 | (twin chat, base ~/bragg_sim_twin; ID reported by that chat 2026-10-25) Nt80x antisymmetric twin | not ours; seats shared |
+| 270651 DONE | (twin chat, base ~/bragg_sim_twin) Nt80x antisymmetric twin | twin study CLOSED NEGATIVE (reported by that chat 2026-10-25); no twin jobs left - all seats are ours |
 Score: `python python_tools/radcancel/solve_v4.py --short --energy <COPY of results_from_athena/budget_overshoot/dy29_box6p8.mat> <dev>`
 (Q_i is the arbiter; solve_v4 P/Pc lacks the short-run frequency factor g = |D_fp|/|D_ff| - apply it as in
 postarray_work_dy29/fable_refit/s11_features.py:14-19,43 before comparing radiated power; `--energy` is a core-field energy proxy).

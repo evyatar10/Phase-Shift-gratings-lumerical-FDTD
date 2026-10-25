@@ -11,6 +11,19 @@ review: the kappa*x1 term failed out of regime; plain Born predicted pa4/pa5); r
 Doc with all numbers: `docs/postarray_radiation_cancellation_2026-10-23.md`. Code: `python_tools/radcancel/postarray_{born,ceiling,design}.py`.
 Work files (control far field, Gram matrices, designs, 13-device dataset): `results_from_athena/comb_overshoot/postarray_work/`.
 
+## ★★WORKFLOW RULE (user 2026-10-25, after days of model -> 3.5 h FDTD -> miss cycles)
+Best MEASURED (2026-10-25): x42_r0910 x2.096 / x42_j3 x2.098 / nw_r2pack_ext42 x2.076 (dy29). Model add-ons delivered 0.25-0.9 of prediction
+EXCEPT in empty regions (ext42 1.6x). So, in this order, before ANY post-array design dispatch:
+1. **Model gate on stored data (zero GPU, minutes):** the model must pass a HELD-OUT-FAMILY test on all measured dy29 devices (families
+   knobs / w4+w5 / ell / nw9+r3pack / x20 / ext42 / x42 / clouds): correct sign of dQ, meas/pred dP 0.5-1.5, |err| <= 0.02 of base power.
+   No pass = no design from that model (the incumbent stays; add-ons only in EMPTY regions).
+2. **Physics/numerics questions on SMALL scenes (minutes), never on the 3.5 h device:** single-post response beside the strip, mesh
+   strength vs radius (post_mesh_probe 270533: production mesh r50 0.65 / r100 0.91 of converged), registration, post height (finite-height
+   form factor sinc(k u_z h/2) ~0.84 at |u_z|=1 for 350 nm) — measure, then put into the model.
+3. **Full-device FDTD = confirmation only:** batch every candidate of a wave together, each with a pre-registered band and a kill line.
+Separate NUMERICS from PHYSICS first: at the production mesh posts are distorted (radius- and registration-dependent), so the referee itself
+is biased exactly where increments fail (resizes/fills next to posts).
+
 ## Physics in one paragraph
 Each post (full-height SiN cylinder, same layer as the grating) is a weak dipole driven by the cavity field at its site and re-radiates;
 the far field is leak + sum of posts. Phase comes from the post's x position, strength from r^2. Minimising the TOTAL radiated power
