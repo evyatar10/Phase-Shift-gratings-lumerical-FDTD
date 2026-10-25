@@ -1,13 +1,15 @@
-% plot_postarray_farfield_linear.m -- (linear-scale version of plot_postarray_farfield.m) far field of the bare TE overshoot vs the best post device (nw_r2pack, Q_i x1.89): 2-D intensity on the
+% plot_postarray_farfield_linear.m -- (linear-scale version of plot_postarray_farfield.m) far field of the bare TE overshoot vs a post device: 2-D intensity on the
 % top (z>0, u_x-u_y) and side (y>0, u_x-u_z) hemispheres + 1-D dP/du_x over the whole sphere. Study: runners/sweeps/
-% farfield_sph_15um_postarray_overshoot | Jobs: Athena 267605_0 (control), 269626_1 (nw_r2pack) | 2026-10-25.
-% Input: results_from_athena/comb_overshoot/farfield_ctrl_vs_nw_r2pack.mat (python: solve_v4 --short --energy normalisation, both
-% divided by the control's total -> same scale; raw P/Pc without the short-run g-correction).
+% farfield_sph_15um_postarray_overshoot | Jobs: Athena 267605_0 (control), 269626_1 (nw_r2pack), 270593 (nw_r2pack_ext42) | 2026-10-25.
+% Input: results_from_athena/comb_overshoot/farfield_ctrl_vs_<dev>.mat (python: solve_v4 --short --energy normalisation, both
+% divided by the control's total -> same scale; raw P/Pc without the short-run g-correction; label / T / lam_nm fields for the text).
+% Other device: matlab -batch "dev='nw_r2pack_ext42'; plot_postarray_farfield_linear"
+if ~exist('dev', 'var'), dev = 'nw_r2pack'; end
 R = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))), 'results_from_athena', 'comb_overshoot');
-d = load(fullfile(R, 'farfield_ctrl_vs_nw_r2pack.mat')); u = d.grid;
+d = load(fullfile(R, ['farfield_ctrl_vs_' dev '.mat'])); u = d.grid;
 f = figure('Color', 'w', 'Position', [40 40 1400 1350]); tl = tiledlayout(f, 4, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
 hi = 0.5 * max([d.top_ctrl(:); d.side_ctrl(:)], [], 'omitnan');   % LINEAR colour scale, same for both devices (saturates at half the control max)
-lab = {'ctrl', 'posts'}; nm = {'Bare overshoot', '+ posts (nw\_r2pack, Q_i x1.89)'};
+lab = {'ctrl', 'posts'}; nm = {'Bare overshoot', ['+ posts (' d.label ')']};
 for k = 1:2
     for v = {'top', 'side'}
         ax = nexttile(tl); M = d.([v{1} '_' lab{k}]); imagesc(ax, u, u, M); axis(ax, 'xy', 'equal'); xlim(ax, [-1 1]); ylim(ax, [-1 1]);
@@ -26,6 +28,6 @@ title(ax, 'Ratio per u_x (linear): < 1 = radiation removed', 'FontSize', 11);
 ax = nexttile(tl); du = mean(diff(d.ux)); plot(ax, d.ux, cumsum(d.dPdux_ctrl) * du, 'k-', 'LineWidth', 1.6); hold(ax, 'on');
 plot(ax, d.ux, cumsum(d.dPdux_posts) * du, '-', 'Color', [0.85 0.3 0.15], 'LineWidth', 1.6); grid(ax, 'on'); xlabel(ax, 'u_x');
 ylabel(ax, 'cumulative radiated power'); legend(ax, {'bare overshoot', '+ posts'}, 'Location', 'northwest');
-title(ax, 'Cumulative power from u_x = -1 (linear): ends at 1.00 vs 0.49', 'FontSize', 11);
-title(tl, 'Far field: TE \pi-shift overshoot Nt80x, SiN 350 nm, 96 periods/side, 1619.4 nm (peak T 0.671 \rightarrow 0.801)', 'FontSize', 12);
-exportgraphics(f, fullfile(R, 'farfield_ctrl_vs_nw_r2pack_linear.png'), 'Resolution', 150); savefig(f, fullfile(R, 'farfield_ctrl_vs_nw_r2pack_linear.fig'));
+title(ax, sprintf('Cumulative power from u_x = -1 (linear): ends at 1.00 vs %.2f', d.Ptot_posts), 'FontSize', 11);
+title(tl, sprintf('Far field: TE \\pi-shift overshoot Nt80x, SiN 350 nm, 96 periods/side, %.1f nm (peak T %.3f \\rightarrow %.3f)', d.lam_nm, d.T_ctrl, d.T_posts), 'FontSize', 12);
+exportgraphics(f, fullfile(R, ['farfield_ctrl_vs_' dev '_linear.png']), 'Resolution', 150); savefig(f, fullfile(R, ['farfield_ctrl_vs_' dev '_linear.fig']));
