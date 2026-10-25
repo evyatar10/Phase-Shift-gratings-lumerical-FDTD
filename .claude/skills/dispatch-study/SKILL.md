@@ -10,7 +10,7 @@ This skill is the dispatch checklist; it exists because wrong dispatches are the
 expensive mistake class in this project's history.
 
 
-**★Pre-dispatch marker (2026-10-25):** run `python python_tools/predispatch_ok.py <spec or run module>` right before `deploy_*.sh` — it runs the target's asserts + the IGUM seat probe and writes `~/.claude/dispatch_ok.json`; the `athena-dispatch` mod blocks a deploy without a fresh (<20 min) matching marker, asserts OK and seats <= 42/50 (`--upload-only/--status` are exempt).
+**★Pre-dispatch marker (2026-10-25):** run `python python_tools/predispatch_ok.py <spec or run module>` right before `deploy_*.sh` — it runs the target's asserts + the IGUM seat probe and writes `~/.claude/dispatch_ok.json` (optional one-command preflight; nothing blocks a deploy — user 2026-10-25).
 ## 1. Before dispatching (gate, in order)
 
 0. **Think first, run second** (user rule 2026-08-07). State in one line what this run

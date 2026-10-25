@@ -1,6 +1,6 @@
-# predispatch_ok.py (2026-10-25; read by the athena-dispatch mod's dispatch guard): runs the dispatch target's own asserts and the
-# IGUM seat probe, then writes C:/Users/evyat/.claude/dispatch_ok.json. The guard blocks deploy_athena.sh / deploy_igum.sh unless this
-# marker is < 20 min old, names the same --spec/--run target, has asserts_ok and seats_used <= 42 (CLAUDE.md sec. 6 seat bands).
+# predispatch_ok.py (2026-10-25; optional one-command preflight, blocks nothing): runs the dispatch target's own asserts and the
+# IGUM seat probe, prints both, and records them in C:/Users/evyat/.claude/dispatch_ok.json; exit 1 if asserts fail or seats > 42/50
+# (CLAUDE.md sec. 6 seat bands).
 #   python python_tools/predispatch_ok.py runners.sweeps.farfield_sph_15um_postarray_overshoot_x42
 import json, os, re, subprocess, sys, time
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
