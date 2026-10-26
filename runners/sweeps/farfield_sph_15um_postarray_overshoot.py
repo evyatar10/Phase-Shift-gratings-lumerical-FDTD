@@ -115,6 +115,30 @@ elif PA_SET == "v21":                       # model v2.1 designs (2-D): ext42 x 
     NAMES = ["v21_seedfy", "v21_scratch"]
 elif PA_SET == "v21b":                      # model v2.1 designs round b: rows redesign, clouds y<=1.5 / y<=1.7, conservative-fab cloud (150/150)
     NAMES = ["v21b_rows", "v21b_y1500", "v21b_y1700", "v21b_acons"]
+elif PA_SET == "v21c":                      # 2026-10-26 round c: undispatched v2.1 clouds (fromseed 520 posts, y<=1.95 452 posts), lineage-checked
+    NAMES = ["v21c_fromseed", "v21c_y1950"]
+elif PA_SET == "v21d":                      # 2026-10-26 round d: lineage steps from measured v21b_y1700 / v21b_acons (75/150)
+    NAMES = ["v21d_liny1700", "v21d_linacons"]
+elif PA_SET == "v21e":                      # 2026-10-26 round e: economy lineage step from measured v21c_fromseed (407 posts)
+    NAMES = ["v21e_fsecon"]
+elif PA_SET == "v21f":                      # 2026-10-26 round f: BIG lineage step from measured fromseed (421 posts; lineage 3.62 vs plain 3.06)
+    NAMES = ["v21f_fsbig"]
+elif PA_SET == "v21g":                      # 2026-10-26 round g: GPT x4 search, posts to y 2.8 um, box 8.8: plain-v2.1 max (628 posts, plain 3.80 / lineage 3.29)
+    NAMES = ["v21g_rawbest"]
+elif PA_SET == "portref":                   # 2026-10-26 PORT CALIBRATION (CLAUDE.md sec 2, GPT audit): straight 1000-nm guide (teeth + cavity = feed width),
+    NAMES = ["c29_pa3_r100_x30"]            # no posts, dy29 numerics, same 1619.39 nm window/points, 20 ps -> T_ref for T = T_dev / T_ref; placeholder row
+    TEETH = ([1000.0] * len(TEETH[0]), [1000.0] * len(TEETH[1])); CAV_W_NM = 1000.0
+    os.environ["TM_SIM_TIME_PS"] = "20"
+elif PA_SET == "v21h":                      # 2026-10-26 round h: conservative 150/150 lineage step from measured v21d_linacons (x3.08)
+    NAMES = ["v21h_labig"]
+elif PA_SET == "v21i":                      # 2026-10-26 round i: lineage from measured linacons relaxed to 100/100 (359 posts, lineage 3.44)
+    NAMES = ["v21i_la100"]
+elif PA_SET == "v21j":                      # 2026-10-26 round j: GPT x4 compact (362 posts, y to 2.8 um, box 8.8, lineage 4.28)
+    NAMES = ["v21j_compact"]
+elif PA_SET == "v21k":                      # 2026-10-26 round k: big lineage step from measured v21e_fsecon (351 posts, lineage 3.98)
+    NAMES = ["v21k_ebig"]
+elif PA_SET == "v21l":                      # 2026-10-26 round l: big lineage step from measured v21f_fsbig (412 posts, lineage 4.08)
+    NAMES = ["v21l_fbig"]
 elif PA_SET == "rep":                       # NOISE FLOOR: identical repeat of nw_r2pack (reversed list order only), other GPU type
     NAMES = ["nw_r2pack_rep"]
 elif PA_SET == "w8":                        # Fable fresh COMPACT free 2-D design (42 posts, |x|<=19 um, 9 layers; pre-reg Q_i x1.87, 1.73-2.01)
@@ -123,8 +147,9 @@ elif PA_SET in ("m3db", "m3dbctrl"):
     NAMES = [os.environ["FF15_WIN"]]
     N_SIDE = int(os.environ["FF15_N"]); TEETH = pad(NT80X_NARROW_NM, NT80X_WIDE_NM, N_SIDE)
     os.environ["TM_SIM_TIME_PS"] = os.environ["FF15_PS"]
-NFMAP = PA_SET in ("w1", "w1b", "w2a", "w2b", "w3", "w3b", "w3c", "w4", "w5", "w6e", "w6", "kn", "x20", "x15", "kn40", "w8", "rep", "ext", "x42", "uni", "c2d", "xs", "v21", "v21b", "fine2", "fine2ctrl", "fine3", "fine3ctrl", "nfctrl")          # z=0 XY drive map: |x| <= 36 um, y 0..2.3 um, 21 points in the far-field window
+NFMAP = PA_SET in ("w1", "w1b", "w2a", "w2b", "w3", "w3b", "w3c", "w4", "w5", "w6e", "w6", "kn", "x20", "x15", "kn40", "w8", "rep", "ext", "x42", "uni", "c2d", "xs", "v21", "v21b", "v21c", "v21d", "v21e", "v21f", "v21g", "v21h", "v21i", "v21j", "v21k", "v21l", "fine2", "fine2ctrl", "fine3", "fine3ctrl", "nfctrl")          # z=0 XY drive map: |x| <= 36 um, y 0..2.3 um, 21 points in the far-field window
 BIGBOX = PA_SET == "r7"
+BOX88 = BIGBOX or PA_SET in ("v21g", "v21j")            # 2026-10-26: v21g posts reach y 2.8 um -> box 8.8 (posts >= 1.5 um from PML), standard fab asserts; control = stored 267605_1 dy29_box8p8
 FINE = PA_SET in ("fine", "finectrl", "fine2", "fine2ctrl", "fine3", "fine3ctrl")
 FINE_DY_M, FINE_BAND_M = 25e-9, ((0.70e-6, 1.70e-6) if PA_SET in ("fine2", "fine2ctrl") else (0.65e-6, 2.05e-6) if PA_SET in ("fine3", "fine3ctrl") else (1.05e-6, 1.95e-6))
 ROWS = [(nm, DESIGNS[nm]) for nm in NAMES]
@@ -133,15 +158,15 @@ BASE = copy.deepcopy(BASE_FF)
 BASE.scatterer.enabled = True
 BASE.scatterer.shape = "cylinder"
 BASE.scatterer.mirrored_y = True
-if PA_SET in ("dy29", "r7", "fine", "finectrl", "c29", "c29r12", "w1", "w1b", "w2a", "w2b", "w3", "w3b", "w3c", "w4", "w5", "w6e", "w6", "kn", "x20", "x15", "kn40", "w8", "rep", "ext", "x42", "uni", "c2d", "xs", "v21", "v21b", "fine2", "fine2ctrl", "fine3", "fine3ctrl", "nfctrl", "m3db", "m3dbctrl"):   # fine/finectrl also refine the core (GPT 01a1691c: otherwise only x + post band)
+if PA_SET in ("portref", "dy29", "r7", "fine", "finectrl", "c29", "c29r12", "w1", "w1b", "w2a", "w2b", "w3", "w3b", "w3c", "w4", "w5", "w6e", "w6", "kn", "x20", "x15", "kn40", "w8", "rep", "ext", "x42", "uni", "c2d", "xs", "v21", "v21b", "v21c", "v21d", "v21e", "v21f", "v21g", "v21h", "v21i", "v21j", "v21k", "v21l", "fine2", "fine2ctrl", "fine3", "fine3ctrl", "nfctrl", "m3db", "m3dbctrl"):   # fine/finectrl also refine the core (GPT 01a1691c: otherwise only x + post band)
     BASE.mesh.y_mesh_cells = 26
 if FINE:
     BASE.mesh.simulation_mode = "fine_x10"
     BASE.mesh.scatterer_mesh_dy_m = FINE_DY_M
     BASE.mesh.scatterer_mesh_y_band_m = FINE_BAND_M
-if PA_SET in ("finectrl", "nfctrl", "m3dbctrl", "fine2ctrl", "fine3ctrl"):
+if PA_SET in ("finectrl", "nfctrl", "m3dbctrl", "fine2ctrl", "fine3ctrl", "portref"):
     BASE.scatterer.enabled = False
-if PA_SET in ("w3", "w3b", "w3c", "w4", "w5", "w6e", "w6", "kn", "x20", "x15", "kn40", "w8", "rep", "ext", "x42", "uni", "c2d", "xs", "v21", "v21b", "fine2", "fine2ctrl", "fine3", "fine3ctrl", "m3db", "m3dbctrl"):
+if PA_SET in ("w3", "w3b", "w3c", "w4", "w5", "w6e", "w6", "kn", "x20", "x15", "kn40", "w8", "rep", "ext", "x42", "uni", "c2d", "xs", "v21", "v21b", "v21c", "v21d", "v21e", "v21f", "v21g", "v21h", "v21i", "v21j", "v21k", "v21l", "fine2", "fine2ctrl", "fine3", "fine3ctrl", "m3db", "m3dbctrl"):
     BASE.monitors.monitor_2d_span_nm = 1.5
 if PA_SET in ("fine3", "fine3ctrl"):
     BASE.monitors.monitor_2d_center_nm = LAM_NM          # far field / field profile / XY map windows follow the fine-mesh resonance
@@ -162,8 +187,8 @@ SPEC = SweepSpec(
     n_periods_each_side       = [N_SIDE] * n,
     center_wavelength_nm      = [LAM_NM] * n,
     scan_width_nm             = [WIN_NM] * n,
-    y_span_um                 = [8.8 if BIGBOX else BOX_Y] * n,
-    span_mult                 = [zmult(8.8 if BIGBOX else BOX_Z, LAM_NM)] * n,
+    y_span_um                 = [8.8 if BOX88 else BOX_Y] * n,
+    span_mult                 = [zmult(8.8 if BOX88 else BOX_Z, LAM_NM)] * n,
     scatterer_shape           = ["cylinder"] * n,
     scatterer_radius_nm       = [75.0] * n,                      # shared default; per-site radii below win
     scatterer_height_nm       = [350.0] * n,
@@ -177,7 +202,7 @@ SPEC = SweepSpec(
     mode  = "zipped",
     label = "farfield_sph_15um_postarray_overshoot" + (f"_{PA_SET}" if PA_SET else ""),
 )
-if PA_SET in ("finectrl", "nfctrl", "m3dbctrl", "fine2ctrl", "fine3ctrl"):
+if PA_SET in ("finectrl", "nfctrl", "m3dbctrl", "fine2ctrl", "fine3ctrl", "portref"):
     for f_ in ("scatterer_shape", "scatterer_radius_nm", "scatterer_height_nm", "scatterer_index", "scatterer_mirrored_y",
                "scatterer_x_list_nm", "scatterer_y_list_nm", "scatterer_r_list_nm"):
         setattr(SPEC, f_, None)
@@ -197,6 +222,11 @@ if __name__ == "__main__":
         assert not cfg.scatterer.enabled and not diff, ("nfctrl numerics differ from c29", diff)
         print(f"nfctrl: NO posts, numerics == c29 run, drive map x {kw['field_2d_x_span_m']} band {kw['field_2d_xy_band_m']} pts {cfg.spectral.n_2d_monitor_points}")
         sys.exit(0)
+    if PA_SET == "portref":   # straight-guide calibration: no posts, every tooth + cavity = feed width
+        cfg = SPEC.expand(base=BASE)[0]; kw = cfg.to_device_kwargs()
+        assert not cfg.scatterer.enabled and set(TEETH[0]) == set(TEETH[1]) == {1000.0} and CAV_W_NM == 1000.0, "portref geometry"
+        print(f"portref: straight 1000-nm guide, y_mesh_cells {cfg.mesh.y_mesh_cells}, window {cfg.spectral.center_wavelength_m*1e9:.3f} +- {cfg.spectral.scan_width_nm/2} nm, {os.environ['TM_SIM_TIME_PS']} ps")
+        sys.exit(0)
     if PA_SET in ("m3db", "m3dbctrl"):   # length/time knobs reached the build: N periods, padded teeth, run time
         cfg = SPEC.expand(base=BASE)[0]; kw = cfg.to_device_kwargs(); nar = [v * 1e9 for v in kw["width_narrow_per_tooth_m"]]
         assert kw["n_periods_each_side"] == N_SIDE == len(nar) and all(abs(a - b) < 1e-6 for a, b in zip(nar[:81], NT80X_NARROW_NM)) and round(nar[-1], 3) == 750.0
@@ -209,6 +239,8 @@ if __name__ == "__main__":
         print(f"finectrl: NO posts, dx {PITCH_NM/20:.2f} nm, band dy {FINE_DY_M*1e9:.0f} nm over |y| {FINE_BAND_M}, box {cfg.y_span*1e6:.2f}/{cfg.z_span*1e6:.2f}, short {cfg.farfield.short_run}")
         sys.exit(0)
     wall = max(max(TEETH[0]), max(TEETH[1]), CAV_W_NM) / 2
+    _fc = os.path.join(os.path.dirname(os.path.abspath(__file__)), "postarray_teeth_cad.json")   # built teeth+cavity of the N96 Nt80x scene (Athena 272280)
+    TCAD = json.load(open(_fc))["rects"] if os.path.exists(_fc) else None
     for (name, d), cfg in zip(ROWS, SPEC.expand(base=BASE)):
         kw = cfg.to_device_kwargs()
         xb = [v * 1e9 for v in kw["scatterer_x_list_m"]]; yb = [v * 1e9 for v in kw["scatterer_y_list_m"]]; rb = [v * 1e9 for v in kw["scatterer_r_list_m"]]
@@ -221,10 +253,12 @@ if __name__ == "__main__":
         # property asserts: per-site lists carried through intact, radii 50-100, wall clearance >= 150 nm, in-row edge gap >= 99 nm, box/ff span
         assert len(xb) == len(d["x_nm"]) > 20 and all(abs(a - b) < 0.01 for a, b in zip(rb, d["r_nm"])), ("lists", name)
         assert (34.9 if PA_SET in ("w5", "w6", "kn40") else 44.9 if PA_SET == "fine2" else 49.9) <= min(rb) and max(rb) <= (120.1 if PA_SET in ("big", "r7") else 100.1), ("radius", name)
-        if PA_SET in ("w1", "w1b", "w2a", "w2b", "w3", "w3b", "w3c", "w4", "w5", "w6e", "w6", "kn", "x20", "x15", "kn40", "w8", "rep", "ext", "x42", "uni", "c2d", "xs", "v21", "v21b", "fine2", "fine3", "m3db"):   # free 2-D designs: >= 100 nm from the LOCAL tooth wall (max half-width of every period within r + 100 nm in x)
+        if PA_SET in ("w1", "w1b", "w2a", "w2b", "w3", "w3b", "w3c", "w4", "w5", "w6e", "w6", "kn", "x20", "x15", "kn40", "w8", "rep", "ext", "x42", "uni", "c2d", "xs", "v21", "v21b", "v21c", "v21d", "v21e", "v21f", "v21g", "v21h", "v21i", "v21j", "v21k", "v21l", "fine2", "fine3", "m3db"):   # free 2-D designs: >= 100 nm from the LOCAL tooth wall (max half-width of every period within r + 100 nm in x)
             edges = CAV_W_NM / 2 + PITCH_NM * np.arange(len(TEETH[0]) + 1)
             for x_, y_, r_ in zip(xb, yb, rb):
                 near = [max(TEETH[0][i], TEETH[1][i]) / 2 for i in range(len(TEETH[0])) if edges[i] - r_ - 100 <= abs(x_) <= edges[i + 1] + r_ + 100]
+                if TCAD and N_SIDE == 96:   # 2026-10-26 GPT audit: the formula above uses CAV width as length + mirrored arms; use the BUILT rectangles
+                    near = [hw for x0, x1, hw in TCAD if x0 - r_ - 100 <= x_ <= x1 + r_ + 100]
                 assert y_ - r_ - max(near + [CAV_W_NM / 2]) >= 100 - 1e-6, ("local wall clearance", name, x_, y_, r_)
         else:
             assert min(y - r for y, r in zip(yb, rb)) - wall >= 150, ("wall clearance", name)
@@ -233,7 +267,7 @@ if __name__ == "__main__":
         for yr in sorted(set(yb)):
             s = sorted((x, r) for x, y, r in zip(xb, yb, rb) if y == yr)
             assert all(b[0] - a[0] - a[1] - b[1] >= (49 if BIGBOX else 99) for a, b in zip(s[:-1], s[1:])), ("in-row gap", name, yr)
-        if BIGBOX or PA_SET in ("w1", "w1b", "w2a", "w2b", "w3", "w3b", "w3c", "w4", "w5", "w6e", "w6", "kn", "x20", "x15", "kn40", "w8", "rep", "ext", "x42", "uni", "c2d", "xs", "v21", "v21b", "fine2", "fine3", "m3db"):   # all-pairs gap (any two posts, any rows) >= 50 nm (r7) / 100 nm (w1)
+        if BIGBOX or PA_SET in ("w1", "w1b", "w2a", "w2b", "w3", "w3b", "w3c", "w4", "w5", "w6e", "w6", "kn", "x20", "x15", "kn40", "w8", "rep", "ext", "x42", "uni", "c2d", "xs", "v21", "v21b", "v21c", "v21d", "v21e", "v21f", "v21g", "v21h", "v21i", "v21j", "v21k", "v21l", "fine2", "fine3", "m3db"):   # all-pairs gap (any two posts, any rows) >= 50 nm (r7) / 100 nm (w1)
             X, Y, Rr = np.array(xb), np.array(yb), np.array(rb)
             gap = np.hypot(X[:, None] - X[None], Y[:, None] - Y[None]) - Rr[:, None] - Rr[None]; np.fill_diagonal(gap, 1e9)
             assert gap.min() >= (49.5 if BIGBOX else 99.5), ("all-pairs gap", name, gap.min())

@@ -53,6 +53,8 @@ you will PARK for the user. Then stop asking — everything after this is action
   six finished rows plus the 07:00 follow-up window were lost. Prefer one long-lived Monitor (re-armed on every expiry) over
   exit-on-change shell loops, and after handling ANY notification re-read the queue before ending the turn.
 
+- **★LOCAL LONG JOBS NEED A WAKE TOO (incident 2026-10-26, ~2.5 h idle):** a local optimizer or GPT worker launched detached (`( cmd & )`) never notifies on exit; two lineage optimizers finished at ~02:20 and nothing woke the session until a server watcher fired at 05:00. Launch every local long job with `run_in_background: true` (it notifies on exit), or arm a watcher on its output file.
+- **★A CHANGE-WATCHER MUST NOT BASELINE ON A TERMINAL STATE (incident 2026-10-26):** a watcher that wakes on 'set of finished jobs changed since my first poll' silently misses every job that finished before its first poll (272361 + 272601 sat done ~1 h). Wake on ANY terminal state of jobs not yet handled, never on a diff from a late baseline.
 - Never end a turn "waiting" without a mechanism that re-invokes you: a background
   watcher script (`run_in_background`) that polls the queue and **exits only on
   ssh-success AND condition met** (ssh failure ≠ queue empty — VPN blips), with an

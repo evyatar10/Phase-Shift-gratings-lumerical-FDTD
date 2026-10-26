@@ -563,3 +563,9 @@ Claude: forwarded to the Fable 2D prototype agent.
 - Ideas triage (gptIDEAS): joint tooth+post, rotated bars, segmented ribbons ranked; islands/reflectors/antisymmetric = dead ends.
 - Gap (gptGAP): v2.1 over-predicts own designs 6.4 %/11.3 %; measured-drive substitution closes most -> local-drive (DDA) is the weak link;
   provisional gains for 272017 designs rows/y1500/y1700/acons 2.38/2.43/2.68/2.80. Next: refit drive response, conservative/ensemble objective.
+
+### 2026-10-26 night (Claude log)
+- gptLIN: built scratch opt_lineage.py (measured-base anchored local search; gates pass). Used for v21d (272310) and fromseed steps. Backtest lineage err -0.2..+7 %, bias ~+2 %.
+- gptLINES2: lines probe 272087: closure bug fixed (analyze_lines_fixed.py); depol-Born pattern overlap 0.28-0.78 fails gates; no route beats circles -> PARKED.
+- gptREFIT: v2.1 refit on 46 devices FAILS held-out gate (4.31 % vs 3.90 % before; optima held-out bias +4.5 %). ADOPTED: keep v2.1 final weights + lineage predictor (optima lineage bias +1.3..+3 %).
+- MEASURED: v21c_fromseed x3.052 (520 posts), v21c_y1950 x2.994 (452), v21b_acons x2.856, v21b_y1700 x2.842.

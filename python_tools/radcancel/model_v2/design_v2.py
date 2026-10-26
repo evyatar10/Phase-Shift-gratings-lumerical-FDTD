@@ -10,13 +10,15 @@ from scipy.special import hankel1
 from scipy.optimize import minimize
 D = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, D)
 import model_v2 as mm
-XMAX, CLR, RMIN, RMAX, GAP, R0 = 42000.0, 200.0, float(os.environ.get("RMIN_NM", 50)), 100.0, float(os.environ.get("GAP_NM", 100)), 75.0   # fab variants via env (A: 50/100, A-cons: 75/150, B: 35/70, 25/50)
+XMAX, CLR, RMIN, RMAX, GAP, R0 = float(os.environ.get("XMAX_NM", 42000)), 200.0, float(os.environ.get("RMIN_NM", 50)), 100.0, float(os.environ.get("GAP_NM", 100)), 75.0   # fab variants via env (A: 50/100, A-cons: 75/150, B: 35/70, 25/50)
 YMAX = float(os.environ.get("YMAX_NM", 1950))
 T = json.load(open(os.path.join(mm.DATA, "teeth.json"))); EDGES = T["CAV"] / 2 + T["PITCH"] * np.arange(len(T["NAR"]) + 1)
+TCAD = json.load(open(os.path.join(mm.DATA, "teeth_cad.json")))["rects"]
 def wall(x, reach):
     """local built wall half-width (nm) within +-reach of x: max over the per-tooth arrays (CLAUDE.md sec 5: never the avg+corr/2 formula)."""
-    w = [max(T["NAR"][i], T["WID"][i]) / 2 for i in range(len(T["NAR"])) if EDGES[i] - reach <= abs(x) <= EDGES[i + 1] + reach]
-    return max(w + [T["CAV"] / 2])
+    # 2026-10-26 GPT audit: the formula (EDGES from CAV = cavity WIDTH, abs(x) = mirrored arms) misplaced teeth; real clearances were 160-180 nm.
+    # Use the BUILT rectangles of the Athena scene (data/teeth_cad.json: teeth + cavity, per arm, exact x extents).
+    return max(hw for x0, x1, hw in TCAD if x0 - reach <= x <= x1 + reach)
 W, PINV = mm._W["W"], mm._W["pinv"]; F_MAP, C_MAP = mm.FINAL["map"]; NB = mm.FINAL["NB"]; VAR = mm.FINAL["variant"]
 NA = mm.NHAT.shape[0]; Cv = mm.C.reshape(2, -1); dWv = mm.dW.reshape(2, -1); CC = mm.CC
 KT = mm.K * np.sqrt(np.maximum(1 - mm.UX ** 2, 0.05 ** 2))
